@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peltipiirturi — Kalajoen Peltityö</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #1a1a1a;
+    --panel: #242424;
+    --border: #333;
+    --accent: #e8a020;
+    --accent2: #3a8fe8;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --input-bg: #2e2e2e;
+    --success: #3dba6e;
+    --danger: #e84040;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  .type-bar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  .type-btn {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    padding: 10px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  .type-btn:hover { color: var(--text); }
+
+  .type-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 90px);
+  }
+
+  .left-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .field input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field input.angle {
+    border-color: #444;
+  }
+
+  /* Segments editor */
+  .segments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .segment-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 28px;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .segment-row .seg-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 0 4px;
+  }
+
+  .btn-remove {
+    background: none;
+    border: 1px solid #444;
+    color: var(--text-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
+
+  .btn-add {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Pituustaulukko */
+  .table-wrap {
+    width: 100%;
+  }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 80px 60px 50px 1fr 28px;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .table-header span {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    padding: 0 4px;
+  }
+
+  .table-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 80px 60px 50px 1fr 28px;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .table-row input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 5px 6px;
+    border-radius: 3px;
+    width: 100%;
+  }
+
+  .table-row input:focus {
+    outline: none;
+    border-color: var(--accent2);
+  }
+
+  .table-row input.huomio { color: #ffaa44; }
+
+  .summary-bar {
+    background: #1e1e1e;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .summary-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .summary-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .summary-value.aihio {
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  /* SVG panel */
+  .right-panel {
+    background: #f5f5f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  .drawing-area {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .cut-list {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 700px;
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .cut-list h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #666;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  .cut-row {
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .cut-row .kpl { color: #333; font-weight: 600; min-width: 50px; }
+  .cut-row .mitta { color: #222; flex: 1; }
+  .cut-row .huomio-text { color: #cc4400; font-size: 11px; }
+
+  .cut-total {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .cut-total .label { font-size: 11px; color: #666; }
+  .cut-total .value { font-size: 20px; font-weight: 600; color: #1a6fc4; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">KALAJOEN PELTITYÖ</div>
+  <h1>Peltipiirturi</h1>
+</header>
+
+<div class="type-bar">
+  <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
+  <button class="type-btn" onclick="setType('ulkonurkka')">Ulkonurkka</button>
+  <button class="type-btn" onclick="setType('kynnys')">Kynnys</button>
+  <button class="type-btn" onclick="setType('hattulista')">Hattulista</button>
+  <button class="type-btn" onclick="setType('vapaa')">⊕ Vapaa profiili</button>
+</div>
+
+<div class="main">
+  <div class="left-panel">
+
+    <!-- Profiilimitat -->
+    <div class="section" id="profile-section">
+      <div class="section-title">Profiilimitat</div>
+      <div id="profile-fields"></div>
+    </div>
+
+    <!-- Vapaa segmenttieditori (piilotettu vakioprofiileilla) -->
+    <div class="section" id="free-section" style="display:none">
+      <div class="section-title">Taitokset</div>
+      <div class="segments-list" id="segments-list"></div>
+      <button class="btn-add" onclick="addSegment()">+ Lisää taitos</button>
+    </div>
+
+    <!-- Pituustaulukko -->
+    <div class="section">
+      <div class="section-title">Pituudet</div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <span>Mitta mm</span>
+          <span>Päät mm</span>
+          <span>Kpl</span>
+          <span>Huomio</span>
+          <span></span>
+        </div>
+        <div class="table-rows" id="length-rows"></div>
+      </div>
+      <button class="btn-add" onclick="addRow()">+ Lisää rivi</button>
+    </div>
+
+    <!-- Yhteenveto -->
+    <div class="summary-bar">
+      <div class="summary-row">
+        <span class="summary-label">AIHIOLEVEYS</span>
+        <span class="summary-value aihio" id="aihio-val">— mm</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">YHTEENSÄ</span>
+        <span class="summary-value" id="total-m2">0.00 m²</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <svg id="drawing" class="drawing-area" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="cut-list">
+      <h3>Leikkauslista</h3>
+      <div id="cut-list-rows"></div>
+      <div class="cut-total">
+        <span class="label">YHTEENSÄ</span>
+        <span class="value" id="cut-total-val">0.00 m²</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Profiilityypit ───────────────────────────────────────────────
+const TYPES = {
+  avp: {
+    name: 'Alavesipelti',
+    fields: [
+      { id: 'seg0_len', label: 'Takareuna mm', default: 15 },
+      { id: 'seg1_len', label: 'Pinta mm', default: 150 },
+      { id: 'seg2_len', label: 'Etureuna mm', default: 30 },
+      { id: 'seg3_len', label: 'Etukäännös mm', default: 10 },
+      { id: 'seg0_ang', label: 'Käännös taka °', default: 75, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Käännös etu °', default: 75, cls: 'angle' },
+      { id: 'seg3_ang', label: 'Etur °', default: 125, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const L = [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len];
+      const A = [vals.seg0_ang, vals.seg1_ang, vals.seg3_ang];
+      // Kulmat: pinta on vaakasuora referenssi
+      const a1 = Math.PI / 2; // pinta alas
+      const a0 = a1 - (A[0] * Math.PI / 180); // takareuna
+      const a2 = a1 + (A[1] * Math.PI / 180); // etureuna
+      const a3 = a2 + (A[2] * Math.PI / 180); // etukäännös
+      return buildFromAngles([a0, a1, a2, a3], L);
+    }
+  },
+  ulkonurkka: {
+    name: 'Ulkonurkka',
+    fields: [
+      { id: 'seg0_len', label: 'Sivu A mm', default: 100 },
+      { id: 'seg1_len', label: 'Sivu B mm', default: 100 },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+      { id: 'seg2_len', label: 'Tiivistepokkaus mm', default: 0 },
+      { id: 'seg3_len', label: 'Tuplakäännös mm', default: 0 },
+    ],
+    build: (vals) => {
+      const segs = [
+        { len: vals.seg0_len, angle: 0 },
+        { len: vals.seg1_len, angle: vals.seg0_ang * Math.PI / 180 },
+      ];
+      if (vals.seg2_len > 0) segs.push({ len: vals.seg2_len, angle: segs[1].angle + Math.PI / 2 });
+      if (vals.seg3_len > 0) segs.push({ len: vals.seg3_len, angle: (segs[segs.length-1]?.angle || 0) + Math.PI });
+      return buildFromSegments(segs);
+    }
+  },
+  kynnys: {
+    name: 'Kynnys',
+    fields: [
+      { id: 'seg0_len', label: 'Etulaippa mm', default: 30 },
+      { id: 'seg1_len', label: 'Pinta mm', default: 120 },
+      { id: 'seg2_len', label: 'Takalaippa mm', default: 30 },
+      { id: 'seg3_len', label: 'Nokka etu mm', default: 10 },
+      { id: 'seg4_len', label: 'Nokka taka mm', default: 10 },
+      { id: 'seg0_ang', label: 'Kulma etu °', default: 90, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Kulma taka °', default: 90, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const a0 = 0;
+      const a1 = a0 + (vals.seg0_ang * Math.PI / 180);
+      const a2 = a1 + Math.PI;
+      const a3 = a0 - Math.PI / 2;
+      const a4 = a2 + Math.PI / 2;
+      const L = [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len, vals.seg4_len];
+      return buildFromAngles([a3, a0, a1, a2, a4], L);
+    }
+  },
+  hattulista: {
+    name: 'Hattulista',
+    fields: [
+      { id: 'seg0_len', label: 'Laippa vasen mm', default: 30 },
+      { id: 'seg1_len', label: 'Sivu vasen mm', default: 40 },
+      { id: 'seg2_len', label: 'Harja mm', default: 80 },
+      { id: 'seg3_len', label: 'Sivu oikea mm', default: 40 },
+      { id: 'seg4_len', label: 'Laippa oikea mm', default: 30 },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const k = vals.seg0_ang * Math.PI / 180;
+      const a = [Math.PI, Math.PI - k, 0, k, 0];
+      const L = [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len, vals.seg4_len];
+      return buildFromAngles(a, L);
+    }
+  },
+  vapaa: {
+    name: 'Vapaa profiili',
+    fields: [],
+    build: () => buildFromFreeSegments()
+  }
+};
+
+// ─── Vapaat segmentit ─────────────────────────────────────────────
+let freeSegments = [
+  { len: 50, angle: 90 },
+  { len: 100, angle: 180 },
+  { len: 50, angle: 90 },
+];
+
+// ─── Pituusrivit ──────────────────────────────────────────────────
+let lengthRows = [{ mitta: 1000, paat: 0, kpl: 1, huomio: '' }];
+
+// ─── Aktiivinen tyyppi ────────────────────────────────────────────
+let activeType = 'avp';
+
+function setType(t) {
+  activeType = t;
+  document.querySelectorAll('.type-btn').forEach((b, i) => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
+  });
+  renderProfileFields();
+  document.getElementById('free-section').style.display = t === 'vapaa' ? '' : 'none';
+  document.getElementById('profile-section').style.display = t === 'vapaa' ? 'none' : '';
+  redraw();
+}
+
+// ─── Profiilikentät ───────────────────────────────────────────────
+function renderProfileFields() {
+  const type = TYPES[activeType];
+  const el = document.getElementById('profile-fields');
+  if (!type.fields.length) { el.innerHTML = ''; return; }
+
+  const grid = document.createElement('div');
+  grid.className = 'field-grid';
+
+  type.fields.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field';
+    const existing = document.getElementById(f.id);
+    const val = existing ? existing.value : f.default;
+    div.innerHTML = `
+      <label>${f.label}</label>
+      <input type="number" id="${f.id}" value="${val}" class="${f.cls || ''}" oninput="redraw()">
+    `;
+    grid.appendChild(div);
+  });
+  el.innerHTML = '';
+  el.appendChild(grid);
+}
+
+// ─── Vapaa segmenttieditori ───────────────────────────────────────
+function renderFreeSegments() {
+  const list = document.getElementById('segments-list');
+  list.innerHTML = '';
+  freeSegments.forEach((seg, i) => {
+    const row = document.createElement('div');
+    row.className = 'segment-row';
+    row.innerHTML = `
+      <input type="number" value="${seg.len}" placeholder="mm" oninput="freeSegments[${i}].len=+this.value;redraw()">
+      <input type="number" value="${seg.angle}" placeholder="°" class="angle" oninput="freeSegments[${i}].angle=+this.value;redraw()">
+      <button class="btn-remove" onclick="removeSegment(${i})">×</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addSegment() {
+  freeSegments.push({ len: 50, angle: 90 });
+  renderFreeSegments();
+  redraw();
+}
+
+function removeSegment(i) {
+  freeSegments.splice(i, 1);
+  renderFreeSegments();
+  redraw();
+}
+
+// ─── Pituusrivit ──────────────────────────────────────────────────
+function renderLengthRows() {
+  const container = document.getElementById('length-rows');
+  container.innerHTML = '';
+  lengthRows.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'table-row';
+    row.innerHTML = `
+      <input type="number" value="${r.mitta}" placeholder="1000" oninput="lengthRows[${i}].mitta=+this.value;redraw()">
+      <input type="number" value="${r.paat}" placeholder="0" oninput="lengthRows[${i}].paat=+this.value;redraw()">
+      <input type="number" value="${r.kpl}" placeholder="1" oninput="lengthRows[${i}].kpl=+this.value;redraw()">
+      <input type="text" value="${r.huomio}" placeholder="—" class="${r.huomio ? 'huomio' : ''}" oninput="lengthRows[${i}].huomio=this.value;this.className=this.value?'huomio':'';redraw()">
+      <button class="btn-remove" onclick="removeRow(${i})">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function addRow() {
+  lengthRows.push({ mitta: 1000, paat: 0, kpl: 1, huomio: '' });
+  renderLengthRows();
+  redraw();
+}
+
+function removeRow(i) {
+  if (lengthRows.length === 1) return;
+  lengthRows.splice(i, 1);
+  renderLengthRows();
+  redraw();
+}
+
+// ─── Geometria ────────────────────────────────────────────────────
+function getVals() {
+  const vals = {};
+  document.querySelectorAll('#profile-fields input').forEach(inp => {
+    vals[inp.id] = parseFloat(inp.value) || 0;
+  });
+  return vals;
+}
+
+function buildFromAngles(angles, lengths) {
+  // angles: absoluuttiset suuntakulmat (radiaaneina)
+  // lengths: segmenttien pituudet
+  let points = [{ x: 0, y: 0 }];
+  for (let i = 0; i < lengths.length; i++) {
+    const prev = points[points.length - 1];
+    points.push({
+      x: prev.x + lengths[i] * Math.cos(angles[i]),
+      y: prev.y + lengths[i] * Math.sin(angles[i])
+    });
+  }
+  return points;
+}
+
+function buildFromSegments(segs) {
+  let points = [{ x: 0, y: 0 }];
+  segs.forEach(s => {
+    const prev = points[points.length - 1];
+    points.push({
+      x: prev.x + s.len * Math.cos(s.angle),
+      y: prev.y + s.len * Math.sin(s.angle)
+    });
+  });
+  return points;
+}
+
+function buildFromFreeSegments() {
+  let points = [{ x: 0, y: 0 }];
+  let cumAngle = 0;
+  freeSegments.forEach(s => {
+    cumAngle += s.angle * Math.PI / 180;
+    const prev = points[points.length - 1];
+    points.push({
+      x: prev.x + s.len * Math.cos(cumAngle),
+      y: prev.y + s.len * Math.sin(cumAngle)
+    });
+  });
+  return points;
+}
+
+function getSegmentLengths() {
+  if (activeType === 'vapaa') {
+    return freeSegments.map(s => s.len);
+  }
+  const vals = getVals();
+  return TYPES[activeType].fields
+    .filter(f => f.id.endsWith('_len'))
+    .map(f => vals[f.id] || 0);
+}
+
+// ─── SVG-piirto ───────────────────────────────────────────────────
+function redraw() {
+  const type = TYPES[activeType];
+  let points;
+
+  try {
+    if (activeType === 'vapaa') {
+      points = buildFromFreeSegments();
+    } else {
+      const vals = getVals();
+      points = type.build(vals);
+    }
+  } catch(e) { return; }
+
+  // Normalisoi koordinaatit SVG-näkymään
+  const pad = 60;
+  const svgW = 700, svgH = 340;
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const scale = Math.min((svgW - pad*2) / rangeX, (svgH - pad*2) / rangeY, 2);
+
+  const tx = p => pad + (p.x - minX) * scale;
+  const ty = p => pad + (p.y - minY) * scale;
+
+  // Segmenttien pituudet aihioleveyttä varten
+  const segLens = getSegmentLengths();
+  const aihio = segLens.reduce((a, b) => a + b, 0);
+
+  // Leikkauslista
+  let totalM2 = 0;
+  const cutRows = lengthRows.map(r => {
+    const kok = (r.mitta || 0) + (r.paat || 0);
+    const m2 = (kok / 1000) * (aihio / 1000) * (r.kpl || 0);
+    totalM2 += m2;
+    return { ...r, kok, m2 };
+  });
+
+  // Päivitä yhteenvedot
+  document.getElementById('aihio-val').textContent = aihio.toFixed(0) + ' mm';
+  document.getElementById('total-m2').textContent = totalM2.toFixed(2) + ' m²';
+  document.getElementById('cut-total-val').textContent = totalM2.toFixed(2) + ' m²';
+
+  // Piirrä SVG
+  const svg = document.getElementById('drawing');
+  let html = '';
+
+  // Viivat
+  for (let i = 0; i < points.length - 1; i++) {
+    html += `<line x1="${tx(points[i])}" y1="${ty(points[i])}" x2="${tx(points[i+1])}" y2="${ty(points[i+1])}" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
+
+  // Mitat
+  for (let i = 0; i < points.length - 1; i++) {
+    const mx = (tx(points[i]) + tx(points[i+1])) / 2;
+    const my = (ty(points[i]) + ty(points[i+1])) / 2;
+    const len = segLens[i] || '';
+    const dx = tx(points[i+1]) - tx(points[i]);
+    const dy = ty(points[i+1]) - ty(points[i]);
+    const segLen = Math.sqrt(dx*dx + dy*dy);
+    const ox = -dy / segLen * 14;
+    const oy = dx / segLen * 14;
+    if (len > 0) {
+      html += `<text x="${mx + ox}" y="${my + oy}" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${len}</text>`;
+    }
+  }
+
+  // Päätepisteet
+  points.forEach((p, i) => {
+    html += `<circle cx="${tx(p)}" cy="${ty(p)}" r="3" fill="${i === 0 || i === points.length-1 ? '#e8a020' : '#888'}"/>`;
+  });
+
+  svg.innerHTML = html;
+
+  // Leikkauslista HTML
+  const listEl = document.getElementById('cut-list-rows');
+  listEl.innerHTML = cutRows.map(r => `
+    <div class="cut-row">
+      <span class="kpl">${r.kpl} kpl</span>
+      <span class="mitta">${r.kok} mm ${r.paat > 0 ? `(${r.mitta}+${r.paat})` : ''}</span>
+      ${r.huomio ? `<span class="huomio-text">⚠ ${r.huomio}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+renderProfileFields();
+renderFreeSegments();
+renderLengthRows();
+redraw();
+</script>
+</body>
+</html>
