@@ -1,9 +1,28 @@
 # Kalajoen Peltityö ERP — Varastopaikat
 
-## Kartta
+## Varastot
 
-- **URL:** https://eltsu2013.github.io/kalajoen-peltityo-erp/verstaspohja_mitoitettu.html
-- **Tiedosto:** verstaspohja_mitoitettu.html (GitHub repo)
+| Koodi | Nimi | Kuvaus |
+|-------|------|--------|
+| VER | Verstas | Sisävarasto, täysi hyllyrakenne |
+| ULK | Ulkovarasto | Vasen ja oikea puoli |
+| AUTO | Auto | Vanha pakettiauto varastona |
+| KONTTI | Kontti | Kourutarvikkeet ja pienosat |
+| ULKOHYL | Ulkohylly | Ulkona oleva hylly |
+
+### Ulkovarasto
+- ULK-V — Vasen puoli (ULKV-Vasen)
+- ULK-O — Oikea puoli (ULKV-Oikea)
+
+### Auto, Kontti, Ulkohylly
+- Yksi varastopaikka per varasto (ei hyllyrakennetta)
+
+---
+
+## Verstaan kartta
+
+- **URL:** https://eltsu2013.github.io/kalajoen-peltityo-erp/maps/verstaspohja_mitoitettu.html
+- **Tiedosto:** maps/verstaspohja_mitoitettu.html (GitHub repo)
 - **Teema:** Tumma (IBM Plex Mono), värikoodaus alla
 
 ## Värikoodit kartalla
