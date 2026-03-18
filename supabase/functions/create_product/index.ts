@@ -8,8 +8,7 @@ serve(async (req) => {
   );
 
   const body = await req.json();
-
-  const { data, error } = await supabase
+const { data, error } = await supabase
     .from("products")
     .insert({
       material: body.material,
@@ -19,8 +18,10 @@ serve(async (req) => {
       unit: body.unit,
       manufacturer_country: body.manufacturer_country,
       default_vat_percent: body.default_vat_percent,
+      product_code: body.product_code,
       is_active: true
     });
+  
 
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
