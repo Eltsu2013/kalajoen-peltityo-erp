@@ -14,17 +14,18 @@ serve(async (req) => {
   let query = supabase
     .from("stock_items")
     .select(`
-      *,
-      locations (
-        code,
-        name
-      ),
-      products (
-        material,
-        thickness_mm,
-        color
-      )
-    `)
+  *,
+  locations (
+    code,
+    name
+  ),
+  products (
+    material,
+    thickness_mm,
+    color,
+    product_group
+  )
+`)
     .order("created_at", { ascending: false })
 
   if (statusFilter) {
@@ -42,10 +43,13 @@ serve(async (req) => {
     material: row.products?.material || null,
     thickness_mm: row.products?.thickness_mm || null,
     color: row.products?.color || null,
+    product_group: row.products?.product_group || null,
     type_fi:
       row.type === "ROLL" ? "Rulla" :
       row.type === "SHEET" ? "Levy" :
       row.type === "OFFCUT" ? "Siivu" :
+      row.type === "ITEM" ? "Kpl" :
+      row.type === "BULK" ? "Metri" :
       row.type
   }))
 
