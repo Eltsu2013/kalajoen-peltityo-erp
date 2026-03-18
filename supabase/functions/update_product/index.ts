@@ -18,7 +18,8 @@ serve(async (req) => {
       product_group: body.product_group,
       unit: body.unit,
       manufacturer_country: body.manufacturer_country,
-      default_vat_percent: body.default_vat_percent
+      default_vat_percent: body.default_vat_percent,
+      product_code: body.product_code
     })
     .eq("id", body.id);
 
