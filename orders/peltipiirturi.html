@@ -3506,8 +3506,42 @@ if (savedCtx) {
   try {
     const ctx = JSON.parse(savedCtx);
     localStorage.removeItem('kpt_open_profile');
-    // Pieni viive jotta DOM on valmis
-    setTimeout(() => aktivoiTilausPalkki(ctx), 100);
+    setTimeout(() => {
+      aktivoiTilausPalkki(ctx);
+      // Jos muokkaustila — ladataan vanhat tiedot
+      if (ctx.editItemId && ctx.existingData) {
+        const { vals, opts } = ctx.existingData;
+        // Asetetaan kenttien arvot
+        if (vals) {
+          Object.entries(vals).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+          });
+        }
+        // Asetetaan checkboxit
+        if (opts) {
+          Object.entries(opts).forEach(([id, val]) => {
+            const el = document.getElementById('opt_' + id);
+            if (el) el.checked = !!val;
+          });
+        }
+        // Ladataan pituusrivit
+        if (ctx.existingRows && ctx.existingRows.length > 0) {
+          lengthRows = ctx.existingRows.map(r => ({
+            mitta: r.mitta || 0,
+            paat: r.paat || 0,
+            kpl: r.kpl || 0,
+            huomio: r.huomio || ''
+          }));
+          renderLengthRows();
+        }
+        redraw();
+        // Muutetaan napin teksti
+        const bar = document.getElementById('tilaus-bar');
+        const btn = bar.querySelector('button');
+        if (btn) btn.textContent = '✓ Päivitä tilaukseen';
+      }
+    }, 200);
   } catch(e) {}
 }
 
@@ -3545,6 +3579,7 @@ function lisaaTilaukseen() {
     type: 'ADD_TO_ORDER',
     orderId: tilausContext.orderId,
     groupId: tilausContext.groupId,
+    editItemId: tilausContext.editItemId || null,
     profileType: activeType,
     nimike: tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
