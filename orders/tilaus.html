@@ -1939,19 +1939,44 @@ function deleteGroup(id) {
   updateSummary();
 }
 
-// ── Tilausintegraatio BroadcastChannel ───────────────────────────
+// ── Tilausintegraatio localStorage ───────────────────────────────
 const bc = new BroadcastChannel('kpt_mallisto');
-let pendingContext = null; // odottaa Malliston valmistumista
 
 bc.onmessage = (e) => {
-  if (e.data.type === 'MALLISTO_READY' && pendingContext) {
-    bc.postMessage(pendingContext);
-    pendingContext = null;
-  }
   if (e.data.type === 'ADD_TO_ORDER') {
     receiveFromMallisto(e.data);
   }
 };
+
+function receiveFromMallisto(data) {
+  const group = groups.find(g => g.id === data.groupId);
+  if (!group) return;
+  const item = {
+    id: 'i_' + Date.now(),
+    profileType: data.profileType,
+    nimike: data.nimike,
+    aihio_width_mm: data.aihio_width_mm,
+    profile_data: data.profile_data,
+    rows: data.rows,
+    totalM2: data.totalM2
+  };
+  group.items.push(item);
+  renderGroups();
+  updateSummary();
+  saveItemToSupabase(item, data.groupId);
+  setSaveStatus('ok', 'Pelti lisätty!');
+}
+
+// Kuunnellaan myös localStorage-muutoksia (fallback)
+window.addEventListener('storage', (e) => {
+  if (e.key === 'kpt_add_to_order' && e.newValue) {
+    try {
+      const data = JSON.parse(e.newValue);
+      receiveFromMallisto(data);
+      localStorage.removeItem('kpt_add_to_order');
+    } catch(err) {}
+  }
+});
 
 function receiveFromMallisto(data) {
   const group = groups.find(g => g.id === data.groupId);
@@ -2026,7 +2051,7 @@ function _openMallisto(groupId, profileType, nimike) {
 
 function __openMallisto(groupId, profileType, nimike) {
   const group = groups.find(g => g.id === groupId);
-  pendingContext = {
+  const context = {
     type: 'OPEN_PROFILE',
     orderId: currentOrderId,
     groupId,
@@ -2034,6 +2059,8 @@ function __openMallisto(groupId, profileType, nimike) {
     nimike,
     profileType
   };
+  // Tallennetaan konteksti localStorageen — Mallisto lukee sen heti auetessaan
+  localStorage.setItem('kpt_open_profile', JSON.stringify(context));
   window.open('peltipiirturi.html', '_blank');
 }
 
