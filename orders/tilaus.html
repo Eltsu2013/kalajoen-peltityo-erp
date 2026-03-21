@@ -1848,8 +1848,9 @@ function onCustomerChange() {
 
 // ── Tilauksen luonti / tallennus ──────────────────────────────────
 async function createOrder() {
+  const customerId = document.getElementById('customer-select').value;
   const body = {
-    customer_id: document.getElementById('customer-select').value || null,
+    customer_id: customerId || null,
     order_date: new Date().toISOString().slice(0,10),
     status: 'DRAFT',
     notes: ''
@@ -1859,6 +1860,12 @@ async function createOrder() {
     headers: { ...headers, 'Prefer': 'return=representation' },
     body: JSON.stringify(body)
   });
+  if (!r.ok) {
+    const err = await r.json();
+    console.error('createOrder error:', err);
+    setSaveStatus('err', 'Virhe: ' + (err.message || r.status));
+    return;
+  }
   const data = await r.json();
   currentOrderId = data[0].id;
   document.getElementById('order-number-display').textContent = data[0].order_number || currentOrderId.slice(0,8);
