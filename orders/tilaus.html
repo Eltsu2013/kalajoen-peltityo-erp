@@ -1958,20 +1958,38 @@ bc.onmessage = (e) => {
 function receiveFromMallisto(data) {
   const group = groups.find(g => g.id === data.groupId);
   if (!group) return;
-  const item = {
-    id: 'i_' + Date.now(),
-    profileType: data.profileType,
-    nimike: data.nimike,
-    aihio_width_mm: data.aihio_width_mm,
-    profile_data: data.profile_data,
-    rows: data.rows,
-    totalM2: data.totalM2
-  };
-  group.items.push(item);
+
+  if (data.editItemId) {
+    // Muokkaus — korvataan olemassa oleva rivi
+    const idx = group.items.findIndex(i => i.id === data.editItemId);
+    if (idx !== -1) {
+      group.items[idx] = {
+        ...group.items[idx],
+        aihio_width_mm: data.aihio_width_mm,
+        profile_data: data.profile_data,
+        rows: data.rows,
+        totalM2: data.totalM2
+      };
+    }
+    setSaveStatus('ok', 'Pelti päivitetty!');
+  } else {
+    // Uusi pelti
+    const item = {
+      id: 'i_' + Date.now(),
+      profileType: data.profileType,
+      nimike: data.nimike,
+      aihio_width_mm: data.aihio_width_mm,
+      profile_data: data.profile_data,
+      rows: data.rows,
+      totalM2: data.totalM2
+    };
+    group.items.push(item);
+    saveItemToSupabase(item, data.groupId);
+    setSaveStatus('ok', 'Pelti lisätty!');
+  }
+
   renderGroups();
   updateSummary();
-  saveItemToSupabase(item, data.groupId);
-  setSaveStatus('ok', 'Pelti lisätty!');
 }
 
 async function saveItemToSupabase(item, groupId) {
@@ -2059,12 +2077,33 @@ function renderGroups() {
       <div class="group-items">
         ${g.items.length === 0 
           ? '<div style="color:var(--text-dim);font-size:12px;padding:8px 0">Ei vielä peltejä tässä ryhmässä.</div>'
-          : g.items.map(item => renderItem(item, g.id)).join('')
+          : renderItemsGrouped(g.items, g.id)
         }
         <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="addItemToGroup('${g.id}')">+ Lisää pelti</button>
       </div>
     </div>
   `).join('');
+}
+
+function renderItemsGrouped(items, groupId) {
+  // Ryhmitellään samanlevyiset allekkain
+  const byWidth = {};
+  items.forEach(item => {
+    const key = item.aihio_width_mm || 0;
+    if (!byWidth[key]) byWidth[key] = [];
+    byWidth[key].push(item);
+  });
+
+  return Object.entries(byWidth)
+    .sort((a, b) => Number(b[0]) - Number(a[0]))
+    .map(([width, widthItems]) => `
+      <div style="margin-bottom:6px">
+        <div style="font-size:10px;color:var(--accent);font-family:IBM Plex Mono,monospace;font-weight:600;padding:3px 0;border-bottom:1px solid #444;margin-bottom:4px">
+          LL-${width} mm
+        </div>
+        ${widthItems.map(item => renderItem(item, groupId)).join('')}
+      </div>
+    `).join('');
 }
 
 function renderItem(item, groupId) {
@@ -2082,16 +2121,38 @@ function renderItem(item, groupId) {
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
           <span class="item-nimike">${item.nimike || item.profileType}</span>
-          <span class="tag">LL-${item.aihio_width_mm || '—'} mm</span>
           ${item.totalM2 ? `<span class="tag">${item.totalM2.toFixed(2)} m²</span>` : ''}
         </div>
         <div>${rowsHtml}</div>
       </div>
       <div class="item-actions">
+        <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="editItem('${groupId}','${item.id}')">✎ Muokkaa</button>
         <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteItem('${groupId}','${item.id}')">✕</button>
       </div>
     </div>
   `;
+}
+
+function editItem(groupId, itemId) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  const item = group.items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // Tallennetaan konteksti muokkausta varten
+  const context = {
+    type: 'OPEN_PROFILE',
+    orderId: currentOrderId,
+    groupId,
+    groupName: group.name,
+    nimike: item.nimike,
+    profileType: item.profileType,
+    editItemId: itemId,           // merkki että muokataan olemassa olevaa
+    existingData: item.profile_data,
+    existingRows: item.rows
+  };
+  localStorage.setItem('kpt_open_profile', JSON.stringify(context));
+  window.open('peltipiirturi.html', '_blank');
 }
 
 function deleteItem(groupId, itemId) {
