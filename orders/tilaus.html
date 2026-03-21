@@ -1946,7 +1946,7 @@ function deleteGroup(id) {
   updateSummary();
 }
 
-// ── Tilausintegraatio localStorage ───────────────────────────────
+// ── Tilausintegraatio BroadcastChannel ───────────────────────────
 const bc = new BroadcastChannel('kpt_mallisto');
 
 bc.onmessage = (e) => {
@@ -1967,38 +1967,6 @@ function receiveFromMallisto(data) {
     rows: data.rows,
     totalM2: data.totalM2
   };
-  group.items.push(item);
-  renderGroups();
-  updateSummary();
-  saveItemToSupabase(item, data.groupId);
-  setSaveStatus('ok', 'Pelti lisätty!');
-}
-
-// Kuunnellaan myös localStorage-muutoksia (fallback)
-window.addEventListener('storage', (e) => {
-  if (e.key === 'kpt_add_to_order' && e.newValue) {
-    try {
-      const data = JSON.parse(e.newValue);
-      receiveFromMallisto(data);
-      localStorage.removeItem('kpt_add_to_order');
-    } catch(err) {}
-  }
-});
-
-function receiveFromMallisto(data) {
-  const group = groups.find(g => g.id === data.groupId);
-  if (!group) return;
-
-  const item = {
-    id: 'i_' + Date.now(),
-    profileType: data.profileType,
-    nimike: data.nimike,
-    aihio_width_mm: data.aihio_width_mm,
-    profile_data: data.profile_data,
-    rows: data.rows,
-    totalM2: data.totalM2
-  };
-
   group.items.push(item);
   renderGroups();
   updateSummary();
@@ -2101,15 +2069,20 @@ function renderGroups() {
 
 function renderItem(item, groupId) {
   const rowsHtml = item.rows && item.rows.length > 0
-    ? item.rows.map(r => `<span style="font-size:10px;color:var(--text-dim);font-family:IBM Plex Mono,monospace;margin-right:10px">${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' ⚠'+r.huomio : ''}</span>`).join('')
-    : '<span style="font-size:10px;color:var(--text-dim)">Ei pituuksia</span>';
+    ? item.rows.map(r => {
+        const kokStr = r.paat > 0 
+          ? `${r.mitta}+${r.paat} = <strong>${r.kok} mm</strong>`
+          : `<strong>${r.kok} mm</strong>`;
+        return `<span style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace;margin-right:12px">${kokStr} × ${r.kpl} kpl${r.huomio ? ' ⚠ '+r.huomio : ''}</span>`;
+      }).join('')
+    : '<span style="font-size:11px;color:var(--text-dim)">Ei pituuksia</span>';
 
   return `
     <div class="order-item">
       <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
           <span class="item-nimike">${item.nimike || item.profileType}</span>
-          <span class="tag">${item.aihio_width_mm || '—'} mm aihio</span>
+          <span class="tag">LL-${item.aihio_width_mm || '—'} mm</span>
           ${item.totalM2 ? `<span class="tag">${item.totalM2.toFixed(2)} m²</span>` : ''}
         </div>
         <div>${rowsHtml}</div>
