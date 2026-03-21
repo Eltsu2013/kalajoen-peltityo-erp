@@ -1947,8 +1947,20 @@
   </g>
 </svg></div>
   <h1>Mallisto</h1>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:8px"><label style="font-size:12px;color:var(--text-dim)">Nimike:</label><input id="nimike" type="text" placeholder="esim. Katkaisupelti" style="background:var(--bg);border:1px solid #333;color:var(--text);font-family:IBM Plex Mono,monospace;font-size:13px;padding:4px 8px;border-radius:4px;width:200px"></div>
 </header>
+
+<!-- Tilausyhteys-palkki — näkyy vain kun avattu tilauslomakkeelta -->
+<div id="tilaus-bar" style="display:none; background:#1a3a2a; border-bottom:1px solid #2a6a4a; padding:8px 24px; display:none; align-items:center; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:12px;">
+  <span style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
+  <span id="tilaus-ryhmä" style="color:#e8e8e8"></span>
+  <span id="tilaus-nimike" style="color:#e8a020; font-weight:600"></span>
+  <button onclick="lisaaTilaukseen()" style="margin-left:auto; background:#3dba6e; color:#1a1a1a; border:none; border-radius:4px; padding:6px 16px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer;">
+    ✓ Lisää tilaukseen
+  </button>
+  <button onclick="peruutaTilaus()" style="background:#333; color:#aaa; border:none; border-radius:4px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer;">
+    Peruuta
+  </button>
+</div>
 
 <div class="type-bar">
   <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
@@ -3472,7 +3484,70 @@ renderProfileFields();
 renderFreeSegments();
 renderLengthRows();
 redraw();
+
+// ─── Tilausintegraatio ────────────────────────────────────────────
+let tilausContext = null; // { orderId, groupId, groupName, nimike, profileType }
+const bc = new BroadcastChannel('kpt_mallisto');
+
+// Kuunnellaan viestiä tilauslomakkeelta
+bc.onmessage = (e) => {
+  if (e.data.type === 'OPEN_PROFILE') {
+    tilausContext = e.data;
+    // Asetetaan profiilityyppi
+    if (TYPES[tilausContext.profileType]) {
+      setType(tilausContext.profileType);
+    }
+    // Näytetään tilaus-palkki
+    const bar = document.getElementById('tilaus-bar');
+    bar.style.display = 'flex';
+    document.getElementById('tilaus-ryhmä').textContent = tilausContext.groupName + ' —';
+    document.getElementById('tilaus-nimike').textContent = tilausContext.nimike;
+  }
+};
+
+function lisaaTilaukseen() {
+  if (!tilausContext) return;
+
+  // Kerätään kaikki tiedot
+  const vals = getVals();
+  const opts = getOpts();
+  const type = TYPES[activeType];
+  const segLens = getSegmentLengths();
+  const aihio = type.aihio ? type.aihio(vals, opts) : segLens.reduce((a,b)=>a+b,0);
+
+  // Leikkausrivit
+  const rows = lengthRows.filter(r => r.kpl > 0 && (r.mitta > 0)).map(r => ({
+    mitta: r.mitta,
+    paat: r.paat || 0,
+    kok: (r.mitta || 0) + (r.paat || 0),
+    kpl: r.kpl,
+    huomio: r.huomio || ''
+  }));
+
+  const payload = {
+    type: 'ADD_TO_ORDER',
+    orderId: tilausContext.orderId,
+    groupId: tilausContext.groupId,
+    profileType: activeType,
+    nimike: tilausContext.nimike,
+    aihio_width_mm: Math.round(aihio),
+    profile_data: { vals, opts },
+    rows,
+    totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0)
+  };
+
+  bc.postMessage(payload);
+
+  // Suljetaan tämä välilehti
+  const bar = document.getElementById('tilaus-bar');
+  bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen! Voit sulkea tämän välilehden.</span>';
+  tilausContext = null;
+}
+
+function peruutaTilaus() {
+  tilausContext = null;
+  document.getElementById('tilaus-bar').style.display = 'none';
+}
 </script>
 </body>
 </html>
-
