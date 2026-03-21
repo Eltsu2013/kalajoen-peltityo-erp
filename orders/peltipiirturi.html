@@ -3489,21 +3489,32 @@ redraw();
 let tilausContext = null;
 const bc = new BroadcastChannel('kpt_mallisto');
 
-bc.onmessage = (e) => {
-  if (e.data.type === 'OPEN_PROFILE') {
-    tilausContext = e.data;
-    if (TYPES[tilausContext.profileType]) {
-      setType(tilausContext.profileType);
-    }
-    const bar = document.getElementById('tilaus-bar');
-    bar.style.display = 'flex';
-    document.getElementById('tilaus-ryhmä').textContent = tilausContext.groupName + ' —';
-    document.getElementById('tilaus-nimike').textContent = tilausContext.nimike;
+function aktivoiTilausPalkki(ctx) {
+  tilausContext = ctx;
+  if (TYPES[tilausContext.profileType]) {
+    setType(tilausContext.profileType);
   }
-};
+  const bar = document.getElementById('tilaus-bar');
+  bar.style.display = 'flex';
+  document.getElementById('tilaus-ryhmä').textContent = tilausContext.groupName + ' —';
+  document.getElementById('tilaus-nimike').textContent = tilausContext.nimike;
+}
 
-// Ilmoitetaan tilauslomakkeelle että Mallisto on valmis
-bc.postMessage({ type: 'MALLISTO_READY' });
+// Luetaan konteksti localStoragesta heti kun sivu aukeaa
+const savedCtx = localStorage.getItem('kpt_open_profile');
+if (savedCtx) {
+  try {
+    const ctx = JSON.parse(savedCtx);
+    localStorage.removeItem('kpt_open_profile');
+    // Pieni viive jotta DOM on valmis
+    setTimeout(() => aktivoiTilausPalkki(ctx), 100);
+  } catch(e) {}
+}
+
+// BroadcastChannel fallback
+bc.onmessage = (e) => {
+  if (e.data.type === 'OPEN_PROFILE') aktivoiTilausPalkki(e.data);
+};
 
 function lisaaTilaukseen() {
   if (!tilausContext) return;
@@ -3537,6 +3548,7 @@ function lisaaTilaukseen() {
   };
 
   bc.postMessage(payload);
+  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
 
   // Suljetaan tämä välilehti
   const bar = document.getElementById('tilaus-bar');
