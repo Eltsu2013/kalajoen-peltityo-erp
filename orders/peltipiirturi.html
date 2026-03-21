@@ -3600,6 +3600,7 @@ function lisaaTilaukseen() {
 function peruutaTilaus() {
   tilausContext = null;
   document.getElementById('tilaus-bar').style.display = 'none';
+  setTimeout(() => window.close(), 300);
 }
 </script>
 </body>
