@@ -3519,21 +3519,27 @@ bc.onmessage = (e) => {
 function lisaaTilaukseen() {
   if (!tilausContext) return;
 
-  // Kerätään kaikki tiedot
   const vals = getVals();
   const opts = getOpts();
   const type = TYPES[activeType];
   const segLens = getSegmentLengths();
   const aihio = type.aihio ? type.aihio(vals, opts) : segLens.reduce((a,b)=>a+b,0);
 
-  // Leikkausrivit
-  const rows = lengthRows.filter(r => r.kpl > 0 && (r.mitta > 0)).map(r => ({
-    mitta: r.mitta,
-    paat: r.paat || 0,
-    kok: (r.mitta || 0) + (r.paat || 0),
-    kpl: r.kpl,
-    huomio: r.huomio || ''
-  }));
+  // Luetaan rivit suoraan DOM:sta — varmistetaan että kaikki muutokset mukana
+  const rows = lengthRows
+    .filter(r => (r.mitta || 0) > 0 && (r.kpl || 0) > 0)
+    .map(r => ({
+      mitta: Number(r.mitta) || 0,
+      paat: Number(r.paat) || 0,
+      kok: (Number(r.mitta) || 0) + (Number(r.paat) || 0),
+      kpl: Number(r.kpl) || 0,
+      huomio: r.huomio || ''
+    }));
+
+  if (rows.length === 0) {
+    alert('Lisää ainakin yksi pituusrivi ennen kuin lisäät tilaukseen!');
+    return;
+  }
 
   const payload = {
     type: 'ADD_TO_ORDER',
@@ -3547,10 +3553,9 @@ function lisaaTilaukseen() {
     totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0)
   };
 
+  // Käytetään vain BroadcastChannel — ei localStorage kaksoislisäystä
   bc.postMessage(payload);
-  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
 
-  // Suljetaan tämä välilehti
   const bar = document.getElementById('tilaus-bar');
   bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen! Voit sulkea tämän välilehden.</span>';
   tilausContext = null;
