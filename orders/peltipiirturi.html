@@ -2288,11 +2288,11 @@ const TYPES = {
   'seinänvieripelti': {
     name: 'Seinänvieripelti',
     fields: [
+      { id: 'ura_len', label: 'Uran pohja mm', default: 20 },
       { id: 'seg0_len', label: 'Katolle mm', default: 150 },
       { id: 'seg1_len', label: 'Seinälle mm', default: 200 },
-      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
-      { id: 'ura_len', label: 'Uran pohja mm', default: 20 },
       { id: 'ura_ang', label: 'Uraan °', default: 45, cls: 'angle' },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
       { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
       { id: 'tiiB_len', label: 'Tiiviste B mm', default: 15 },
       { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
@@ -2379,11 +2379,10 @@ const TYPES = {
     fields: [
       { id: 'seg0_len', label: 'Katolle mm', default: 150 },
       { id: 'seg1_len', label: 'Räystäälle mm', default: 30 },
-      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
-      { id: 'tiiA_len', label: 'Tiiviste A mm', default: 15 },
-      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
       { id: 'nokka_len', label: 'Tippanokka mm', default: 15 },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
       { id: 'nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
       { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
     ],
     options: [
@@ -2470,14 +2469,14 @@ const TYPES = {
   paatypelti: {
     name: 'Päätypelti',
     fields: [
+      { id: 'harja_len', label: 'Uran pohja mm', default: 20 },
       { id: 'seg0_len', label: 'Katolle mm', default: 80 },
       { id: 'seg1_len', label: 'Räystäälle mm', default: 70 },
-      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
-      { id: 'harja_len', label: 'Uran pohja mm', default: 20 },
-      { id: 'harja_ang', label: 'Uraan °', default: 45, cls: 'angle' },
-      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
       { id: 'nokka_len', label: 'Tippanokka mm', default: 15 },
+      { id: 'harja_ang', label: 'Uraan °', default: 45, cls: 'angle' },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
       { id: 'nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
       { id: 'tupB_len', label: 'Tupla B mm', default: 12 },
     ],
     options: [],
@@ -2841,11 +2840,11 @@ const TYPES = {
       { id: 'seg0_len', label: 'Pinta mm', default: 100 },
       { id: 'seg1_len', label: 'Vasen sivu mm', default: 100 },
       { id: 'seg2_len', label: 'Oikea sivu mm', default: 100 },
-      { id: 'seg0_ang', label: 'Kulma vasen °', default: 90, cls: 'angle', flip: true },
-      { id: 'seg1_ang', label: 'Kulma oikea °', default: 90, cls: 'angle' },
       { id: 'laippaV_len', label: 'Laippa vasen mm', default: 30 },
-      { id: 'laippaV_ang', label: 'Laippa vasen kulma °', default: 90, cls: 'angle' },
       { id: 'laippaO_len', label: 'Laippa oikea mm', default: 30 },
+      { id: 'seg0_ang', label: 'Kulma vasen °', default: 90, cls: 'angle', flip: true },
+      { id: 'laippaV_ang', label: 'Laippa vasen kulma °', default: 90, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Kulma oikea °', default: 90, cls: 'angle' },
       { id: 'laippaO_ang', label: 'Laippa oikea kulma °', default: 90, cls: 'angle' },
       { id: 'tiiB_len', label: 'Tiiviste vasen mm', default: 15 },
       { id: 'tiiC_len', label: 'Tiiviste oikea mm', default: 15 },
@@ -2944,13 +2943,13 @@ const TYPES = {
     name: 'Z-lista',
     fields: [
       { id: 'seg0_len', label: 'A pinta mm', default: 80 },
-      { id: 'seg1_len', label: 'B nousu mm', default: 30 },
+      { id: 'seg1_len', label: 'Nousu mm', default: 30 },
       { id: 'seg2_len', label: 'B pinta mm', default: 80 },
       { id: 'seg0_ang', label: 'Alakulma °', default: 90, cls: 'angle' },
       { id: 'seg1_ang', label: 'Yläkulma °', default: 90, cls: 'angle' },
       { id: 'tiiA_len', label: 'Tiiviste A vasen mm', default: 15 },
-      { id: 'tiiB_len', label: 'Tiiviste B oikea mm', default: 15 },
       { id: 'tupA_len', label: 'Tupla A vasen mm', default: 15 },
+      { id: 'tiiB_len', label: 'Tiiviste B oikea mm', default: 15 },
       { id: 'tupB_len', label: 'Tupla B oikea mm', default: 15 },
     ],
     options: [
@@ -3346,8 +3345,13 @@ function redraw() {
   } else if (activeType === 'zlista' && nousuViiva) {
     etenemäMm = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
     kaatoMm = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
+    // Kokonaismitta A-alku → B-loppu
+    const kokMm = Math.round(Math.sqrt(
+      Math.pow(points[points.length-1].x - points[0].x, 2) +
+      Math.pow(points[points.length-1].y - points[0].y, 2)
+    ));
     document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
-    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm';
+    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm  |  Kok: ' + kokMm + ' mm';
     document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
     document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
     kaatoRow.style.display = '';
