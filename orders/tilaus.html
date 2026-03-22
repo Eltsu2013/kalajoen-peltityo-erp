@@ -2072,7 +2072,7 @@ function renderGroups() {
     <div class="order-group">
       <div class="group-header">
         <input type="text" value="${g.name}" onchange="renameGroup('${g.id}', this.value)" title="Klikkaa nimetäksesi uudelleen">
-        <span class="tag">${g.items.length} peltiä</span>
+        <span class="tag">${g.items.reduce((s,i) => s + (i.rows ? i.rows.reduce((a,r) => a+(r.kpl||0),0) : 0), 0)} kpl</span>
         <div style="margin-left:auto;display:flex;gap:6px">
           <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="copyGroup('${g.id}')">Kopioi</button>
           <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteGroup('${g.id}')">Poista</button>
@@ -2090,21 +2090,16 @@ function renderGroups() {
 }
 
 function renderItemsGrouped(items, groupId) {
-  // Ryhmitellään samanlevyiset allekkain
   const byWidth = {};
   items.forEach(item => {
     const key = item.aihio_width_mm || 0;
     if (!byWidth[key]) byWidth[key] = [];
     byWidth[key].push(item);
   });
-
   return Object.entries(byWidth)
     .sort((a, b) => Number(b[0]) - Number(a[0]))
     .map(([width, widthItems]) => `
       <div style="margin-bottom:6px">
-        <div style="font-size:10px;color:var(--accent);font-family:IBM Plex Mono,monospace;font-weight:600;padding:3px 0;border-bottom:1px solid #444;margin-bottom:4px">
-          LL-${width} mm
-        </div>
         ${widthItems.map(item => renderItem(item, groupId)).join('')}
       </div>
     `).join('');
@@ -2125,6 +2120,7 @@ function renderItem(item, groupId) {
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
           <span class="item-nimike">${item.nimike || item.profileType}</span>
+          <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">LL-${item.aihio_width_mm || '—'} mm</span>
           ${item.totalM2 ? `<span class="tag">${item.totalM2.toFixed(2)} m²</span>` : ''}
         </div>
         <div>${rowsHtml}</div>
