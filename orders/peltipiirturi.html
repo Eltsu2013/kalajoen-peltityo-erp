@@ -259,7 +259,6 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    margin-top: auto;
   }
 
   .summary-row {
@@ -2024,6 +2023,10 @@
         <span class="summary-label">ETENEMÄ</span>
         <span class="summary-value aihio" id="etenemä-val">— mm</span>
       </div>
+      <div id="kok-row" class="summary-row" style="display:none">
+        <span class="summary-label">KOK MITTA</span>
+        <span class="summary-value aihio" id="kok-val">— mm</span>
+      </div>
       <div class="summary-row">
         <span class="summary-label">YHTEENSÄ</span>
         <span class="summary-value" id="total-m2">0.00 m²</span>
@@ -2931,7 +2934,7 @@ const TYPES = {
       labels.push(opts?.tiiC ? laippaOLen : vals.laippaO_len);
       points.push(opts?.tiiC ? pLaippaOShort : pLaippaO);
 
-      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pLaippaV, p2: pBend, p3: pCend, p4: pLaippaO } };
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pA0, p2: pBend, p3: pA1, p4: pCend, p5: pLaippaV, p6: pLaippaO } };
     },
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len + vals.laippaV_len + vals.laippaO_len;
@@ -3333,39 +3336,51 @@ function redraw() {
     kaatoRow.style.display = '';
     etenemäRow.style.display = '';
   } else if (activeType === 'hattulista' && nousuViiva) {
+    // p1=pA0, p2=pBend (vasen sivu), p3=pA1, p4=pCend (oikea sivu)
+    // p5=pLaippaV, p6=pLaippaO (kokonaisleveys)
     const nousV = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
     const etenV = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
     const nousO = Math.abs(nousuViiva.p4.y - nousuViiva.p3.y).toFixed(0);
     const etenO = Math.abs(nousuViiva.p4.x - nousuViiva.p3.x).toFixed(0);
-    kaatoMm = `Vasen: ${nousV}  Oikea: ${nousO}`;
-    etenemäMm = `Vasen: ${etenV}  Oikea: ${etenO}`;
+    const kokLev = Math.abs(nousuViiva.p6.x - nousuViiva.p5.x).toFixed(0);
+    // Näytetään nousu vain jos se on > 0
+    const nousStr = `V:${nousV}  O:${nousO}`;
+    kaatoMm = nousStr;
+    etenemäMm = `V:${etenV}  O:${etenO}`;
     document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
     document.getElementById('etenemä-val').textContent = etenemäMm + ' mm';
     document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
     document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
     kaatoRow.style.display = '';
     etenemäRow.style.display = '';
+    document.getElementById('kok-val').textContent = kokLev + ' mm';
+    document.getElementById('kok-row').querySelector('.summary-label').textContent = 'KOK LEVEYS';
+    document.getElementById('kok-row').style.display = '';
   } else if (activeType === 'zlista' && nousuViiva) {
     etenemäMm = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
     kaatoMm = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
-    // Kokonaismitta A-alku → B-loppu käyttäen kokonaisViivaa
-    let kokStr = '';
+    document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
+    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm';
+    document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
+    document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
+    kaatoRow.style.display = '';
+    etenemäRow.style.display = '';
+    // Kokonaismitta omalle riville
+    const kokRow = document.getElementById('kok-row');
     if (kokonaisViiva) {
       const kokMm = Math.round(Math.sqrt(
         Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
         Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
       ));
-      kokStr = '  |  Kok: ' + kokMm + ' mm';
+      document.getElementById('kok-val').textContent = kokMm + ' mm';
+      kokRow.style.display = '';
+    } else {
+      kokRow.style.display = 'none';
     }
-    document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
-    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm' + kokStr;
-    document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
-    document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
-    kaatoRow.style.display = '';
-    etenemäRow.style.display = '';
   } else {
     kaatoRow.style.display = 'none';
     etenemäRow.style.display = 'none';
+    document.getElementById('kok-row').style.display = 'none';
     document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'KAATO';
     document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
   }
@@ -3463,17 +3478,33 @@ function redraw() {
     svgEl.innerHTML += `<polygon points="${tx1},${ty1} ${tx2},${ty2} ${tx3},${ty3}" fill="#c0392b" opacity="0.8"/>`;
 
     // Kaato/Nousu ja etenemä SVG:n vasempaan alareunaan
-    if (kaatoMm !== null) {
-      const svgH2 = 340;
-      let label1, label2;
-      if (activeType === 'zlista' || activeType === 'hattulista') {
-        label1 = 'NOUSU'; label2 = 'ETENEMÄ';
-      } else {
-        label1 = 'KAATO'; label2 = 'ETENEMÄ';
-      }
+    const svgH2 = 340;
+    if (activeType === 'zlista' && kaatoMm !== null) {
+      const kokMmSvg = kokonaisViiva ? Math.round(Math.sqrt(
+        Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
+        Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
+      )) : null;
+      const nousStr = Number(kaatoMm) > 0 ? `NOUSU: ${kaatoMm} mm` : '';
       svgEl.innerHTML += `
-        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#555">${label1}: ${kaatoMm} mm</text>
-        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#555">${label2}: ${etenemäMm} mm</text>
+        ${nousStr ? `<text x="10" y="${svgH2 - 45}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">${nousStr}</text>` : ''}
+        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
+        ${kokMmSvg ? `<text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KOK: ${kokMmSvg} mm</text>` : ''}
+      `;
+    } else if (activeType === 'hattulista' && nousuViiva) {
+      const nousV = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
+      const etenV = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
+      const nousO = Math.abs(nousuViiva.p4.y - nousuViiva.p3.y).toFixed(0);
+      const etenO = Math.abs(nousuViiva.p4.x - nousuViiva.p3.x).toFixed(0);
+      const kokLevSvg = Math.abs(nousuViiva.p6.x - nousuViiva.p5.x).toFixed(0);
+      svgEl.innerHTML += `
+        <text x="10" y="${svgH2 - 45}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">NOUSU: V:${nousV} O:${nousO} mm</text>
+        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: V:${etenV} O:${etenO} mm</text>
+        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KOK LEVEYS: ${kokLevSvg} mm</text>
+      `;
+    } else if (kaatoMm !== null) {
+      svgEl.innerHTML += `
+        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">KAATO: ${kaatoMm} mm</text>
+        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
       `;
     }
   }
