@@ -2107,12 +2107,12 @@ function renderItemsGrouped(items, groupId) {
 
 function renderItem(item, groupId) {
   const rowsHtml = item.rows && item.rows.length > 0
-    ? item.rows.map(r => {
+    ? '<div style="display:flex;flex-direction:column;gap:2px">' + item.rows.map(r => {
         const kokStr = r.paat > 0 
           ? `${r.mitta}+${r.paat} = <strong>${r.kok} mm</strong>`
           : `<strong>${r.kok} mm</strong>`;
-        return `<span style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace;margin-right:12px">${kokStr} × ${r.kpl} kpl${r.huomio ? ' ⚠ '+r.huomio : ''}</span>`;
-      }).join('')
+        return `<div style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">${kokStr} × ${r.kpl} kpl${r.huomio ? ' ⚠ '+r.huomio : ''}</div>`;
+      }).join('') + '</div>'
     : '<span style="font-size:11px;color:var(--text-dim)">Ei pituuksia</span>';
 
   return `
