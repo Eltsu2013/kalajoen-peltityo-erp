@@ -1700,31 +1700,6 @@
         <input type="text" id="new-group-name" placeholder="esim. Ikkuna 1">
       </div>
       <div class="field">
-        <label>Materiaali</label>
-        <select id="mat-select" onchange="onMatChange()">
-          <option value="">— valitse —</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Väri</label>
-        <select id="color-select" onchange="onColorChange()">
-          <option value="">— valitse —</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Paksuus</label>
-        <select id="thick-select">
-          <option value="">— valitse —</option>
-        </select>
-      </div>
-      <hr class="divider">
-      <div class="field">
-        <label>Lisää profiili ryhmään</label>
-        <select id="group-select" style="flex:1">
-          <option value="__new__">+ Luo uusi ryhmä</option>
-        </select>
-      </div>
-      <div class="field">
         <label>Profiilityyppi</label>
         <select id="profile-type-select" onchange="onProfileTypeChange()">
           <option value="avp">Alavesipelti</option>
@@ -1744,6 +1719,31 @@
       <div class="field">
         <label>Nimike <span style="color:var(--text-dim);font-weight:400">(vaihda tarvittaessa)</span></label>
         <input type="text" id="new-nimike" placeholder="esim. Sivusmyygi">
+      </div>
+      <div class="field">
+        <label>Materiaali</label>
+        <select id="mat-select" onchange="onMatChange()">
+          <option value="">— valitse —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Väri</label>
+        <select id="color-select" onchange="onColorChange()">
+          <option value="">— valitse —</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Paksuus</label>
+        <select id="thick-select">
+          <option value="">— valitse —</option>
+        </select>
+      </div>
+      <hr class="divider">
+      <div class="field">
+        <label>Lisää ryhmään</label>
+        <select id="group-select" style="flex:1">
+          <option value="__new__">+ Luo uusi ryhmä</option>
+        </select>
       </div>
       <button class="btn btn-primary" style="width:100%" onclick="openMallisto()">
         Avaa Mallisto →
