@@ -2382,6 +2382,7 @@ const TYPES = {
       { id: 'nokka_len', label: 'Tippanokka mm', default: 15 },
       { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
       { id: 'nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'tiiA_len', label: 'Tiiviste A mm', default: 15 },
       { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
       { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
     ],
@@ -2930,7 +2931,7 @@ const TYPES = {
       labels.push(opts?.tiiC ? laippaOLen : vals.laippaO_len);
       points.push(opts?.tiiC ? pLaippaOShort : pLaippaO);
 
-      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pA0, p2: pBend, p3: pA1, p4: pCend } };
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pLaippaV, p2: pBend, p3: pCend, p4: pLaippaO } };
     },
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len + vals.laippaV_len + vals.laippaO_len;
@@ -3032,7 +3033,7 @@ const TYPES = {
         extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [0, 16] });
       }
 
-      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pA1, p2: pNousuEnd } };
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pA1, p2: pNousuEnd }, kokonaisViiva: { p1: pA0, p2: (opts?.tiiB ? pB1Short : pB1) } };
     },
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len;
@@ -3259,6 +3260,7 @@ function redraw() {
   let extraLines = [];
   let pintaViiva = null;
   let nousuViiva = null;
+  let kokonaisViiva = null;
 
   try {
     if (activeType === 'vapaa') {
@@ -3279,6 +3281,7 @@ function redraw() {
         extraLines = result.extraLines || [];
         pintaViiva = result.pintaViiva || null;
         nousuViiva = result.nousuViiva || null;
+        kokonaisViiva = result.kokonaisViiva || null;
       }
     }
   } catch(e) { return; }
@@ -3345,13 +3348,17 @@ function redraw() {
   } else if (activeType === 'zlista' && nousuViiva) {
     etenemäMm = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
     kaatoMm = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
-    // Kokonaismitta A-alku → B-loppu
-    const kokMm = Math.round(Math.sqrt(
-      Math.pow(points[points.length-1].x - points[0].x, 2) +
-      Math.pow(points[points.length-1].y - points[0].y, 2)
-    ));
+    // Kokonaismitta A-alku → B-loppu käyttäen kokonaisViivaa
+    let kokStr = '';
+    if (kokonaisViiva) {
+      const kokMm = Math.round(Math.sqrt(
+        Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
+        Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
+      ));
+      kokStr = '  |  Kok: ' + kokMm + ' mm';
+    }
     document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
-    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm  |  Kok: ' + kokMm + ' mm';
+    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm' + kokStr;
     document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
     document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
     kaatoRow.style.display = '';
