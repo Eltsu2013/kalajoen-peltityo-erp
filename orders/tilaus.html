@@ -1668,9 +1668,17 @@
       <div class="section-title">Tilauksen tiedot</div>
       <div class="field">
         <label>Asiakas</label>
-        <select id="customer-select" onchange="onCustomerChange()">
-          <option value="">— valitse asiakas —</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="customer-search" placeholder="Hae nimellä..." autocomplete="off"
+            oninput="filterCustomers(this.value)"
+            onfocus="showCustomerDropdown()"
+            style="width:100%">
+          <div id="customer-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:200px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px">
+          </div>
+          <input type="hidden" id="customer-select">
+        </div>
       </div>
       <div class="field">
         <label>Kohde / viite</label>
@@ -1807,14 +1815,42 @@ async function fetchProducts() {
 async function fetchCustomers() {
   const r = await fetch(SUPABASE_URL + '/rest/v1/customers?is_active=eq.true&order=name', { headers });
   customers = await r.json();
-  const sel = document.getElementById('customer-select');
-  customers.forEach(c => {
-    const o = document.createElement('option');
-    o.value = c.id;
-    o.textContent = c.name;
-    sel.appendChild(o);
-  });
 }
+
+function filterCustomers(q) {
+  const dd = document.getElementById('customer-dropdown');
+  if (!q) { dd.style.display = 'none'; return; }
+  const matches = customers.filter(c => c.name.toLowerCase().includes(q.toLowerCase())).slice(0, 20);
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = matches.map(c => `
+    <div onclick="selectCustomer('${c.id}', '${c.name.replace(/'/g, "\\'")}')"
+      style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--input-bg)'"
+      onmouseout="this.style.background=''">
+      ${c.name}
+    </div>
+  `).join('');
+  dd.style.display = 'block';
+}
+
+function showCustomerDropdown() {
+  const q = document.getElementById('customer-search').value;
+  if (q) filterCustomers(q);
+}
+
+function selectCustomer(id, name) {
+  document.getElementById('customer-search').value = name;
+  document.getElementById('customer-select').value = id;
+  document.getElementById('customer-dropdown').style.display = 'none';
+  saveOrderMeta();
+}
+
+// Suljetaan dropdown kun klikataan muualle
+document.addEventListener('click', e => {
+  if (!e.target.closest('#customer-search') && !e.target.closest('#customer-dropdown')) {
+    document.getElementById('customer-dropdown').style.display = 'none';
+  }
+});
 
 // ── Materiaalivalinnat ────────────────────────────────────────────
 function buildMatSelect() {
