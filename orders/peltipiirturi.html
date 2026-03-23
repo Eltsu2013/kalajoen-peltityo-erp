@@ -2105,10 +2105,10 @@ const TYPES = {
     fields: [
       { id: 'ikkuna_len', label: 'Karmiin mm', default: 10 },
       { id: 'seg0_len', label: 'Takareuna mm', default: 15 },
-      { id: 'ikkuna_ang', label: 'Käännös karmi °', default: 90, cls: 'angle' },
       { id: 'seg1_len', label: 'Pinta mm', default: 150 },
       { id: 'seg2_len', label: 'Etureuna mm', default: 30 },
       { id: 'seg3_len', label: 'Etukäännös mm', default: 10 },
+      { id: 'ikkuna_ang', label: 'Käännös karmi °', default: 90, cls: 'angle' },
       { id: 'seg0_ang', label: 'Käännös taka °', default: 75, cls: 'angle' },
       { id: 'seg1_ang', label: 'Käännös etu °', default: 75, cls: 'angle' },
       { id: 'seg3_ang', label: 'Etur °', default: 125, cls: 'angle' },
@@ -3149,6 +3149,8 @@ function setType(t) {
 }
 
 // ─── Profiilikentät ───────────────────────────────────────────────
+let tilausContext = null;
+
 function renderProfileFields() {
   const type = TYPES[activeType];
   const el = document.getElementById('profile-fields');
@@ -3189,21 +3191,19 @@ function renderProfileFields() {
     el.appendChild(optDiv);
   }
 
-  // Nimike-kenttä aina viimeisenä — vain tilausyhteydessä hyödyllinen
-  if (tilausContext) {
-    const nDiv = document.createElement('div');
-    nDiv.style.cssText = 'margin-top:12px; border-top:1px solid var(--border); padding-top:10px;';
-    const currentNimike = tilausContext.nimike || type.name;
-    nDiv.innerHTML = `
-      <label style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">NIMIKE</label>
-      <input type="text" id="profile-nimike" value="${currentNimike}"
-        style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);
-               font-family:IBM Plex Mono,monospace;font-size:13px;padding:6px 8px;
-               border-radius:4px;width:100%;margin-top:4px;"
-        oninput="if(tilausContext) tilausContext.nimike=this.value">
-    `;
-    el.appendChild(nDiv);
-  }
+  // Nimike-kenttä aina näkyvissä
+  const nDiv = document.createElement('div');
+  nDiv.style.cssText = 'margin-top:12px; border-top:1px solid var(--border); padding-top:10px;';
+  const currentNimike = (typeof tilausContext !== 'undefined' && tilausContext?.nimike) || type.name || '';
+  nDiv.innerHTML = `
+    <label style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">NIMIKE</label>
+    <input type="text" id="profile-nimike" value="${currentNimike}"
+      style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);
+             font-family:IBM Plex Mono,monospace;font-size:13px;padding:6px 8px;
+             border-radius:4px;width:100%;margin-top:4px;"
+      oninput="if(typeof tilausContext !== 'undefined' && tilausContext) tilausContext.nimike=this.value">
+  `;
+  el.appendChild(nDiv);
 }
 
 // ─── Vapaa segmenttieditori ───────────────────────────────────────
@@ -3607,7 +3607,6 @@ renderLengthRows();
 redraw();
 
 // ─── Tilausintegraatio ────────────────────────────────────────────
-let tilausContext = null;
 const bc = new BroadcastChannel('kpt_mallisto');
 
 function aktivoiTilausPalkki(ctx) {
