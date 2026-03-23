@@ -1733,15 +1733,25 @@
       </div>
       <div class="field">
         <label>Materiaali</label>
-        <select id="mat-select" onchange="onMatChange()">
-          <option value="">— valitse —</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="mat-search" placeholder="Hae materiaalia..." autocomplete="off"
+            oninput="filterMat(this.value)" onfocus="filterMat(this.value)" style="width:100%">
+          <div id="mat-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:160px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="mat-select">
+        </div>
       </div>
       <div class="field">
         <label>Väri</label>
-        <select id="color-select" onchange="onColorChange()">
-          <option value="">— valitse —</option>
-        </select>
+        <div style="position:relative">
+          <input type="text" id="color-search" placeholder="Hae väriä..." autocomplete="off"
+            oninput="filterColor(this.value)" onfocus="filterColor(this.value)" style="width:100%">
+          <div id="color-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:160px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="color-select">
+        </div>
       </div>
       <div class="field">
         <label>Paksuus</label>
@@ -1846,31 +1856,58 @@ function selectCustomer(id, name) {
 }
 
 // Suljetaan dropdown kun klikataan muualle
-document.addEventListener('click', e => {
-  if (!e.target.closest('#customer-search') && !e.target.closest('#customer-dropdown')) {
-    document.getElementById('customer-dropdown').style.display = 'none';
-  }
-});
-
 // ── Materiaalivalinnat ────────────────────────────────────────────
 function buildMatSelect() {
-  const mats = [...new Set(products.map(p => p.material))].sort();
-  const sel = document.getElementById('mat-select');
-  sel.innerHTML = '<option value="">— valitse —</option>';
-  mats.forEach(m => {
-    const o = document.createElement('option');
-    o.value = m; o.textContent = m; sel.appendChild(o);
-  });
+  // Ei tarvitse enää täyttää selectiä — hakukenttä hoitaa
 }
 
-function onMatChange() {
-  const mat = document.getElementById('mat-select').value;
-  const colors = [...new Set(products.filter(p => p.material === mat).map(p => p.color))].sort();
-  const sel = document.getElementById('color-select');
-  sel.innerHTML = '<option value="">— valitse —</option>';
-  colors.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+function filterMat(q) {
+  const dd = document.getElementById('mat-dropdown');
+  const mats = [...new Set(products.map(p => p.material))].sort()
+    .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
+  if (!mats.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = mats.map(m => `
+    <div onclick="selectMat('${m.replace(/'/g, "\\'")}')"
+      style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--input-bg)'" onmouseout="this.style.background=''">
+      ${m}
+    </div>`).join('');
+  dd.style.display = 'block';
+}
+
+function selectMat(m) {
+  document.getElementById('mat-search').value = m;
+  document.getElementById('mat-select').value = m;
+  document.getElementById('mat-dropdown').style.display = 'none';
+  // Nollaa väri ja paksuus
+  document.getElementById('color-search').value = '';
+  document.getElementById('color-select').value = '';
   document.getElementById('thick-select').innerHTML = '<option value="">— valitse —</option>';
 }
+
+function filterColor(q) {
+  const mat = document.getElementById('mat-select').value;
+  const dd = document.getElementById('color-dropdown');
+  const colors = [...new Set(products.filter(p => !mat || p.material === mat).map(p => p.color))].sort()
+    .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
+  if (!colors.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = colors.map(c => `
+    <div onclick="selectColor('${c.replace(/'/g, "\\'")}')"
+      style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--input-bg)'" onmouseout="this.style.background=''">
+      ${c}
+    </div>`).join('');
+  dd.style.display = 'block';
+}
+
+function selectColor(c) {
+  document.getElementById('color-search').value = c;
+  document.getElementById('color-select').value = c;
+  document.getElementById('color-dropdown').style.display = 'none';
+  onColorChange();
+}
+
+function onMatChange() {}
 
 function onColorChange() {
   const mat = document.getElementById('mat-select').value;
@@ -1881,9 +1918,15 @@ function onColorChange() {
   thicks.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t + ' mm'; sel.appendChild(o); });
 }
 
-function onThickChange() {
-  // materiaali tallennetaan ryhmän luonnissa
-}
+// Suljetaan dropdownit kun klikataan muualle
+document.addEventListener('click', e => {
+  if (!e.target.closest('#mat-search') && !e.target.closest('#mat-dropdown'))
+    document.getElementById('mat-dropdown').style.display = 'none';
+  if (!e.target.closest('#color-search') && !e.target.closest('#color-dropdown'))
+    document.getElementById('color-dropdown').style.display = 'none';
+  if (!e.target.closest('#customer-search') && !e.target.closest('#customer-dropdown'))
+    document.getElementById('customer-dropdown').style.display = 'none';
+});
 
 function onCustomerChange() {
   autoSaveOrder();
