@@ -1,6 +1,7 @@
 Kalajoen Peltityö ERP — Tilanne ja tekolista
 Projektin tila (maaliskuu 2026)
 VALMIS ✅
+Varastonhallinta
 Tietokantarakenne (Supabase)
 Varastorakenne ja -paikat (locations-taulu)
 Pellin lisäys, muokkaus, arkistointi, varastopaikan vaihto
@@ -9,41 +10,57 @@ Retool mobiili UI: Selaa / Lisää / Muokkaa / Kartta välilehdet
 Varastokartta GitHub Pagesissa (interaktiivinen SVG, mobiiliresponsiivinen)
 Toinen käyttäjä lisätty (johtaja, viewer-rooli)
 Tuotteet-välilehti (lista, suodattimet, lisäys, muokkaus, poisto käytöstä)
-Tuoteryhmäsuodatin desktop ja mobiili
-Uudet varastot: Verstas (ent. Kalajoki), Ulkovarasto, Auto, Kontti, Ulkohylly
-Kourutarvikkeet K ja P lisätty tuotteisiin (RR 20, RR 23, RR 32, RR 33)
-Kattoturvatuotteet lisätty tuotteisiin (RR 20, RR 23, RR 32, RR 33, RR 750)
-Tarvikkeet lisätty tuotteisiin (kateruuvit, harjatiiviste, poraruuvi)
 ITEM (Kpl) ja BULK (Metri) tyypit käyttöön varastossa
 product_code-kenttä lisätty products-tauluun ja funktioihin
-GitHub siistiytyi — kansiorakenne, dokumentit ja Edge Functionit talteen
+GitHub kansiorakenne siistiytyi (docs/, maps/, supabase/functions/)
+Tilausmoduuli (GitHub Pages)
+peltipiirturi.html — peltiprofiilien piirtotyökalu
+Profiilityypit: Alavesipelti, Alavp 2 (ikkunapelti), Ulkonurkka, Sisänurkka, Jiiripelti, Seinänvieripelti, Eturäystäspelti, Päätypelti, Päätypelti huopa, U-lista u/s, Kynnys, Hattulista, Z-lista, Peitelista, Vapaa profiili
+SVG-esikatselu reaaliajassa, pintamerkki, kaato/nousu/etenemä/kokonaismitta
+Pituustaulukko (mitta, päät, kok, kpl, huomio)
+Aihioleveyslaskenta
+Nimike-kenttä muokattavissa ennen tilauksen lisäystä
+BroadcastChannel-integraatio tilauslomakkeeseen
+tilaus.html — tilauslomake
+Ryhmät (lisää, kopioi, poista, nimeä uudelleen)
+Pellit ryhmitelty aihioleveyden mukaan
+Kappalemäärä yhteensä ryhmän otsikossa
+Tilauspäivä + toimituspäivä
+Materiaali/väri/paksuus haetaan Supabasesta
+Asiakkaat haetaan Supabasesta
+Tilaus tallentuu Supabaseen (orders + order_items)
+Pellin muokkaus jälkikäteen Malliston kautta
+---
 KESKEN / TEKOLISTA ⏳
 Pienet karttatyöt
-[ ] IN-R-02 klikattavaksi kartalla (näkyy mutta ei reagoi)
+[ ] IN-R-02 klikattavaksi kartalla
 [ ] IN-R-01 tasot 1 ja 2 kartalle
-[ ] Vasen seinä (IN-L) tarkistus ja mahdolliset päivitykset
-Käyttäjähallinta
-[ ] Johtajan resurssioikeudet Retoolissa — vaatii maksullisen version
-Isommat kokonaisuudet (uusia chat-ketjuja varten)
-[ ] Kartta + taulukko yhdistäminen (karttaklikkauksesta suodattuu taulukko Retoolissa)
+[ ] Vasen seinä (IN-L) tarkistus
+Tilausmoduuli — viimeistelyä
+[ ] Asiakkaiden siirto Access → Supabase (customers-taulu)
+[ ] Materiaalit ja värit tilauslomakkeelle (toimii kun tuotteet Supabasessa)
+[ ] Vakiomallit yrityksille (erillinen sivu tai "Tallenna malliksi" -toiminto)
+[ ] Kappaletavara tilauslomakkeelle (tikkaat ym. ilman piirustusta)
+Isommat kokonaisuudet
+[ ] Kartta + taulukko yhdistäminen Retoolissa
 [ ] QR-koodit hyllyihin
-[ ] Tilausmoduuli (asiakkaat, tarjoukset, tilaukset)
-[ ] Leikkausoptimointi (rulla→levy→siivu ketju, parent_stock_item_id käyttöön)
+[ ] Leikkausoptimointi (rulla→levy→siivu, parent_stock_item_id)
 [ ] Laskutus ja maksuseuranta
 [ ] Muut varastot inventointi (Ulkovarasto, Auto, Kontti, Ulkohylly)
-[ ] GitHub siistiminen (SQL-skriptit, dokumentit talteen)
+[ ] Johtajan resurssioikeudet — vaatii maksullisen Retool-version
 ---
 Ohjeet uuden chat-ketjun aloitukseen
-Liitä uuden chatin alkuun:
 > "Jatketaan Kalajoen Peltityö ERP-projektia. Stack: Supabase + Retool + GitHub Pages. Warehouse ID: e56f3534-50f9-4081-8840-f81f03905113. Liitän projektidokumentit. Tänään tehdään: [mitä tehdään]."
-Liitä mukaan tarvittavat .md-tiedostot tästä docs-kansiosta.
 ---
 Tärkeimmät tiedot pikaisesti
 Asia	Arvo
 Warehouse ID (Verstas)	e56f3534-50f9-4081-8840-f81f03905113
 GitHub repo	eltsu2013/kalajoen-peltityo-erp
 Kartta	maps/verstaspohja_mitoitettu.html
+Peltipiirturi	orders/peltipiirturi.html
+Tilauslomake	orders/tilaus.html
 Supabase projekti	hjyeugeqmyavxisndlwp
+Supabase anon key	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4
 Edge fn: lisää pelti	create_initial_stock_items
 Edge fn: muokkaa	adjust_stock_item_edge
 Edge fn: hae pellit	get_stock_items
