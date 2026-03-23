@@ -1963,6 +1963,7 @@
 
 <div class="type-bar">
   <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
+  <button class="type-btn" onclick="setType('avp2')">Alavp 2</button>
   <button class="type-btn" onclick="setType('ulkonurkka')">Ulkonurkka</button>
   <button class="type-btn" onclick="setType('sisanurkka')">Sisänurkka</button>
   <button class="type-btn" onclick="setType('seinänvieripelti')">Seinänvieripelti</button>
@@ -2098,6 +2099,68 @@ const TYPES = {
       if (pEtukaannos) pts.push(pEtukaannos);
       return { points: pts, labels: null, extraLines: [], pintaViiva: { p1: pPintapaaty, p2: pEtuylapaa } };
     }
+  },
+  avp2: {
+    name: 'Alavp 2',
+    fields: [
+      { id: 'ikkuna_len', label: 'Karmiin mm', default: 10 },
+      { id: 'seg0_len', label: 'Takareuna mm', default: 15 },
+      { id: 'ikkuna_ang', label: 'Käännös karmi °', default: 90, cls: 'angle' },
+      { id: 'seg1_len', label: 'Pinta mm', default: 150 },
+      { id: 'seg2_len', label: 'Etureuna mm', default: 30 },
+      { id: 'seg3_len', label: 'Etukäännös mm', default: 10 },
+      { id: 'seg0_ang', label: 'Käännös taka °', default: 75, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Käännös etu °', default: 75, cls: 'angle' },
+      { id: 'seg3_ang', label: 'Etur °', default: 125, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+
+      const pEtuylapaa = { x: 0, y: 0 };
+
+      // Etureuna alas
+      let suunta = 90;
+      const pEtualapaa = {
+        x: pEtuylapaa.x + vals.seg2_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg2_len * Math.sin(deg(suunta))
+      };
+
+      // Etukäännös
+      suunta += vals.seg3_ang;
+      const pEtukaannos = vals.seg3_len > 0 ? {
+        x: pEtualapaa.x + vals.seg3_len * Math.cos(deg(suunta)),
+        y: pEtualapaa.y + vals.seg3_len * Math.sin(deg(suunta))
+      } : null;
+
+      // Pinta
+      suunta = 90 + (180 - vals.seg1_ang);
+      const pPintapaaty = {
+        x: pEtuylapaa.x + vals.seg1_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg1_len * Math.sin(deg(suunta))
+      };
+
+      // Takareuna
+      suunta += vals.seg0_ang;
+      const pTakaylapaa = {
+        x: pPintapaaty.x + vals.seg0_len * Math.cos(deg(suunta)),
+        y: pPintapaaty.y + vals.seg0_len * Math.sin(deg(suunta))
+      };
+
+      // Karmi viiva: 90° = suoraan vasemmalle, kulma käännetty
+      const karmiSuunta = 180 + (90 - vals.ikkuna_ang);
+      const pKarmi = {
+        x: pTakaylapaa.x + vals.ikkuna_len * Math.cos(deg(karmiSuunta)),
+        y: pTakaylapaa.y + vals.ikkuna_len * Math.sin(deg(karmiSuunta))
+      };
+
+      const pts = [pKarmi, pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+      if (pEtukaannos) pts.push(pEtukaannos);
+
+      const labels = [vals.ikkuna_len, vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
+
+      return { points: pts, labels, extraLines: [], pintaViiva: { p1: pPintapaaty, p2: pEtuylapaa } };
+    },
+    aihio: (vals) => vals.seg0_len + vals.seg1_len + vals.seg2_len + vals.seg3_len + vals.ikkuna_len
   },
   ulkonurkka: {
     name: 'Ulkonurkka',
@@ -3124,6 +3187,22 @@ function renderProfileFields() {
       optDiv.appendChild(row);
     });
     el.appendChild(optDiv);
+  }
+
+  // Nimike-kenttä aina viimeisenä — vain tilausyhteydessä hyödyllinen
+  if (tilausContext) {
+    const nDiv = document.createElement('div');
+    nDiv.style.cssText = 'margin-top:12px; border-top:1px solid var(--border); padding-top:10px;';
+    const currentNimike = tilausContext.nimike || type.name;
+    nDiv.innerHTML = `
+      <label style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">NIMIKE</label>
+      <input type="text" id="profile-nimike" value="${currentNimike}"
+        style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);
+               font-family:IBM Plex Mono,monospace;font-size:13px;padding:6px 8px;
+               border-radius:4px;width:100%;margin-top:4px;"
+        oninput="if(tilausContext) tilausContext.nimike=this.value">
+    `;
+    el.appendChild(nDiv);
   }
 }
 
