@@ -1969,6 +1969,7 @@
   <button class="type-btn" onclick="setType('seinänvieripelti')">Seinänvieripelti</button>
   <button class="type-btn" onclick="setType('eturaaystaspelti')">Eturäystäspelti</button>
   <button class="type-btn" onclick="setType('paatypelti')">Päätypelti</button>
+  <button class="type-btn" onclick="setType('paatypelti_huopa')">Päätypelti huopa</button>
   <button class="type-btn" onclick="setType('ulista')">U-lista u</button>
   <button class="type-btn" onclick="setType('ulistas')">U-lista s</button>
   <button class="type-btn" onclick="setType('kynnys')">Kynnys</button>
@@ -2619,6 +2620,78 @@ const TYPES = {
     aihio: (vals) => {
       return vals.seg0_len + vals.seg1_len + vals.harja_len + vals.nokka_len + vals.tupA_len + vals.tupB_len;
     }
+  },
+  paatypelti_huopa: {
+    name: 'Päätypelti huopa',
+    fields: [
+      { id: 'hp_katolle_len', label: 'Katolle mm', default: 100 },
+      { id: 'hp_nousu_len', label: 'Nousu mm', default: 20 },
+      { id: 'hp_raystas_len', label: 'Räystäälle mm', default: 110 },
+      { id: 'hp_nokka_len', label: 'Tippanokka mm', default: 15 },
+      { id: 'hp_katolle_ang', label: 'Katolle °', default: 50, cls: 'angle', flip: true },
+      { id: 'hp_kulma_ang', label: 'Nousu °', default: 130, cls: 'angle' },
+      { id: 'hp_nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'hp_tupla_len', label: 'Tupla mm', default: 12 },
+    ],
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      // Origin = (0,0) — räystään yläpää / kulmapisteen paikka
+      // Rakenne:
+      //   Nousu: origosta YLÖSPÄIN (-y suuntaan SVG:ssä)
+      //   Katolle: nousun yläpäästä vasemmalle (kulma säädettävissä)
+      //   Räystäs: origosta suoraan alas (+y)
+      //   Nokka: räystään alapäästä
+
+      const pOrigin = { x: 0, y: 0 };
+
+      // === NOUSU: origosta, kulma säädettävissä (oletus 130° = vasemmalle ylöspäin) ===
+      const nousSuunta = 270 - vals.hp_kulma_ang; // kanttikulma 130° → geometria
+      const pNousuEnd = {
+        x: vals.hp_nousu_len * Math.cos(deg(nousSuunta)),
+        y: vals.hp_nousu_len * Math.sin(deg(nousSuunta))
+      };
+
+      // === KATOLLE: nousun päästä, kanttikulma 50° ===
+      const katSuunta = nousSuunta + (90 - vals.hp_katolle_ang);
+      const pKatolleEnd = {
+        x: pNousuEnd.x + vals.hp_katolle_len * Math.cos(deg(katSuunta)),
+        y: pNousuEnd.y + vals.hp_katolle_len * Math.sin(deg(katSuunta))
+      };
+
+      // === RÄYSTÄÄLLE: origosta pystysuora alas ===
+      const pRaysEnd = { x: 0, y: vals.hp_raystas_len };
+
+      // === TIPPANOKKA ===
+      const nokkSuunta = 90 - vals.hp_nokka_ang;
+      const pNokkEnd = {
+        x: pRaysEnd.x + vals.hp_nokka_len * Math.cos(deg(nokkSuunta)),
+        y: pRaysEnd.y + vals.hp_nokka_len * Math.sin(deg(nokkSuunta))
+      };
+      const tupBSuunta = nokkSuunta + 180 - 8;
+      const pTupBEnd = {
+        x: pNokkEnd.x + vals.hp_tupla_len * Math.cos(deg(tupBSuunta)),
+        y: pNokkEnd.y + vals.hp_tupla_len * Math.sin(deg(tupBSuunta))
+      };
+      extraLines.push({ p1: pNokkEnd, p2: pTupBEnd, label: vals.hp_tupla_len, labelOffset: [-20, 0] });
+
+      // Pisteketju: katolleEnd → nousEnd → origin → räystäs → nokka
+      points.push(pKatolleEnd); labels.push(vals.hp_katolle_len);
+      points.push(pNousuEnd);   labels.push(vals.hp_nousu_len);
+      points.push(pOrigin);     labels.push(vals.hp_raystas_len);
+      points.push(pRaysEnd);    labels.push(vals.hp_nokka_len);
+      points.push(pNokkEnd);    labels.push('');
+      points.push(pRaysEnd);    labels.push('');
+
+      // Korkeus = y-etäisyys nokasta katolle-viivan oikeaan reunaan (nousun yläpää)
+      const korkeus = Math.abs(pNokkEnd.y - pNousuEnd.y).toFixed(0);
+
+      return { points, labels, extraLines, pintaViiva: { p1: pNousuEnd, p2: pOrigin }, korkeus };
+    },
+    aihio: (vals) => vals.hp_katolle_len + vals.hp_nousu_len + vals.hp_raystas_len + vals.hp_nokka_len + vals.hp_tupla_len
   },
   ulista: {
     name: 'U-lista u',
@@ -3343,6 +3416,7 @@ function redraw() {
   let pintaViiva = null;
   let nousuViiva = null;
   let kokonaisViiva = null;
+  let korkeus = null;
 
   try {
     if (activeType === 'vapaa') {
@@ -3364,6 +3438,7 @@ function redraw() {
         pintaViiva = result.pintaViiva || null;
         nousuViiva = result.nousuViiva || null;
         kokonaisViiva = result.kokonaisViiva || null;
+        korkeus = result.korkeus || null;
       }
     }
   } catch(e) { return; }
@@ -3584,6 +3659,13 @@ function redraw() {
       svgEl.innerHTML += `
         <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">KAATO: ${kaatoMm} mm</text>
         <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
+      `;
+    }
+
+    // Korkeus päätypelti huopa -kohdassa
+    if (activeType === 'paatypelti_huopa' && korkeus) {
+      svgEl.innerHTML += `
+        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KORKEUS: ${korkeus} mm</text>
       `;
     }
   }
