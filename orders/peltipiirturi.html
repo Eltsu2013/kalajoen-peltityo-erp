@@ -122,7 +122,17 @@
   .field-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
+  }
+
+  /* Kolme saraketta leveällä sidebarilla */
+  .left-panel.wide .field-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  /* Neljä saraketta erittäin leveällä */
+  .left-panel.xwide .field-grid {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
   }
 
   .field {
@@ -148,6 +158,14 @@
     width: 100%;
     transition: border-color 0.15s;
   }
+
+  /* Kompaktimmat kentät leveällä sidebarilla */
+  .left-panel.wide .field input,
+  .left-panel.wide .field select {
+    padding: 5px 7px;
+    font-size: 13px;
+  }
+  .left-panel.wide .field label { font-size: 10px; }
 
   .field input:focus {
     outline: none;
@@ -3554,8 +3572,9 @@ fetchPmProducts();
 (function() {
   const STORAGE_KEY = 'kpt_mallisto_sidebar_width';
   const MIN_WIDTH = 280;
-  const MAX_WIDTH = 700;
+  const MAX_WIDTH = 800;
   const WIDE_THRESHOLD = 480;
+  const XWIDE_THRESHOLD = 640;
 
   const panel = document.getElementById('left-panel');
   const resizer = document.getElementById('sidebar-resizer');
@@ -3564,7 +3583,8 @@ fetchPmProducts();
   const saved = parseInt(localStorage.getItem(STORAGE_KEY));
   if (saved && saved >= MIN_WIDTH) {
     main.style.gridTemplateColumns = saved + 'px 1fr';
-    if (saved >= WIDE_THRESHOLD) panel.classList.add('wide');
+    if (saved >= XWIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.add('xwide'); }
+    else if (saved >= WIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.remove('xwide'); }
   }
 
   let startX, startW;
@@ -3578,8 +3598,9 @@ fetchPmProducts();
     function onMove(e) {
       const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (e.clientX - startX)));
       main.style.gridTemplateColumns = w + 'px 1fr';
-      if (w >= WIDE_THRESHOLD) panel.classList.add('wide');
-      else panel.classList.remove('wide');
+      if (w >= XWIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.add('xwide'); }
+      else if (w >= WIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.remove('xwide'); }
+      else { panel.classList.remove('wide'); panel.classList.remove('xwide'); }
     }
 
     function onUp() {
