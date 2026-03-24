@@ -3777,7 +3777,7 @@ let pmProducts = [];
 
 async function fetchPmProducts() {
   try {
-    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&order=material,color', { headers: pmHeaders });
+    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m²&order=material,color', { headers: pmHeaders });
     pmProducts = await r.json();
   } catch(e) { console.log('Tuotteiden haku epäonnistui', e); }
 }
