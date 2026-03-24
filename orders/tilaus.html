@@ -16,8 +16,13 @@
   body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
   header { background: #444444; border-bottom: 2px solid var(--accent); padding: 10px 24px; display: flex; align-items: center; gap: 16px; }
   header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .main { display: grid; grid-template-columns: 320px 1fr; height: calc(100vh - 62px); }
-  .left-panel { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .main { display: grid; grid-template-columns: var(--sidebar-width, 320px) 1fr; height: calc(100vh - 62px); }
+  .left-panel { background: var(--panel); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; }
+  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
+  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
+  /* Kaksi saraketta kun sidebar tarpeeksi leveä */
+  .left-panel.wide .section .field-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .left-panel.wide .section { padding: 12px 16px; }
   .right-panel { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .section { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
   .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
@@ -1661,7 +1666,8 @@
 <div class="main">
 
   <!-- VASEN PANEELI: Tilauksen tiedot + uusi profiili -->
-  <div class="left-panel">
+  <div class="left-panel" id="left-panel">
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
 
     <!-- Tilauksen perustiedot -->
     <div class="section">
@@ -2181,6 +2187,55 @@ function setSaveStatus(type, msg) {
 document.getElementById('order-date').value = new Date().toISOString().slice(0,10);
 fetchProducts();
 fetchCustomers();
+
+// ── Sidebar resize ────────────────────────────────────────────────
+(function() {
+  const STORAGE_KEY = 'kpt_sidebar_width';
+  const MIN_WIDTH = 280;
+  const MAX_WIDTH = 700;
+  const WIDE_THRESHOLD = 480;
+
+  const panel = document.getElementById('left-panel');
+  const resizer = document.getElementById('sidebar-resizer');
+  const main = document.querySelector('.main');
+
+  // Aseta tallennettu leveys
+  const saved = parseInt(localStorage.getItem(STORAGE_KEY));
+  if (saved && saved >= MIN_WIDTH) {
+    main.style.gridTemplateColumns = saved + 'px 1fr';
+    if (saved >= WIDE_THRESHOLD) panel.classList.add('wide');
+  }
+
+  let startX, startW;
+
+  resizer.addEventListener('mousedown', e => {
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (e.clientX - startX)));
+      main.style.gridTemplateColumns = w + 'px 1fr';
+      if (w >= WIDE_THRESHOLD) panel.classList.add('wide');
+      else panel.classList.remove('wide');
+    }
+
+    function onUp() {
+      const w = panel.offsetWidth;
+      localStorage.setItem(STORAGE_KEY, w);
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
 </script>
 </body>
 </html>
