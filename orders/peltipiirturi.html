@@ -3443,41 +3443,45 @@ async function fetchPmProducts() {
   } catch(e) { console.log('Tuotteiden haku epäonnistui', e); }
 }
 
-function pmDropdown(items, ddId, onSelect) {
+function pmShowDropdown(ddId, items, onClickFn) {
   const dd = document.getElementById(ddId);
   if (!items.length) { dd.style.display = 'none'; return; }
-  dd.innerHTML = items.map(v => `
-    <div onclick="(${onSelect})('${v.replace(/'/g, "\\'")}')"
-      style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
-      onmouseover="this.style.background='var(--input-bg)'" onmouseout="this.style.background=''">
-      ${v}
-    </div>`).join('');
+  dd.innerHTML = '';
+  items.forEach(v => {
+    const div = document.createElement('div');
+    div.textContent = v;
+    div.style.cssText = 'padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)';
+    div.onmouseover = () => div.style.background = 'var(--input-bg)';
+    div.onmouseout = () => div.style.background = '';
+    div.onclick = () => onClickFn(v);
+    dd.appendChild(div);
+  });
   dd.style.display = 'block';
 }
 
 function pmFilterMat(q) {
   const mats = [...new Set(pmProducts.map(p => p.material))].sort()
     .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
-  pmDropdown(mats, 'pm-mat-dd', `function(m){ 
-    document.getElementById('pm-mat-search').value=m;
-    document.getElementById('pm-mat').value=m;
-    document.getElementById('pm-mat-dd').style.display='none';
-    document.getElementById('pm-color-search').value='';
-    document.getElementById('pm-color').value='';
-    document.getElementById('pm-thick').innerHTML='<option value="">— valitse —</option>';
-  }`);
+  pmShowDropdown('pm-mat-dd', mats, m => {
+    document.getElementById('pm-mat-search').value = m;
+    document.getElementById('pm-mat').value = m;
+    document.getElementById('pm-mat-dd').style.display = 'none';
+    document.getElementById('pm-color-search').value = '';
+    document.getElementById('pm-color').value = '';
+    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+  });
 }
 
 function pmFilterColor(q) {
   const mat = document.getElementById('pm-mat').value;
   const colors = [...new Set(pmProducts.filter(p => !mat || p.material === mat).map(p => p.color))].sort()
     .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
-  pmDropdown(colors, 'pm-color-dd', `function(c){
-    document.getElementById('pm-color-search').value=c;
-    document.getElementById('pm-color').value=c;
-    document.getElementById('pm-color-dd').style.display='none';
+  pmShowDropdown('pm-color-dd', colors, c => {
+    document.getElementById('pm-color-search').value = c;
+    document.getElementById('pm-color').value = c;
+    document.getElementById('pm-color-dd').style.display = 'none';
     pmUpdateThick();
-  }`);
+  });
 }
 
 function pmUpdateThick() {
