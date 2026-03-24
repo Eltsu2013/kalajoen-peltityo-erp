@@ -93,7 +93,17 @@
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
+
+  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
+  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
+  /* Kaksi saraketta kun sidebar tarpeeksi leveä */
+  .left-panel.wide .section { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+  .left-panel.wide .section .section-title { grid-column: 1 / -1; }
+  .left-panel.wide .section .btn-add { grid-column: 1 / -1; }
+  .left-panel.wide .section .table-wrap { grid-column: 1 / -1; }
+  .left-panel.wide .summary-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
   .section {
     padding: 16px;
@@ -1981,11 +1991,23 @@
 </div>
 
 <div class="main">
-  <div class="left-panel">
+  <div class="left-panel" id="left-panel">
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
 
     <!-- Materiaali -->
     <div class="section" id="material-section">
       <div class="section-title">Materiaali</div>
+      <div class="field">
+        <label>Tuoteryhmä</label>
+        <div style="position:relative">
+          <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off"
+            oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)" style="width:100%">
+          <div id="pm-group-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="pm-group">
+        </div>
+      </div>
       <div class="field">
         <label>Materiaali</label>
         <div style="position:relative">
@@ -1997,7 +2019,7 @@
           <input type="hidden" id="pm-mat">
         </div>
       </div>
-      <div class="field">
+      <div class="field" id="pm-color-row">
         <label>Väri</label>
         <div style="position:relative">
           <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off"
@@ -3459,8 +3481,28 @@ function pmShowDropdown(ddId, items, onClickFn) {
   dd.style.display = 'block';
 }
 
+function pmFilterGroup(q) {
+  const groups = [...new Set(pmProducts.map(p => p.product_group).filter(Boolean))].sort()
+    .filter(g => !q || g.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-group-dd', groups, g => {
+    document.getElementById('pm-group-search').value = g;
+    document.getElementById('pm-group').value = g;
+    document.getElementById('pm-group-dd').style.display = 'none';
+    // Nollaa materiaali, väri, paksuus
+    document.getElementById('pm-mat-search').value = '';
+    document.getElementById('pm-mat').value = '';
+    document.getElementById('pm-color-search').value = '';
+    document.getElementById('pm-color').value = '';
+    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+    // Tarkista onko tässä tuoteryhmässä värejä
+    const hasColors = pmProducts.filter(p => p.product_group === g).some(p => p.color);
+    document.getElementById('pm-color-row').style.display = hasColors ? '' : 'none';
+  });
+}
+
 function pmFilterMat(q) {
-  const mats = [...new Set(pmProducts.map(p => p.material))].sort()
+  const group = document.getElementById('pm-group').value;
+  const mats = [...new Set(pmProducts.filter(p => !group || p.product_group === group).map(p => p.material))].sort()
     .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
   pmShowDropdown('pm-mat-dd', mats, m => {
     document.getElementById('pm-mat-search').value = m;
@@ -3469,12 +3511,14 @@ function pmFilterMat(q) {
     document.getElementById('pm-color-search').value = '';
     document.getElementById('pm-color').value = '';
     document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+    pmUpdateThick(); // päivitä paksuus heti materiaalin valinnan jälkeen
   });
 }
 
 function pmFilterColor(q) {
   const mat = document.getElementById('pm-mat').value;
-  const colors = [...new Set(pmProducts.filter(p => !mat || p.material === mat).map(p => p.color))].sort()
+  const group = document.getElementById('pm-group').value;
+  const colors = [...new Set(pmProducts.filter(p => (!mat || p.material === mat) && (!group || p.product_group === group)).map(p => p.color).filter(Boolean))].sort()
     .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
   pmShowDropdown('pm-color-dd', colors, c => {
     document.getElementById('pm-color-search').value = c;
@@ -3487,7 +3531,8 @@ function pmFilterColor(q) {
 function pmUpdateThick() {
   const mat = document.getElementById('pm-mat').value;
   const col = document.getElementById('pm-color').value;
-  const thicks = [...new Set(pmProducts.filter(p => p.material===mat && p.color===col).map(p => p.thickness_mm))].sort((a,b)=>a-b);
+  // Jos väri on tyhjä, haetaan kaikki paksuudet materiaalille
+  const thicks = [...new Set(pmProducts.filter(p => p.material===mat && (!col || p.color===col)).map(p => p.thickness_mm))].sort((a,b)=>a-b);
   const sel = document.getElementById('pm-thick');
   sel.innerHTML = '<option value="">— valitse —</option>';
   thicks.forEach(t => { const o = document.createElement('option'); o.value=t; o.textContent=t+' mm'; sel.appendChild(o); });
@@ -3495,6 +3540,8 @@ function pmUpdateThick() {
 }
 
 document.addEventListener('click', e => {
+  if (!e.target.closest('#pm-group-search') && !e.target.closest('#pm-group-dd'))
+    document.getElementById('pm-group-dd').style.display = 'none';
   if (!e.target.closest('#pm-mat-search') && !e.target.closest('#pm-mat-dd'))
     document.getElementById('pm-mat-dd').style.display = 'none';
   if (!e.target.closest('#pm-color-search') && !e.target.closest('#pm-color-dd'))
@@ -3502,6 +3549,52 @@ document.addEventListener('click', e => {
 });
 
 fetchPmProducts();
+
+// ── Sidebar resize ────────────────────────────────────────────────
+(function() {
+  const STORAGE_KEY = 'kpt_mallisto_sidebar_width';
+  const MIN_WIDTH = 280;
+  const MAX_WIDTH = 700;
+  const WIDE_THRESHOLD = 480;
+
+  const panel = document.getElementById('left-panel');
+  const resizer = document.getElementById('sidebar-resizer');
+  const main = document.querySelector('.main');
+
+  const saved = parseInt(localStorage.getItem(STORAGE_KEY));
+  if (saved && saved >= MIN_WIDTH) {
+    main.style.gridTemplateColumns = saved + 'px 1fr';
+    if (saved >= WIDE_THRESHOLD) panel.classList.add('wide');
+  }
+
+  let startX, startW;
+  resizer.addEventListener('mousedown', e => {
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (e.clientX - startX)));
+      main.style.gridTemplateColumns = w + 'px 1fr';
+      if (w >= WIDE_THRESHOLD) panel.classList.add('wide');
+      else panel.classList.remove('wide');
+    }
+
+    function onUp() {
+      localStorage.setItem(STORAGE_KEY, panel.offsetWidth);
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
 
 function renderProfileFields() {
   const type = TYPES[activeType];
