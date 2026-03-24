@@ -30,6 +30,11 @@ Materiaali/väri/paksuus haetaan Supabasesta
 Asiakkaat haetaan Supabasesta
 Tilaus tallentuu Supabaseen (orders + order_items)
 Pellin muokkaus jälkikäteen Malliston kautta
+Mallisto: kaikki uudet peltityypit (Alavp 2, Päätypelti huopa, Jiiripelti, Peitelista)
+Mallisto: materiaali/väri/paksuus-valinta
+Tilauslomake: asiakas-haku kirjoittamalla
+Tilauslomake: materiaali/väri/paksuus siirretty Mallistoon
+Asiakkaat: 10 testiasiakasta lisätty Supabaseen
 ---
 KESKEN / TEKOLISTA ⏳
 Pienet karttatyöt
@@ -37,8 +42,7 @@ Pienet karttatyöt
 [ ] IN-R-01 tasot 1 ja 2 kartalle
 [ ] Vasen seinä (IN-L) tarkistus
 Tilausmoduuli — viimeistelyä
-[ ] Asiakkaiden siirto Access → Supabase (customers-taulu)
-[ ] Materiaalit ja värit tilauslomakkeelle (toimii kun tuotteet Supabasessa)
+[ ] Sidebar leveyssäätö tilaus.html:ssä (vetämällä leveämmäksi, localStorage muistaa)
 [ ] Vakiomallit yrityksille (erillinen sivu tai "Tallenna malliksi" -toiminto)
 [ ] Kappaletavara tilauslomakkeelle (tikkaat ym. ilman piirustusta)
 Isommat kokonaisuudet
