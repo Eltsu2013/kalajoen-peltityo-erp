@@ -1731,34 +1731,6 @@
         <label>Nimike <span style="color:var(--text-dim);font-weight:400">(vaihda tarvittaessa)</span></label>
         <input type="text" id="new-nimike" placeholder="esim. Sivusmyygi">
       </div>
-      <div class="field">
-        <label>Materiaali</label>
-        <div style="position:relative">
-          <input type="text" id="mat-search" placeholder="Hae materiaalia..." autocomplete="off"
-            oninput="filterMat(this.value)" onfocus="filterMat(this.value)" style="width:100%">
-          <div id="mat-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
-            background:var(--panel);border:1px solid var(--border);border-top:none;
-            max-height:160px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
-          <input type="hidden" id="mat-select">
-        </div>
-      </div>
-      <div class="field">
-        <label>Väri</label>
-        <div style="position:relative">
-          <input type="text" id="color-search" placeholder="Hae väriä..." autocomplete="off"
-            oninput="filterColor(this.value)" onfocus="filterColor(this.value)" style="width:100%">
-          <div id="color-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;
-            background:var(--panel);border:1px solid var(--border);border-top:none;
-            max-height:160px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
-          <input type="hidden" id="color-select">
-        </div>
-      </div>
-      <div class="field">
-        <label>Paksuus</label>
-        <select id="thick-select">
-          <option value="">— valitse —</option>
-        </select>
-      </div>
       <hr class="divider">
       <div class="field">
         <label>Lisää ryhmään</label>
@@ -2067,7 +2039,10 @@ function receiveFromMallisto(data) {
       aihio_width_mm: data.aihio_width_mm,
       profile_data: data.profile_data,
       rows: data.rows,
-      totalM2: data.totalM2
+      totalM2: data.totalM2,
+      material: data.material || null,
+      color: data.color || null,
+      thickness: data.thickness || null,
     };
     group.items.push(item);
     saveItemToSupabase(item, data.groupId);
@@ -2204,6 +2179,8 @@ function renderItem(item, groupId) {
           <span class="item-nimike">${item.nimike || item.profileType}</span>
           <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">LL-${item.aihio_width_mm || '—'} mm</span>
           ${item.totalM2 ? `<span class="tag">${item.totalM2.toFixed(2)} m²</span>` : ''}
+        </div>
+        ${item.material ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:3px">${item.material}${item.color ? ' · ' + item.color : ''}${item.thickness ? ' · ' + item.thickness + ' mm' : ''}</div>` : ''}
         </div>
         <div>${rowsHtml}</div>
       </div>
