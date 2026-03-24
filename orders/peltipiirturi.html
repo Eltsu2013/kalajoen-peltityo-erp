@@ -55,10 +55,35 @@
   .type-bar {
     background: var(--panel);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
+    padding: 0 16px;
     display: flex;
     gap: 0;
     overflow-x: auto;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .type-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+
+  .type-group-label {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    padding: 0 8px 0 12px;
+    white-space: nowrap;
+    opacity: 0.6;
+    border-left: 1px solid var(--border);
+    margin-left: 4px;
+  }
+
+  .type-group:first-child .type-group-label {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
   }
 
   .type-btn {
@@ -1993,22 +2018,28 @@
 </div>
 
 <div class="type-bar">
-  <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
-  <button class="type-btn" onclick="setType('avp2')">Alavp 2</button>
-  <button class="type-btn" onclick="setType('ulkonurkka')">Ulkonurkka</button>
-  <button class="type-btn" onclick="setType('sisanurkka')">Sisänurkka</button>
-  <button class="type-btn" onclick="setType('jiiri')">Jiiripelti</button>
-  <button class="type-btn" onclick="setType('seinänvieripelti')">Seinänvieripelti</button>
-  <button class="type-btn" onclick="setType('eturaaystaspelti')">Eturäystäspelti</button>
-  <button class="type-btn" onclick="setType('paatypelti')">Päätypelti</button>
-  <button class="type-btn" onclick="setType('paatypelti_huopa')">Päätypelti huopa</button>
-  <button class="type-btn" onclick="setType('ulista')">U-lista u</button>
-  <button class="type-btn" onclick="setType('ulistas')">U-lista s</button>
-  <button class="type-btn" onclick="setType('kynnys')">Kynnys</button>
-  <button class="type-btn" onclick="setType('hattulista')">Hattulista</button>
-  <button class="type-btn" onclick="setType('zlista')">Z-lista</button>
-  <button class="type-btn" onclick="setType('peitelista')">Peitelista</button>
-  <button class="type-btn" onclick="setType('vapaa')">⊕ Vapaa profiili</button>
+  <div class="type-group">
+    <span class="type-group-label">MUUT</span>
+    <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
+    <button class="type-btn" onclick="setType('avp2')">Alavp 2</button>
+    <button class="type-btn" onclick="setType('ulkonurkka')">Ulkonurkka</button>
+    <button class="type-btn" onclick="setType('sisanurkka')">Sisänurkka</button>
+    <button class="type-btn" onclick="setType('ulista')">U-lista u</button>
+    <button class="type-btn" onclick="setType('ulistas')">U-lista s</button>
+    <button class="type-btn" onclick="setType('kynnys')">Kynnys</button>
+    <button class="type-btn" onclick="setType('hattulista')">Hattulista</button>
+    <button class="type-btn" onclick="setType('zlista')">Z-lista</button>
+    <button class="type-btn" onclick="setType('peitelista')">Peitelista</button>
+    <button class="type-btn" onclick="setType('vapaa')">⊕ Vapaa profiili</button>
+  </div>
+  <div class="type-group">
+    <span class="type-group-label">KATOLLE</span>
+    <button class="type-btn" onclick="setType('jiiri')">Jiiripelti</button>
+    <button class="type-btn" onclick="setType('seinänvieripelti')">Seinänvieripelti</button>
+    <button class="type-btn" onclick="setType('eturaaystaspelti')">Eturäystäspelti</button>
+    <button class="type-btn" onclick="setType('paatypelti')">Päätypelti</button>
+    <button class="type-btn" onclick="setType('paatypelti_huopa')">Päätypelti huopa</button>
+  </div>
 </div>
 
 <div class="main">
@@ -2539,66 +2570,67 @@ const TYPES = {
       const points = [];
       const labels = [];
       const extraLines = [];
-      let x = 0, y = 0;
-      let suunta = 0;
 
-      // === VASEN REUNA: Uran pohja — sama logiikka kuin päätypelti ===
-      const uraStart = { x, y };
-      const uraSuunta = 180 - vals.ura_ang; // vasemmalle alas
-      const uraEnd = {
-        x: x + vals.ura_len * Math.cos(deg(uraSuunta)),
-        y: y + vals.ura_len * Math.sin(deg(uraSuunta))
-      };
-      points.push(uraEnd);
-      labels.push(vals.ura_len);
-      points.push(uraStart);
-      labels.push('');
+      // Rakenne: Seinälle on AINA pystysuora (ylös = -90°)
+      // Origin = seinän alapää / kulmapisteen paikka
+      // Seinälle lähtee origosta ylöspäin
+      // Katolle lähtee origosta oikealle (kulma° muuttaa kaatoa)
+      // Uran pohja lähtee Katolle-viivan vasemmasta päästä
 
-      // Tupla A: lähtee uran päästä 8° avoimempaan suuntaan
-      const tupAAng = uraSuunta - 172; // jatkuu uran suuntaan avautuen
-      const tupAEnd = {
-        x: uraEnd.x + vals.tupA_len * Math.cos(deg(tupAAng)),
-        y: uraEnd.y + vals.tupA_len * Math.sin(deg(tupAAng))
-      };
-      extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len, labelOffset: [20, 0] });
+      const pOrigin = { x: 0, y: 0 };
 
-      // === SIVU A (Katolle): vaakasuora — sama kuin sisänurkka ===
-      suunta = 0;
-      const pA0 = { x, y };
-      points.push(pA0);
-      x += vals.seg0_len * Math.cos(deg(suunta));
-      y += vals.seg0_len * Math.sin(deg(suunta));
-      labels.push(vals.seg0_len);
-
-      // === KULMA: sisänurkan tapaan -kulma ===
-      suunta -= vals.seg0_ang;
-
-      // === SIVU B (Seinälle): sama kuin sisänurkka ===
-      const pKulma = { x, y };
-      points.push(pKulma);
+      // === SEINÄLLE: pystysuora ylös ===
       const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
-      x += bLen * Math.cos(deg(suunta));
-      y += bLen * Math.sin(deg(suunta));
-      const pBend = { x, y };
-      points.push(pBend);
-      labels.push(bLen);
+      const pSeinaEnd = { x: 0, y: -bLen };
+      points.push(pSeinaEnd); labels.push(bLen);
+      points.push(pOrigin);   labels.push('');
 
-      let tiiBEnd = { x, y };
+      // Tiiviste B: seinän yläpäässä vasemmalle alas
+      let tiiBEnd = pSeinaEnd;
       if (opts?.tiiB) {
-        const tiiSuunta = suunta + 8;
-        tiiBEnd = { x: x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
-        points.push(tiiBEnd);
-        labels.push(vals.tiiB_len);
-        points.push(pBend);
-        labels.push('');
+        const tiiSuunta = 180 + 8;
+        tiiBEnd = {
+          x: pSeinaEnd.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)),
+          y: pSeinaEnd.y + vals.tiiB_len * Math.sin(deg(tiiSuunta))
+        };
+        extraLines.push({ p1: pSeinaEnd, p2: tiiBEnd, label: vals.tiiB_len, labelOffset: [-20, 8] });
       }
       if (opts?.tupB) {
-        const tupSuunta = opts?.tiiB ? suunta + 180 : suunta + 172;
-        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
-        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [25, 0] });
+        const tupSuunta = opts?.tiiB ? 0 : 8;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)),
+          y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [0, 16] });
       }
 
-      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
+      // === KATOLLE: lähtee origosta oikealle, kulma° säätää kaatoa ===
+      const katSuunta = -(90 - vals.seg0_ang); // 90° = vaakasuora, pienempi = alas
+      const pKatEnd = {
+        x: pOrigin.x + vals.seg0_len * Math.cos(deg(katSuunta)),
+        y: pOrigin.y + vals.seg0_len * Math.sin(deg(katSuunta))
+      };
+      points.push(pOrigin);  labels.push(vals.seg0_len);
+      points.push(pKatEnd);  labels.push('');
+
+      // === URAN POHJA: lähtee Katolle-viivan oikeasta päästä ===
+      const uraSuunta = katSuunta - (180 - vals.ura_ang);
+      const pUraEnd = {
+        x: pKatEnd.x + vals.ura_len * Math.cos(deg(uraSuunta)),
+        y: pKatEnd.y + vals.ura_len * Math.sin(deg(uraSuunta))
+      };
+      points.push(pKatEnd);  labels.push(vals.ura_len);
+      points.push(pUraEnd);  labels.push('');
+
+      // Tupla A: uran päästä
+      const tupAAng = uraSuunta + 180 - 8;
+      const tupAEnd = {
+        x: pUraEnd.x + vals.tupA_len * Math.cos(deg(tupAAng)),
+        y: pUraEnd.y + vals.tupA_len * Math.sin(deg(tupAAng))
+      };
+      extraLines.push({ p1: pUraEnd, p2: tupAEnd, label: vals.tupA_len, labelOffset: [0, 16] });
+
+      return { points, labels, extraLines, pintaViiva: { p1: pOrigin, p2: pKatEnd } };
     },
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len + vals.ura_len + vals.tupA_len;
