@@ -1789,9 +1789,7 @@ let saveTimer = null;
 
 // ── Supabase-haut ─────────────────────────────────────────────────
 async function fetchProducts() {
-  const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&order=material,color', { headers });
-  products = await r.json();
-  buildMatSelect();
+  // Materiaalit haetaan nyt Mallistossa
 }
 
 async function fetchCustomers() {
@@ -1828,74 +1826,7 @@ function selectCustomer(id, name) {
 }
 
 // Suljetaan dropdown kun klikataan muualle
-// ── Materiaalivalinnat ────────────────────────────────────────────
-function buildMatSelect() {
-  // Ei tarvitse enää täyttää selectiä — hakukenttä hoitaa
-}
-
-function filterMat(q) {
-  const dd = document.getElementById('mat-dropdown');
-  const mats = [...new Set(products.map(p => p.material))].sort()
-    .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
-  if (!mats.length) { dd.style.display = 'none'; return; }
-  dd.innerHTML = mats.map(m => `
-    <div onclick="selectMat('${m.replace(/'/g, "\\'")}')"
-      style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
-      onmouseover="this.style.background='var(--input-bg)'" onmouseout="this.style.background=''">
-      ${m}
-    </div>`).join('');
-  dd.style.display = 'block';
-}
-
-function selectMat(m) {
-  document.getElementById('mat-search').value = m;
-  document.getElementById('mat-select').value = m;
-  document.getElementById('mat-dropdown').style.display = 'none';
-  // Nollaa väri ja paksuus
-  document.getElementById('color-search').value = '';
-  document.getElementById('color-select').value = '';
-  document.getElementById('thick-select').innerHTML = '<option value="">— valitse —</option>';
-}
-
-function filterColor(q) {
-  const mat = document.getElementById('mat-select').value;
-  const dd = document.getElementById('color-dropdown');
-  const colors = [...new Set(products.filter(p => !mat || p.material === mat).map(p => p.color))].sort()
-    .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
-  if (!colors.length) { dd.style.display = 'none'; return; }
-  dd.innerHTML = colors.map(c => `
-    <div onclick="selectColor('${c.replace(/'/g, "\\'")}')"
-      style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
-      onmouseover="this.style.background='var(--input-bg)'" onmouseout="this.style.background=''">
-      ${c}
-    </div>`).join('');
-  dd.style.display = 'block';
-}
-
-function selectColor(c) {
-  document.getElementById('color-search').value = c;
-  document.getElementById('color-select').value = c;
-  document.getElementById('color-dropdown').style.display = 'none';
-  onColorChange();
-}
-
-function onMatChange() {}
-
-function onColorChange() {
-  const mat = document.getElementById('mat-select').value;
-  const col = document.getElementById('color-select').value;
-  const thicks = [...new Set(products.filter(p => p.material === mat && p.color === col).map(p => p.thickness_mm))].sort((a,b)=>a-b);
-  const sel = document.getElementById('thick-select');
-  sel.innerHTML = '<option value="">— valitse —</option>';
-  thicks.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t + ' mm'; sel.appendChild(o); });
-}
-
-// Suljetaan dropdownit kun klikataan muualle
 document.addEventListener('click', e => {
-  if (!e.target.closest('#mat-search') && !e.target.closest('#mat-dropdown'))
-    document.getElementById('mat-dropdown').style.display = 'none';
-  if (!e.target.closest('#color-search') && !e.target.closest('#color-dropdown'))
-    document.getElementById('color-dropdown').style.display = 'none';
   if (!e.target.closest('#customer-search') && !e.target.closest('#customer-dropdown'))
     document.getElementById('customer-dropdown').style.display = 'none';
 });
@@ -1959,12 +1890,8 @@ function addGroup(name) {
 
 function _addGroup(name) {
   const id = 'g_' + Date.now();
-  const mat = document.getElementById('mat-select').value;
-  const color = document.getElementById('color-select').value;
-  const thick = document.getElementById('thick-select').value;
-  const product = products.find(p => p.material === mat && p.color === color && String(p.thickness_mm) === String(thick));
   const groupName = name || document.getElementById('new-group-name').value || ('Ryhmä ' + (groups.length + 1));
-  groups.push({ id, name: groupName, items: [], material: mat, color, thickness: thick, product_id: product?.id });
+  groups.push({ id, name: groupName, items: [] });
   document.getElementById('new-group-name').value = '';
   updateGroupSelect();
   renderGroups();
