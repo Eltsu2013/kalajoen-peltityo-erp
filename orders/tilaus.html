@@ -1750,6 +1750,41 @@
       <button class="btn btn-primary" style="width:100%" onclick="openMallisto()">
         Avaa Mallisto →
       </button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="toggleKappaleForm()">
+        + Kappaletavara
+      </button>
+
+      <!-- Kappaletavara-lomake -->
+      <div id="kappale-form" style="display:none;border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:4px;display:none">
+        <div class="field" style="margin-bottom:6px">
+          <label>Nimike</label>
+          <input type="text" id="kap-nimike" placeholder="esim. Kouru RR20">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <div class="field">
+            <label>Pituus m</label>
+            <input type="number" id="kap-pituus" placeholder="—" min="0" step="0.1">
+          </div>
+          <div class="field">
+            <label>Määrä</label>
+            <input type="number" id="kap-maara" placeholder="1" min="1">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+          <div class="field">
+            <label>Yksikkö</label>
+            <select id="kap-yksikko">
+              <option value="kpl">kpl</option>
+              <option value="m">m</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Huomio</label>
+            <input type="text" id="kap-huomio" placeholder="—">
+          </div>
+        </div>
+        <button class="btn btn-primary" style="width:100%" onclick="addKappaletavara()">Lisää →</button>
+      </div>
     </div>
 
   </div>
@@ -2011,6 +2046,75 @@ async function saveItemToSupabase(item, groupId) {
 }
 
 // ── Profiilien lisäys ─────────────────────────────────────────────
+function toggleKappaleForm() {
+  const f = document.getElementById('kappale-form');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+function addKappaletavara() {
+  const nimike = document.getElementById('kap-nimike').value.trim();
+  if (!nimike) { alert('Kirjoita nimike!'); return; }
+  const maara = parseFloat(document.getElementById('kap-maara').value) || 1;
+  const pituus = parseFloat(document.getElementById('kap-pituus').value) || null;
+  const yksikko = document.getElementById('kap-yksikko').value;
+  const huomio = document.getElementById('kap-huomio').value.trim();
+
+  const selEl = document.getElementById('group-select');
+  let groupId = selEl.value;
+  if (!groupId || groupId === '__new__') {
+    _addGroup('');
+    groupId = groups[groups.length - 1].id;
+  }
+
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+
+  const item = {
+    id: 'i_' + Date.now(),
+    itemType: 'kappale',
+    nimike,
+    maara,
+    pituus,
+    yksikko,
+    huomio,
+  };
+  group.items.push(item);
+  saveKappaleToSupabase(item, groupId);
+
+  // Tyhjennä kentät
+  document.getElementById('kap-nimike').value = '';
+  document.getElementById('kap-pituus').value = '';
+  document.getElementById('kap-maara').value = '';
+  document.getElementById('kap-huomio').value = '';
+
+  renderGroups();
+  updateSummary();
+  setSaveStatus('ok', 'Lisätty!');
+}
+
+async function saveKappaleToSupabase(item, groupId) {
+  if (!currentOrderId) return;
+  const group = groups.find(g => g.id === groupId);
+  const body = {
+    order_id: currentOrderId,
+    group_name: group?.name,
+    group_order: groups.findIndex(g => g.id === groupId),
+    item_order: group?.items.length - 1,
+    nimike: item.nimike,
+    profile_type: 'KAPPALE',
+    profile_data: { maara: item.maara, pituus: item.pituus, yksikko: item.yksikko, huomio: item.huomio },
+    aihio_width_mm: null,
+    quantity: item.maara,
+  };
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/order_items', {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(body)
+    });
+  } catch(e) { console.log('Kappale save error', e); }
+}
+
 function openMallisto() {
   const groupId = document.getElementById('group-select').value;
   const profileType = document.getElementById('profile-type-select').value;
@@ -2099,6 +2203,25 @@ function renderItemsGrouped(items, groupId) {
 }
 
 function renderItem(item, groupId) {
+  // Kappaletavara-rivi
+  if (item.itemType === 'kappale') {
+    const pituusStr = item.pituus ? `${item.pituus} m × ` : '';
+    return `
+      <div class="order-item">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <span class="item-nimike">${item.nimike}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">${pituusStr}${item.maara} ${item.yksikko}</span>
+          </div>
+          ${item.huomio ? `<div style="font-size:11px;color:#ffaa44">⚠ ${item.huomio}</div>` : ''}
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteItem('${groupId}','${item.id}')">✕</button>
+        </div>
+      </div>
+    `;
+  }
+
   const rowsHtml = item.rows && item.rows.length > 0
     ? '<div style="display:flex;flex-direction:column;gap:2px">' + item.rows.map(r => {
         const kokStr = r.paat > 0 
