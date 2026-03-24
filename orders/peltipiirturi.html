@@ -121,18 +121,18 @@
 
   .field-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
     gap: 6px;
   }
 
   /* Kolme saraketta leveällä sidebarilla */
   .left-panel.wide .field-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(80px, 1fr));
   }
 
   /* Neljä saraketta erittäin leveällä */
   .left-panel.xwide .field-grid {
-    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-columns: repeat(4, minmax(80px, 1fr));
   }
 
   .field {
@@ -145,6 +145,9 @@
     font-size: 11px;
     color: var(--text-dim);
     font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .field input {
