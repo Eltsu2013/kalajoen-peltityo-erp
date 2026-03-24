@@ -1758,7 +1758,13 @@
       <div id="kappale-form" style="display:none;border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:4px;display:none">
         <div class="field" style="margin-bottom:6px">
           <label>Nimike</label>
-          <input type="text" id="kap-nimike" placeholder="esim. Kouru RR20">
+          <div style="position:relative">
+            <input type="text" id="kap-nimike" placeholder="Hae tai kirjoita..." autocomplete="off"
+              oninput="filterKapNimike(this.value)" onfocus="filterKapNimike(this.value)" style="width:100%">
+            <div id="kap-nimike-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:200;border-radius:0 0 4px 4px"></div>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
           <div class="field">
@@ -2049,7 +2055,47 @@ async function saveItemToSupabase(item, groupId) {
 function toggleKappaleForm() {
   const f = document.getElementById('kappale-form');
   f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (f.style.display === 'block' && kapProducts.length === 0) fetchKapProducts();
 }
+
+let kapProducts = [];
+
+async function fetchKapProducts() {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=in.(m,kpl)&order=product_group,material', { headers });
+    kapProducts = await r.json();
+  } catch(e) { console.log('Kap products error', e); }
+}
+
+function filterKapNimike(q) {
+  const dd = document.getElementById('kap-nimike-dd');
+  const matches = kapProducts.filter(p =>
+    !q || (p.material + ' ' + (p.color||'') + ' ' + (p.product_group||'')).toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 20);
+  if (!matches.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = '';
+  matches.forEach(p => {
+    const div = document.createElement('div');
+    const label = [p.product_group, p.material, p.color].filter(Boolean).join(' · ');
+    div.textContent = label;
+    div.style.cssText = 'padding:7px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)';
+    div.onmouseover = () => div.style.background = 'var(--input-bg)';
+    div.onmouseout = () => div.style.background = '';
+    div.onclick = () => {
+      document.getElementById('kap-nimike').value = label;
+      // Aseta yksikkö automaattisesti
+      document.getElementById('kap-yksikko').value = p.unit || 'kpl';
+      dd.style.display = 'none';
+    };
+    dd.appendChild(div);
+  });
+  dd.style.display = 'block';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#kap-nimike') && !e.target.closest('#kap-nimike-dd'))
+    document.getElementById('kap-nimike-dd').style.display = 'none';
+});
 
 function addKappaletavara() {
   const nimike = document.getElementById('kap-nimike').value.trim();
