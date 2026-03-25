@@ -207,31 +207,24 @@
 </div>
 
 <script>
-// Tilauskontext BroadcastChannelista
-const bc = new BroadcastChannel('kpt_mallisto');
-let tilausContext = null;
-
-bc.onmessage = (e) => {
-  if (e.data?.type === 'OPEN_VAKIOMALLIT') {
-    tilausContext = e.data;
-    document.getElementById('infoBar').innerHTML =
-      '<span style="color:var(--success)">✓ Tilaus auki</span> — valitse profiili lisätäksesi tilaukseen';
-    document.getElementById('infoBar').style.background = '#1e2e1e';
-    document.getElementById('infoBar').style.borderColor = '#2a4a2a';
-  }
-};
+// Luetaan tilauskontext localStoragesta — sama tapa kuin peltipiirturi
+const ctx = localStorage.getItem('kpt_open_profile');
+if (ctx) {
+  try {
+    const data = JSON.parse(ctx);
+    if (data.orderId) {
+      document.getElementById('infoBar').innerHTML =
+        '<span style="color:var(--success)">✓ Tilaus auki</span> — valitse profiili lisätäksesi tilaukseen';
+      document.getElementById('infoBar').style.background = '#1e2e1e';
+      document.getElementById('infoBar').style.borderColor = '#2a4a2a';
+    }
+  } catch(e) {}
+}
 
 function avaaProfiili(sivu) {
-  // Avaa profiilisivu uuteen välilehteen
-  const url = sivu;
-  const win = window.open(url, '_blank');
-  
-  // Jos tilaus on auki, lähetetään konteksti uudelle sivulle pienen viiveen jälkeen
-  if (tilausContext) {
-    setTimeout(() => {
-      bc.postMessage({ ...tilausContext, type: 'OPEN_PROFILE' });
-    }, 800);
-  }
+  // Tallenna localStorage jotta profiilisivu saa kontekstin
+  // (konteksti on jo siellä tilaus.html:n asettamana)
+  window.open(sivu, '_blank');
 }
 </script>
 </body>
