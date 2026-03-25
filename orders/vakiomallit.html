@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vakiomallit — Kalajoen Peltityö</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #1a1a1a;
+    --panel: #242424;
+    --border: #333;
+    --accent: #e8a020;
+    --accent2: #3a8fe8;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --success: #3dba6e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header h1 { font-size: 16px; font-weight: 500; }
+
+  header .back-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  header .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .group {
+    margin-bottom: 36px;
+  }
+
+  .group-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .profile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+  }
+
+  .profile-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 16px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .profile-btn:hover {
+    border-color: var(--accent2);
+    background: #2a2a2a;
+  }
+
+  .profile-btn .profile-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .info-bar {
+    background: #1e2a38;
+    border: 1px solid #2a3a50;
+    border-radius: 4px;
+    padding: 10px 16px;
+    margin-bottom: 28px;
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent2);
+  }
+
+  /* Mallisto-linkki */
+  .mallisto-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-bottom: 32px;
+    transition: all 0.15s;
+  }
+  .mallisto-link:hover { border-color: var(--success); color: var(--success); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">KPT</div>
+  <h1>Vakiomallit</h1>
+  <a href="tilaus.html" class="back-btn">← Tilauslomake</a>
+</header>
+
+<div class="main">
+
+  <div class="info-bar" id="infoBar">
+    Avaa profiili laskemista varten — tai käytä tilaus.html:n kautta lisätäksesi tilaukseen.
+  </div>
+
+  <a href="peltipiirturi.html" target="_blank" class="mallisto-link">
+    ⊕ Avaa Mallisto (kaikki profiilityypit)
+  </a>
+
+  <!-- Parmaco-vakiomallit -->
+  <div class="group">
+    <div class="group-title">Parmaco — ikkunapellit</div>
+    <div class="profile-grid">
+      <button class="profile-btn" onclick="avaaProfiili('ylapelti.html')">
+        Yläpelti
+        <span class="profile-desc">Alavesipelti · 70/57/35/30 mm</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('alapellit.html')">
+        Alapellit
+        <span class="profile-desc">Alavesipelti · 20/145/35/60 mm</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('kynnys1.html')">
+        Kynnyspelti 1
+        <span class="profile-desc">Päätypelti · 32/88/113 mm</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('alaslaskun_kappalista.html')">
+        Alaslaskun kappalista
+        <span class="profile-desc">U-lista · 82/40/10 mm</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('hattupelti.html')">
+        Hattupelti viipalesaumaan
+        <span class="profile-desc">U-lista · 280/55/55 mm</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('ulkoverhouksen_katkaisulista.html')">
+        Ulkoverhouksen katkaisulista
+        <span class="profile-desc">Alavesipelti · 90/100/50 mm</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('kattolista.html')">
+        Kattolista
+        <span class="profile-desc">Sisänurkka · 50/50 mm · 85°</span>
+      </button>
+      <button class="profile-btn" onclick="avaaProfiili('raystaslista.html')">
+        Räystäslista
+        <span class="profile-desc">Alavp 2 · 30/120/95/135 mm</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Tilauskontext BroadcastChannelista
+const bc = new BroadcastChannel('kpt_mallisto');
+let tilausContext = null;
+
+bc.onmessage = (e) => {
+  if (e.data?.type === 'OPEN_VAKIOMALLIT') {
+    tilausContext = e.data;
+    document.getElementById('infoBar').innerHTML =
+      '<span style="color:var(--success)">✓ Tilaus auki</span> — valitse profiili lisätäksesi tilaukseen';
+    document.getElementById('infoBar').style.background = '#1e2e1e';
+    document.getElementById('infoBar').style.borderColor = '#2a4a2a';
+  }
+};
+
+function avaaProfiili(sivu) {
+  // Avaa profiilisivu uuteen välilehteen
+  const url = sivu;
+  const win = window.open(url, '_blank');
+  
+  // Jos tilaus on auki, lähetetään konteksti uudelle sivulle pienen viiveen jälkeen
+  if (tilausContext) {
+    setTimeout(() => {
+      bc.postMessage({ ...tilausContext, type: 'OPEN_PROFILE' });
+    }, 800);
+  }
+}
+</script>
+</body>
+</html>
