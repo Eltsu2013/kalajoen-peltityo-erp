@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Räystäslista — Kalajoen Peltityö</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #1a1a1a;
+    --panel: #242424;
+    --border: #333;
+    --accent: #e8a020;
+    --accent2: #3a8fe8;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --input-bg: #2e2e2e;
+    --success: #3dba6e;
+    --danger: #e84040;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--panel);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  header .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  header .subtitle {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-left: auto;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: var(--sidebar-width, 360px) 1fr;
+    height: calc(100vh - 62px);
+  }
+
+  .left-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .sidebar-resizer {
+    position: absolute; top: 0; right: 0; width: 5px; height: 100%;
+    cursor: col-resize; z-index: 10; background: transparent;
+  }
+  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
+
+  .left-panel.wide .field-grid { grid-template-columns: repeat(3, 1fr); }
+  .left-panel.xwide .field-grid { grid-template-columns: repeat(4, 1fr); }
+
+  .section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .field-grid.three {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .field input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field input.angle {
+    border-color: #3a5a8a;
+    color: #7ab3e8;
+  }
+
+  .field input.angle:focus {
+    border-color: var(--accent2);
+  }
+
+  .field input.computed {
+    border-color: #2a5a3a;
+    color: var(--success);
+    cursor: default;
+  }
+
+  /* Laskuri-boksi */
+  .calc-box {
+    background: #1e1e1e;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 8px;
+  }
+
+  .calc-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .calc-row:last-child { border-bottom: none; }
+
+  .calc-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .calc-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .calc-value.big {
+    font-size: 20px;
+    color: var(--accent);
+  }
+
+  /* Pituustaulukko */
+  .table-wrap { width: 100%; }
+
+  .table-header {
+    display: grid;
+    grid-template-columns: 80px 70px 75px 45px 1fr 28px;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+
+  .table-header span {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    padding: 0 4px;
+  }
+
+  .table-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 80px 70px 75px 45px 1fr 28px;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .table-row input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 5px 6px;
+    border-radius: 3px;
+    width: 100%;
+  }
+
+  .table-row input:focus {
+    outline: none;
+    border-color: var(--accent2);
+  }
+
+  .table-row input.computed-row {
+    color: var(--accent2);
+    background: #1e2a38;
+    border-color: #2a3a50;
+    cursor: default;
+  }
+
+  .table-row input.huomio { color: #ffaa44; }
+
+  .btn-remove {
+    background: none;
+    border: 1px solid #444;
+    color: var(--text-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
+
+  .btn-add {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+
+  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Yhteenveto */
+  .summary-bar {
+    background: #1e1e1e;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .summary-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .summary-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .summary-value.aihio {
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  /* SVG oikea paneeli */
+  .right-panel {
+    background: #f5f5f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px;
+    overflow: auto;
+    gap: 16px;
+  }
+
+  .drawing-area {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .cut-list {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 700px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .cut-list h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #666;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  .cut-row {
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
+  .cut-row .kpl { color: #333; font-weight: 600; min-width: 50px; }
+  .cut-row .mitta { color: #222; flex: 1; }
+  .cut-row .paatmitta { color: #1a6fc4; min-width: 80px; }
+  .cut-row .kokmitta { color: #c41a1a; font-weight: 600; min-width: 80px; }
+  .cut-row .huomio-text { color: #cc4400; font-size: 11px; }
+
+  .cut-total {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .cut-total .label { font-size: 11px; color: #666; }
+  .cut-total .value { font-size: 20px; font-weight: 600; color: #1a6fc4; }
+
+  /* Lisää tilaukseen -nappi */
+  .tilaus-bar {
+    background: var(--panel);
+    border-top: 2px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .btn-primary {
+    background: var(--success);
+    color: #1a1a1a;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-primary:hover { opacity: 0.85; }
+
+  .nimike-input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    flex: 1;
+  }
+
+  .nimike-input:focus { outline: none; border-color: var(--accent); }
+
+  .info-badge {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    background: #2a2a2a;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">KPT</div>
+  <h1>Räystäslista</h1>
+  <span class="subtitle">Alavesipelti / vakiomitat</span>
+</header>
+
+<div class="main">
+
+  <!-- VASEN PANEELI -->
+  <div class="left-panel" id="leftPanel">
+    <div class="sidebar-resizer" id="sidebarResizer"></div>
+
+    <!-- Materiaalivalinta -->
+    <div class="section">
+      <div class="section-title">Materiaali</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Tuoteryhmä</label>
+          <div style="position:relative">
+            <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off"
+              oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)"
+              style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            <div id="pm-group-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+            <input type="hidden" id="pm-group">
+          </div>
+        </div>
+        <div class="field">
+          <label>Materiaali</label>
+          <div style="position:relative">
+            <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
+              oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)"
+              style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+            <input type="hidden" id="pm-mat">
+          </div>
+        </div>
+        <div class="field" id="pm-color-row">
+          <label>Väri</label>
+          <div style="position:relative">
+            <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off"
+              oninput="pmFilterColor(this.value)" onfocus="pmFilterColor(this.value)"
+              style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            <div id="pm-color-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+            <input type="hidden" id="pm-color">
+          </div>
+        </div>
+        <div class="field">
+          <label>Paksuus</label>
+          <select id="pm-thick" style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;width:100%;">
+            <option value="">— valitse —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profiilin mitat -->
+    <div class="section">
+      <div class="section-title">Profiilin mitat</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Yläreuna mm</label>
+          <input type="number" id="ikkuna_len" value="30" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Takareuna mm</label>
+          <input type="number" id="takareuna" value="120" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Pinta mm</label>
+          <input type="number" id="paankaanto_ylos" value="95" oninput="laske()">
+        </div>
+        <div class="field" style="display:none">
+          <input type="number" id="paankaanto_alas" value="0">
+        </div>
+        <div class="field" style="display:none">
+          <input type="text" id="pinta_mm" readonly>
+        </div>
+        <div class="field">
+          <label>Etureuna mm</label>
+          <input type="number" id="etureuna" value="135" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Etukäännös mm</label>
+          <input type="number" id="etukaannos" value="15" oninput="laske()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Kulmat -->
+    <div class="section">
+      <div class="section-title">Kulmat</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Yläkäännös °</label>
+          <input type="number" id="ikkuna_ang" value="90" class="angle" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Käännös taka °</label>
+          <input type="number" id="kaannos_taka" value="72" class="angle" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Käännös etu °</label>
+          <input type="number" id="kaannos_etu" value="72" class="angle" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Etur °</label>
+          <input type="number" id="etur" value="125" class="angle" oninput="laske()">
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" id="pykala" value="0">
+    <span id="res_kaava" style="display:none"></span>
+
+    <!-- Pituustaulukko -->
+    <div class="section">
+      <div class="section-title">Pituudet</div>
+      <div class="table-wrap">
+        <div class="table-header">
+          <span>L mm</span>
+          <span>Päät mm</span>
+          <span>Kok mm</span>
+          <span>Kpl</span>
+          <span>Huomio</span>
+          <span></span>
+        </div>
+        <div class="table-rows" id="tableRows"></div>
+      </div>
+      <button class="btn-add" onclick="lisaaRivi()">+ Lisää rivi</button>
+    </div>
+
+    <!-- Yhteenveto + lisää tilaukseen -->
+    <div class="summary-bar">
+      <div class="summary-row">
+        <span class="summary-label">Aihioleveys</span>
+        <span class="summary-value aihio" id="summAihio">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-label">Kpl yhteensä</span>
+        <span class="summary-value" id="summKpl">0</span>
+      </div>
+    </div>
+
+    <!-- Tilaus-bar -->
+    <div class="tilaus-bar" id="tilausBar" style="display:none">
+      <input type="text" class="nimike-input" id="nmikeInput" placeholder="Nimike...">
+      <button class="btn-primary" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
+    </div>
+
+  </div><!-- /left-panel -->
+
+  <!-- OIKEA PANEELI -->
+  <div class="right-panel">
+    <svg class="drawing-area" id="svgEl" viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="cut-list" id="cutList" style="display:none">
+      <h3>Leikkauslista</h3>
+      <div id="cutRows"></div>
+      <div class="cut-total">
+        <span class="label">Kpl yhteensä</span>
+        <span class="value" id="cutTotal">0</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// =============================================
+// SUPABASE + BROADCAST
+// =============================================
+const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+const pmHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+
+const bc = new BroadcastChannel('kpt_mallisto');
+
+// tilausContext tulee tilaus.html:ltä BroadcastChannelin kautta
+let tilausContext = null;
+bc.onmessage = (e) => {
+  if (e.data?.type === 'OPEN_PROFILE') {
+    tilausContext = e.data;
+    document.getElementById('nmikeInput').value = e.data.nimike || 'Räystäslista';
+    document.getElementById('tilausBar').style.display = 'flex';
+  }
+};
+
+// =============================================
+// PITUUSRIVIT
+// =============================================
+let rivit = [{ mitta: '', paat: '', kok: '', kpl: 1, huomio: '' }];
+
+function lisaaRivi() {
+  rivit.push({ mitta: '', paat: '', kok: '', kpl: 1, huomio: '' });
+  renderRivit();
+}
+
+function poistaRivi(i) {
+  if (rivit.length > 1) rivit.splice(i, 1);
+  renderRivit();
+  laske();
+}
+
+function renderRivit() {
+  const container = document.getElementById('tableRows');
+  container.innerHTML = '';
+  rivit.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'table-row';
+    div.innerHTML = `
+      <input type="number" placeholder="L" value="${r.mitta}" 
+        oninput="rivit[${i}].mitta=this.value; laskePaatJaKok(${i})" >
+      <input type="text" class="computed-row" placeholder="—" value="${r.paat}" readonly tabindex="-1">
+      <input type="text" class="computed-row" placeholder="—" value="${r.kok}" readonly tabindex="-1">
+      <input type="number" value="${r.kpl}" min="1"
+        oninput="rivit[${i}].kpl=+this.value; paivitaYhteenveto(); paivitaLeikkauslista()">
+      <input type="text" class="huomio" placeholder="huomio" value="${r.huomio}"
+        oninput="rivit[${i}].huomio=this.value">
+      <button class="btn-remove" onclick="poistaRivi(${i})">×</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// =============================================
+// LASKENTALOGIIKKA
+// =============================================
+
+function getVal(id) {
+  return parseFloat(document.getElementById(id).value) || 0;
+}
+
+function laskePaatMm() {
+  // Pinta mm = päänkääntö ylös + päänkääntö alas
+  const pintaMm   = getVal('paankaanto_ylos') + getVal('paankaanto_alas');
+  const etureuna  = getVal('etureuna');
+  const kaannos_etu_deg = getVal('kaannos_etu');
+
+  // Kallistuskulma = 90° - käännösetu° (esim. 90-73 = 17°)
+  const kallistusDeg = 90 - kaannos_etu_deg;
+  const kallistusRad = kallistusDeg * Math.PI / 180;
+
+  // K12 = Päänkääntö alas mm — tämä on se mitta johon Pythagoraan kaava tehdään
+  // Tässä pellissä käyttäjä syöttää Päät itse — ei lasketa automaattisesti
+  return { pintaMm, paat: 0, etuVaaka: 0, kallistusDeg };
+}
+
+function laskePaatJaKok(i) {
+  const { paat } = laskePaatMm();
+  const mitta = parseFloat(rivit[i].mitta) || 0;
+
+  if (mitta > 0) {
+    rivit[i].paat = Math.round(paat);
+    rivit[i].kok = Math.round(mitta + paat);
+  } else {
+    rivit[i].paat = '';
+    rivit[i].kok = '';
+  }
+
+  // Päivitä DOM suoraan ilman full re-render
+  const rows = document.querySelectorAll('#tableRows .table-row');
+  if (rows[i]) {
+    rows[i].querySelectorAll('input')[1].value = rivit[i].paat;
+    rows[i].querySelectorAll('input')[2].value = rivit[i].kok;
+  }
+
+  paivitaYhteenveto();
+  paivitaLeikkauslista();
+}
+
+function laske() {
+  const { pintaMm, paat, etuVaaka, kallistusDeg } = laskePaatMm();
+  const pykala = getVal('pykala');
+
+  // Päivitä laskettu Pinta mm -kenttä
+  document.getElementById('pinta_mm').value = pintaMm + ' mm';
+
+  // Päivitä laskuruutu
+  document.getElementById('res_kaava').textContent = `Kok = L + ${Math.round(paat)} mm  (sis. pykälä ${pykala} mm)`;
+
+  // Laske kaikki rivit uudelleen
+  rivit.forEach((r, i) => {
+    const mitta = parseFloat(r.mitta) || 0;
+    if (mitta > 0) {
+      rivit[i].paat = Math.round(paat);
+      rivit[i].kok = Math.round(mitta + paat);
+    }
+  });
+
+  renderRivit();
+  paivitaYhteenveto();
+  paivitaLeikkauslista();
+  piirra();
+}
+
+function paivitaYhteenveto() {
+  const aihio = getVal('ikkuna_len') + getVal('takareuna') + getVal('paankaanto_ylos') + getVal('etureuna') + getVal('etukaannos');
+  document.getElementById('summAihio').textContent = Math.round(aihio) + ' mm';
+
+  const kplYht = rivit.reduce((s, r) => s + (parseFloat(r.kpl) || 0), 0);
+  document.getElementById('summKpl').textContent = kplYht + ' kpl';
+}
+
+// =============================================
+// LEIKKAUSLISTA
+// =============================================
+function paivitaLeikkauslista() {
+  const voimassaOlevat = rivit.filter(r => (parseFloat(r.mitta) || 0) > 0 && (parseFloat(r.kpl) || 0) > 0);
+
+  const cutList = document.getElementById('cutList');
+  const cutRows = document.getElementById('cutRows');
+  const cutTotal = document.getElementById('cutTotal');
+
+  if (voimassaOlevat.length === 0) {
+    cutList.style.display = 'none';
+    return;
+  }
+
+  cutList.style.display = 'block';
+  cutRows.innerHTML = '';
+
+  let kplYht = 0;
+  voimassaOlevat.forEach(r => {
+    const kpl = parseFloat(r.kpl) || 0;
+    kplYht += kpl;
+    const div = document.createElement('div');
+    div.className = 'cut-row';
+    div.innerHTML = `
+      <span class="kpl">${kpl} kpl</span>
+      <span class="mitta">L = ${r.mitta} mm</span>
+      <span class="paatmitta">Päät: ${r.paat} mm</span>
+      <span class="kokmitta">= ${r.kok} mm</span>
+      ${r.huomio ? `<span class="huomio-text">${r.huomio}</span>` : ''}
+    `;
+    cutRows.appendChild(div);
+  });
+
+  cutTotal.textContent = kplYht + ' kpl';
+}
+
+// =============================================
+// SVG PIIRROS
+// =============================================
+function piirra() {
+  const deg  = d => d * Math.PI / 180;
+  const svg  = document.getElementById('svgEl');
+
+  const ikkuna_len  = getVal('ikkuna_len');  // Yläreuna
+  const takareuna   = getVal('takareuna');
+  const pinta       = getVal('paankaanto_ylos'); // Pinta mm
+  const etureuna    = getVal('etureuna');
+  const etukaannos  = getVal('etukaannos');
+  const ikkuna_ang  = getVal('ikkuna_ang');  // Yläkäännös
+  const kaannos_taka = getVal('kaannos_taka');
+  const kaannos_etu  = getVal('kaannos_etu');
+  const etur         = getVal('etur');
+
+  // Alavp2-logiikka — sama kuin peltipiirturissa
+  const pEtuylapaa = { x: 0, y: 0 };
+
+  // Etureuna: suoraan alas
+  let suunta = 90;
+  const pEtualapaa = {
+    x: pEtuylapaa.x + etureuna * Math.cos(deg(suunta)),
+    y: pEtuylapaa.y + etureuna * Math.sin(deg(suunta))
+  };
+
+  // Etukäännös
+  suunta += etur;
+  const pEtukaannos = etukaannos > 0 ? {
+    x: pEtualapaa.x + etukaannos * Math.cos(deg(suunta)),
+    y: pEtualapaa.y + etukaannos * Math.sin(deg(suunta))
+  } : null;
+
+  // Pinta
+  suunta = 90 + (180 - kaannos_etu);
+  const pPintapaaty = {
+    x: pEtuylapaa.x + pinta * Math.cos(deg(suunta)),
+    y: pEtuylapaa.y + pinta * Math.sin(deg(suunta))
+  };
+
+  // Takareuna
+  suunta += kaannos_taka;
+  const pTakaylapaa = {
+    x: pPintapaaty.x + takareuna * Math.cos(deg(suunta)),
+    y: pPintapaaty.y + takareuna * Math.sin(deg(suunta))
+  };
+
+  // Yläreuna: kääntyy ikkuna_ang kulmassa
+  const karmiSuunta = 180 + (90 - ikkuna_ang);
+  const pKarmi = {
+    x: pTakaylapaa.x + ikkuna_len * Math.cos(deg(karmiSuunta)),
+    y: pTakaylapaa.y + ikkuna_len * Math.sin(deg(karmiSuunta))
+  };
+
+  const pts = [pKarmi, pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+  if (pEtukaannos) pts.push(pEtukaannos);
+
+  // Skaalaus
+  const margin = 60;
+  const svgW = 700, svgH = 300;
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const scaleX = (svgW - margin * 2) / (maxX - minX || 1);
+  const scaleY = (svgH - margin * 2) / (maxY - minY || 1);
+  const scale  = Math.min(scaleX, scaleY, 3.5);
+
+  const tx = p => margin + (p.x - minX) * scale;
+  const ty = p => margin + (p.y - minY) * scale;
+
+  const totalH = (maxY - minY) * scale + margin * 2;
+  svg.setAttribute('viewBox', `0 0 ${svgW} ${Math.max(totalH, 120)}`);
+
+  const polyPts = pts.map(p => `${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ');
+
+  const kallistusDeg = 90 - kaannos_etu;
+  const kaato = Math.abs(pPintapaaty.y - pEtuylapaa.y).toFixed(1);
+
+  svg.innerHTML = `
+    <rect width="100%" height="100%" fill="white"/>
+    <polyline points="${polyPts}" fill="none" stroke="#1a1a1a" stroke-width="2.5"
+      stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- Yläreuna mm -->
+    <text x="${((tx(pTakaylapaa)+tx(pKarmi))/2).toFixed(0)}"
+          y="${(Math.min(ty(pTakaylapaa),ty(pKarmi))-10).toFixed(0)}"
+          text-anchor="middle"
+          style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#3a8fe8">${ikkuna_len}</text>
+
+    <!-- Takareuna mm -->
+    <text x="${(Math.max(tx(pTakaylapaa),tx(pPintapaaty))+8).toFixed(0)}"
+          y="${((ty(pTakaylapaa)+ty(pPintapaaty))/2).toFixed(0)}"
+          dominant-baseline="middle"
+          style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#3a8fe8">${takareuna}</text>
+
+    <!-- Pinta mm -->
+    <text x="${((tx(pPintapaaty)+tx(pEtuylapaa))/2).toFixed(0)}"
+          y="${(Math.min(ty(pPintapaaty),ty(pEtuylapaa))-12).toFixed(0)}"
+          text-anchor="middle"
+          style="font-family:IBM Plex Mono,monospace;font-size:12px;fill:#1a6fc4;font-weight:600">${pinta} mm</text>
+
+    <!-- Etureuna mm -->
+    <text x="${(tx(pEtuylapaa)+8).toFixed(0)}"
+          y="${((ty(pEtuylapaa)+ty(pEtualapaa))/2).toFixed(0)}"
+          dominant-baseline="middle"
+          style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#3a8fe8">${etureuna}</text>
+
+    <!-- Etukäännös mm -->
+    ${pEtukaannos ? `<text x="${((tx(pEtualapaa)+tx(pEtukaannos))/2).toFixed(0)}"
+          y="${((ty(pEtualapaa)+ty(pEtukaannos))/2+14).toFixed(0)}"
+          text-anchor="middle"
+          style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#3a8fe8">${etukaannos}</text>` : ''}
+
+    <!-- Käännös etu ° -->
+    <text x="${(tx(pEtuylapaa)+28).toFixed(0)}" y="${(ty(pEtuylapaa)-8).toFixed(0)}"
+      style="font-family:IBM Plex Mono,monospace;font-size:10px;fill:#3a8fe8">${kaannos_etu}° (kaato ${kallistusDeg}°)</text>
+
+    <!-- Kaato -->
+    <text x="8" y="${(Math.max(ty(pEtualapaa),ty(pKarmi))+20).toFixed(0)}"
+      style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>
+  `;
+}
+
+// =============================================
+// LISÄÄ TILAUKSEEN
+// =============================================
+function lisaaTilaukseen() {
+  if (!tilausContext) return;
+
+  const voimassaOlevat = rivit.filter(r => (parseFloat(r.mitta) || 0) > 0 && (parseFloat(r.kpl) || 0) > 0);
+  if (voimassaOlevat.length === 0) {
+    alert('Lisää ainakin yksi pituusrivi ennen kuin lisäät tilaukseen!');
+    return;
+  }
+
+  const aihio = getVal('ikkuna_len') + getVal('takareuna') + getVal('paankaanto_ylos') + getVal('etureuna') + getVal('etukaannos');
+  const { paat } = laskePaatMm();
+
+  const payload = {
+    type: 'ADD_TO_ORDER',
+    orderId: tilausContext.orderId,
+    groupId: tilausContext.groupId,
+    editItemId: tilausContext.editItemId || null,
+    profileType: 'avp', // käyttää alavesipeltin SVG-tyyliä
+    nimike: document.getElementById('nmikeInput').value || 'Yläpelti',
+    aihio_width_mm: Math.round(aihio),
+    profile_data: {
+      vals: {
+        seg0_len: getVal('takareuna'),
+        seg1_len: getVal('paankaanto_ylos') + getVal('paankaanto_alas'),
+        seg2_len: getVal('etureuna'),
+        seg3_len: getVal('etukaannos'),
+        seg0_ang: getVal('kaannos_taka'),
+        seg1_ang: getVal('kaannos_etu'),
+        seg3_ang: getVal('etur'),
+      }
+    },
+    rows: voimassaOlevat.map(r => ({
+      mitta: parseFloat(r.mitta) || 0,
+      paat:  parseFloat(r.paat)  || 0,
+      kok:   parseFloat(r.kok)   || 0,
+      kpl:   parseFloat(r.kpl)   || 1,
+      huomio: r.huomio || ''
+    })),
+    totalM2: voimassaOlevat.reduce((s, r) =>
+      s + (parseFloat(r.kok)/1000) * (aihio/1000) * parseFloat(r.kpl), 0),
+    material: document.getElementById('pm-mat').value || null,
+    color: document.getElementById('pm-color').value || null,
+    thickness: document.getElementById('pm-thick').value || null,
+  };
+
+  bc.postMessage(payload);
+
+  const bar = document.getElementById('tilausBar');
+  bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
+  setTimeout(() => {
+    bar.innerHTML = `<input type="text" class="nimike-input" id="nmikeInput" placeholder="Nimike...">
+      <button class="btn-primary" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>`;
+  }, 2000);
+}
+
+// =============================================
+// SIDEBAR RESIZE
+// =============================================
+(function() {
+  const resizer = document.getElementById('sidebarResizer');
+  const panel   = document.getElementById('leftPanel');
+  const saved   = localStorage.getItem('parmaco_sidebar_w');
+  if (saved) {
+    document.documentElement.style.setProperty('--sidebar-width', saved + 'px');
+    updateWideClass(parseInt(saved));
+  }
+
+  function updateWideClass(w) {
+    panel.classList.toggle('wide',  w > 480);
+    panel.classList.toggle('xwide', w > 640);
+  }
+
+  let dragging = false, startX = 0, startW = 0;
+  resizer.addEventListener('mousedown', e => {
+    dragging = true;
+    startX = e.clientX;
+    startW = panel.getBoundingClientRect().width;
+    resizer.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const w = Math.max(280, Math.min(900, startW + e.clientX - startX));
+    document.documentElement.style.setProperty('--sidebar-width', w + 'px');
+    updateWideClass(w);
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    resizer.classList.remove('dragging');
+    document.body.style.userSelect = '';
+    localStorage.setItem('parmaco_sidebar_w', panel.getBoundingClientRect().width);
+  });
+})();
+
+
+// =============================================
+// MATERIAALIVALINTA
+// =============================================
+let pmProducts = [];
+
+async function fetchPmProducts() {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m%C2%B2&order=material,color', { headers: pmHeaders });
+    pmProducts = await r.json();
+  } catch(e) { console.log('Tuotteiden haku epäonnistui', e); }
+}
+
+function pmShowDropdown(ddId, items, onClickFn) {
+  const dd = document.getElementById(ddId);
+  if (!items.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = '';
+  items.forEach(v => {
+    const div = document.createElement('div');
+    div.textContent = v;
+    div.style.cssText = 'padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)';
+    div.onmouseover = () => div.style.background = 'var(--input-bg)';
+    div.onmouseout = () => div.style.background = '';
+    div.onclick = () => onClickFn(v);
+    dd.appendChild(div);
+  });
+  dd.style.display = 'block';
+}
+
+function pmFilterGroup(q) {
+  const groups = [...new Set(pmProducts.map(p => p.product_group).filter(Boolean))].sort()
+    .filter(g => !q || g.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-group-dd', groups, g => {
+    document.getElementById('pm-group-search').value = g;
+    document.getElementById('pm-group').value = g;
+    document.getElementById('pm-group-dd').style.display = 'none';
+    document.getElementById('pm-mat-search').value = '';
+    document.getElementById('pm-mat').value = '';
+    document.getElementById('pm-color-search').value = '';
+    document.getElementById('pm-color').value = '';
+    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+  });
+}
+
+function pmFilterMat(q) {
+  const group = document.getElementById('pm-group').value;
+  const mats = [...new Set(pmProducts.filter(p => !group || p.product_group === group).map(p => p.material))].sort()
+    .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-mat-dd', mats, m => {
+    document.getElementById('pm-mat-search').value = m;
+    document.getElementById('pm-mat').value = m;
+    document.getElementById('pm-mat-dd').style.display = 'none';
+    document.getElementById('pm-color-search').value = '';
+    document.getElementById('pm-color').value = '';
+    pmUpdateThick();
+  });
+}
+
+function pmFilterColor(q) {
+  const mat = document.getElementById('pm-mat').value;
+  const colors = [...new Set(pmProducts.filter(p => !mat || p.material === mat).map(p => p.color).filter(Boolean))].sort()
+    .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-color-dd', colors, c => {
+    document.getElementById('pm-color-search').value = c;
+    document.getElementById('pm-color').value = c;
+    document.getElementById('pm-color-dd').style.display = 'none';
+    pmUpdateThick();
+  });
+}
+
+function pmUpdateThick() {
+  const mat = document.getElementById('pm-mat').value;
+  const col = document.getElementById('pm-color').value;
+  const thicks = [...new Set(pmProducts.filter(p => p.material===mat && (!col || p.color===col)).map(p => p.thickness_mm))].sort((a,b)=>a-b);
+  const sel = document.getElementById('pm-thick');
+  sel.innerHTML = '<option value="">— valitse —</option>';
+  thicks.forEach(t => { const o = document.createElement('option'); o.value=t; o.textContent=t+' mm'; sel.appendChild(o); });
+  if (thicks.length === 1) sel.value = thicks[0];
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#pm-group-search') && !e.target.closest('#pm-group-dd'))
+    document.getElementById('pm-group-dd').style.display = 'none';
+  if (!e.target.closest('#pm-mat-search') && !e.target.closest('#pm-mat-dd'))
+    document.getElementById('pm-mat-dd').style.display = 'none';
+  if (!e.target.closest('#pm-color-search') && !e.target.closest('#pm-color-dd'))
+    document.getElementById('pm-color-dd').style.display = 'none';
+});
+
+fetchPmProducts();
+
+// =============================================
+// INIT
+// =============================================
+renderRivit();
+laske();
+</script>
+</body>
+</html>
