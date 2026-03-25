@@ -432,7 +432,7 @@
 
 <header>
   <div class="logo">KPT</div>
-  <h1>Yläpelti — Parmaco</h1>
+  <h1>Yläpelti</h1>
   <span class="subtitle">Alavesipelti / vakiomitat</span>
 </header>
 
@@ -441,6 +441,55 @@
   <!-- VASEN PANEELI -->
   <div class="left-panel" id="leftPanel">
     <div class="sidebar-resizer" id="sidebarResizer"></div>
+
+    <!-- Materiaalivalinta -->
+    <div class="section">
+      <div class="section-title">Materiaali</div>
+      <div class="field-grid">
+        <div class="field">
+          <label>Tuoteryhmä</label>
+          <div style="position:relative">
+            <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off"
+              oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)"
+              style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            <div id="pm-group-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+            <input type="hidden" id="pm-group">
+          </div>
+        </div>
+        <div class="field">
+          <label>Materiaali</label>
+          <div style="position:relative">
+            <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
+              oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)"
+              style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+            <input type="hidden" id="pm-mat">
+          </div>
+        </div>
+        <div class="field" id="pm-color-row">
+          <label>Väri</label>
+          <div style="position:relative">
+            <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off"
+              oninput="pmFilterColor(this.value)" onfocus="pmFilterColor(this.value)"
+              style="width:100%;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            <div id="pm-color-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+              background:var(--panel);border:1px solid var(--border);border-top:none;
+              max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+            <input type="hidden" id="pm-color">
+          </div>
+        </div>
+        <div class="field">
+          <label>Paksuus</label>
+          <select id="pm-thick" style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;width:100%;">
+            <option value="">— valitse —</option>
+          </select>
+        </div>
+      </div>
+    </div>
 
     <!-- Profiilin mitat -->
     <div class="section">
@@ -488,6 +537,10 @@
         <div class="field">
           <label>Etur °</label>
           <input type="number" id="etur" value="125" class="angle" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Päänkääntö mm</label>
+          <input type="number" id="paankaanto_mm" value="10" oninput="laske()">
         </div>
       </div>
     </div>
@@ -608,7 +661,7 @@ function renderRivit() {
       <input type="text" class="computed-row" placeholder="—" value="${r.paat}" readonly tabindex="-1">
       <input type="text" class="computed-row" placeholder="—" value="${r.kok}" readonly tabindex="-1">
       <input type="number" value="${r.kpl}" min="1"
-        oninput="rivit[${i}].kpl=+this.value; paivitaYhteenveto()">
+        oninput="rivit[${i}].kpl=+this.value; paivitaYhteenveto(); paivitaLeikkauslista()">
       <input type="text" class="huomio" placeholder="huomio" value="${r.huomio}"
         oninput="rivit[${i}].huomio=this.value">
       <button class="btn-remove" onclick="poistaRivi(${i})">×</button>
@@ -858,10 +911,73 @@ function piirra() {
         style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#555">${etukaannos}</text>`
     : '';
 
+  // Takareuna-suuntavektori (yksikkövektori): pEtuylapaa → pPintapaaty
+  // Kaikki pisteet lasketaan alkuperäisissä piirtokoordinaateissa,
+  // tx()/ty() hoitaa skaalauksen SVG-koordinaateiksi
+  const takaUx = (pPintapaaty.x - pEtuylapaa.x) / pinta;
+  const takaUy = (pPintapaaty.y - pEtuylapaa.y) / pinta;
+
+  // Apuviiva 1:
+  // A = pEtualapaa
+  // B = A + takareuna-suuntaan paanAlas mm
+  // C = B + suoraan ylös (etureuna + 10) mm
+  const apu1_A = pEtualapaa;
+  const apu1_B = {
+    x: apu1_A.x + takaUx * paanAlas,
+    y: apu1_A.y + takaUy * paanAlas
+  };
+  // apu1_C = pPaanYlosEnd — se piste missä päänkääntö ylös ja alas kohtaavat pintaviivalla
+  const apu1_C = {
+    x: apu1_B.x,
+    y: pPaanYlosEnd.y
+  };
+
+  // Apuviiva 2:
+  // 10mm pystysuora pätkä lasketaan mutta EI piirretä — pelkkä lähtöpiste 45° viivalle
+  // 45° viiva lähtee sen päästä ja päätyy suoraan pPaanYlosEnd-pisteeseen
+  const paankaanto_mm = getVal('paankaanto_mm');
+  const todellinen_kulma = 45 - kallistusDeg;
+  const apu2_suuntaRad = (90 - todellinen_kulma) * Math.PI / 180;
+  // Piilossa oleva lähtöpiste: suoraan 10mm pPaanYlosEndin yläpuolella
+  // x lasketaan niin että viiva tulee 45° kulmassa alas pPaanYlosEndiin
+  // tan(todellinen_kulma) = dx/dy → dx = dy * tan(todellinen_kulma)
+  const apu2_dy = paankaanto_mm;
+  const apu2_dx = apu2_dy * Math.tan(todellinen_kulma * Math.PI / 180);
+  const apu2_piilo = {
+    x: pPaanYlosEnd.x - apu2_dx,   // vasemmalle kohti takareunaa
+    y: pPaanYlosEnd.y - apu2_dy    // 10mm suoraan ylös
+  };
+  const apu2_A = apu2_piilo;
+  // Pysähtyy takareuna-viivaan (x = pPintapaaty.x)
+  let apu2_C;
+  if (Math.abs(takaUx) < 0.001) {
+    apu2_C = { x: apu2_A.x + takaUx * paanYlos, y: apu2_A.y + takaUy * paanYlos };
+  } else {
+    const t = (pPintapaaty.x - apu2_A.x) / takaUx;
+    apu2_C = { x: apu2_A.x + t * takaUx, y: apu2_A.y + t * takaUy };
+  }
+
+  const apuViivat = `
+    <!-- Apuviiva 1: etureunan alapäästä takareunaa kohti, sitten ylös -->
+    <polyline
+      points="${tx(apu1_A).toFixed(1)},${ty(apu1_A).toFixed(1)} ${tx(apu1_B).toFixed(1)},${ty(apu1_B).toFixed(1)} ${tx(apu1_C).toFixed(1)},${ty(apu1_C).toFixed(1)}"
+      fill="none" stroke="#bbb" stroke-width="1" stroke-dasharray="4,3" stroke-linejoin="round"/>
+    <!-- Yhdistävä viiva apu1_C:stä apu2_piiloon -->
+    <line x1="${tx(apu1_C).toFixed(1)}" y1="${ty(apu1_C).toFixed(1)}"
+          x2="${tx(apu2_piilo).toFixed(1)}" y2="${ty(apu2_piilo).toFixed(1)}"
+          stroke="#bbb" stroke-width="1" stroke-dasharray="4,3"/>
+    <!-- Apuviiva 2: 45° viiva piilopisteestä takareuna-suuntaan -->
+    <line x1="${tx(apu2_A).toFixed(1)}" y1="${ty(apu2_A).toFixed(1)}"
+          x2="${tx(apu2_C).toFixed(1)}" y2="${ty(apu2_C).toFixed(1)}"
+          stroke="#bbb" stroke-width="1" stroke-dasharray="4,3"/>
+  `;
+
   svg.innerHTML = `
     <rect width="100%" height="100%" fill="white"/>
     <!-- pintaviiva katkoviiva -->
     <path d="${pintaLine}" stroke="#aaa" stroke-width="1" stroke-dasharray="4,3" fill="none"/>
+    <!-- apuviivat päänkäännöksille -->
+    ${apuViivat}
     <!-- pintamerkki -->
     ${pintaMerkki}
     <!-- pääprofiili -->
@@ -901,6 +1017,15 @@ function piirra() {
     <text x="${(tx(pEtuylapaa)+28).toFixed(0)}"
           y="${(ty(pEtuylapaa)-8).toFixed(0)}"
           style="font-family:IBM Plex Mono,monospace;font-size:10px;fill:#3a8fe8">${kaannos_etu}° (kaato ${kallistusDeg}°)</text>
+    <!-- Kaato ja Etenemä vasemmassa alareunassa -->
+    <text x="8" y="${(Math.max(ty(pEtualapaa), ty(pTakaylapaa)) + 20).toFixed(0)}"
+      style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">
+      Kaato: ${Math.abs(pPintapaaty.y - pEtuylapaa.y).toFixed(1)} mm
+    </text>
+    <text x="8" y="${(Math.max(ty(pEtualapaa), ty(pTakaylapaa)) + 34).toFixed(0)}"
+      style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">
+      Etenemä: ${Math.abs(pPintapaaty.x - pEtuylapaa.x).toFixed(1)} mm
+    </text>
 
     <!-- Etukäännös mitta -->
     ${etukaannosLabel}
@@ -950,9 +1075,9 @@ function lisaaTilaukseen() {
     })),
     totalM2: voimassaOlevat.reduce((s, r) =>
       s + (parseFloat(r.kok)/1000) * (aihio/1000) * parseFloat(r.kpl), 0),
-    material: null,
-    color: null,
-    thickness: null,
+    material: document.getElementById('pm-mat').value || null,
+    color: document.getElementById('pm-color').value || null,
+    thickness: document.getElementById('pm-thick').value || null,
   };
 
   bc.postMessage(payload);
@@ -1004,6 +1129,97 @@ function lisaaTilaukseen() {
     localStorage.setItem('parmaco_sidebar_w', panel.getBoundingClientRect().width);
   });
 })();
+
+
+// =============================================
+// MATERIAALIVALINTA
+// =============================================
+let pmProducts = [];
+
+async function fetchPmProducts() {
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m%C2%B2&order=material,color', { headers: pmHeaders });
+    pmProducts = await r.json();
+  } catch(e) { console.log('Tuotteiden haku epäonnistui', e); }
+}
+
+function pmShowDropdown(ddId, items, onClickFn) {
+  const dd = document.getElementById(ddId);
+  if (!items.length) { dd.style.display = 'none'; return; }
+  dd.innerHTML = '';
+  items.forEach(v => {
+    const div = document.createElement('div');
+    div.textContent = v;
+    div.style.cssText = 'padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)';
+    div.onmouseover = () => div.style.background = 'var(--input-bg)';
+    div.onmouseout = () => div.style.background = '';
+    div.onclick = () => onClickFn(v);
+    dd.appendChild(div);
+  });
+  dd.style.display = 'block';
+}
+
+function pmFilterGroup(q) {
+  const groups = [...new Set(pmProducts.map(p => p.product_group).filter(Boolean))].sort()
+    .filter(g => !q || g.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-group-dd', groups, g => {
+    document.getElementById('pm-group-search').value = g;
+    document.getElementById('pm-group').value = g;
+    document.getElementById('pm-group-dd').style.display = 'none';
+    document.getElementById('pm-mat-search').value = '';
+    document.getElementById('pm-mat').value = '';
+    document.getElementById('pm-color-search').value = '';
+    document.getElementById('pm-color').value = '';
+    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+  });
+}
+
+function pmFilterMat(q) {
+  const group = document.getElementById('pm-group').value;
+  const mats = [...new Set(pmProducts.filter(p => !group || p.product_group === group).map(p => p.material))].sort()
+    .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-mat-dd', mats, m => {
+    document.getElementById('pm-mat-search').value = m;
+    document.getElementById('pm-mat').value = m;
+    document.getElementById('pm-mat-dd').style.display = 'none';
+    document.getElementById('pm-color-search').value = '';
+    document.getElementById('pm-color').value = '';
+    pmUpdateThick();
+  });
+}
+
+function pmFilterColor(q) {
+  const mat = document.getElementById('pm-mat').value;
+  const colors = [...new Set(pmProducts.filter(p => !mat || p.material === mat).map(p => p.color).filter(Boolean))].sort()
+    .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
+  pmShowDropdown('pm-color-dd', colors, c => {
+    document.getElementById('pm-color-search').value = c;
+    document.getElementById('pm-color').value = c;
+    document.getElementById('pm-color-dd').style.display = 'none';
+    pmUpdateThick();
+  });
+}
+
+function pmUpdateThick() {
+  const mat = document.getElementById('pm-mat').value;
+  const col = document.getElementById('pm-color').value;
+  const thicks = [...new Set(pmProducts.filter(p => p.material===mat && (!col || p.color===col)).map(p => p.thickness_mm))].sort((a,b)=>a-b);
+  const sel = document.getElementById('pm-thick');
+  sel.innerHTML = '<option value="">— valitse —</option>';
+  thicks.forEach(t => { const o = document.createElement('option'); o.value=t; o.textContent=t+' mm'; sel.appendChild(o); });
+  if (thicks.length === 1) sel.value = thicks[0];
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#pm-group-search') && !e.target.closest('#pm-group-dd'))
+    document.getElementById('pm-group-dd').style.display = 'none';
+  if (!e.target.closest('#pm-mat-search') && !e.target.closest('#pm-mat-dd'))
+    document.getElementById('pm-mat-dd').style.display = 'none';
+  if (!e.target.closest('#pm-color-search') && !e.target.closest('#pm-color-dd'))
+    document.getElementById('pm-color-dd').style.display = 'none';
+});
+
+fetchPmProducts();
 
 // =============================================
 // INIT
