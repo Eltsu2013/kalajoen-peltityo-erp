@@ -292,7 +292,7 @@
 </tspan><tspan
          x="489.69227"
          y="222.15765"
-         id="tspan52483"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d0bbb1bcb1babfb5befea0b5bca4b9a4a9bf90bbbfa4b9beb5a4feb3bfbd">[email&#160;protected]</a>
+         id="tspan52483"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="214a404d404b4e444f0f51444d554855584e614a4e55484f44550f424e4c">[email&#160;protected]</a>
 </tspan><tspan
          x="622.73773"
          y="265.09094"
@@ -2206,7 +2206,6 @@ function __openMallisto(groupId, profileType, nimike) {
 }
 
 function openVakiomallit() {
-  // Varmistetaan että tilaus on luotu ennen vakiomallien avaamista
   const open = () => {
     const context = {
       type: 'OPEN_PROFILE',
@@ -2422,4 +2421,15 @@ fetchCustomers();
       resizer.classList.remove('dragging');
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      document.
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
+
+</script>
+</body>
+</html>
