@@ -926,6 +926,31 @@ function lisaaTilaukseen() {
   }, 2000);
 }
 
+
+// Luetaan tilausContext localStoragesta
+const savedCtx = localStorage.getItem('kpt_open_profile');
+if (savedCtx) {
+  try {
+    tilausContext = JSON.parse(savedCtx);
+    localStorage.removeItem('kpt_open_profile');
+    if (tilausContext.orderId) {
+      // Näytä tilaus-palkki
+      const bar = document.getElementById('tilausBar') || document.getElementById('tilaus-bar');
+      if (bar) bar.style.display = 'flex';
+      // Aseta nimike
+      if (document.getElementById('nmikeInput') && tilausContext.nimike) {
+        document.getElementById('nmikeInput').value = tilausContext.nimike;
+      }
+    }
+  } catch(e) {}
+}
+
+function peruutaTilaus() {
+  tilausContext = null;
+  const bar = document.getElementById('tilausBar') || document.getElementById('tilaus-bar');
+  if (bar) bar.style.display = 'none';
+}
+
 // =============================================
 // SIDEBAR RESIZE
 // =============================================
@@ -1062,6 +1087,8 @@ fetchPmProducts();
 // =============================================
 renderRivit();
 laske();
+
+
 // Aseta Päänkääntö mm oletusarvo = Päät mm / 2 (yhden pään käännön verran)
 (function() {
   const { paat } = laskePaatMm();
