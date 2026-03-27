@@ -201,7 +201,16 @@
   }
 
   .field input.angle {
-    border-color: #444;
+    border-color: #3a5a8a;
+    color: #7ab3e8;
+  }
+
+  .field input.angle:focus {
+    border-color: #3a8fe8;
+  }
+
+  .field label.angle-label {
+    color: #7ab3e8;
   }
 
   /* Segments editor */
@@ -634,7 +643,7 @@
 </tspan><tspan
          x="489.69227"
          y="222.15765"
-         id="tspan52483">kalajoen.peltityo@kotinet.com
+         id="tspan52483"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3358525f52595c565d1d43565f475a474a5c73585c475a5d56471d505c5e">[email&#160;protected]</a>
 </tspan><tspan
          x="622.73773"
          y="265.09094"
@@ -2154,7 +2163,7 @@
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── Profiilityypit ───────────────────────────────────────────────
 const TYPES = {
   avp: {
@@ -2725,8 +2734,8 @@ const TYPES = {
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len;
       if (opts?.tupA) lev += vals.tupA_len;
-      if (opts?.nokka) lev += vals.nokka_len;
-      if (opts?.tupB) lev += vals.tupB_len;
+      lev += vals.nokka_len; // aina mukana
+      lev += vals.tupB_len;  // aina mukana
       return lev;
     }
   },
@@ -3665,7 +3674,7 @@ function renderProfileFields() {
     const existing = document.getElementById(f.id);
     const val = existing ? existing.value : f.default;
     div.innerHTML = `
-      <label>${f.label}</label>
+      <label class="${f.cls === 'angle' ? 'angle-label' : ''}">${f.label}</label>
       <input type="number" id="${f.id}" value="${val}" class="${f.cls || ''}" oninput="redraw()">
     `;
     grid.appendChild(div);
@@ -3907,7 +3916,7 @@ function redraw() {
   const kaatoRow = document.getElementById('kaato-row');
   const etenemäRow = document.getElementById('etenemä-row');
   let kaatoMm = null, etenemäMm = null;
-  if (pintaViiva && (activeType === 'avp' || activeType === 'kynnys')) {
+  if (pintaViiva && (activeType === 'avp' || activeType === 'avp2' || activeType === 'kynnys')) {
     etenemäMm = Math.abs(pintaViiva.p2.x - pintaViiva.p1.x).toFixed(0);
     kaatoMm = Math.abs(pintaViiva.p2.y - pintaViiva.p1.y).toFixed(0);
     document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
@@ -4226,14 +4235,14 @@ function lisaaTilaukseen() {
   const bar = document.getElementById('tilaus-bar');
   bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
   tilausContext = null;
-  setTimeout(() => window.close(), 800);
+  setTimeout(() => window.close(), 1500);
 }
 
 function peruutaTilaus() {
   tilausContext = null;
   document.getElementById('tilaus-bar').style.display = 'none';
-  setTimeout(() => window.close(), 300);
 }
+
 </script>
 </body>
 </html>
