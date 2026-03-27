@@ -1691,21 +1691,38 @@
             <input type="hidden" id="customer-select">
           </div>
           <button id="customer-edit-btn" onclick="openCustomerModal()" style="display:none;background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 10px;border-radius:3px;cursor:pointer;white-space:nowrap;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">✎ Muokkaa</button>
+          <button onclick="openNewCustomerModal()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 10px;border-radius:3px;cursor:pointer;white-space:nowrap;" onmouseover="this.style.borderColor='var(--success)';this.style.color='var(--success)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">+ Uusi</button>
         </div>
       </div>
 
-      <!-- Asiakkaan muokkausmodaali -->
+      <!-- Asiakkaan muokkaus/lisäys -modaali -->
       <div id="customer-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;">
-        <div style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:24px;width:420px;max-width:90vw;">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);margin-bottom:16px;font-weight:600;">Muokkaa asiakkaan tietoja</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div>
-              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Nimi</label>
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:24px;width:480px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+          <div id="cmod-title" style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--accent);margin-bottom:16px;font-weight:600;">Muokkaa asiakkaan tietoja</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="grid-column:1/-1">
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Asiakasnimi *</label>
               <input type="text" id="cmod-name" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
             </div>
             <div>
-              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Osoite</label>
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Yhteyshenkilö</label>
+              <input type="text" id="cmod-contact" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Y-tunnus</label>
+              <input type="text" id="cmod-business-id" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div style="grid-column:1/-1">
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Laskutusosoite</label>
               <input type="text" id="cmod-address" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Postinumero</label>
+              <input type="text" id="cmod-postal" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Kaupunki</label>
+              <input type="text" id="cmod-city" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
             </div>
             <div>
               <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Puhelin</label>
@@ -1714,6 +1731,18 @@
             <div>
               <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Sähköposti</label>
               <input type="text" id="cmod-email" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Sähköposti 2</label>
+              <input type="text" id="cmod-email2" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">OVT-numero</label>
+              <input type="text" id="cmod-ovt" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;">
+            </div>
+            <div style="grid-column:1/-1">
+              <label style="font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;">Muistiinpanot</label>
+              <textarea id="cmod-notes" rows="2" style="width:100%;margin-top:4px;background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:7px 10px;border-radius:3px;resize:vertical;"></textarea>
             </div>
           </div>
           <div id="cmod-status" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--success);margin-top:10px;min-height:16px;"></div>
@@ -2262,18 +2291,58 @@ function openVakiomallit() {
   }
 }
 
-// ── Asiakkaan muokkaus ───────────────────────────────────────────
+// ── Asiakkaan muokkaus / lisäys ──────────────────────────────────
+let cmodMode = 'edit'; // 'edit' tai 'new'
+
+function cmodFill(c) {
+  document.getElementById('cmod-name').value       = c.name              || '';
+  document.getElementById('cmod-contact').value    = c.contact_person    || '';
+  document.getElementById('cmod-business-id').value = c.business_id     || '';
+  document.getElementById('cmod-address').value    = c.billing_address   || '';
+  document.getElementById('cmod-postal').value     = c.billing_postal_code || '';
+  document.getElementById('cmod-city').value       = c.billing_city      || '';
+  document.getElementById('cmod-phone').value      = c.phone             || '';
+  document.getElementById('cmod-email').value      = c.email             || '';
+  document.getElementById('cmod-email2').value     = c.email2            || '';
+  document.getElementById('cmod-ovt').value        = c.ovt_number        || '';
+  document.getElementById('cmod-notes').value      = c.notes             || '';
+}
+
+function cmodData() {
+  return {
+    name:                 document.getElementById('cmod-name').value.trim(),
+    contact_person:       document.getElementById('cmod-contact').value.trim(),
+    business_id:          document.getElementById('cmod-business-id').value.trim(),
+    billing_address:      document.getElementById('cmod-address').value.trim(),
+    billing_postal_code:  document.getElementById('cmod-postal').value.trim(),
+    billing_city:         document.getElementById('cmod-city').value.trim(),
+    phone:                document.getElementById('cmod-phone').value.trim(),
+    email:                document.getElementById('cmod-email').value.trim(),
+    email2:               document.getElementById('cmod-email2').value.trim(),
+    ovt_number:           document.getElementById('cmod-ovt').value.trim(),
+    notes:                document.getElementById('cmod-notes').value.trim(),
+  };
+}
+
 function openCustomerModal() {
+  cmodMode = 'edit';
   const id = document.getElementById('customer-select').value;
   if (!id) return;
   const c = customers.find(c => c.id === id);
   if (!c) return;
-  document.getElementById('cmod-name').value    = c.name    || '';
-  document.getElementById('cmod-address').value = c.address || '';
-  document.getElementById('cmod-phone').value   = c.phone   || '';
-  document.getElementById('cmod-email').value   = c.email   || '';
+  document.getElementById('cmod-title').textContent = 'Muokkaa asiakkaan tietoja';
+  cmodFill(c);
   document.getElementById('cmod-status').textContent = '';
   document.getElementById('customer-modal').style.display = 'flex';
+}
+
+function openNewCustomerModal() {
+  cmodMode = 'new';
+  document.getElementById('cmod-title').textContent = 'Lisää uusi asiakas';
+  cmodFill({});
+  document.getElementById('cmod-status').textContent = '';
+  document.getElementById('customer-modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('cmod-name').focus(), 100);
 }
 
 function closeCustomerModal() {
@@ -2281,29 +2350,43 @@ function closeCustomerModal() {
 }
 
 async function saveCustomer() {
-  const id = document.getElementById('customer-select').value;
-  if (!id) return;
-  const body = {
-    name:    document.getElementById('cmod-name').value.trim(),
-    address: document.getElementById('cmod-address').value.trim(),
-    phone:   document.getElementById('cmod-phone').value.trim(),
-    email:   document.getElementById('cmod-email').value.trim(),
-  };
+  const body = cmodData();
+  if (!body.name) {
+    document.getElementById('cmod-status').style.color = 'var(--danger)';
+    document.getElementById('cmod-status').textContent = 'Nimi on pakollinen!';
+    return;
+  }
   const statusEl = document.getElementById('cmod-status');
   statusEl.style.color = 'var(--text-dim)';
   statusEl.textContent = 'Tallennetaan...';
   try {
-    const r = await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + id, {
-      method: 'PATCH',
-      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-      body: JSON.stringify(body)
-    });
-    if (!r.ok) throw new Error(await r.text());
-    // Päivitä paikallinen customers-lista
-    const idx = customers.findIndex(c => c.id === id);
-    if (idx >= 0) customers[idx] = { ...customers[idx], ...body };
-    // Päivitä hakukenttä jos nimi muuttui
-    document.getElementById('customer-search').value = body.name;
+    if (cmodMode === 'edit') {
+      const id = document.getElementById('customer-select').value;
+      const r = await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const idx = customers.findIndex(c => c.id === id);
+      if (idx >= 0) customers[idx] = { ...customers[idx], ...body };
+      document.getElementById('customer-search').value = body.name;
+    } else {
+      // Uusi asiakas
+      const r = await fetch(SUPABASE_URL + '/rest/v1/customers', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify({ ...body, is_active: true })
+      });
+      if (!r.ok) throw new Error(await r.text());
+      const [newC] = await r.json();
+      customers.push(newC);
+      // Valitse uusi asiakas automaattisesti
+      document.getElementById('customer-search').value = newC.name;
+      document.getElementById('customer-select').value = newC.id;
+      document.getElementById('customer-edit-btn').style.display = 'block';
+      saveOrderMeta();
+    }
     statusEl.style.color = 'var(--success)';
     statusEl.textContent = '✓ Tallennettu!';
     setTimeout(closeCustomerModal, 1200);
