@@ -2315,10 +2315,32 @@ function renderItem(item, groupId) {
       </div>
       <div class="item-actions">
         <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="editItem('${groupId}','${item.id}')">✎ Muokkaa</button>
+        <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="copyItem('${groupId}','${item.id}')" title="Kopioi tuote">⧉ Kopioi</button>
         <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteItem('${groupId}','${item.id}')">✕</button>
       </div>
     </div>
   `;
+}
+
+function copyItem(groupId, itemId) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  const item = group.items.find(i => i.id === itemId);
+  if (!item) return;
+
+  // Luodaan kopio itemistä uudella id:llä
+  const kopio = {
+    ...item,
+    id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+    nimike: item.nimike + ' (kopio)',
+  };
+
+  // Lisätään kopion jälkeen alkuperäisen perään
+  const idx = group.items.findIndex(i => i.id === itemId);
+  group.items.splice(idx + 1, 0, kopio);
+
+  renderGroups();
+  saveOrder();
 }
 
 function editItem(groupId, itemId) {
