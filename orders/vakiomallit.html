@@ -165,7 +165,7 @@
 <div id="tilaus-bar">
   <span style="color:#3dba6e;font-weight:600">● TILAUS AUKI</span>
   <span id="tilaus-ryhma" style="color:#e8e8e8"></span>
-  <span id="tilaus-nimike-bar" style="color:#e8a020;font-weight:600"></span>
+  <input type="text" id="nmikeInput" placeholder="Nimike..." style="background:#1e2e1e;border:1px solid #2a6a4a;color:#e8e8e8;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 10px;border-radius:3px;width:180px;">
   <button onclick="lisaaTilaukseen()" style="margin-left:auto;background:#3dba6e;color:#1a1a1a;border:none;border-radius:4px;padding:6px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;">
     ✓ Lisää tilaukseen
   </button>
@@ -270,11 +270,7 @@
       </div>
     </div>
 
-    <!-- Nimike + Lisää tilaukseen -->
-    <div class="tilaus-action" id="tilausAction">
-      <input type="text" class="nimike-input" id="nmikeInput" placeholder="Nimike...">
-      <button class="btn-primary" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
-    </div>
+    <!-- Nimike pidetään piilossa, käytetään tilaus-barin nmikeInput -->
 
   </div>
 
@@ -483,7 +479,7 @@ const IKKUNAPELLIT = {
     name: 'Alapelti',
     nimike: 'Alapelti',
     takareuna: 20, paanYlos: 145, paanAlas: 35, etureuna: 60, etukaannos: 10,
-    kaannos_taka: 64, kaannos_etu: 64, etur: 125, pykala: 0, tyovara: 1
+    kaannos_taka: 64, kaannos_etu: 64, etur: 125, pykala: 0, tyovara: 1, paankaantoMm: 30
   }
 };
 
@@ -571,7 +567,7 @@ function renderFields() {
           <div class="field"><label>Etureuna mm</label><input type="number" id="f_etureuna" value="${p.etureuna}" oninput="laske()"></div>
           <div class="field"><label>Etukäännös mm</label><input type="number" id="f_etukaannos" value="${p.etukaannos}" oninput="laske()"></div>
           <div class="field"><label>Pykälä mm</label><input type="number" id="f_pykala" value="${p.pykala}" oninput="laske()"></div>
-          <div class="field"><label>Päänkääntö mm</label><input type="number" id="f_paankaanto_mm" value="10" oninput="laske()"></div>
+          <div class="field"><label>Päänkääntö mm</label><input type="number" id="f_paankaanto_mm" value="${p.paankaantoMm || 10}" oninput="laske()"></div>
         </div>
       </div>
       <div class="section">
@@ -591,6 +587,17 @@ function renderFields() {
     : (PROFILES[activeType]?.nimike || '');
   const ni = document.getElementById('nmikeInput');
   if (ni) ni.value = nimike;
+  // Päivitä profiilin nimi ylös kentän yläpuolelle
+  let nameEl = document.getElementById('active-profile-name');
+  if (!nameEl) {
+    nameEl = document.createElement('div');
+    nameEl.id = 'active-profile-name';
+    nameEl.style.cssText = 'padding:8px 16px 0;font-family:IBM Plex Mono,monospace;font-size:12px;color:var(--accent);font-weight:600;';
+    container.before(nameEl);
+  }
+  nameEl.textContent = activeType === 'ikkunapellit' && activeIkkuna
+    ? IKKUNAPELLIT[activeIkkuna].name
+    : (PROFILES[activeType]?.name || '');
 }
 
 // =============================================
@@ -876,20 +883,26 @@ function buildKynnys1() {
   const suora_ang = gv('f_suora_ang'), kulma_ang = gv('f_kulma_ang');
   const nokka_ang = gv('f_nokka_ang'), kaannos_taka = gv('f_kaannos_taka');
 
-  const pEtuAla = { x: 0, y: 0 };
-  const pEtuYla = { x: 0, y: -etureuna };
+  // Lähtöpiste = pinnan vasen pää (pA0)
+  const pA0 = { x: 0, y: 0 };
+  const pintaKaato = 90 - kulma_ang;
+  const pKulma = { x: pA0.x + pinta*Math.cos(deg(pintaKaato)), y: pA0.y + pinta*Math.sin(deg(pintaKaato)) };
+
+  // Etureuna lähtee pKulmasta suoraan alas
+  const pEtuYla = pKulma;
+  const pEtuAla = { x: pKulma.x, y: pKulma.y + etureuna };
+
+  // Tippanokka etureunan alapäästä vasemmalle
   const nokkaSuunta = 90 - nokka_ang;
   const pNokka = { x: pEtuAla.x + tippanokka*Math.cos(deg(nokkaSuunta)), y: pEtuAla.y + tippanokka*Math.sin(deg(nokkaSuunta)) };
-  const pintaKaato = 90 - kulma_ang;
-  const pKulma = { x: pEtuYla.x + pinta*Math.cos(deg(pintaKaato)), y: pEtuYla.y + pinta*Math.sin(deg(pintaKaato)) };
 
-  let harjaStart = pKulma;
+  // Suora1 lähtee pA0:sta vasemmalle
   const suora1Suunta = pintaKaato + (180 - suora_ang);
-  const harjaEnd = { x: harjaStart.x + suora1*Math.cos(deg(suora1Suunta)), y: harjaStart.y + suora1*Math.sin(deg(suora1Suunta)) };
+  const harjaEnd = { x: pA0.x + suora1*Math.cos(deg(suora1Suunta)), y: pA0.y + suora1*Math.sin(deg(suora1Suunta)) };
   const takaAng = suora1Suunta + kaannos_taka;
   const takaEnd = { x: harjaEnd.x + takareuna*Math.cos(deg(takaAng)), y: harjaEnd.y + takareuna*Math.sin(deg(takaAng)) };
 
-  const pts = [pNokka, pEtuAla, pEtuYla, pKulma, harjaStart, harjaEnd, takaEnd];
+  const pts = [pNokka, pEtuAla, pEtuYla, pA0, harjaEnd, takaEnd];
   const { svg, tx, ty } = setupSVG(pts);
   const kaato = Math.abs(pKulma.y - pEtuYla.y).toFixed(1);
 
@@ -903,16 +916,16 @@ function buildKynnys1() {
     const aNx = 0, aNy = -1;
     const pA0s = { x: pEtuYla.x+aNx*pp, y: pEtuYla.y+aNy*pp };
     const pKulmas = { x: pKulma.x+aNx*pp, y: pKulma.y+aNy*pp };
-    const bDx = harjaEnd.x-harjaStart.x, bDy = harjaEnd.y-harjaStart.y;
+    const bDx = harjaEnd.x-pA0.x, bDy = harjaEnd.y-pA0.y;
     const bLen = Math.sqrt(bDx*bDx+bDy*bDy);
     const bNx = -bDy/bLen, bNy = bDx/bLen;
-    const hSs = { x: harjaStart.x+bNx*pp, y: harjaStart.y+bNy*pp };
+    const hSs = { x: pA0.x+bNx*pp, y: pA0.y+bNy*pp };
     const hEs = { x: harjaEnd.x+bNx*pp, y: harjaEnd.y+bNy*pp };
     paanNostoSVG = [
       `<line x1="${tx(pEtuYla).toFixed(1)}" y1="${ty(pEtuYla).toFixed(1)}" x2="${tx(pA0s).toFixed(1)}" y2="${ty(pA0s).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(pA0s).toFixed(1)}" y1="${ty(pA0s).toFixed(1)}" x2="${tx(pKulmas).toFixed(1)}" y2="${ty(pKulmas).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(pKulma).toFixed(1)}" y1="${ty(pKulma).toFixed(1)}" x2="${tx(pKulmas).toFixed(1)}" y2="${ty(pKulmas).toFixed(1)}" ${dash}/>`,
-      `<line x1="${tx(harjaStart).toFixed(1)}" y1="${ty(harjaStart).toFixed(1)}" x2="${tx(hSs).toFixed(1)}" y2="${ty(hSs).toFixed(1)}" ${dash}/>`,
+      `<line x1="${tx(pA0).toFixed(1)}" y1="${ty(pA0).toFixed(1)}" x2="${tx(hSs).toFixed(1)}" y2="${ty(hSs).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(hSs).toFixed(1)}" y1="${ty(hSs).toFixed(1)}" x2="${tx(hEs).toFixed(1)}" y2="${ty(hEs).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(harjaEnd).toFixed(1)}" y1="${ty(harjaEnd).toFixed(1)}" x2="${tx(hEs).toFixed(1)}" y2="${ty(hEs).toFixed(1)}" ${dash}/>`
     ].join('');
@@ -924,10 +937,10 @@ function buildKynnys1() {
     <text x="${(tx(pEtuYla)+8).toFixed(0)}" y="${((ty(pEtuYla)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
     <text x="${(tx(pNokka)+8).toFixed(0)}" y="${((ty(pEtuAla)+ty(pNokka))/2+12).toFixed(0)}" text-anchor="middle" style="${BL}">${tippanokka}</text>
     <text x="${((tx(pEtuYla)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pEtuYla),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${pinta}</text>
-    <text x="${((tx(harjaStart)+tx(harjaEnd))/2-12).toFixed(0)}" y="${((ty(harjaStart)+ty(harjaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${suora1}</text>
+    <text x="${((tx(pA0)+tx(harjaEnd))/2-12).toFixed(0)}" y="${((ty(pA0)+ty(harjaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${suora1}</text>
     <text x="${((tx(harjaEnd)+tx(takaEnd))/2-12).toFixed(0)}" y="${((ty(harjaEnd)+ty(takaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${takareuna}</text>
     <text x="${(tx(pEtuYla)-28).toFixed(0)}" y="${(ty(pEtuYla)+18).toFixed(0)}" style="${AN}">${kulma_ang}°</text>
-    <text x="${(tx(harjaStart)-10).toFixed(0)}" y="${(ty(harjaStart)+18).toFixed(0)}" style="${AN}">${suora_ang}°</text>
+    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+18).toFixed(0)}" style="${AN}">${suora_ang}°</text>
     <text x="8" y="${(Math.max(ty(pEtuAla),ty(pNokka))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
 }
 
@@ -963,7 +976,8 @@ function buildAlaslaskun() {
     <text x="${(tx(pA1)+10).toFixed(0)}" y="${((ty(pA1)+ty(pCend))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${seg2}</text>
     <text x="${((tx(pBend)+tx(pTupB))/2+14).toFixed(0)}" y="${((ty(pBend)+ty(pTupB))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupB}</text>
     <text x="${(tx(pA0)+8).toFixed(0)}" y="${(ty(pA0)+20).toFixed(0)}" style="${AN}">${ang0}°</text>
-    <text x="${(tx(pA1)-28).toFixed(0)}" y="${(ty(pA1)+18).toFixed(0)}" style="${AN}">${ang1}°</text>`;
+    <text x="${(tx(pA1)-28).toFixed(0)}" y="${(ty(pA1)+18).toFixed(0)}" style="${AN}">${ang1}°</text>
+    <text x="8" y="${(Math.max(...[pA0,pA1,pBend,pCend,pTupB].map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Etenemä B: ${Math.abs(pA0.x-pBend.x).toFixed(1)} mm</text>`;
 }
 
 function buildHattupelti() {
@@ -1034,9 +1048,10 @@ function buildKattolista() {
     <line x1="${tx(pBend).toFixed(1)}" y1="${ty(pBend).toFixed(1)}" x2="${tx(pTupB).toFixed(1)}" y2="${ty(pTupB).toFixed(1)}" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
     <text x="${((tx(pA0)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${seg0}</text>
     <text x="${((tx(pKulma)+tx(pBend))/2-12).toFixed(0)}" y="${((ty(pKulma)+ty(pBend))/2).toFixed(0)}" text-anchor="middle" style="${BL}">${seg1}</text>
-    <text x="${((tx(pA0)+tx(pTupA))/2+14).toFixed(0)}" y="${((ty(pA0)+ty(pTupA))/2).toFixed(0)}" dominant-baseline="middle" style="${LS}">${tupA}</text>
-    <text x="${((tx(pBend)+tx(pTupB))/2+12).toFixed(0)}" y="${((ty(pBend)+ty(pTupB))/2).toFixed(0)}" dominant-baseline="middle" style="${LS}">${tupB}</text>
-    <text x="${(tx(pKulma)+8).toFixed(0)}" y="${(ty(pKulma)+18).toFixed(0)}" style="${AN}">${ang0}°</text>`;
+    <text x="${((tx(pA0)+tx(pTupA))/2+14).toFixed(0)}" y="${((ty(pA0)+ty(pTupA))/2+14).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupA}</text>
+    <text x="${((tx(pBend)+tx(pTupB))/2+12).toFixed(0)}" y="${((ty(pBend)+ty(pTupB))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupB}</text>
+    <text x="${(tx(pKulma)+8).toFixed(0)}" y="${(ty(pKulma)+18).toFixed(0)}" style="${AN}">${ang0}°</text>
+    <text x="8" y="${(Math.max(...[pA0,pBend,pKulma,pTupA,pTupB].map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Etenemä B: ${Math.abs(pKulma.x-pBend.x).toFixed(1)} mm</text>`;
 }
 
 // --- Räystäslista (alavp2) ---
@@ -1119,6 +1134,7 @@ function peruutaTilaus() {
   tilausContext = null;
   document.getElementById('tilaus-bar').style.display = 'none';
   document.getElementById('mainGrid').classList.remove('with-tilausbar');
+  if (window.opener && !window.opener.closed) window.close();
 }
 
 function goBack(e) {
@@ -1247,7 +1263,7 @@ if (savedCtx) {
       document.getElementById('mainGrid').classList.add('with-tilausbar');
       document.getElementById('tilaus-ryhma').textContent = (tilausContext.groupName||'') + (tilausContext.groupName?' —':'');
       document.getElementById('tilaus-nimike-bar').textContent = tilausContext.nimike||'';
-      document.getElementById('tilausAction').classList.add('visible');
+      // tilausAction poistettu — nimike on tilaus-baarissa
     }
   } catch(e) {}
 }
