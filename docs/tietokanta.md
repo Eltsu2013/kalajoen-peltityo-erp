@@ -38,7 +38,25 @@ Tilausrivit.
 Kentät: order_id, group_name, group_order, item_order, nimike, profile_type, profile_data (jsonb), aihio_width_mm, quantity.
 customers
 Asiakkaat. Täytetään Access-siirrolla.
-Kentät: name, address, phone, email, jne.
+Kentät:
+id, created_at, is_active
+name — asiakasnimi
+contact_person — yhteyshenkilö (lisätty 27.3.2026)
+customer_number — asiakasnumero (lisätty 27.3.2026)
+business_id — Y-tunnus
+billing_address — laskutusosoite
+billing_postal_code — postinumero
+billing_city — kaupunki
+billing_country — maa
+phone — puhelin
+email — sähköposti
+email2 — sähköposti 2 (lisätty 27.3.2026)
+ovt_number — OVT-numero verkkolaskutusta varten (lisätty 27.3.2026)
+notes — muistiinpanot (huom: vanhoilla asiakkailla notes-kentässä voi olla yhteyshenkilötietoja ennen contact_person-sarakkeen lisäystä — korjataan Access-siirrossa)
+RLS-politiikat:
+SELECT: anon saa lukea (oletuksena)
+INSERT: "Allow anon insert customers" — anon saa lisätä
+UPDATE: "Allow anon update customers" — anon saa päivittää
 Muut taulut
 suppliers, batches, warehouses, user_warehouses, optimization_batches.
 Edge Functions
@@ -56,6 +74,7 @@ GitHub Pages -tiedostot
 Tiedosto	Kuvaus
 maps/verstaspohja_mitoitettu.html	Interaktiivinen varastokartta
 orders/peltipiirturi.html	Peltiprofiilien piirtotyökalu (Mallisto)
+orders/vakiomallit.html	Parmaco-vakiomallit (yhtenäinen sivu)
 orders/tilaus.html	Tilauslomake
 Hyödyllisiä SQL-komentoja
 ```sql
@@ -81,4 +100,8 @@ FROM orders o
 LEFT JOIN customers c ON o.customer_id = c.id
 JOIN order_items oi ON oi.order_id = o.id
 ORDER BY o.order_date DESC;
+
+-- Asiakkaiden sarakkeet
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_name = 'customers' ORDER BY ordinal_position;
 ```
