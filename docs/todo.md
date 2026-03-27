@@ -70,8 +70,6 @@ Pienet karttatyöt
 [ ] IN-R-02 klikattavaksi kartalla
 [ ] IN-R-01 tasot 1 ja 2 kartalle
 [ ] Vasen seinä (IN-L) tarkistus
-Tilausmoduuli — viimeistelyä
-[ ] Seinänvieripelti: kulma ei toimi oikein (seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa sitä)
 [ ] Asiakkaat-sivu (erillinen hallintasivu) — perusmuokkaus toimii jo tilaus.html:stä
 [ ] Access-siirto asiakkaat — notes-sarakkeessa on yhteyshenkilötietoja vanhoilta asiakkailta, siirron yhteydessä pitää siirtää notes → contact_person oikeille asiakkaille
 Ulkoasu — Retool
