@@ -2532,6 +2532,49 @@ function buildKynnys1() {
     <text x="8" y="${(Math.max(...pts.map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
 }
 
+function buildUlista(seg0, seg1, seg2, tupB, ang0, ang1, tupC) {
+  // Geometria täsmälleen kuten vanhoissa erillisissä sivuissa (alaslaskun_kappalista.html, hattupelti.html)
+  const pA0 = { x: 0, y: 0 };
+  const pA1 = { x: seg0, y: 0 };
+
+  // Vasen sivu: geometrinen suunta = 180 - syötetty kulma
+  const suuntaB = 180 - ang0;
+  const pBend = {
+    x: pA0.x + seg1 * Math.cos(deg(suuntaB)),
+    y: pA0.y + seg1 * Math.sin(deg(suuntaB))
+  };
+
+  // Tupla vasen: lähtee B:n päästä, suunta = suuntaB - 172°
+  const tupSuunta = suuntaB - 172;
+  const pTupB = {
+    x: pBend.x + tupB * Math.cos(deg(tupSuunta)),
+    y: pBend.y + tupB * Math.sin(deg(tupSuunta))
+  };
+
+  // Oikea sivu: suunta = syötetty kulma suoraan (ei peilausta)
+  const suuntaC = ang1;
+  const pCend = {
+    x: pA1.x + seg2 * Math.cos(deg(suuntaC)),
+    y: pA1.y + seg2 * Math.sin(deg(suuntaC))
+  };
+
+  // Tupla oikea: lähtee C:n päästä, suunta = suuntaC + 172° (valinnainen)
+  let pTupC = null;
+  if (tupC && tupC > 0) {
+    const tupCSuunta = suuntaC + 172;
+    pTupC = {
+      x: pCend.x + tupC * Math.cos(deg(tupCSuunta)),
+      y: pCend.y + tupC * Math.sin(deg(tupCSuunta))
+    };
+  }
+
+  const pts = pTupC
+    ? [pTupB, pBend, pA0, pA1, pCend, pTupC]
+    : [pTupB, pBend, pA0, pA1, pCend];
+
+  return { pA0, pA1, pBend, pCend, pTupB, pTupC, pts };
+}
+
 function buildAlaslaskun() {
   const seg0=gv('f_seg0'), seg1=gv('f_seg1'), seg2=gv('f_seg2'), tupB=gv('f_tupB');
   const ang0=gv('f_ang0'), ang1=gv('f_ang1');
