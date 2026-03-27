@@ -1,5 +1,5 @@
 Kalajoen Peltityö ERP — Tilanne ja tekolista
-Projektin tila (24. maaliskuuta 2026)
+Projektin tila (27. maaliskuuta 2026)
 VALMIS ✅
 Varastonhallinta
 Tietokantarakenne (Supabase)
@@ -16,15 +16,26 @@ GitHub kansiorakenne siistiytyi (docs/, maps/, supabase/functions/)
 Supabase unit-arvot päivitetty: mm/Mm → m², m/M → m, kpl/Kpl → kpl
 Tilausmoduuli (GitHub Pages)
 peltipiirturi.html — peltiprofiilien piirtotyökalu (Mallisto)
-Profiilityypit: Alavesipelti, Alavp 2 (ikkunapelti), Ulkonurkka, Sisänurkka, Jiiripelti, Seinänvieripelti, Eturäystäspelti, Päätypelti, Päätypelti huopa, U-lista u/s, Kynnys, Hattulista, Z-lista, Peitelista, Vapaa profiili
+Profiilityypit: Alavesipelti, Alavp 2, Ulkonurkka, Sisänurkka, Jiiripelti, Seinänvieripelti, Eturäystäspelti, Päätypelti, Päätypelti huopa, U-lista u/s, Kynnys, Hattulista, Z-lista, Peitelista, Vapaa profiili
 Napit ryhmitelty: MUUT ja KATOLLE osiot
 SVG-esikatselu reaaliajassa, pintamerkki, kaato/nousu/etenemä/kokonaismitta
 Pituustaulukko (mitta, päät, kok, kpl, huomio)
 Aihioleveyslaskenta
 Nimike-kenttä muokattavissa ennen tilauksen lisäystä
-BroadcastChannel-integraatio tilauslomakkeeseen
 Tuoteryhmä/materiaali/väri/paksuus-valinta — hakee Supabasesta, suodattuu unit=m² mukaan
 Sidebar resize — vetoelementti, muistaa leveyden, 2/3/4 saraketta leveyden mukaan
+UUSI: Kulma-kentät siniharmaina (border + teksti), mitta-kentät normaalit — visuaalinen erottelu
+KORJATTU: Alavp 2 näyttää kaaton ja etenemän kuten Alavesipelti
+KORJATTU: Eturäystäspelti laskee Tippanokka mm ja Tupla B mm mukaan aihioleveyteen
+vakiomallit.html — Parmaco-vakiomallien piirtotyökalu (UUSi yhtenäinen sivu)
+Kaikki Parmaco-vakiomallit yhdellä sivulla profiilivalintanapein
+Profiilityypit: Ikkunapellit (Yläpelti / Alapelti), Kynnyspelti 1, Alaslaskun kappalista, Hattupelti viipalesaumaan, Ulkoverhouksen katkaisulista, Kattolista, Räystäslista
+Yläpelti ja Alapelti: Pythagoraan kaavalla lasketut päät, sama kuin Alavesipelti
+Muut profiilit: käyttäjä syöttää Päät itse
+Tuoteryhmä/materiaali/väri/paksuus-valinta Supabasesta
+Tilaus-palkki headerin alla — Lisää tilaukseen sulkee ikkunan, Peruuta sulkee ikkunan
+Sidebar resize, varoitus jos vaihtaa profiilia ja rivejä täytetty
+Vanhat erilliset sivut (ylapelti.html, alapellit.html jne.) jäävät GitHubiin mutta niitä ei enää käytetä
 tilaus.html — tilauslomake
 Ryhmät (lisää, kopioi, poista, nimeä uudelleen)
 Pellit ryhmitelty aihioleveyden mukaan ryhmän sisällä
@@ -34,9 +45,16 @@ Asiakkaat haetaan Supabasesta, haku kirjoittamalla
 Tilaus tallentuu Supabaseen (orders + order_items)
 Pellin muokkaus jälkikäteen Malliston kautta
 Materiaali/väri/paksuus valitaan Mallistossa — näkyy tilausrivillä
-Kappaletavara-lomake (nimike, pituus m, määrä, yksikkö, huomio) — nimike hakee Supabasesta unit=m ja kpl tuotteet
-Sidebar resize — vetoelementti, muistaa leveyden, kaksi saraketta leveällä näytöllä
-10 asiakasta lisätty Supabaseen
+Kappaletavara-lomake (nimike, pituus m, määrä, yksikkö, huomio)
+Sidebar resize — vetoelementti, muistaa leveyden
+UUSI: Avaa Vakiomallit → -nappi sidebarissa ja headerissa
+UUSI: Tuotekohtainen ⧉ Kopioi -nappi jokaisen tuoterivin Muokkaa-napin vieressä
+UUSI: Asiakkaan ✎ Muokkaa -nappi ilmestyy kun asiakas valittu — avaa modaalin
+UUSI: + Uusi asiakas -nappi — lisää asiakkaan suoraan tilauksen teon yhteydessä
+Asiakasmodaalissa: Asiakasnimi, Yhteyshenkilö, Y-tunnus, Laskutusosoite, Postinumero, Kaupunki, Puhelin, Sähköposti, Sähköposti 2, OVT-numero, Muistiinpanot
+Supabase — customers-taulu päivitykset
+Lisätty sarakkeet: contact_person, customer_number, email2, ovt_number
+Lisätty RLS-politiikat: INSERT ja UPDATE anon-käyttäjälle
 ---
 KESKEN / TEKOLISTA ⏳
 Pienet karttatyöt
@@ -45,8 +63,8 @@ Pienet karttatyöt
 [ ] Vasen seinä (IN-L) tarkistus
 Tilausmoduuli — viimeistelyä
 [ ] Seinänvieripelti: kulma ei toimi oikein (seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa sitä)
-[ ] Asiakkaan muokkausnappi tilauslomakkeeseen — pieni Muokkaa-nappi asiakkaan vieressä laskutustietojen päivitykseen
-[ ] Vakiomallit yrityksille — uusi chat
+[ ] Asiakkaat-sivu (erillinen hallintasivu) — perusmuokkaus toimii jo tilaus.html:stä
+[ ] Access-siirto asiakkaat — notes-sarakkeessa on yhteyshenkilötietoja vanhoilta asiakkailta, siirron yhteydessä pitää siirtää notes → contact_person oikeille asiakkaille
 Isommat kokonaisuudet
 [ ] Kartta + taulukko yhdistäminen Retoolissa
 [ ] QR-koodit hyllyihin
@@ -54,6 +72,21 @@ Isommat kokonaisuudet
 [ ] Laskutus ja maksuseuranta
 [ ] Muut varastot inventointi (Ulkovarasto, Auto, Kontti, Ulkohylly)
 [ ] Johtajan resurssioikeudet — vaatii maksullisen Retool-version
+[ ] Access-siirto asiakkaat
+---
+GitHub Pages — tiedostorakenne (orders/)
+Tiedosto	Kuvaus
+peltipiirturi.html	Mallisto — kaikki profiilityypit
+vakiomallit.html	Parmaco-vakiomallit — yhtenäinen sivu
+tilaus.html	Tilauslomake
+ylapelti.html	Vanha erillinen sivu (ei enää käytössä)
+alapellit.html	Vanha erillinen sivu (ei enää käytössä)
+kynnys1.html	Vanha erillinen sivu (ei enää käytössä)
+alaslaskun_kappalista.html	Vanha erillinen sivu (ei enää käytössä)
+hattupelti.html	Vanha erillinen sivu (ei enää käytössä)
+ulkoverhouksen_katkaisulista.html	Vanha erillinen sivu (ei enää käytössä)
+kattolista.html	Vanha erillinen sivu (ei enää käytössä)
+raystaslista.html	Vanha erillinen sivu (ei enää käytössä)
 ---
 Ohjeet uuden chat-ketjun aloitukseen
 "Jatketaan Kalajoen Peltityö ERP-projektia. Stack: Supabase + Retool + GitHub Pages. Warehouse ID: e56f3534-50f9-4081-8840-f81f03905113. Liitän projektidokumentit. Tänään tehdään: [mitä tehdään]."
@@ -64,6 +97,7 @@ Warehouse ID (Verstas)	e56f3534-50f9-4081-8840-f81f03905113
 GitHub repo	eltsu2013/kalajoen-peltityo-erp
 Kartta	maps/verstaspohja_mitoitettu.html
 Peltipiirturi	orders/peltipiirturi.html
+Vakiomallit	orders/vakiomallit.html
 Tilauslomake	orders/tilaus.html
 Supabase projekti	hjyeugeqmyavxisndlwp
 Supabase anon key	eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4
