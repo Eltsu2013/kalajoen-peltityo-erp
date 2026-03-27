@@ -937,8 +937,8 @@ function buildKynnys1() {
     <text x="${((tx(pA0)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${pinta}</text>
     <text x="${((tx(pA0)+tx(harjaEnd))/2-12).toFixed(0)}" y="${((ty(pA0)+ty(harjaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${suora1}</text>
     <text x="${((tx(harjaEnd)+tx(takaEnd))/2-12).toFixed(0)}" y="${((ty(harjaEnd)+ty(takaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${takareuna}</text>
-    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+18).toFixed(0)}" style="${AN}">${kulma_ang}°</text>
-    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+30).toFixed(0)}" style="${AN}">${suora_ang}°</text>
+    <text x="${(tx(pKulma)-28).toFixed(0)}" y="${(ty(pKulma)+18).toFixed(0)}" style="${AN}">${kulma_ang}°</text>
+    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+18).toFixed(0)}" style="${AN}">${suora_ang}°</text>
     <text x="8" y="${(Math.max(...pts.map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
 }
 
