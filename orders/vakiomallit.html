@@ -161,6 +161,14 @@
 </head>
 <body>
 
+
+
+<header>
+  <div class="logo">KPT</div>
+  <h1>Vakiomallit</h1>
+  <a href="tilaus.html" style="margin-left:auto;color:var(--text-dim);font-size:12px;font-family:'IBM Plex Mono',monospace;text-decoration:none;" onclick="goBack(event)">← Tilauslomake</a>
+</header>
+
 <!-- Tilaus-palkki -->
 <div id="tilaus-bar">
   <span style="color:#3dba6e;font-weight:600">● TILAUS AUKI</span>
@@ -173,12 +181,6 @@
     Peruuta
   </button>
 </div>
-
-<header>
-  <div class="logo">KPT</div>
-  <h1>Vakiomallit</h1>
-  <a href="tilaus.html" style="margin-left:auto;color:var(--text-dim);font-size:12px;font-family:'IBM Plex Mono',monospace;text-decoration:none;" onclick="goBack(event)">← Tilauslomake</a>
-</header>
 
 <!-- Profiilivalinta -->
 <div class="type-bar">
@@ -664,6 +666,7 @@ function laskeKok(i) {
   if (rows[i]) rows[i].querySelectorAll('input')[2].value = rivit[i].kok;
   paivitaYhteenveto();
   paivitaLeikkauslista();
+  piirra();
 }
 
 // =============================================
@@ -707,6 +710,7 @@ function laskePaatJaKok(i) {
   }
   paivitaYhteenveto();
   paivitaLeikkauslista();
+  piirra();
 }
 
 // =============================================
@@ -883,46 +887,40 @@ function buildKynnys1() {
   const suora_ang = gv('f_suora_ang'), kulma_ang = gv('f_kulma_ang');
   const nokka_ang = gv('f_nokka_ang'), kaannos_taka = gv('f_kaannos_taka');
 
-  // Lähtöpiste = pinnan vasen pää (pA0)
   const pA0 = { x: 0, y: 0 };
   const pintaKaato = 90 - kulma_ang;
   const pKulma = { x: pA0.x + pinta*Math.cos(deg(pintaKaato)), y: pA0.y + pinta*Math.sin(deg(pintaKaato)) };
-
-  // Etureuna lähtee pKulmasta suoraan alas
-  const pEtuYla = pKulma;
   const pEtuAla = { x: pKulma.x, y: pKulma.y + etureuna };
-
-  // Tippanokka etureunan alapäästä vasemmalle
   const nokkaSuunta = 90 - nokka_ang;
   const pNokka = { x: pEtuAla.x + tippanokka*Math.cos(deg(nokkaSuunta)), y: pEtuAla.y + tippanokka*Math.sin(deg(nokkaSuunta)) };
-
-  // Suora1 lähtee pA0:sta vasemmalle
   const suora1Suunta = pintaKaato + (180 - suora_ang);
   const harjaEnd = { x: pA0.x + suora1*Math.cos(deg(suora1Suunta)), y: pA0.y + suora1*Math.sin(deg(suora1Suunta)) };
   const takaAng = suora1Suunta + kaannos_taka;
   const takaEnd = { x: harjaEnd.x + takareuna*Math.cos(deg(takaAng)), y: harjaEnd.y + takareuna*Math.sin(deg(takaAng)) };
 
-  const pts = [pNokka, pEtuAla, pEtuYla, pA0, harjaEnd, takaEnd];
+  const pts = [pNokka, pEtuAla, pKulma, pA0, harjaEnd, takaEnd];
   const { svg, tx, ty } = setupSVG(pts);
-  const kaato = Math.abs(pKulma.y - pEtuYla.y).toFixed(1);
+  const kaato = Math.abs(pKulma.y - pA0.y).toFixed(1);
 
   // Päännostot
   let paanNostoSVG = '';
   const paatInputs = document.querySelectorAll('#tableRows .table-row input:nth-child(2)');
-  let pp = 0;
-  paatInputs.forEach(inp => { const v = parseFloat(inp.value); if (v > 0) pp = v/2; });
-  if (pp > 0) {
+  let paatPuoli = 0;
+  paatInputs.forEach(inp => { const v = parseFloat(inp.value); if (v > 0) paatPuoli = v / 2; });
+  if (paatPuoli > 0) {
     const dash = 'stroke="#bbb" stroke-width="1" stroke-dasharray="4,3"';
-    const aNx = 0, aNy = -1;
-    const pA0s = { x: pEtuYla.x+aNx*pp, y: pEtuYla.y+aNy*pp };
-    const pKulmas = { x: pKulma.x+aNx*pp, y: pKulma.y+aNy*pp };
-    const bDx = harjaEnd.x-pA0.x, bDy = harjaEnd.y-pA0.y;
-    const bLen = Math.sqrt(bDx*bDx+bDy*bDy);
-    const bNx = -bDy/bLen, bNy = bDx/bLen;
-    const hSs = { x: pA0.x+bNx*pp, y: pA0.y+bNy*pp };
-    const hEs = { x: harjaEnd.x+bNx*pp, y: harjaEnd.y+bNy*pp };
+    const pintaDx = pKulma.x - pA0.x, pintaDy = pKulma.y - pA0.y;
+    const pintaLen = Math.sqrt(pintaDx*pintaDx + pintaDy*pintaDy);
+    const pNx = pintaDy/pintaLen, pNy = -pintaDx/pintaLen;
+    const pA0s    = { x: pA0.x    + pNx*paatPuoli, y: pA0.y    + pNy*paatPuoli };
+    const pKulmas = { x: pKulma.x + pNx*paatPuoli, y: pKulma.y + pNy*paatPuoli };
+    const sDx = harjaEnd.x - pA0.x, sDy = harjaEnd.y - pA0.y;
+    const sLen = Math.sqrt(sDx*sDx + sDy*sDy);
+    const sNx = -sDy/sLen, sNy = sDx/sLen;
+    const hSs = { x: pA0.x     + sNx*paatPuoli, y: pA0.y     + sNy*paatPuoli };
+    const hEs = { x: harjaEnd.x + sNx*paatPuoli, y: harjaEnd.y + sNy*paatPuoli };
     paanNostoSVG = [
-      `<line x1="${tx(pEtuYla).toFixed(1)}" y1="${ty(pEtuYla).toFixed(1)}" x2="${tx(pA0s).toFixed(1)}" y2="${ty(pA0s).toFixed(1)}" ${dash}/>`,
+      `<line x1="${tx(pA0).toFixed(1)}" y1="${ty(pA0).toFixed(1)}" x2="${tx(pA0s).toFixed(1)}" y2="${ty(pA0s).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(pA0s).toFixed(1)}" y1="${ty(pA0s).toFixed(1)}" x2="${tx(pKulmas).toFixed(1)}" y2="${ty(pKulmas).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(pKulma).toFixed(1)}" y1="${ty(pKulma).toFixed(1)}" x2="${tx(pKulmas).toFixed(1)}" y2="${ty(pKulmas).toFixed(1)}" ${dash}/>`,
       `<line x1="${tx(pA0).toFixed(1)}" y1="${ty(pA0).toFixed(1)}" x2="${tx(hSs).toFixed(1)}" y2="${ty(hSs).toFixed(1)}" ${dash}/>`,
@@ -934,34 +932,14 @@ function buildKynnys1() {
   svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
     <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
     ${paanNostoSVG}
-    <text x="${(tx(pEtuYla)+8).toFixed(0)}" y="${((ty(pEtuYla)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
+    <text x="${(tx(pKulma)+8).toFixed(0)}" y="${((ty(pKulma)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
     <text x="${(tx(pNokka)+8).toFixed(0)}" y="${((ty(pEtuAla)+ty(pNokka))/2+12).toFixed(0)}" text-anchor="middle" style="${BL}">${tippanokka}</text>
-    <text x="${((tx(pEtuYla)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pEtuYla),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${pinta}</text>
+    <text x="${((tx(pA0)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${pinta}</text>
     <text x="${((tx(pA0)+tx(harjaEnd))/2-12).toFixed(0)}" y="${((ty(pA0)+ty(harjaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${suora1}</text>
     <text x="${((tx(harjaEnd)+tx(takaEnd))/2-12).toFixed(0)}" y="${((ty(harjaEnd)+ty(takaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${takareuna}</text>
-    <text x="${(tx(pEtuYla)-28).toFixed(0)}" y="${(ty(pEtuYla)+18).toFixed(0)}" style="${AN}">${kulma_ang}°</text>
-    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+18).toFixed(0)}" style="${AN}">${suora_ang}°</text>
-    <text x="8" y="${(Math.max(ty(pEtuAla),ty(pNokka))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
-}
-
-// --- U-lista pohjainen (alaslaskun, hattupelti) ---
-function buildUlista(seg0, seg1, seg2, tupB, ang0, ang1, tupC) {
-  const pA0 = { x:0, y:0 }, pA1 = { x:seg0, y:0 };
-  const suuntaB = 180 - ang0;
-  const pBend = { x: pA0.x + seg1*Math.cos(deg(suuntaB)), y: pA0.y + seg1*Math.sin(deg(suuntaB)) };
-  const tupBSuunta = suuntaB - 172;
-  const pTupB = { x: pBend.x + tupB*Math.cos(deg(tupBSuunta)), y: pBend.y + tupB*Math.sin(deg(tupBSuunta)) };
-  const suuntaC = ang1;
-  const pCend = { x: pA1.x + seg2*Math.cos(deg(suuntaC)), y: pA1.y + seg2*Math.sin(deg(suuntaC)) };
-
-  let pts = [pTupB, pBend, pA0, pA1, pCend];
-  let pTupC = null;
-  if (tupC !== undefined) {
-    const tupCSuunta = suuntaC + 172;
-    pTupC = { x: pCend.x + tupC*Math.cos(deg(tupCSuunta)), y: pCend.y + tupC*Math.sin(deg(tupCSuunta)) };
-    pts = [pTupB, pBend, pA0, pA1, pCend, pTupC];
-  }
-  return { pA0, pA1, pBend, pCend, pTupB, pTupC, pts, suuntaB, suuntaC };
+    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+18).toFixed(0)}" style="${AN}">${kulma_ang}°</text>
+    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+30).toFixed(0)}" style="${AN}">${suora_ang}°</text>
+    <text x="8" y="${(Math.max(...pts.map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
 }
 
 function buildAlaslaskun() {
