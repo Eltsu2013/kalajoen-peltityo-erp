@@ -8,14 +8,14 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
   :root {
-    --bg: #1a1a1a;
-    --panel: #242424;
-    --border: #333;
+    --bg: #2a2e3a;
+    --panel: #353a47;
+    --border: #555563;
     --accent: #e8a020;
     --accent2: #3a8fe8;
-    --text: #e8e8e8;
-    --text-dim: #888;
-    --input-bg: #2e2e2e;
+    --text: #ededf0;
+    --text-dim: #9595a0;
+    --input-bg: #3e4250;
     --success: #3dba6e;
     --danger: #e84040;
   }
@@ -2014,7 +2014,7 @@
 </header>
 
 <!-- Tilausyhteys-palkki — näkyy vain kun avattu tilauslomakkeelta -->
-<div id="tilaus-bar" style="display:none; background:#1a3a2a; border-bottom:1px solid #2a6a4a; padding:8px 24px; display:none; align-items:center; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:12px;">
+<div id="tilaus-bar" style="display:none; background:#1e3d2e; border-bottom:1px solid #2a6a4a; padding:8px 24px; align-items:center; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:12px;">
   <span style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
   <span id="tilaus-ryhmä" style="color:#e8e8e8"></span>
   <span id="tilaus-nimike" style="color:#e8a020; font-weight:600"></span>
@@ -4241,6 +4241,7 @@ function lisaaTilaukseen() {
 function peruutaTilaus() {
   tilausContext = null;
   document.getElementById('tilaus-bar').style.display = 'none';
+  if (window.opener && !window.opener.closed) window.close();
 }
 
 </script>
