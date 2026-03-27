@@ -2295,17 +2295,23 @@ function openVakiomallit() {
 let cmodMode = 'edit'; // 'edit' tai 'new'
 
 function cmodFill(c) {
-  document.getElementById('cmod-name').value       = c.name              || '';
-  document.getElementById('cmod-contact').value    = c.contact_person    || '';
-  document.getElementById('cmod-business-id').value = c.business_id     || '';
-  document.getElementById('cmod-address').value    = c.billing_address   || '';
-  document.getElementById('cmod-postal').value     = c.billing_postal_code || '';
-  document.getElementById('cmod-city').value       = c.billing_city      || '';
-  document.getElementById('cmod-phone').value      = c.phone             || '';
-  document.getElementById('cmod-email').value      = c.email             || '';
-  document.getElementById('cmod-email2').value     = c.email2            || '';
-  document.getElementById('cmod-ovt').value        = c.ovt_number        || '';
-  document.getElementById('cmod-notes').value      = c.notes             || '';
+  // Tyhjennetään ensin kaikki kentät eksplisiittisesti
+  ['cmod-name','cmod-contact','cmod-business-id','cmod-address',
+   'cmod-postal','cmod-city','cmod-phone','cmod-email',
+   'cmod-email2','cmod-ovt','cmod-notes'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('cmod-name').value         = c.name                 || '';
+  document.getElementById('cmod-contact').value      = c.contact_person       || '';
+  document.getElementById('cmod-business-id').value  = c.business_id          || '';
+  document.getElementById('cmod-address').value      = c.billing_address      || '';
+  document.getElementById('cmod-postal').value       = c.billing_postal_code  || '';
+  document.getElementById('cmod-city').value         = c.billing_city         || '';
+  document.getElementById('cmod-phone').value        = c.phone                || '';
+  document.getElementById('cmod-email').value        = c.email                || '';
+  document.getElementById('cmod-email2').value       = c.email2               || '';
+  document.getElementById('cmod-ovt').value          = c.ovt_number           || '';
+  document.getElementById('cmod-notes').value        = c.notes                || '';
 }
 
 function cmodData() {
