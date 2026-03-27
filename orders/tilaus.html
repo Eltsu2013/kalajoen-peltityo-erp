@@ -2364,7 +2364,7 @@ async function saveCustomer() {
       const id = document.getElementById('customer-select').value;
       const r = await fetch(SUPABASE_URL + '/rest/v1/customers?id=eq.' + id, {
         method: 'PATCH',
-        headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        headers: { ...headers },
         body: JSON.stringify(body)
       });
       if (!r.ok) throw new Error(await r.text());
