@@ -20,6 +20,36 @@
     --danger: #e84040;
   }
 
+  .nav-menu-wrap { position: relative; }
+  .nav-btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; padding: 6px 12px;
+    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
+  }
+  .nav-btn:hover { background: var(--input-bg); }
+  .nav-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; min-width: 200px; z-index: 999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
+  }
+  .nav-dropdown.open { display: block; }
+  .nav-section-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); padding: 8px 14px 4px;
+  }
+  .nav-item {
+    display: block; width: 100%; text-align: left;
+    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--text); background: none;
+    border: none; cursor: pointer; text-decoration: none; transition: background 0.1s;
+  }
+  .nav-item:hover { background: var(--accent-glow, rgba(232,160,32,0.12)); color: var(--accent); }
+  .nav-item.current { color: var(--accent); font-weight: 600; }
+  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
@@ -2010,6 +2040,19 @@
        r="0.002904671" />
   </g>
 </svg></div>
+  <div class="nav-menu-wrap">
+    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <div class="nav-section-label">Sivut</div>
+      <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
+      <a class="nav-item" href="tilaus.html">📋 Tilaukset</a>
+      <a class="nav-item current" href="peltipiirturi.html">✏️ Mallisto</a>
+      <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
+      <hr class="nav-divider">
+      <div class="nav-section-label">Sovellukset</div>
+      <a class="nav-item external" href="https://kalajoenpeltityo.retool.com/apps/03e2ccb8-0e5c-11f1-abca-8fb585b85c11/Varaston%C3%A4kym%C3%A4/Varasto" target="_blank">📦 Varasto</a>
+    </div>
+  </div>
   <h1>Mallisto</h1>
 </header>
 
@@ -2579,80 +2622,66 @@ const TYPES = {
       const points = [];
       const labels = [];
       const extraLines = [];
+      let x = 0, y = 0;
+      let suunta = 0;
 
-      // Rakenne: L peilikuva
-      // Seinälle-viiva on aina pystysuora (alas = 90°)
-      // Katolle-viiva lähtee Seinälle-viivan ALAPÄÄSTÄ vasemmalle, kulma kallistaa sitä
-      // Uran pohja lähtee Katolle-viivan päästä
-
-      // === SEINÄLLE: lähtöpiste ylhäältä, menee suoraan alas ===
-      const pSeinaYla = { x: 0, y: 0 };
-      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
-      const pSeinaAla = {
-        x: pSeinaYla.x,
-        y: pSeinaYla.y + bLen  // suoraan alas
-      };
-
-      // === KATOLLE: lähtee Seinälle-viivan ALAPÄÄSTÄ vasemmalle ===
-      // Kulma 90° = täysin vaakasuora. Kaava: suunta = 90 + (180 - kulma)
-      // 90° → suunta=180° (vaaka), 80° → suunta=190° (hieman alas), 100° → suunta=170° (hieman ylös)
-      const seinaSuunta = 90; // seinä menee aina alas
-      const katolleSuunta = 180 - (90 - vals.seg0_ang);
-      const pKatolle = {
-        x: pSeinaAla.x + vals.seg0_len * Math.cos(deg(katolleSuunta)),
-        y: pSeinaAla.y + vals.seg0_len * Math.sin(deg(katolleSuunta))
-      };
-
-      // === URAN POHJA: lähtee Katolle-viivan päästä ===
-      const uraLahtoSuunta = katolleSuunta - vals.ura_ang;
+      // === VASEN REUNA: Uran pohja — sama logiikka kuin päätypelti ===
+      const uraStart = { x, y };
+      const uraSuunta = 180 - vals.ura_ang; // vasemmalle alas
       const uraEnd = {
-        x: pKatolle.x + vals.ura_len * Math.cos(deg(uraLahtoSuunta)),
-        y: pKatolle.y + vals.ura_len * Math.sin(deg(uraLahtoSuunta))
+        x: x + vals.ura_len * Math.cos(deg(uraSuunta)),
+        y: y + vals.ura_len * Math.sin(deg(uraSuunta))
       };
+      points.push(uraEnd);
+      labels.push(vals.ura_len);
+      points.push(uraStart);
+      labels.push('');
 
-      // Tupla A: sama logiikka kuin alkuperäisessä — uraSuunta - 172
-      const tupAAng = uraLahtoSuunta - 172;
+      // Tupla A: lähtee uran päästä 8° avoimempaan suuntaan
+      const tupAAng = uraSuunta - 172; // jatkuu uran suuntaan avautuen
       const tupAEnd = {
         x: uraEnd.x + vals.tupA_len * Math.cos(deg(tupAAng)),
         y: uraEnd.y + vals.tupA_len * Math.sin(deg(tupAAng))
       };
       extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len, labelOffset: [20, 0] });
 
-      // Tiiviste B ja Tupla B — sama logiikka kuin alkuperäisessä, seinaSuunta=90
-      let tiiBEnd = { ...pSeinaYla };
+      // === SIVU A (Katolle): vaakasuora — sama kuin sisänurkka ===
+      suunta = 0;
+      const pA0 = { x, y };
+      points.push(pA0);
+      x += vals.seg0_len * Math.cos(deg(suunta));
+      y += vals.seg0_len * Math.sin(deg(suunta));
+      labels.push(vals.seg0_len);
+
+      // === KULMA: sisänurkan tapaan -kulma ===
+      suunta -= vals.seg0_ang;
+
+      // === SIVU B (Seinälle): sama kuin sisänurkka ===
+      const pKulma = { x, y };
+      points.push(pKulma);
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      x += bLen * Math.cos(deg(suunta));
+      y += bLen * Math.sin(deg(suunta));
+      const pBend = { x, y };
+      points.push(pBend);
+      labels.push(bLen);
+
+      let tiiBEnd = { x, y };
       if (opts?.tiiB) {
-        const tiiSuunta = seinaSuunta + 180 + 8; // käännetty 180° + 8° avautuen
-        tiiBEnd = {
-          x: pSeinaYla.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)),
-          y: pSeinaYla.y + vals.tiiB_len * Math.sin(deg(tiiSuunta))
-        };
+        const tiiSuunta = suunta + 8;
+        tiiBEnd = { x: x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiBEnd);
+        labels.push(vals.tiiB_len);
+        points.push(pBend);
+        labels.push('');
       }
       if (opts?.tupB) {
-        const tupSuunta = opts?.tiiB ? seinaSuunta + 180 + 180 : seinaSuunta + 180 + 172;
-        const tupEnd = {
-          x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)),
-          y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta))
-        };
+        const tupSuunta = opts?.tiiB ? suunta + 180 : suunta + 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
         extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [25, 0] });
       }
 
-      // Pisteet järjestyksessä: ura → katolle → seinä ala → seinä yla [→ tiiviste B]
-      points.push(uraEnd);
-      labels.push(vals.ura_len);
-      points.push(pKatolle);
-      labels.push(vals.seg0_len);  // Katolle mm
-      points.push(pSeinaAla);
-      labels.push(bLen);           // Seinälle mm
-      points.push(pSeinaYla);
-      labels.push('');
-      if (opts?.tiiB) {
-        points.push(pSeinaYla);
-        labels.push(vals.tiiB_len);
-        points.push(tiiBEnd);
-        labels.push('');
-      }
-
-      return { points, labels, extraLines, pintaViiva: { p1: pKatolle, p2: pSeinaAla } };
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
     },
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len + vals.ura_len + vals.tupA_len;
@@ -4258,6 +4287,13 @@ function peruutaTilaus() {
   if (window.opener && !window.opener.closed) window.close();
 }
 
+function toggleNav(e) {
+  e.stopPropagation();
+  document.getElementById('navDropdown').classList.toggle('open');
+}
+document.addEventListener('click', function() {
+  document.getElementById('navDropdown').classList.remove('open');
+});
 </script>
 </body>
 </html>
