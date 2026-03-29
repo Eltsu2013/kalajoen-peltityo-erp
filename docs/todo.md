@@ -1,6 +1,8 @@
 # Kalajoen Peltityö ERP — Tilanne ja tekolista
 
-## Projektin tila (27. maaliskuuta 2026)
+## Projektin tila (29. maaliskuuta 2026)
+
+---
 
 ### VALMIS ✅
 
@@ -19,9 +21,11 @@
 - GitHub kansiorakenne siistiytyi (docs/, maps/, supabase/functions/)
 - Supabase unit-arvot päivitetty: mm/Mm → m², m/M → m, kpl/Kpl → kpl
 
+---
+
 #### Tilausmoduuli (GitHub Pages)
 
-**peltipiirturi.html** — peltiprofiilien piirtotyökalu (Mallisto)
+**peltipiirturi.html** — Mallisto, peltiprofiilien piirtotyökalu
 
 - Profiilityypit: Alavesipelti, Alavp 2, Ulkonurkka, Sisänurkka, Jiiripelti, Seinänvieripelti, Eturäystäspelti, Päätypelti, Päätypelti huopa, U-lista u/s, Kynnys, Hattulista, Z-lista, Peitelista, Vapaa profiili
 - Napit ryhmitelty: MUUT ja KATOLLE osiot
@@ -32,9 +36,10 @@
 - Tuoteryhmä/materiaali/väri/paksuus-valinta — hakee Supabasesta, suodattuu unit=m² mukaan
 - Sidebar resize — vetoelementti, muistaa leveyden, 2/3/4 saraketta leveyden mukaan
 - Kulma-kentät siniharmaina (border + teksti), mitta-kentät normaalit — visuaalinen erottelu
-- **KORJATTU:** Alavp 2 näyttää kaaton ja etenemän kuten Alavesipelti
-- **KORJATTU:** Eturäystäspelti laskee Tippanokka mm ja Tupla B mm mukaan aihioleveyteen
-- **KORJATTU:** Peruuta-nappi sulkee välilehden oikein (window.close)
+- Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
+- Korjattu: Alavp 2 näyttää kaaton ja etenemän kuten Alavesipelti
+- Korjattu: Eturäystäspelti laskee Tippanokka mm ja Tupla B mm mukaan aihioleveyteen
+- Korjattu: Peruuta-nappi sulkee välilehden oikein (window.close)
 
 **vakiomallit.html** — Parmaco-vakiomallien piirtotyökalu (yhtenäinen sivu)
 
@@ -45,8 +50,9 @@
 - Tuoteryhmä/materiaali/väri/paksuus-valinta Supabasesta
 - Tilaus-palkki headerin alla — Lisää tilaukseen sulkee ikkunan, Peruuta sulkee ikkunan
 - Sidebar resize, varoitus jos vaihtaa profiilia ja rivejä täytetty
-- **KORJATTU:** Alaslaskun kappalista ja Hattupelti piirtyvät oikein (buildUlista-funktio lisätty)
-- Vanhat erilliset sivut (ylapelti.html, alapellit.html jne.) jäävät GitHubiin mutta niitä ei enää käytetä
+- Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
+- Korjattu: Alaslaskun kappalista ja Hattupelti piirtyvät oikein (buildUlista-funktio lisätty)
+- Vanhat erilliset sivut (ylapelti.html jne.) jäävät GitHubiin mutta niitä ei enää käytetä
 
 **tilaus.html** — tilauslomake
 
@@ -65,30 +71,42 @@
 - Asiakkaan ✎ Muokkaa -nappi ilmestyy kun asiakas valittu — avaa modaalin
 - + Uusi asiakas -nappi — lisää asiakkaan suoraan tilauksen teon yhteydessä
 - Asiakasmodaalissa: Asiakasnimi, Yhteyshenkilö, Y-tunnus, Laskutusosoite, Postinumero, Kaupunki, Puhelin, Sähköposti, Sähköposti 2, OVT-numero, Muistiinpanot
+- Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
+- Asiakkaan esivalinta localStorage:sta — asiakkaat.html:stä avattaessa asiakas valitaan automaattisesti
 
-#### Ulkoasu — GitHub Pages -sivut
-
-- Yhteinen värimaailma kaikille kolmelle sivulle (tumma antrasiitti, sinertävä sävy)
-- Sivukohtaiset tunnusvärit: tilaus=oranssi viiva, peltipiirturi=sininen viiva, vakiomallit=vihreä viiva
-- Logo valkoiseksi CSS-filterillä (brightness(0) invert(1)) kaikilla sivuilla
-- vakiomallit.html: oikea SVG-logo lisätty (aiemmin vain teksti "KPT")
-- Väripaletti dokumentoitu: bg=#2e2e38, panel=#3a3a45, border=#555563, accent=#e8a020 (oranssi säilyy)
+---
 
 #### Asiakashallinta (GitHub Pages)
 
 **asiakkaat.html** — asiakashallinta ja -arkisto
 
-- Asiakaslista vasemmassa paneelissa, haku nimellä/numerolla/yhteyshenkilöllä
+- Asiakaslista vasemmassa paneelissa, haku nimellä/numerolla/yhteyshenkilöllä/puhelimella
 - Asiakaskortti oikealla: perustiedot, laskutusosoite, yhteystiedot, OVT, muistiinpanot
-- Muokkaa/Tallenna/Peruuta-toiminnot
-- Arkistoi/Palauta-toiminto (is_active)
-- Näytä arkistoidut -valintaruutu
+- 4-sarakeinen asettelu isolla näytöllä (cols4-variantit kentille)
+- Muokkaa/Tallenna/Peruuta-toiminnot — kentät lukittu oletuksena
+- Arkistoi/Palauta-toiminto (is_active), Näytä arkistoidut -valintaruutu
 - Tilaushistoria asiakaskortin alla
-- Uusi tilaus -nappi avaa tilaus.html uuteen välilehteen asiakas esivalittuna
+- Uusi tilaus -nappi avaa tilaus.html uuteen välilehteen asiakas esivalittuna (localStorage)
 - Tunnusväri: violetti #a855f7 (erottuu muista sivuista)
+- Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
 - Sidebar resize, logo, yhteinen väripohja
+- Mobiiliparannukset: media query 700px, right-panel koko ruudulle, "← Takaisin listaan" -nappi
+- Isompi fontti syöttökentissä (14px) ja readonly-tilassa (15px)
 
-#### Supabase — customers-taulu päivitykset
+---
+
+#### Ulkoasu — GitHub Pages -sivut
+
+- Yhteinen värimaailma kaikille sivuille: bg=#2e2e38, panel=#3a3a45, border=#555563
+- Sivukohtaiset tunnusvärit headerissa: tilaus=oranssi (#e8a020), peltipiirturi=sininen (#3a8fe8), vakiomallit=vihreä (#3dba6e), asiakkaat=violetti (#a855f7)
+- Logo valkoiseksi CSS-filterillä brightness(0) invert(1) kaikilla sivuilla
+- vakiomallit.html: oikea SVG-logo (aiemmin vain teksti "KPT")
+- Navigointipalkki kaikilla sivuilla: Asiakkaat / Tilaukset / Mallisto / Vakiomallit / Varasto (Retool)
+- Aktiivinen sivu korostettuna valikossa (current-luokka, accent-väri)
+
+---
+
+#### Supabase — customers-taulu
 
 - Lisätty sarakkeet: contact_person, customer_number, email2, ovt_number
 - Lisätty RLS-politiikat: INSERT ja UPDATE anon-käyttäjälle
@@ -105,9 +123,11 @@
 
 #### Tilausmoduuli — viimeistelyä
 
-- [ ] Seinänvieripelti: kulma ei toimi oikein (seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa sitä)
-- [ ] Asiakkaat-sivu (erillinen hallintasivu) — perusmuokkaus toimii jo tilaus.html:stä
-- [ ] Access-siirto asiakkaat — notes-sarakkeessa on yhteyshenkilötietoja vanhoilta asiakkailta, siirron yhteydessä pitää siirtää notes → contact_person oikeille asiakkaille
+- [ ] Seinänvieripelti: kulma ei toimi oikein — seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa kulmaa. Tarvitsee oman rauhallisen chatin.
+
+#### Asiakashallinta — viimeistelyä
+
+- [ ] Tilauksen avaaminen tilaushistoriasta — order-row klikkauksesta pitää navigoida tilaus.html:ään orderId:llä
 
 #### Ulkoasu — Retool
 
@@ -116,13 +136,13 @@
 
 #### Isommat kokonaisuudet
 
+- [ ] Access-siirto — asiakkaiden tuonti Supabaseen. Huom: vanhoilla asiakkailla notes-kentässä on yhteyshenkilötietoja, siirron yhteydessä pitää siirtää notes → contact_person oikeille asiakkaille
 - [ ] Kartta + taulukko yhdistäminen Retoolissa
 - [ ] QR-koodit hyllyihin
 - [ ] Leikkausoptimointi (rulla → levy → siivu, parent_stock_item_id)
 - [ ] Laskutus ja maksuseuranta
 - [ ] Muut varastot inventointi (Ulkovarasto, Auto, Kontti, Ulkohylly)
 - [ ] Johtajan resurssioikeudet — vaatii maksullisen Retool-version
-- [ ] Access-siirto asiakkaat
 
 ---
 
@@ -131,9 +151,9 @@
 | Tiedosto | Kuvaus |
 |----------|--------|
 | asiakkaat.html | Asiakashallinta ja -arkisto |
+| tilaus.html | Tilauslomake |
 | peltipiirturi.html | Mallisto — kaikki profiilityypit |
 | vakiomallit.html | Parmaco-vakiomallit — yhtenäinen sivu |
-| tilaus.html | Tilauslomake |
 | ylapelti.html | Vanha erillinen sivu (ei enää käytössä) |
 | alapellit.html | Vanha erillinen sivu (ei enää käytössä) |
 | kynnys1.html | Vanha erillinen sivu (ei enää käytössä) |
@@ -158,13 +178,14 @@
 | Warehouse ID (Verstas) | e56f3534-50f9-4081-8840-f81f03905113 |
 | GitHub repo | eltsu2013/kalajoen-peltityo-erp |
 | Kartta | maps/verstaspohja_mitoitettu.html |
+| Asiakkaat | orders/asiakkaat.html |
+| Tilauslomake | orders/tilaus.html |
 | Peltipiirturi | orders/peltipiirturi.html |
 | Vakiomallit | orders/vakiomallit.html |
-| Tilauslomake | orders/tilaus.html |
 | Supabase projekti | hjyeugeqmyavxisndlwp |
 | Supabase anon key | eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4 |
 | Edge fn: lisää pelti | create_initial_stock_items |
-| Edge fn: muokkaa | adjust_stock_item_edge |
+| Edge fn: muokkaa pelti | adjust_stock_item_edge |
 | Edge fn: hae pellit | get_stock_items |
 | Edge fn: hae tuotteet | get_products |
 | Edge fn: lisää tuote | create_product |
