@@ -64,7 +64,7 @@ Väripaletti dokumentoitu: bg=#2e2e38, panel=#3a3a45, border=#555563, accent=#e8
 Supabase — customers-taulu päivitykset
 Lisätty sarakkeet: contact_person, customer_number, email2, ovt_number
 Lisätty RLS-politiikat: INSERT ja UPDATE anon-käyttäjälle
----
+Lisätty Uusi asiakas -nappi
 KESKEN / TEKOLISTA ⏳
 Pienet karttatyöt
 [ ] IN-R-02 klikattavaksi kartalla
