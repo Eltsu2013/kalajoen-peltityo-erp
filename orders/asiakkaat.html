@@ -53,27 +53,6 @@
   .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
   .right-panel { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 
-  /* FILTER TABS */
-  .filter-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    background: #2a2535;
-  }
-  .filter-tab {
-    flex: 1;
-    padding: 7px 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; font-weight: 600;
-    background: none; border: none;
-    color: var(--text-dim);
-    cursor: pointer;
-    letter-spacing: 0.04em;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .filter-tab:hover { color: var(--text); }
-  .filter-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
   /* SEARCH BAR */
   .search-bar {
     padding: 12px 16px;
@@ -165,9 +144,12 @@
   .card-body { padding: 20px; }
 
   /* GRID KENTÄT */
-  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  .field-grid.cols4 { grid-template-columns: 2fr 1fr 2fr 1fr; }
+  .field-grid.cols4-addr { grid-template-columns: 3fr 1fr 2fr 1fr; }
+  .field-grid.cols4-contact { grid-template-columns: 1fr 2fr 2fr 2fr; }
   .field-grid.wide { grid-template-columns: 1fr; }
-  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field { display: flex; flex-direction: column; gap: 3px; }
   .field.full { grid-column: 1 / -1; }
   label {
     font-size: 11px; color: var(--text-dim);
@@ -178,18 +160,44 @@
     border: 1px solid var(--border);
     color: var(--text);
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px; padding: 7px 9px;
+    font-size: 14px; padding: 7px 9px;
     border-radius: 4px; width: 100%;
   }
   input:focus, select:focus, textarea:focus {
     outline: none; border-color: var(--accent);
   }
   input[readonly] {
-    color: var(--text-dim); cursor: default;
+    color: var(--text); cursor: default;
     border-color: transparent; background: transparent; padding-left: 0;
+    font-size: 15px;
   }
   textarea { resize: vertical; min-height: 60px; }
   select option { background: var(--panel); }
+
+  /* MOBIILI */
+  .mobile-back {
+    display: none;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #2a2535;
+  }
+  .mobile-back button {
+    background: none; border: none; color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    cursor: pointer; padding: 0;
+  }
+  @media (max-width: 700px) {
+    .main { grid-template-columns: 1fr !important; }
+    .left-panel { height: calc(100vh - 62px); border-right: none; }
+    .right-panel { display: none; position: fixed; top: 62px; left: 0; right: 0; bottom: 0;
+      background: var(--bg); z-index: 100; overflow-y: auto; padding: 0; }
+    .right-panel.mobile-open { display: flex; }
+    .mobile-back { display: block; }
+    .field-grid.cols4,
+    .field-grid.cols4-addr,
+    .field-grid.cols4-contact { grid-template-columns: 1fr 1fr; }
+    .card-header { flex-wrap: wrap; gap: 8px; }
+  }
 
   .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
@@ -1853,11 +1861,10 @@
     <!-- Haku -->
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="Hae asiakasta..." oninput="filterCustomers(this.value)">
-    </div>
-    <div class="filter-tabs">
-      <button class="filter-tab active" id="tab-active" onclick="setFilter('active')">Aktiiviset</button>
-      <button class="filter-tab" id="tab-archived" onclick="setFilter('archived')">Arkistoidut</button>
-      <button class="filter-tab" id="tab-all" onclick="setFilter('all')">Kaikki</button>
+      <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-dim);cursor:pointer;white-space:nowrap;">
+        <input type="checkbox" id="showInactive" onchange="filterCustomers(document.getElementById('searchInput').value)" style="width:auto;">
+        Näytä arkistoidut
+      </label>
     </div>
 
     <!-- Lista -->
@@ -1874,6 +1881,9 @@
 
   <!-- OIKEA: asiakkaan tiedot -->
   <div class="right-panel" id="rightPanel">
+    <div class="mobile-back">
+      <button onclick="mobileBack()">← Takaisin listaan</button>
+    </div>
 
     <!-- TYHJä TILA -->
     <div id="emptyState" class="empty-state">
@@ -1899,14 +1909,14 @@
         <!-- Perustiedot -->
         <div class="card-body">
           <div class="section-title">Perustiedot</div>
-          <div class="field-grid">
+          <div class="field-grid cols4">
             <div class="field">
               <label>Asiakasnimi *</label>
               <input type="text" id="f_name" placeholder="Yritys tai henkilö" oninput="markDirty()">
             </div>
             <div class="field">
               <label>Asiakasnumero</label>
-              <input type="text" id="f_customer_number" placeholder="esim. 1042" oninput="markDirty()">
+              <input type="text" id="f_customer_number" placeholder="1042" oninput="markDirty()">
             </div>
             <div class="field">
               <label>Yhteyshenkilö</label>
@@ -1920,8 +1930,8 @@
 
           <hr class="divider">
           <div class="section-title">Laskutusosoite</div>
-          <div class="field-grid">
-            <div class="field full">
+          <div class="field-grid cols4-addr">
+            <div class="field">
               <label>Katuosoite</label>
               <input type="text" id="f_billing_address" placeholder="Esimerkkikatu 1" oninput="markDirty()">
             </div>
@@ -1941,7 +1951,7 @@
 
           <hr class="divider">
           <div class="section-title">Yhteystiedot & Laskutus</div>
-          <div class="field-grid">
+          <div class="field-grid cols4-contact">
             <div class="field">
               <label>Puhelin</label>
               <input type="text" id="f_phone" placeholder="040 1234567" oninput="markDirty()">
@@ -1999,14 +2009,14 @@
         </div>
         <div class="card-body">
           <div class="section-title">Perustiedot</div>
-          <div class="field-grid">
+          <div class="field-grid cols4">
             <div class="field">
               <label>Asiakasnimi *</label>
               <input type="text" id="new_name" placeholder="Yritys tai henkilö">
             </div>
             <div class="field">
               <label>Asiakasnumero</label>
-              <input type="text" id="new_customer_number" placeholder="esim. 1042">
+              <input type="text" id="new_customer_number" placeholder="1042">
             </div>
             <div class="field">
               <label>Yhteyshenkilö</label>
@@ -2020,8 +2030,8 @@
 
           <hr class="divider">
           <div class="section-title">Laskutusosoite</div>
-          <div class="field-grid">
-            <div class="field full">
+          <div class="field-grid cols4-addr">
+            <div class="field">
               <label>Katuosoite</label>
               <input type="text" id="new_billing_address">
             </div>
@@ -2033,11 +2043,15 @@
               <label>Kaupunki</label>
               <input type="text" id="new_billing_city">
             </div>
+            <div class="field">
+              <label>Maa</label>
+              <input type="text" id="new_billing_country" value="Suomi">
+            </div>
           </div>
 
           <hr class="divider">
           <div class="section-title">Yhteystiedot & Laskutus</div>
-          <div class="field-grid">
+          <div class="field-grid cols4-contact">
             <div class="field">
               <label>Puhelin</label>
               <input type="text" id="new_phone">
@@ -2117,15 +2131,6 @@ let filteredCustomers = [];
 let activeCustomer = null;
 let isDirty = false;
 let isEditMode = false;
-let activeFilter = 'active'; // 'active' | 'archived' | 'all'
-
-function setFilter(f) {
-  activeFilter = f;
-  ['active','archived','all'].forEach(id => {
-    document.getElementById('tab-' + id).classList.toggle('active', id === f);
-  });
-  filterCustomers(document.getElementById('searchInput').value);
-}
 
 // =============================================
 // LATAUS
@@ -2137,10 +2142,10 @@ async function loadCustomers() {
 }
 
 function filterCustomers(q) {
+  const showInactive = document.getElementById('showInactive').checked;
   const ql = (q || '').toLowerCase();
   filteredCustomers = customers.filter(c => {
-    if (activeFilter === 'active' && !c.is_active) return false;
-    if (activeFilter === 'archived' && c.is_active) return false;
+    if (!showInactive && !c.is_active) return false;
     if (!ql) return true;
     return (c.name || '').toLowerCase().includes(ql)
       || (c.customer_number || '').toLowerCase().includes(ql)
@@ -2182,6 +2187,12 @@ function selectCustomer(id) {
   renderList();
   showCustomer();
   loadOrders(id);
+  // Mobiili: avaa oikea paneeli
+  document.getElementById('rightPanel').classList.add('mobile-open');
+}
+
+function mobileBack() {
+  document.getElementById('rightPanel').classList.remove('mobile-open');
 }
 
 function showCustomer() {
