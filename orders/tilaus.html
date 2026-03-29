@@ -12,6 +12,36 @@
     --text: #ededf0; --text-dim: #9595a0; --input-bg: #3e3e4a;
     --success: #3dba6e; --danger: #e84040;
   }
+  .nav-menu-wrap { position: relative; }
+  .nav-btn {
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; padding: 6px 12px;
+    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
+  }
+  .nav-btn:hover { background: var(--input-bg); }
+  .nav-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; min-width: 200px; z-index: 999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
+  }
+  .nav-dropdown.open { display: block; }
+  .nav-section-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); padding: 8px 14px 4px;
+  }
+  .nav-item {
+    display: block; width: 100%; text-align: left;
+    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; color: var(--text); background: none;
+    border: none; cursor: pointer; text-decoration: none; transition: background 0.1s;
+  }
+  .nav-item:hover { background: var(--accent-glow, rgba(232,160,32,0.12)); color: var(--accent); }
+  .nav-item.current { color: var(--accent); font-weight: 600; }
+  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
   header { background: #44444f; border-bottom: 2px solid var(--accent); padding: 10px 24px; display: flex; align-items: center; gap: 16px; }
@@ -1659,6 +1689,19 @@
        r="0.002904671" />
   </g>
 </svg></div>
+  <div class="nav-menu-wrap">
+    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <div class="nav-section-label">Sivut</div>
+      <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
+      <a class="nav-item current" href="tilaus.html">📋 Tilaukset</a>
+      <a class="nav-item" href="peltipiirturi.html">✏️ Mallisto</a>
+      <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
+      <hr class="nav-divider">
+      <div class="nav-section-label">Sovellukset</div>
+      <a class="nav-item external" href="https://kalajoenpeltityo.retool.com/apps/03e2ccb8-0e5c-11f1-abca-8fb585b85c11/Varaston%C3%A4kym%C3%A4/Varasto" target="_blank">📦 Varasto</a>
+    </div>
+  </div>
   <h1>Tilaus</h1>
   <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
     <span class="saving" id="save-status"></span>
@@ -2583,7 +2626,19 @@ function setSaveStatus(type, msg) {
 // ── Init ──────────────────────────────────────────────────────────
 document.getElementById('order-date').value = new Date().toISOString().slice(0,10);
 fetchProducts();
-fetchCustomers();
+fetchCustomers().then(() => {
+  // Luetaan asiakkaat.html:stä tullut esivalinta
+  const preCustomerId = localStorage.getItem('newOrderCustomerId');
+  const preCustomerName = localStorage.getItem('newOrderCustomerName');
+  if (preCustomerId && preCustomerName) {
+    localStorage.removeItem('newOrderCustomerId');
+    localStorage.removeItem('newOrderCustomerName');
+    document.getElementById('customer-search').value = preCustomerName;
+    document.getElementById('customer-select').value = preCustomerId;
+    document.getElementById('customer-edit-btn').style.display = 'block';
+    saveOrderMeta();
+  }
+});
 
 // ── Sidebar resize ────────────────────────────────────────────────
 (function() {
@@ -2634,6 +2689,13 @@ fetchCustomers();
   });
 })();
 
+function toggleNav(e) {
+  e.stopPropagation();
+  document.getElementById('navDropdown').classList.toggle('open');
+}
+document.addEventListener('click', function() {
+  document.getElementById('navDropdown').classList.remove('open');
+});
 </script>
 </body>
 </html>
