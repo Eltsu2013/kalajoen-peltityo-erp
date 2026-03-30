@@ -1969,8 +1969,7 @@
             </div>
             <div class="field">
               <label>Asiakasnumero</label>
-              <input type="text" id="f_customer_number" readonly
-                style="color:var(--text-dim);cursor:default;">
+              <input type="text" id="f_customer_number" placeholder="1042" oninput="markDirty()">
             </div>
             <div class="field">
               <label>Yhteyshenkilö</label>
@@ -2063,24 +2062,22 @@
         </div>
         <div class="card-body">
           <div class="section-title">Perustiedot</div>
-          <div class="field-grid cols4">
+          <div class="field-grid cols4-addr">
             <div class="field">
               <label>Asiakasnimi *</label>
-              <input type="text" id="new_name" placeholder="Yritys tai henkilö">
-            </div>
-            <div class="field">
-              <label>Asiakasnumero</label>
-              <input type="text" id="new_customer_number" readonly
-                style="color:var(--text-dim);font-style:italic;"
-                placeholder="Haetaan automaattisesti...">
+              <input type="text" id="new_name" placeholder="Yritys tai henkilö" tabindex="1">
             </div>
             <div class="field">
               <label>Yhteyshenkilö</label>
-              <input type="text" id="new_contact_person">
+              <input type="text" id="new_contact_person" tabindex="2">
             </div>
             <div class="field">
               <label>Y-tunnus</label>
-              <input type="text" id="new_business_id" placeholder="1234567-8">
+              <input type="text" id="new_business_id" placeholder="1234567-8" tabindex="3">
+            </div>
+            <div class="field">
+              <label>OVT-numero</label>
+              <input type="text" id="new_ovt_number" tabindex="4">
             </div>
           </div>
 
@@ -2089,52 +2086,57 @@
           <div class="field-grid cols4-addr">
             <div class="field">
               <label>Katuosoite</label>
-              <input type="text" id="new_billing_address">
+              <input type="text" id="new_billing_address" tabindex="5">
             </div>
             <div class="field">
               <label>Postinumero</label>
-              <input type="text" id="new_billing_postal_code">
+              <input type="text" id="new_billing_postal_code" tabindex="6">
             </div>
             <div class="field">
               <label>Kaupunki</label>
-              <input type="text" id="new_billing_city">
+              <input type="text" id="new_billing_city" tabindex="7">
             </div>
             <div class="field">
               <label>Maa</label>
-              <input type="text" id="new_billing_country" value="Suomi">
+              <input type="text" id="new_billing_country" value="Suomi" tabindex="8">
             </div>
           </div>
 
           <hr class="divider">
-          <div class="section-title">Yhteystiedot & Laskutus</div>
+          <div class="section-title">Yhteystiedot</div>
           <div class="field-grid cols4-contact">
             <div class="field">
               <label>Puhelin</label>
-              <input type="text" id="new_phone">
+              <input type="text" id="new_phone" tabindex="9">
             </div>
             <div class="field">
               <label>Sähköposti</label>
-              <input type="text" id="new_email">
+              <input type="text" id="new_email" tabindex="10">
             </div>
             <div class="field">
               <label>Sähköposti 2</label>
-              <input type="text" id="new_email2">
+              <input type="text" id="new_email2" tabindex="11">
             </div>
-            <div class="field">
-              <label>OVT-numero</label>
-              <input type="text" id="new_ovt_number">
-            </div>
+            <div class="field"></div>
           </div>
 
           <hr class="divider">
           <div class="field">
             <label>Muistiinpanot</label>
-            <textarea id="new_notes" placeholder="Vapaat muistiinpanot..."></textarea>
+            <textarea id="new_notes" placeholder="Vapaat muistiinpanot..." tabindex="12"></textarea>
+          </div>
+
+          <hr class="divider">
+          <div class="field" style="max-width:180px;">
+            <label>Asiakasnumero (automaattinen)</label>
+            <input type="text" id="new_customer_number" readonly
+              style="color:var(--text-dim);font-style:italic;"
+              placeholder="Haetaan tallennuksessa...">
           </div>
 
           <div class="row" style="margin-top:14px;padding-bottom:24px;">
-            <button class="btn btn-primary" onclick="createCustomer()">Luo asiakas</button>
-            <button class="btn btn-secondary" onclick="cancelNew()">Peruuta</button>
+            <button class="btn btn-primary" onclick="createCustomer()" tabindex="13">Luo asiakas</button>
+            <button class="btn btn-secondary" onclick="cancelNew()" tabindex="14">Peruuta</button>
             <span class="saving" id="newSaveStatus"></span>
           </div>
         </div>
@@ -2391,12 +2393,18 @@ function uusiAsiakas() {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('customerCard').style.display = 'none';
   document.getElementById('newCustomerForm').style.display = 'block';
-  ['new_name','new_contact_person','new_business_id',
+  // Tyhjennetään kaikki kentät
+  ['new_name','new_contact_person','new_business_id','new_ovt_number',
    'new_billing_address','new_billing_postal_code','new_billing_city',
-   'new_phone','new_email','new_email2','new_ovt_number','new_notes'].forEach(id => {
+   'new_phone','new_email','new_email2','new_notes'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.value = id === 'new_billing_country' ? 'Suomi' : '';
+    if (el) el.value = '';
   });
+  document.getElementById('new_billing_country').value = 'Suomi';
+  document.getElementById('new_customer_number').value = '';
+  document.getElementById('newSaveStatus').textContent = '';
+  // Mobiili: avaa oikea paneeli
+  document.getElementById('rightPanel').classList.add('mobile-open');
   document.getElementById('new_name').focus();
   renderList();
 }
@@ -2409,22 +2417,9 @@ function cancelNew() {
 async function createCustomer() {
   const el = document.getElementById('newSaveStatus');
   el.className = 'saving'; el.textContent = 'Tallennetaan...';
-
-  // Haetaan seuraava vapaa asiakasnumero Supabasesta
-  let nextNum = null;
-  try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/next_customer_number`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({})
-    });
-    nextNum = await r.json();
-    document.getElementById('new_customer_number').value = nextNum;
-  } catch(e) {}
-
   const data = {
     name: document.getElementById('new_name').value.trim(),
-    customer_number: nextNum ? String(nextNum) : null,
+    customer_number: document.getElementById('new_customer_number').value.trim() || null,
     contact_person: document.getElementById('new_contact_person').value.trim() || null,
     business_id: document.getElementById('new_business_id').value.trim() || null,
     billing_address: document.getElementById('new_billing_address').value.trim() || null,
