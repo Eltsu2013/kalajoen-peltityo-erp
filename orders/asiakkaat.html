@@ -2478,7 +2478,7 @@ async function loadOrders(customerId) {
   const statusLabel = { draft: 'Luonnos', active: 'Aktiivinen', done: 'Valmis' };
   const statusClass = { draft: 'status-draft', active: 'status-active', done: 'status-done' };
   document.getElementById('orderList').innerHTML = orders.map(o => `
-    <div class="order-row">
+    <div class="order-row" onclick="avaaTilaus('${o.id}')">
       <span class="order-date">${(o.order_date || '').slice(0,10)}</span>
       <span class="order-desc">${o.notes || 'Tilaus'}</span>
       <span class="order-status ${statusClass[o.status] || 'status-draft'}">${statusLabel[o.status] || o.status}</span>
@@ -2488,10 +2488,13 @@ async function loadOrders(customerId) {
 
 function uusiTilaus() {
   if (!activeCustomer) return;
-  // Avataan tilaus.html uudessa välilehdessä, asiakas esivalittuna
-  // Välitetään customer_id localStorage:n kautta kuten muissakin sivuissa
   localStorage.setItem('newOrderCustomerId', activeCustomer.id);
   localStorage.setItem('newOrderCustomerName', activeCustomer.name);
+  window.open('../orders/tilaus.html', '_blank');
+}
+
+function avaaTilaus(orderId) {
+  localStorage.setItem('openOrderId', orderId);
   window.open('../orders/tilaus.html', '_blank');
 }
 
