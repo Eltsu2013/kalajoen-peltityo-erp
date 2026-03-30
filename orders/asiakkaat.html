@@ -2152,12 +2152,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 async function supabaseGet(table, params = '') {
   const r = await fetch(`${SUPABASE_URL}/rest/v1/${table}${params}`, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      'Range-Unit': 'items',
-      'Range': '0-9999'
-    }
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
   });
   return r.json();
 }
@@ -2335,13 +2330,13 @@ async function saveCustomer() {
   const el = document.getElementById('cardSaveStatus');
   el.className = 'saving'; el.textContent = 'Tallennetaan...';
   const data = {
-    name: document.getElementById('f_name').value.trim(),
+    name: document.getElementById('f_name').value.trim().toUpperCase(),
     customer_number: document.getElementById('f_customer_number').value.trim() || null,
     contact_person: document.getElementById('f_contact_person').value.trim() || null,
     business_id: document.getElementById('f_business_id').value.trim() || null,
-    billing_address: document.getElementById('f_billing_address').value.trim() || null,
+    billing_address: (document.getElementById('f_billing_address').value.trim() || '').toUpperCase() || null,
     billing_postal_code: document.getElementById('f_billing_postal_code').value.trim() || null,
-    billing_city: document.getElementById('f_billing_city').value.trim() || null,
+    billing_city: (document.getElementById('f_billing_city').value.trim() || '').toUpperCase() || null,
     billing_country: document.getElementById('f_billing_country').value.trim() || null,
     phone: document.getElementById('f_phone').value.trim() || null,
     email: document.getElementById('f_email').value.trim() || null,
@@ -2436,13 +2431,13 @@ async function createCustomer() {
   } catch(e) {}
 
   const data = {
-    name: document.getElementById('new_name').value.trim(),
+    name: document.getElementById('new_name').value.trim().toUpperCase(),
     customer_number: nextNum ? String(nextNum) : null,
     contact_person: document.getElementById('new_contact_person').value.trim() || null,
     business_id: document.getElementById('new_business_id').value.trim() || null,
-    billing_address: document.getElementById('new_billing_address').value.trim() || null,
+    billing_address: (document.getElementById('new_billing_address').value.trim() || '').toUpperCase() || null,
     billing_postal_code: document.getElementById('new_billing_postal_code').value.trim() || null,
-    billing_city: document.getElementById('new_billing_city').value.trim() || null,
+    billing_city: (document.getElementById('new_billing_city').value.trim() || '').toUpperCase() || null,
     billing_country: 'Suomi',
     phone: document.getElementById('new_phone').value.trim() || null,
     email: document.getElementById('new_email').value.trim() || null,
