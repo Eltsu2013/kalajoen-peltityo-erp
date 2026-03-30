@@ -2203,7 +2203,7 @@ function setFilter(f) {
 // LATAUS
 // =============================================
 async function loadCustomers() {
-  const data = await supabaseGet('customers', '?select=*&order=name.asc');
+  const data = await supabaseGet('customers', '?select=*&order=name.asc&limit=10000');
   customers = Array.isArray(data) ? data : [];
   filterCustomers(document.getElementById('searchInput').value);
 }
