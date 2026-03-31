@@ -1,5 +1,5 @@
 Kalajoen Peltityö ERP — Tilanne ja tekolista
-Projektin tila (30. maaliskuuta 2026)
+Projektin tila (31. maaliskuuta 2026)
 ---
 VALMIS ✅
 Varastonhallinta
@@ -58,9 +58,10 @@ Tuotekohtainen ⧉ Kopioi -nappi jokaisen tuoterivin Muokkaa-napin vieressä
 Asiakkaan ✎ Muokkaa -nappi ilmestyy kun asiakas valittu — avaa modaalin
 
 Uusi asiakas -nappi — lisää asiakkaan suoraan tilauksen teon yhteydessä
-Asiakasmodaalissa: Asiakasnimi, Yhteyshenkilö, Y-tunnus, Laskutusosoite, Postinumero, Kaupunki, Puhelin, Sähköposti, Sähköposti 2, OVT-numero, Muistiinpanot
 Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
-Asiakkaan esivalinta localStorage:sta — asiakkaat.html:stä avattaessa asiakas valitaan automaattisesti
+openOrderId — tilauksen avaaminen asiakkaat.html:n tilaushistoriasta toimii
+newOrderCustomerId — asiakas esivalitaan kun avataan uusi tilaus asiakkaat.html:stä
+order_items tallennus korjattu (product_id ja base_length_mm ei enää pakollisia)
 ---
 Asiakashallinta (GitHub Pages)
 asiakkaat.html — asiakashallinta ja -arkisto
@@ -96,18 +97,19 @@ Supabase rivi-rajoitus nostettu 10000:een (ALTER ROLE + restart)
 Nimet, osoitteet ja kaupungit muunnettu isoiksi kirjaimiksi (UPPER)
 ---
 KESKEN / TEKOLISTA ⏳
+Tilausmoduuli — KRIITTINEN korjaus (uusi Tilaus-chat)
+Peltipiirturi.html → tilaus.html integraatio on rikki. Nämä pitää korjata ennen kuin tilauksia voi tehdä oikeasti:
+[ ] peltipiirturi.html: materiaali, väri, paksuus ja tuoteryhmä ei siirry tilaus.html:ään ADD_TO_ORDER-viestissä
+[ ] peltipiirturi.html: pituusrivit (mitta mm, päät mm, kok mm, kpl, huomio) pitää tallentua oikein profile_data.rows-kenttään
+[ ] tilaus.html: order_item_angles, order_item_widths, order_item_extra_lengths taulut rakennettiin juuri näitä mittoja varten — harkitaan käytetäänkö niitä vai jatketaanko profile_data-lähestymistavalla
 Pienet karttatyöt
 [ ] IN-R-02 klikattavaksi kartalla
 [ ] IN-R-01 tasot 1 ja 2 kartalle
 [ ] Vasen seinä (IN-L) tarkistus
-Tilausmoduuli — viimeistelyä
-[ ] Seinänvieripelti: kulma ei toimi oikein — seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa kulmaa. Tarvitsee oman rauhallisen chatin.
-tilaus.html — korjaukset (tehdään samalla kertaa)
-[ ] newOrderCustomerId-korjaus — asiakas ei siirry automaattisesti kun avataan uusi tilaus asiakkaat.html:stä. Koodi: lue localStorage:sta newOrderCustomerId ja newOrderCustomerName fetchCustomers()-kutsun jälkeen
-[ ] openOrderId-lukeminen — kun asiakkaat.html:stä klikataan tilaushistoriasta tilausta, tilaus.html pitää ladata oikea tilaus localStoragen openOrderId-arvon perusteella
+Tilausmoduuli — muut
+[ ] Seinänvieripelti: kulma ei toimi oikein — seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa kulmaa
 Ulkoasu — Retool
 [ ] Retool-teemat vaativat business-version — palataan kun otetaan käyttöön
-[ ] Suunnitelma valmiina: bg=#2e2e38, primary=#e8a020, välilehtien tunnusvärit (Varasto/Tuotteet=oranssi, Kartta=vihreä, Yhteenveto=harmaa)
 Isommat kokonaisuudet
 [ ] Kartta + taulukko yhdistäminen Retoolissa
 [ ] QR-koodit hyllyihin
