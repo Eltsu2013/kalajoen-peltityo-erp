@@ -2177,6 +2177,8 @@ window.addEventListener('storage', (e) => {
     try {
       const data = JSON.parse(e.newValue);
       if (data.type === 'ADD_TO_ORDER') {
+        // Poistetaan heti jotta ei käsitellä kahteen kertaan
+        localStorage.removeItem('kpt_add_to_order');
         receiveFromMallisto(data);
       }
     } catch(err) {}
