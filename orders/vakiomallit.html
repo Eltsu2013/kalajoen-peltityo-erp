@@ -2917,7 +2917,21 @@ if (savedCtx) {
       document.getElementById('mainGrid').classList.add('with-tilausbar');
       document.getElementById('tilaus-ryhma').textContent = (tilausContext.groupName||'') + (tilausContext.groupName?' —':'');
       document.getElementById('tilaus-nimike-bar').textContent = tilausContext.nimike||'';
-      // tilausAction poistettu — nimike on tilaus-baarissa
+      // Muokkaustila — asetetaan materiaali/väri/paksuus kun tuotteet on haettu
+      if (tilausContext.existingMaterial) {
+        setTimeout(() => {
+          document.getElementById('pm-mat-search').value = tilausContext.existingMaterial;
+          document.getElementById('pm-mat').value = tilausContext.existingMaterial;
+          if (tilausContext.existingColor) {
+            document.getElementById('pm-color-search').value = tilausContext.existingColor;
+            document.getElementById('pm-color').value = tilausContext.existingColor;
+          }
+          pmUpdateThick();
+          if (tilausContext.existingThickness) {
+            document.getElementById('pm-thick').value = tilausContext.existingThickness;
+          }
+        }, 300);
+      }
     }
   } catch(e) {}
 }
