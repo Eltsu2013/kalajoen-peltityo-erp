@@ -2780,6 +2780,8 @@ function lisaaTilaukseen() {
   };
 
   bc.postMessage(payload);
+  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
+  setTimeout(() => localStorage.removeItem('kpt_add_to_order'), 2000);
   const bar = document.getElementById('tilaus-bar');
   bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
   setTimeout(() => window.close(), 1500);
