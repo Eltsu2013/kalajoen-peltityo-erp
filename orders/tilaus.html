@@ -1951,6 +1951,61 @@ async function fetchProducts() {
   // Materiaalit haetaan nyt Mallistossa
 }
 
+async function loadOrderById(orderId) {
+  // Haetaan tilauksen perustiedot
+  const r = await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + orderId + '&select=*', { headers });
+  const data = await r.json();
+  if (!data || !data[0]) return;
+  const order = data[0];
+
+  currentOrderId = order.id;
+  document.getElementById('order-number-display').textContent = order.order_number || currentOrderId.slice(0,8);
+  if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
+  if (order.notes) document.getElementById('order-notes').value = order.notes;
+
+  // Asetetaan asiakas
+  if (order.customer_id) {
+    await fetchCustomers();
+    const c = customers.find(c => c.id === order.customer_id);
+    if (c) {
+      document.getElementById('customer-search').value = c.name;
+      document.getElementById('customer-select').value = c.id;
+      document.getElementById('customer-edit-btn').style.display = 'block';
+    }
+  }
+
+  // Haetaan tilausrivit
+  const r2 = await fetch(SUPABASE_URL + '/rest/v1/order_items?order_id=eq.' + orderId + '&order=group_order,item_order', { headers });
+  const items = await r2.json();
+  if (!items || !items.length) return;
+
+  // Rakennetaan groups-rakenne order_items:istä
+  groups = [];
+  items.forEach(item => {
+    let group = groups.find(g => g.name === item.group_name);
+    if (!group) {
+      group = { id: 'g_' + Date.now() + '_' + groups.length, name: item.group_name || 'Ryhmä', items: [] };
+      groups.push(group);
+    }
+    group.items.push({
+      id: 'i_' + item.id,
+      profileType: item.profile_type,
+      nimike: item.nimike,
+      aihio_width_mm: item.aihio_width_mm,
+      profile_data: item.profile_data || {},
+      rows: item.notes ? item.notes.split(', ').map(n => {
+        const m = n.match(/^(\d+)mm × (\d+)kpl(?:\s*\((.+)\))?$/);
+        return m ? { kok: parseInt(m[1]), kpl: parseInt(m[2]), huomio: m[3] || '' } : { kok: 0, kpl: 0, huomio: n };
+      }) : [],
+      totalM2: 0
+    });
+  });
+
+  renderGroups();
+  updateSummary();
+  setSaveStatus('ok', 'Tilaus ladattu');
+}
+
 async function fetchCustomers() {
   const r = await fetch(SUPABASE_URL + '/rest/v1/customers?is_active=eq.true&order=name', { headers });
   customers = await r.json();
@@ -2626,19 +2681,25 @@ function setSaveStatus(type, msg) {
 // ── Init ──────────────────────────────────────────────────────────
 document.getElementById('order-date').value = new Date().toISOString().slice(0,10);
 fetchProducts();
-fetchCustomers().then(() => {
-  // Luetaan asiakkaat.html:stä tullut esivalinta
-  const preCustomerId = localStorage.getItem('newOrderCustomerId');
-  const preCustomerName = localStorage.getItem('newOrderCustomerName');
-  if (preCustomerId && preCustomerName) {
-    localStorage.removeItem('newOrderCustomerId');
-    localStorage.removeItem('newOrderCustomerName');
-    document.getElementById('customer-search').value = preCustomerName;
-    document.getElementById('customer-select').value = preCustomerId;
-    document.getElementById('customer-edit-btn').style.display = 'block';
-    saveOrderMeta();
-  }
-});
+const openOrderId = localStorage.getItem('openOrderId');
+if (openOrderId) {
+  localStorage.removeItem('openOrderId');
+  loadOrderById(openOrderId);
+} else {
+  fetchCustomers().then(() => {
+    // Luetaan asiakkaat.html:stä tullut esivalinta
+    const preCustomerId = localStorage.getItem('newOrderCustomerId');
+    const preCustomerName = localStorage.getItem('newOrderCustomerName');
+    if (preCustomerId && preCustomerName) {
+      localStorage.removeItem('newOrderCustomerId');
+      localStorage.removeItem('newOrderCustomerName');
+      document.getElementById('customer-search').value = preCustomerName;
+      document.getElementById('customer-select').value = preCustomerId;
+      document.getElementById('customer-edit-btn').style.display = 'block';
+      saveOrderMeta();
+    }
+  });
+}
 
 // ── Sidebar resize ────────────────────────────────────────────────
 (function() {
