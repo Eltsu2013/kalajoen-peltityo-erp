@@ -4182,17 +4182,25 @@ function aktivoiTilausPalkki(ctx) {
 
   // Muokkaustila — asetetaan materiaali/väri/paksuus kenttiin
   if (ctx.existingMaterial) {
-    document.getElementById('pm-mat-search').value = ctx.existingMaterial;
-    document.getElementById('pm-mat').value = ctx.existingMaterial;
-    if (ctx.existingColor) {
-      document.getElementById('pm-color-search').value = ctx.existingColor;
-      document.getElementById('pm-color').value = ctx.existingColor;
-    }
-    // Rakennetaan paksuus-dropdown ja asetetaan arvo
-    pmUpdateThick();
-    if (ctx.existingThickness) {
-      document.getElementById('pm-thick').value = ctx.existingThickness;
-    }
+    // Odotetaan että fetchPmProducts on valmis (500ms varmuuden vuoksi)
+    setTimeout(() => {
+      if (ctx.existingProductGroup) {
+        const grpEl = document.getElementById('pm-group-search');
+        const grpHid = document.getElementById('pm-group');
+        if (grpEl) grpEl.value = ctx.existingProductGroup;
+        if (grpHid) grpHid.value = ctx.existingProductGroup;
+      }
+      document.getElementById('pm-mat-search').value = ctx.existingMaterial;
+      document.getElementById('pm-mat').value = ctx.existingMaterial;
+      if (ctx.existingColor) {
+        document.getElementById('pm-color-search').value = ctx.existingColor;
+        document.getElementById('pm-color').value = ctx.existingColor;
+      }
+      pmUpdateThick();
+      if (ctx.existingThickness) {
+        document.getElementById('pm-thick').value = ctx.existingThickness;
+      }
+    }, 500);
   }
 }
 
@@ -4276,6 +4284,7 @@ function lisaaTilaukseen() {
     orderId: tilausContext.orderId,
     groupId: tilausContext.groupId,
     editItemId: tilausContext.editItemId || null,
+    supabaseId: tilausContext.supabaseId || null,
     profileType: activeType,
     nimike: tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
@@ -4285,6 +4294,7 @@ function lisaaTilaukseen() {
     material: document.getElementById('pm-mat').value || null,
     color: document.getElementById('pm-color').value || null,
     thickness: document.getElementById('pm-thick').value || null,
+    productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
   };
 
   // Käytetään vain BroadcastChannel — ei localStorage kaksoislisäystä
