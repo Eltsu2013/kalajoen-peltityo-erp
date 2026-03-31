@@ -1996,6 +1996,7 @@ async function loadOrderById(orderId) {
       material: item.material || null,
       color: item.color || null,
       thickness: item.thickness_mm ? String(item.thickness_mm) : null,
+      productGroup: item.product_group || null,
       profile_data: item.profile_data || {},
       rows: (item.profile_data && item.profile_data.rows) ? item.profile_data.rows :
         item.notes ? item.notes.split(', ').map(n => {
@@ -2183,7 +2184,7 @@ function receiveFromMallisto(data) {
         color: data.color || group.items[idx].color || null,
         thickness: data.thickness || group.items[idx].thickness || null,
       };
-      updateItemInSupabase(group.items[idx], data.editItemId);
+      updateItemInSupabase(group.items[idx], data.supabaseId || data.editItemId);
     }
     setSaveStatus('ok', 'Pelti päivitetty!');
   } else {
@@ -2199,6 +2200,7 @@ function receiveFromMallisto(data) {
       material: data.material || null,
       color: data.color || null,
       thickness: data.thickness || null,
+      productGroup: data.productGroup || null,
     };
     group.items.push(item);
     saveItemToSupabase(item, data.groupId);
@@ -2224,6 +2226,7 @@ async function saveItemToSupabase(item, groupId) {
     material: item.material || null,
     color: item.color || null,
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
+    product_group: item.productGroup || null,
     quantity: item.rows.reduce((s, r) => s + (r.kpl || 0), 0),
     notes: item.rows.map(r => r.paat > 0
       ? `${r.mitta}+${r.paat}=${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
@@ -2244,15 +2247,23 @@ async function saveItemToSupabase(item, groupId) {
   }
 }
 
-async function updateItemInSupabase(item, editItemId) {
-  // editItemId on muotoa 'i_<supabase-uuid>' — poistetaan etuliite
-  const supabaseId = item.supabaseId || editItemId.replace(/^i_/, '');
+async function updateItemInSupabase(item, supabaseIdOrEditId) {
+  // Käytetään suoraan annettua supabaseId:tä jos se on UUID-muodossa
+  // UUID tunnistaa siitä että siinä on väliviivoja eikä se ala i_:llä
+  const isUuid = supabaseIdOrEditId && !supabaseIdOrEditId.startsWith('i_') && supabaseIdOrEditId.includes('-');
+  const supabaseId = isUuid ? supabaseIdOrEditId : (item.supabaseId || null);
+  if (!supabaseId) {
+    console.warn('updateItemInSupabase: ei löydy supabaseId:tä, ei päivitetä', item);
+    setSaveStatus('err', 'Päivitys epäonnistui — tallennetaan uutena');
+    return;
+  }
   const body = {
     profile_data: { ...(item.profile_data || {}), rows: item.rows || [] },
     aihio_width_mm: item.aihio_width_mm,
     material: item.material || null,
     color: item.color || null,
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
+    product_group: item.productGroup || null,
     quantity: item.rows.reduce((s, r) => s + (r.kpl || 0), 0),
     notes: item.rows.map(r => r.paat > 0
       ? `${r.mitta}+${r.paat}=${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
@@ -2688,6 +2699,8 @@ function editItem(groupId, itemId) {
     nimike: item.nimike,
     profileType: item.profileType,
     editItemId: itemId,           // merkki että muokataan olemassa olevaa
+    supabaseId: item.supabaseId || null,
+    existingProductGroup: item.productGroup || null,
     existingData: item.profile_data,
     existingRows: item.rows,
     existingMaterial: item.material || null,
