@@ -2764,7 +2764,7 @@ function lisaaTilaukseen() {
     orderId: tilausContext.orderId,
     groupId: tilausContext.groupId,
     editItemId: tilausContext.editItemId || null,
-    profileType: 'avp',
+    supabaseId: tilausContext.supabaseId || null,
     nimike: document.getElementById('nmikeInput').value || '',
     aihio_width_mm: Math.round(aihio),
     profile_data: { vals: {}, opts: {} },
@@ -2776,6 +2776,7 @@ function lisaaTilaukseen() {
     material: document.getElementById('pm-mat').value || null,
     color: document.getElementById('pm-color').value || null,
     thickness: document.getElementById('pm-thick').value || null,
+    productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
   };
 
   bc.postMessage(payload);
@@ -2920,6 +2921,10 @@ if (savedCtx) {
       // Muokkaustila — asetetaan materiaali/väri/paksuus kun tuotteet on haettu
       if (tilausContext.existingMaterial) {
         setTimeout(() => {
+          if (tilausContext.existingProductGroup) {
+            document.getElementById('pm-group-search').value = tilausContext.existingProductGroup;
+            document.getElementById('pm-group').value = tilausContext.existingProductGroup;
+          }
           document.getElementById('pm-mat-search').value = tilausContext.existingMaterial;
           document.getElementById('pm-mat').value = tilausContext.existingMaterial;
           if (tilausContext.existingColor) {
@@ -2930,7 +2935,7 @@ if (savedCtx) {
           if (tilausContext.existingThickness) {
             document.getElementById('pm-thick').value = tilausContext.existingThickness;
           }
-        }, 300);
+        }, 500);
       }
     }
   } catch(e) {}
