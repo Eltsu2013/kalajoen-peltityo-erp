@@ -2171,6 +2171,18 @@ bc.onmessage = (e) => {
   }
 };
 
+// localStorage-fallback jos BroadcastChannel ei toimi
+window.addEventListener('storage', (e) => {
+  if (e.key === 'kpt_add_to_order' && e.newValue) {
+    try {
+      const data = JSON.parse(e.newValue);
+      if (data.type === 'ADD_TO_ORDER') {
+        receiveFromMallisto(data);
+      }
+    } catch(err) {}
+  }
+});
+
 function receiveFromMallisto(data) {
   const group = groups.find(g => g.id === data.groupId);
   if (!group) return;
