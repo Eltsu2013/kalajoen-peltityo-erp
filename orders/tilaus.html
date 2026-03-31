@@ -2196,7 +2196,8 @@ function receiveFromMallisto(data) {
 }
 
 async function saveItemToSupabase(item, groupId) {
-  if (!currentOrderId) return;
+  if (!currentOrderId) await createOrder();
+  if (!currentOrderId) return; // createOrder epäonnistui
   const body = {
     order_id: currentOrderId,
     group_name: groups.find(g => g.id === groupId)?.name,
