@@ -2341,7 +2341,10 @@ function openMallisto() {
     }
     addGroup();
     // Odotetaan hetki että ryhmä luodaan
-    setTimeout(() => _openMallisto(groups[groups.length-1].id, profileType, nimike), 100);
+    const newGroup = groups[groups.length-1];
+    if (newGroup) {
+      setTimeout(() => _openMallisto(newGroup.id, profileType, nimike), 100);
+    }
     return;
   }
   _openMallisto(groupId, profileType, nimike);
