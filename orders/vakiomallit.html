@@ -2779,7 +2779,7 @@ function lisaaTilaukseen() {
     productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
   };
 
-  bc.postMessage(payload);
+  // Lähetetään localStoragen kautta — BroadcastChannel ei toimi GitHub Pagesilla luotettavasti
   localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
   setTimeout(() => localStorage.removeItem('kpt_add_to_order'), 2000);
   const bar = document.getElementById('tilaus-bar');
