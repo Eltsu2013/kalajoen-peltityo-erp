@@ -4297,8 +4297,11 @@ function lisaaTilaukseen() {
     productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
   };
 
-  // Käytetään vain BroadcastChannel — ei localStorage kaksoislisäystä
+  // Lähetetään sekä BroadcastChannelilla että localStoragella varmuuden vuoksi
   bc.postMessage(payload);
+  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
+  // Poistetaan heti jotta storage-event laukeaa myös seuraavalla kerralla
+  setTimeout(() => localStorage.removeItem('kpt_add_to_order'), 2000);
 
   const bar = document.getElementById('tilaus-bar');
   bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
