@@ -4179,6 +4179,21 @@ function aktivoiTilausPalkki(ctx) {
   bar.style.display = 'flex';
   document.getElementById('tilaus-ryhmä').textContent = tilausContext.groupName + ' —';
   document.getElementById('tilaus-nimike').textContent = tilausContext.nimike;
+
+  // Muokkaustila — asetetaan materiaali/väri/paksuus kenttiin
+  if (ctx.existingMaterial) {
+    document.getElementById('pm-mat-search').value = ctx.existingMaterial;
+    document.getElementById('pm-mat').value = ctx.existingMaterial;
+    if (ctx.existingColor) {
+      document.getElementById('pm-color-search').value = ctx.existingColor;
+      document.getElementById('pm-color').value = ctx.existingColor;
+    }
+    // Rakennetaan paksuus-dropdown ja asetetaan arvo
+    pmUpdateThick();
+    if (ctx.existingThickness) {
+      document.getElementById('pm-thick').value = ctx.existingThickness;
+    }
+  }
 }
 
 // Luetaan konteksti localStoragesta heti kun sivu aukeaa
