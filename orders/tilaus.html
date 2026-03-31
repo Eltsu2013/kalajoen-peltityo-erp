@@ -1960,7 +1960,9 @@ async function loadOrderById(orderId) {
 
   currentOrderId = order.id;
   document.getElementById('order-number-display').textContent = order.order_number || currentOrderId.slice(0,8);
+  if (order.order_date) document.getElementById('order-date').value = order.order_date.slice(0,10);
   if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
+  if (order.kohde) document.getElementById('order-kohde').value = order.kohde;
   if (order.notes) document.getElementById('order-notes').value = order.notes;
 
   // Asetetaan asiakas
@@ -2068,7 +2070,8 @@ async function createOrder() {
     customer_id: customerId || null,
     order_date: document.getElementById('order-date')?.value || new Date().toISOString().slice(0,10),
     status: 'DRAFT',
-    notes: ''
+    kohde: document.getElementById('order-kohde')?.value || null,
+    notes: document.getElementById('order-notes')?.value || ''
   };
   const r = await fetch(SUPABASE_URL + '/rest/v1/orders', {
     method: 'POST',
@@ -2093,7 +2096,9 @@ async function saveOrderMeta() {
   saveTimer = setTimeout(async () => {
     const body = {
       customer_id: document.getElementById('customer-select').value || null,
+      order_date: document.getElementById('order-date').value || null,
       delivery_date: document.getElementById('order-delivery').value || null,
+      kohde: document.getElementById('order-kohde').value || null,
       notes: document.getElementById('order-notes').value
     };
     await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + currentOrderId, {
@@ -2174,6 +2179,8 @@ function receiveFromMallisto(data) {
     // Muokkaus — korvataan olemassa oleva rivi
     const idx = group.items.findIndex(i => i.id === data.editItemId);
     if (idx !== -1) {
+      // Tallennetaan supabaseId ennen ylikirjoitusta
+      const existingSupabaseId = group.items[idx].supabaseId || data.supabaseId || null;
       group.items[idx] = {
         ...group.items[idx],
         aihio_width_mm: data.aihio_width_mm,
@@ -2183,8 +2190,14 @@ function receiveFromMallisto(data) {
         material: data.material || group.items[idx].material || null,
         color: data.color || group.items[idx].color || null,
         thickness: data.thickness || group.items[idx].thickness || null,
+        supabaseId: existingSupabaseId,
       };
-      updateItemInSupabase(group.items[idx], data.supabaseId || data.editItemId);
+      if (existingSupabaseId) {
+        updateItemInSupabase(group.items[idx], existingSupabaseId);
+      } else {
+        console.warn('Muokkaus: supabaseId puuttuu. editItemId:', data.editItemId);
+        setSaveStatus('err', 'Tallennus epäonnistui — avaa tilaus uudelleen ja yritä');
+      }
     }
     setSaveStatus('ok', 'Pelti päivitetty!');
   } else {
