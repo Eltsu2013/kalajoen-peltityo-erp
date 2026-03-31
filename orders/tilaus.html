@@ -1993,10 +1993,16 @@ async function loadOrderById(orderId) {
       nimike: item.nimike,
       aihio_width_mm: item.aihio_width_mm,
       profile_data: item.profile_data || {},
-      rows: item.notes ? item.notes.split(', ').map(n => {
-        const m = n.match(/^(\d+)mm × (\d+)kpl(?:\s*\((.+)\))?$/);
-        return m ? { kok: parseInt(m[1]), kpl: parseInt(m[2]), huomio: m[3] || '' } : { kok: 0, kpl: 0, huomio: n };
-      }) : [],
+      rows: (item.profile_data && item.profile_data.rows) ? item.profile_data.rows :
+        item.notes ? item.notes.split(', ').map(n => {
+          // Uusi formaatti: 3000+100=3100mm × 4kpl (huomio)
+          const m1 = n.match(/^(\d+)\+(\d+)=(\d+)mm × (\d+)kpl(?:\s*\((.+)\))?$/);
+          if (m1) return { mitta: parseInt(m1[1]), paat: parseInt(m1[2]), kok: parseInt(m1[3]), kpl: parseInt(m1[4]), huomio: m1[5] || '' };
+          // Vanha formaatti: 3000mm × 4kpl (huomio)
+          const m2 = n.match(/^(\d+)mm × (\d+)kpl(?:\s*\((.+)\))?$/);
+          if (m2) return { mitta: parseInt(m2[1]), paat: 0, kok: parseInt(m2[1]), kpl: parseInt(m2[2]), huomio: m2[3] || '' };
+          return { mitta: 0, paat: 0, kok: 0, kpl: 0, huomio: n };
+        }) : [],
       totalM2: 0
     });
   });
@@ -2205,10 +2211,13 @@ async function saveItemToSupabase(item, groupId) {
     item_order: groups.find(g => g.id === groupId)?.items.length - 1,
     nimike: item.nimike,
     profile_type: item.profileType,
-    profile_data: item.profile_data,
+    profile_data: { ...(item.profile_data || {}), rows: item.rows || [] },
     aihio_width_mm: item.aihio_width_mm,
     quantity: item.rows.reduce((s, r) => s + (r.kpl || 0), 0),
-    notes: item.rows.map(r => `${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`).join(', ')
+    notes: item.rows.map(r => r.paat > 0
+      ? `${r.mitta}+${r.paat}=${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
+      : `${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
+    ).join(', ')
   };
   await fetch(SUPABASE_URL + '/rest/v1/order_items', {
     method: 'POST',
