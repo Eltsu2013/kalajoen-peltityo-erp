@@ -2689,7 +2689,10 @@ function editItem(groupId, itemId) {
     profileType: item.profileType,
     editItemId: itemId,           // merkki että muokataan olemassa olevaa
     existingData: item.profile_data,
-    existingRows: item.rows
+    existingRows: item.rows,
+    existingMaterial: item.material || null,
+    existingColor: item.color || null,
+    existingThickness: item.thickness || null,
   };
   localStorage.setItem('kpt_open_profile', JSON.stringify(context));
   window.open('peltipiirturi.html', '_blank');
