@@ -2162,16 +2162,11 @@ function deleteGroup(id) {
   updateSummary();
 }
 
-// ── Tilausintegraatio BroadcastChannel ───────────────────────────
-const bc = new BroadcastChannel('kpt_mallisto');
+// ── Tilausintegraatio — localStorage ─────────────────────────────
+// BroadcastChannel ei toimi GitHub Pagesilla luotettavasti, käytetään localStoragea
+const bc = new BroadcastChannel('kpt_mallisto'); // pidetään olemassa muttei käytetä
 
-bc.onmessage = (e) => {
-  if (e.data.type === 'ADD_TO_ORDER') {
-    receiveFromMallisto(e.data);
-  }
-};
-
-// localStorage-fallback jos BroadcastChannel ei toimi
+// localStorage-kuuntelija
 window.addEventListener('storage', (e) => {
   if (e.key === 'kpt_add_to_order' && e.newValue) {
     try {
