@@ -1976,8 +1976,8 @@ async function loadOrderById(orderId) {
     }
   }
 
-  // Haetaan tilausrivit
-  const r2 = await fetch(SUPABASE_URL + '/rest/v1/order_items?order_id=eq.' + orderId + '&order=group_order,item_order', { headers });
+  // Haetaan tilausrivit + alarivit samalla haulla
+  const r2 = await fetch(SUPABASE_URL + '/rest/v1/order_items?order_id=eq.' + orderId + '&order=group_order,item_order&select=*,order_item_rows(*),order_item_angles(*)', { headers });
   const items = await r2.json();
   if (!items || !items.length) return;
 
@@ -1989,6 +1989,28 @@ async function loadOrderById(orderId) {
       group = { id: 'g_' + Date.now() + '_' + groups.length, name: item.group_name || 'Ryhmä', items: [] };
       groups.push(group);
     }
+
+    // Pituusrivit — ensin order_item_rows, fallback profile_data.rows
+    let rows = [];
+    if (item.order_item_rows && item.order_item_rows.length > 0) {
+      rows = item.order_item_rows
+        .sort((a, b) => a.row_order - b.row_order)
+        .map(r => ({
+          mitta: r.mitta_mm || 0,
+          paat: r.paat_mm || 0,
+          kok: r.kok_mm || 0,
+          kpl: r.kpl || 0,
+          huomio: r.huomio || ''
+        }));
+    } else if (item.profile_data && item.profile_data.rows) {
+      rows = item.profile_data.rows;
+    }
+
+    // Kulmat
+    const angles = (item.order_item_angles || [])
+      .sort((a, b) => a.position_index - b.position_index)
+      .map(a => ({ position_index: a.position_index, angle_value: a.angle_value }));
+
     group.items.push({
       id: 'i_' + item.id,
       supabaseId: item.id,
@@ -2000,16 +2022,8 @@ async function loadOrderById(orderId) {
       thickness: item.thickness_mm ? String(item.thickness_mm) : null,
       productGroup: item.product_group || null,
       profile_data: item.profile_data || {},
-      rows: (item.profile_data && item.profile_data.rows) ? item.profile_data.rows :
-        item.notes ? item.notes.split(', ').map(n => {
-          // Uusi formaatti: 3000+100=3100mm × 4kpl (huomio)
-          const m1 = n.match(/^(\d+)\+(\d+)=(\d+)mm × (\d+)kpl(?:\s*\((.+)\))?$/);
-          if (m1) return { mitta: parseInt(m1[1]), paat: parseInt(m1[2]), kok: parseInt(m1[3]), kpl: parseInt(m1[4]), huomio: m1[5] || '' };
-          // Vanha formaatti: 3000mm × 4kpl (huomio)
-          const m2 = n.match(/^(\d+)mm × (\d+)kpl(?:\s*\((.+)\))?$/);
-          if (m2) return { mitta: parseInt(m2[1]), paat: 0, kok: parseInt(m2[1]), kpl: parseInt(m2[2]), huomio: m2[3] || '' };
-          return { mitta: 0, paat: 0, kok: 0, kpl: 0, huomio: n };
-        }) : [],
+      rows,
+      angles,
       totalM2: 0
     });
   });
@@ -2218,6 +2232,7 @@ function receiveFromMallisto(data) {
       aihio_width_mm: data.aihio_width_mm,
       profile_data: data.profile_data,
       rows: data.rows,
+      angles: data.angles || [],
       totalM2: data.totalM2,
       material: data.material || null,
       color: data.color || null,
@@ -2233,9 +2248,62 @@ function receiveFromMallisto(data) {
   updateSummary();
 }
 
+// ── Apufunktio: tallenna alarivit, kulmat, leveys ─────────────────
+async function saveSubItems(orderItemId, item) {
+  // 1. Pituusrivit — poistetaan vanhat ja lisätään uudet
+  await fetch(SUPABASE_URL + '/rest/v1/order_item_rows?order_item_id=eq.' + orderItemId, {
+    method: 'DELETE', headers
+  });
+  if (item.rows && item.rows.length > 0) {
+    const rowBodies = item.rows.map((r, i) => ({
+      order_item_id: orderItemId,
+      row_order: i,
+      mitta_mm: Number(r.mitta) || 0,
+      paat_mm: Number(r.paat) || 0,
+      kok_mm: Number(r.kok) || (Number(r.mitta) + Number(r.paat)) || 0,
+      kpl: Number(r.kpl) || 0,
+      huomio: r.huomio || null
+    }));
+    await fetch(SUPABASE_URL + '/rest/v1/order_item_rows', {
+      method: 'POST',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(rowBodies)
+    });
+  }
+
+  // 2. Kulmat — poistetaan vanhat ja lisätään uudet
+  await fetch(SUPABASE_URL + '/rest/v1/order_item_angles?order_item_id=eq.' + orderItemId, {
+    method: 'DELETE', headers
+  });
+  if (item.angles && item.angles.length > 0) {
+    const angleBodies = item.angles.map(a => ({
+      order_item_id: orderItemId,
+      position_index: a.position_index,
+      angle_value: a.angle_value
+    }));
+    await fetch(SUPABASE_URL + '/rest/v1/order_item_angles', {
+      method: 'POST',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(angleBodies)
+    });
+  }
+
+  // 3. Leveys — poistetaan vanha ja lisätään uusi
+  await fetch(SUPABASE_URL + '/rest/v1/order_item_widths?order_item_id=eq.' + orderItemId, {
+    method: 'DELETE', headers
+  });
+  if (item.aihio_width_mm) {
+    await fetch(SUPABASE_URL + '/rest/v1/order_item_widths', {
+      method: 'POST',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify([{ order_item_id: orderItemId, position_index: 0, width_mm: item.aihio_width_mm }])
+    });
+  }
+}
+
 async function saveItemToSupabase(item, groupId) {
   if (!currentOrderId) await createOrder();
-  if (!currentOrderId) return; // createOrder epäonnistui
+  if (!currentOrderId) return;
   const body = {
     order_id: currentOrderId,
     group_name: groups.find(g => g.id === groupId)?.name,
@@ -2249,11 +2317,7 @@ async function saveItemToSupabase(item, groupId) {
     color: item.color || null,
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
     product_group: item.productGroup || null,
-    quantity: item.rows.reduce((s, r) => s + (r.kpl || 0), 0),
-    notes: item.rows.map(r => r.paat > 0
-      ? `${r.mitta}+${r.paat}=${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
-      : `${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
-    ).join(', ')
+    quantity: item.rows ? item.rows.reduce((s, r) => s + (r.kpl || 0), 0) : 0,
   };
   const r = await fetch(SUPABASE_URL + '/rest/v1/order_items', {
     method: 'POST',
@@ -2263,20 +2327,18 @@ async function saveItemToSupabase(item, groupId) {
   if (r.ok) {
     const saved = await r.json();
     if (saved && saved[0]) {
-      // Tallennetaan Supabase-id item-objektiin myöhempää muokkausta varten
       item.supabaseId = saved[0].id;
+      await saveSubItems(saved[0].id, item);
     }
   }
 }
 
 async function updateItemInSupabase(item, supabaseIdOrEditId) {
-  // Käytetään suoraan annettua supabaseId:tä jos se on UUID-muodossa
-  // UUID tunnistaa siitä että siinä on väliviivoja eikä se ala i_:llä
   const isUuid = supabaseIdOrEditId && !supabaseIdOrEditId.startsWith('i_') && supabaseIdOrEditId.includes('-');
   const supabaseId = isUuid ? supabaseIdOrEditId : (item.supabaseId || null);
   if (!supabaseId) {
-    console.warn('updateItemInSupabase: ei löydy supabaseId:tä, ei päivitetä', item);
-    setSaveStatus('err', 'Päivitys epäonnistui — tallennetaan uutena');
+    console.warn('updateItemInSupabase: ei löydy supabaseId:tä', item);
+    setSaveStatus('err', 'Päivitys epäonnistui — avaa tilaus uudelleen');
     return;
   }
   const body = {
@@ -2286,17 +2348,14 @@ async function updateItemInSupabase(item, supabaseIdOrEditId) {
     color: item.color || null,
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
     product_group: item.productGroup || null,
-    quantity: item.rows.reduce((s, r) => s + (r.kpl || 0), 0),
-    notes: item.rows.map(r => r.paat > 0
-      ? `${r.mitta}+${r.paat}=${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
-      : `${r.kok}mm × ${r.kpl}kpl${r.huomio ? ' (' + r.huomio + ')' : ''}`
-    ).join(', ')
+    quantity: item.rows ? item.rows.reduce((s, r) => s + (r.kpl || 0), 0) : 0,
   };
   await fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + supabaseId, {
     method: 'PATCH',
     headers: { ...headers, 'Prefer': 'return=minimal' },
     body: JSON.stringify(body)
   });
+  await saveSubItems(supabaseId, item);
 }
 
 // ── Profiilien lisäys ─────────────────────────────────────────────
