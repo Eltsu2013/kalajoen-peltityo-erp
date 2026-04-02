@@ -1,5 +1,5 @@
 Kalajoen Peltityö ERP — Tilanne ja tekolista
-Projektin tila (31. maaliskuuta 2026)
+Projektin tila (2. huhtikuuta 2026)
 ---
 VALMIS ✅
 Varastonhallinta
@@ -28,110 +28,87 @@ Tuoteryhmä/materiaali/väri/paksuus-valinta — hakee Supabasesta, suodattuu un
 Sidebar resize — vetoelementti, muistaa leveyden, 2/3/4 saraketta leveyden mukaan
 Kulma-kentät siniharmaina (border + teksti), mitta-kentät normaalit — visuaalinen erottelu
 Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
-Korjattu: Alavp 2 näyttää kaaton ja etenemän kuten Alavesipelti
-Korjattu: Eturäystäspelti laskee Tippanokka mm ja Tupla B mm mukaan aihioleveyteen
-Korjattu: Peruuta-nappi sulkee välilehden oikein (window.close)
+Integraatio tilaus.html:ään localStorage-kanavalla (BroadcastChannel ei toimi GitHub Pagesilla)
+Lähettää: rivit, kulmat, aihioleveys, materiaali, väri, paksuus, tuoteryhmä
 vakiomallit.html — Parmaco-vakiomallien piirtotyökalu (yhtenäinen sivu)
 Kaikki Parmaco-vakiomallit yhdellä sivulla profiilivalintanapein
 Profiilityypit: Ikkunapellit (Yläpelti / Alapelti), Kynnyspelti 1, Alaslaskun kappalista, Hattupelti viipalesaumaan, Ulkoverhouksen katkaisulista, Kattolista, Räystäslista
-Yläpelti ja Alapelti: Pythagoraan kaavalla lasketut päät, sama kuin Alavesipelti
-Muut profiilit: käyttäjä syöttää Päät itse
-Tuoteryhmä/materiaali/väri/paksuus-valinta Supabasesta
-Tilaus-palkki headerin alla — Lisää tilaukseen sulkee ikkunan, Peruuta sulkee ikkunan
-Sidebar resize, varoitus jos vaihtaa profiilia ja rivejä täytetty
-Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
-Korjattu: Alaslaskun kappalista ja Hattupelti piirtyvät oikein (buildUlista-funktio lisätty)
-Vanhat erilliset sivut (ylapelti.html jne.) jäävät GitHubiin mutta niitä ei enää käytetä
+Sama integraatiologiikka kuin peltipiirturissa
 tilaus.html — tilauslomake
 Ryhmät (lisää, kopioi, poista, nimeä uudelleen)
 Pellit ryhmitelty aihioleveyden mukaan ryhmän sisällä
+Nimike muokattavissa suoraan tilauslistalla lennosta
 Kappalemäärä yhteensä ryhmän otsikossa
-Tilauspäivä + toimituspäivä
+Tilauspäivä + toimituspäivä + kohde/viite + huomio
+Status-valinnat: DRAFT/IN_PROGRESS/QUOTED/ORDERED/IN_PRODUCTION/COMPLETED/INVOICED (UI suomeksi)
 Asiakkaat haetaan Supabasesta, haku kirjoittamalla
-Tilaus tallentuu Supabaseen (orders + order_items)
+Tilaus tallentuu Supabaseen (orders + order_items + order_item_rows + order_item_angles + order_item_widths)
+Pellin lisäys, muokkaus, kopiointi, poisto — kaikki tallentuvat/päivittyvät/poistuvat Supabasesta
+CASCADE-poisto: pellin poisto poistaa automaattisesti rivit, kulmat ja leveydet
 Pellin muokkaus jälkikäteen Malliston kautta
-Materiaali/väri/paksuus valitaan Mallistossa — näkyy tilausrivillä
+Materiaali/väri/paksuus/tuoteryhmä valitaan Mallistossa — näkyy tilausrivillä ja tallentuu omiin sarakkeisiin
 Kappaletavara-lomake (nimike, pituus m, määrä, yksikkö, huomio)
-Sidebar resize — vetoelementti, muistaa leveyden
-Avaa Vakiomallit → -nappi sidebarissa ja headerissa
-Tuotekohtainen ⧉ Kopioi -nappi jokaisen tuoterivin Muokkaa-napin vieressä
-Asiakkaan ✎ Muokkaa -nappi ilmestyy kun asiakas valittu — avaa modaalin
-
-Uusi asiakas -nappi — lisää asiakkaan suoraan tilauksen teon yhteydessä
-Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
-openOrderId — tilauksen avaaminen asiakkaat.html:n tilaushistoriasta toimii
-newOrderCustomerId — asiakas esivalitaan kun avataan uusi tilaus asiakkaat.html:stä
-order_items tallennus korjattu (product_id ja base_length_mm ei enää pakollisia)
+Asiakkaan ✎ Muokkaa -nappi + Uusi asiakas -nappi
+Navigointipalkki (☰ Valikko)
 ---
 Asiakashallinta (GitHub Pages)
 asiakkaat.html — asiakashallinta ja -arkisto
 Asiakaslista vasemmassa paneelissa, haku nimellä/numerolla/yhteyshenkilöllä/puhelimella
 Asiakaskortti oikealla: perustiedot, laskutusosoite, yhteystiedot, OVT, muistiinpanot
-4-sarakeinen asettelu isolla näytöllä (cols4-variantit kentille)
-Muokkaa/Tallenna/Peruuta-toiminnot — kentät lukittu oletuksena
-Arkistoi/Palauta-toiminto (is_active), kolme nappia: Aktiiviset / Arkistoidut / Kaikki
-Tilaushistoria asiakaskortin alla — tilausriviä klikkaamalla avautuu tilaus.html
-Uusi tilaus -nappi avaa tilaus.html uuteen välilehteen asiakas esivalittuna (localStorage)
-Tunnusväri: violetti #a855f7 (erottuu muista sivuista)
-Navigointipalkki (☰ Valikko) — linkit kaikkiin sivuihin ja Retooliin
-Sidebar resize, logo, yhteinen väripohja
-Mobiiliparannukset: media query 700px, right-panel koko ruudulle, "← Takaisin listaan" -nappi
-Isompi fontti syöttökentissä (14px) ja readonly-tilassa (15px)
-Asiakasnumero luodaan automaattisesti (next_customer_number()), ei muokattavissa
-Nimi, osoite ja kaupunki tallennetaan automaattisesti isoilla kirjaimilla
+Muokkaa/Tallenna/Peruuta-toiminnot
+Arkistoi/Palauta-toiminto (is_active)
+Tilaushistoria asiakaskortin alla — klikkaamalla avautuu tilaus.html
+Uusi tilaus -nappi avaa tilaus.html asiakas esivalittuna
+Tunnusväri: violetti #a855f7
+Mobiiliparannukset, isompi fontti, sidebar resize
+Asiakasnumero luodaan automaattisesti (next_customer_number())
+4902 asiakasta siirretty Accessista
 ---
-Ulkoasu — GitHub Pages -sivut
-Yhteinen värimaailma kaikille sivuille: bg=#2e2e38, panel=#3a3a45, border=#555563
-Sivukohtaiset tunnusvärit headerissa: tilaus=oranssi (#e8a020), peltipiirturi=sininen (#3a8fe8), vakiomallit=vihreä (#3dba6e), asiakkaat=violetti (#a855f7)
-Logo valkoiseksi CSS-filterillä brightness(0) invert(1) kaikilla sivuilla
-vakiomallit.html: oikea SVG-logo (aiemmin vain teksti "KPT")
-Navigointipalkki kaikilla sivuilla: Asiakkaat / Tilaukset / Varasto (Retool)
-Aktiivinen sivu korostettuna valikossa (current-luokka, accent-väri)
----
-Supabase — customers-taulu
-Lisätty sarakkeet: contact_person, customer_number, email2, ovt_number
-Lisätty RLS-politiikat: INSERT ja UPDATE anon-käyttäjälle
-next_customer_number() -funktio luotu — antaa seuraavan vapaan asiakasnumeron
-Supabase rivi-rajoitus nostettu 10000:een (ALTER ROLE + restart)
-4902 asiakasta siirretty Accessista — merkistö latin-1→UTF-8, aktiivisuus käännetty oikein
-Nimet, osoitteet ja kaupungit muunnettu isoiksi kirjaimiksi (UPPER)
+Tietokanta — muutokset 2.4.2026
+order_items: lisätty sarakkeet material, color, thickness_mm, product_group
+order_items: lisätty RLS UPDATE ja DELETE politiikat
+orders: lisätty sarake kohde (text)
+orders: status constraint päivitetty englanninkieliseksi (DRAFT/IN_PROGRESS/QUOTED/ORDERED/IN_PRODUCTION/COMPLETED/INVOICED)
+Uusi taulu: order_item_rows (pituusrivit)
+Uusi taulu: order_item_angles (kanttikoneen kulmat, tulevaisuudessa kanttikoneohjaukseen)
+Uusi taulu: order_item_widths (aihioleveys, tulevaisuudessa useampi leveys per profiili)
+order_item_extra_lengths: olemassa, tuleva ominaisuus (limitysvara saumoille)
 ---
 KESKEN / TEKOLISTA ⏳
-Tilausmoduuli — KRIITTINEN korjaus (uusi Tilaus-chat)
-Peltipiirturi.html → tilaus.html integraatio on rikki. Nämä pitää korjata ennen kuin tilauksia voi tehdä oikeasti:
-[ ] peltipiirturi.html: materiaali, väri, paksuus ja tuoteryhmä ei siirry tilaus.html:ään ADD_TO_ORDER-viestissä
-[ ] peltipiirturi.html: pituusrivit (mitta mm, päät mm, kok mm, kpl, huomio) pitää tallentua oikein profile_data.rows-kenttään
-[ ] tilaus.html: order_item_angles, order_item_widths, order_item_extra_lengths taulut rakennettiin juuri näitä mittoja varten — harkitaan käytetäänkö niitä vai jatketaanko profile_data-lähestymistavalla
+Asiakkaat-chat
+[ ] Tilaushistoria: järjestys uusin ensin (ORDER BY order_date DESC)
+[ ] Tilaushistoria: status suomeksi (DRAFT→Luonnos, IN_PROGRESS→Kesken jne.)
 Pienet karttatyöt
 [ ] IN-R-02 klikattavaksi kartalla
 [ ] IN-R-01 tasot 1 ja 2 kartalle
 [ ] Vasen seinä (IN-L) tarkistus
 Tilausmoduuli — muut
-[ ] Seinänvieripelti: kulma ei toimi oikein — seinälle-viiva pysyy pystysuorana mutta muut viivat eivät seuraa kulmaa
-Ulkoasu — Retool
-[ ] Retool-teemat vaativat business-version — palataan kun otetaan käyttöön
+[ ] Seinänvieripelti: kulma ei toimi oikein (HOIDETTU — tarkista)
 Isommat kokonaisuudet
-[ ] Kartta + taulukko yhdistäminen Retoolissa
-[ ] QR-koodit hyllyihin
+[ ] Tilausten hallinta — oma sivu tilaukset.html (lista tilauksista, suodatus statuksen mukaan, linkki tilaus.html:ään) — pohja ulkoasuchatin kanssa
 [ ] Leikkausoptimointi (rulla → levy → siivu, parent_stock_item_id)
 [ ] Laskutus ja maksuseuranta
 [ ] Muut varastot inventointi (Ulkovarasto, Auto, Kontti, Ulkohylly)
 [ ] Johtajan resurssioikeudet — vaatii maksullisen Retool-version
+[ ] Retool-teemat — vaatii business-version
+[ ] QR-koodit hyllyihin
+[ ] Kartta + taulukko yhdistäminen Retoolissa
 ---
-GitHub Pages — tiedostorakenne (orders/)
-Tiedosto	Kuvaus
-asiakkaat.html	Asiakashallinta ja -arkisto
-tilaus.html	Tilauslomake
-peltipiirturi.html	Mallisto — kaikki profiilityypit
-vakiomallit.html	Parmaco-vakiomallit — yhtenäinen sivu
-ylapelti.html	Vanha erillinen sivu (ei enää käytössä)
-alapellit.html	Vanha erillinen sivu (ei enää käytössä)
-kynnys1.html	Vanha erillinen sivu (ei enää käytössä)
-alaslaskun_kappalista.html	Vanha erillinen sivu (ei enää käytössä)
-hattupelti.html	Vanha erillinen sivu (ei enää käytössä)
-ulkoverhouksen_katkaisulista.html	Vanha erillinen sivu (ei enää käytössä)
-kattolista.html	Vanha erillinen sivu (ei enää käytössä)
-raystaslista.html	Vanha erillinen sivu (ei enää käytössä)
+Arkkitehtuurisuunnitelmat
+Viestintä tilaus.html ↔ peltipiirturi/vakiomallit
+BroadcastChannel ei toimi GitHub Pagesilla luotettavasti. Käytetään localStorage-kanavaa:
+Peltipiirturi/vakiomallit kirjoittaa `kpt_add_to_order`-avaimen
+tilaus.html kuuntelee `storage`-eventtiä ja käsittelee viestin kerran
+Tietokantarakenne order_item-taulut
+Periaate: tietokanta englanniksi, UI suomeksi.
+order_item_rows — pituusrivit leikkausoptimointia ja tulostusta varten
+order_item_angles — kulmat kanttikoneen ohjausta varten (tulevaisuus)
+order_item_widths — aihioleveys, tulevaisuudessa useampi leveys per profiili
+order_item_extra_lengths — limitysvara saumoille (tulevaisuus)
+profile_data jsonb — varmuuskopio, sisältää piirturin vals/opts-arvot
+Leikkausoptimointi (tuleva)
+Ryhmittelyperiaate: sama material + color + thickness_mm → sama leikkausajo.
+Tarvitaan: order_item_rows (pituudet), order_item_widths (leveydet), order_items.aihio_width_mm.
 ---
 Ohjeet uuden chat-ketjun aloitukseen
 "Jatketaan Kalajoen Peltityö ERP-projektia. Stack: Supabase + Retool + GitHub Pages. Warehouse ID: e56f3534-50f9-4081-8840-f81f03905113. Liitän projektidokumentit. Tänään tehdään: [mitä tehdään]."
