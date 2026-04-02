@@ -32,10 +32,49 @@ Liikkeet ja muutokset.
 Kentät: stock_item_id, movement_type (IN/CUT/TRANSFER/ADJUST/ARCHIVE), quantity_change, jne.
 orders
 Tilaukset. customer_id on nullable.
-Kentät: customer_id, order_date, delivery_date, status, notes.
+Kentät: customer_id, order_date, delivery_date, status, notes, kohde.
+Status-arvot (englanti → UI suomeksi):
+DRAFT → Luonnos
+IN_PROGRESS → Kesken
+QUOTED → Tarjottu
+ORDERED → Tilattu
+IN_PRODUCTION → Työn alla
+COMPLETED → Valmis
+INVOICED → Laskutettu
+RLS-politiikat:
+SELECT, INSERT, UPDATE: anon sallittu
 order_items
 Tilausrivit.
-Kentät: order_id, group_name, group_order, item_order, nimike, profile_type, profile_data (jsonb), aihio_width_mm, quantity.
+Kentät: order_id, group_name, group_order, item_order, nimike, profile_type, profile_data (jsonb), aihio_width_mm, quantity, material, color, thickness_mm, product_group.
+profile_data (jsonb) — varmuuskopio, sisältää piirturin vals/opts-arvot
+material, color, thickness_mm, product_group — omat sarakkeet leikkausoptimointia varten
+RLS-politiikat:
+SELECT: "Allow select order_items" — anon saa lukea
+INSERT: "Allow insert order_items" — anon saa lisätä
+UPDATE: "Allow anon update order_items" — anon saa päivittää
+DELETE: "Allow anon delete order_items" — anon saa poistaa
+order_item_rows
+Tilausrivin pituusrivit. Yksi rivi per pituus/kappalemäärä-kombinaatio.
+Liittyy order_items:iin — CASCADE poistaa rivit kun order_item poistetaan.
+Kentät: order_item_id, row_order, mitta_mm, paat_mm, kok_mm, kpl, huomio.
+Käyttötarkoitus: leikkausoptimointi, tulostus, työkortti.
+RLS-politiikat: SELECT, INSERT, UPDATE, DELETE — anon sallittu.
+order_item_angles
+Kanttikoneen taivutuskulmat per tilausrivi, järjestyksessä.
+Liittyy order_items:iin — CASCADE poistaa rivit kun order_item poistetaan.
+Kentät: order_item_id, position_index, angle_value.
+Käyttötarkoitus: kanttikoneen ohjaus (tuleva ominaisuus), työkortti.
+RLS-politiikat: SELECT, INSERT, UPDATE, DELETE — anon sallittu.
+order_item_widths
+Aihioleveys per tilausrivi. Toistaiseksi yksi rivi per item, tulevaisuudessa useampi leveys per profiili.
+Liittyy order_items:iin — CASCADE poistaa rivit kun order_item poistetaan.
+Kentät: order_item_id, position_index, width_mm.
+Käyttötarkoitus: leikkausoptimointi.
+RLS-politiikat: SELECT, INSERT, UPDATE, DELETE — anon sallittu.
+order_item_extra_lengths
+Limitysvara saumoille. Tulevaisuuden ominaisuus — käytetään kun tilaus tulee metrimääränä (esim. 60m) ja ohjelma laskee tarvittavan kokonaismateriaalin limitysvarat huomioiden.
+Liittyy order_items:iin — CASCADE poistaa rivit kun order_item poistetaan.
+Kentät: order_item_id, extra_length_mm.
 customers
 Asiakkaat. Täytetään Access-siirrolla.
 Kentät:
@@ -76,6 +115,7 @@ maps/verstaspohja_mitoitettu.html	Interaktiivinen varastokartta
 orders/peltipiirturi.html	Peltiprofiilien piirtotyökalu (Mallisto)
 orders/vakiomallit.html	Parmaco-vakiomallit (yhtenäinen sivu)
 orders/tilaus.html	Tilauslomake
+orders/asiakkaat.html	Asiakashallinta ja -arkisto
 Hyödyllisiä SQL-komentoja
 ```sql
 -- Kaikki varastopaikat
@@ -94,12 +134,15 @@ LEFT JOIN locations l ON si.location_id = l.id
 WHERE si.status = 'ACTIVE'
 AND si.warehouse_id = 'e56f3534-50f9-4081-8840-f81f03905113';
 
--- Tilaukset ja rivit
-SELECT o.*, c.name as customer, oi.nimike, oi.profile_type, oi.aihio_width_mm
+-- Tilaukset ja rivit materiaaleittain (leikkausoptimointia varten)
+SELECT oi.nimike, oi.material, oi.color, oi.thickness_mm, oi.aihio_width_mm,
+  r.mitta_mm, r.paat_mm, r.kok_mm, r.kpl
 FROM orders o
 LEFT JOIN customers c ON o.customer_id = c.id
 JOIN order_items oi ON oi.order_id = o.id
-ORDER BY o.order_date DESC;
+JOIN order_item_rows r ON r.order_item_id = oi.id
+WHERE o.status IN ('IN_PROGRESS','ORDERED','IN_PRODUCTION')
+ORDER BY oi.material, oi.color, oi.thickness_mm, oi.aihio_width_mm;
 
 -- Asiakkaiden sarakkeet
 SELECT column_name, data_type FROM information_schema.columns
