@@ -1811,6 +1811,18 @@
         <label>Huomio</label>
         <textarea id="order-notes" rows="2" placeholder="Vapaa huomio..." oninput="saveOrderMeta()" style="resize:vertical"></textarea>
       </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="order-status" onchange="saveOrderMeta()" style="font-weight:600">
+          <option value="DRAFT">Luonnos</option>
+          <option value="KESKEN">Kesken</option>
+          <option value="TARJOTTU">Tarjottu</option>
+          <option value="TILATTU">Tilattu</option>
+          <option value="TYÖN_ALLA">Työn alla</option>
+          <option value="VALMIS">Valmis</option>
+          <option value="LASKUTETTU">Laskutettu</option>
+        </select>
+      </div>
     </div>
 
 
@@ -1964,6 +1976,7 @@ async function loadOrderById(orderId) {
   if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
   if (order.kohde) document.getElementById('order-kohde').value = order.kohde;
   if (order.notes) document.getElementById('order-notes').value = order.notes;
+  if (order.status) document.getElementById('order-status').value = order.status;
 
   // Asetetaan asiakas
   if (order.customer_id) {
@@ -2113,7 +2126,8 @@ async function saveOrderMeta() {
       order_date: document.getElementById('order-date').value || null,
       delivery_date: document.getElementById('order-delivery').value || null,
       kohde: document.getElementById('order-kohde').value || null,
-      notes: document.getElementById('order-notes').value
+      notes: document.getElementById('order-notes').value,
+      status: document.getElementById('order-status').value || 'DRAFT'
     };
     await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + currentOrderId, {
       method: 'PATCH', headers, body: JSON.stringify(body)
@@ -2750,7 +2764,11 @@ function renderItem(item, groupId) {
     <div class="order-item">
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <span class="item-nimike">${item.nimike || item.profileType}</span>
+          <input value="${(item.nimike || item.profileType).replace(/"/g, '&quot;')}"
+            style="background:transparent;border:none;color:var(--text);font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;min-width:100px;width:auto;max-width:220px;padding:2px 4px;border-radius:3px;"
+            onchange="renameItem('${groupId}','${item.id}',this.value)"
+            onfocus="this.style.background='var(--input-bg)';this.style.border='1px solid var(--border)'"
+            onblur="this.style.background='transparent';this.style.border='none'">
           <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">LL-${item.aihio_width_mm || '—'} mm</span>
           ${item.totalM2 ? `<span class="tag">${item.totalM2.toFixed(2)} m²</span>` : ''}
         </div>
@@ -2765,6 +2783,22 @@ function renderItem(item, groupId) {
       </div>
     </div>
   `;
+}
+
+function renameItem(groupId, itemId, newNimike) {
+  const group = groups.find(g => g.id === groupId);
+  if (!group) return;
+  const item = group.items.find(i => i.id === itemId);
+  if (!item) return;
+  item.nimike = newNimike;
+  // Päivitetään Supabaseen jos supabaseId on tallessa
+  if (item.supabaseId) {
+    fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + item.supabaseId, {
+      method: 'PATCH',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ nimike: newNimike })
+    });
+  }
 }
 
 function copyItem(groupId, itemId) {
