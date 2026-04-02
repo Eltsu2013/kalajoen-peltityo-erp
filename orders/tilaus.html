@@ -2178,10 +2178,22 @@ function copyGroup(id) {
 
 function deleteGroup(id) {
   if (!confirm('Poistetaanko ryhmä?')) return;
+  const group = groups.find(g => g.id === id);
+  if (group) {
+    // Poistetaan kaikki ryhmän pellit Supabasesta
+    group.items.forEach(item => {
+      if (item.supabaseId) {
+        fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + item.supabaseId, {
+          method: 'DELETE', headers
+        });
+      }
+    });
+  }
   groups = groups.filter(g => g.id !== id);
   updateGroupSelect();
   renderGroups();
   updateSummary();
+  setSaveStatus('ok', 'Ryhmä poistettu');
 }
 
 // ── Tilausintegraatio — localStorage ─────────────────────────────
@@ -2811,9 +2823,17 @@ function deleteItem(groupId, itemId) {
   if (!confirm('Poistetaanko pelti?')) return;
   const group = groups.find(g => g.id === groupId);
   if (group) {
+    const item = group.items.find(i => i.id === itemId);
+    if (item && item.supabaseId) {
+      // Poistetaan Supabasesta — CASCADE poistaa myös rivit, kulmat ja leveydet
+      fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + item.supabaseId, {
+        method: 'DELETE', headers
+      });
+    }
     group.items = group.items.filter(i => i.id !== itemId);
     renderGroups();
     updateSummary();
+    setSaveStatus('ok', 'Pelti poistettu');
   }
 }
 
