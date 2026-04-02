@@ -2214,9 +2214,11 @@ function receiveFromMallisto(data) {
       const existingSupabaseId = group.items[idx].supabaseId || data.supabaseId || null;
       group.items[idx] = {
         ...group.items[idx],
+        nimike: data.nimike || group.items[idx].nimike,
         aihio_width_mm: data.aihio_width_mm,
         profile_data: data.profile_data,
         rows: data.rows,
+        angles: data.angles || [],
         totalM2: data.totalM2,
         material: data.material || group.items[idx].material || null,
         color: data.color || group.items[idx].color || null,
@@ -2350,6 +2352,7 @@ async function updateItemInSupabase(item, supabaseIdOrEditId) {
     return;
   }
   const body = {
+    nimike: item.nimike,
     profile_data: { ...(item.profile_data || {}), rows: item.rows || [] },
     aihio_width_mm: item.aihio_width_mm,
     material: item.material || null,
