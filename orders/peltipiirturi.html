@@ -4291,7 +4291,7 @@ function lisaaTilaukseen() {
     editItemId: tilausContext.editItemId || null,
     supabaseId: tilausContext.supabaseId || null,
     profileType: activeType,
-    nimike: tilausContext.nimike,
+    nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
     profile_data: { vals, opts },
     rows,
