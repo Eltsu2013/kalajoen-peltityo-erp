@@ -2161,11 +2161,19 @@ function renameGroup(id, name) {
 function copyGroup(id) {
   const g = groups.find(g => g.id === id);
   if (!g) return;
-  const newG = { id: 'g_' + Date.now(), name: g.name + ' (kopio)', items: g.items.map(i => ({ ...i, id: 'i_' + Date.now() + Math.random() })) };
+  const newGroupId = 'g_' + Date.now();
+  const newG = {
+    id: newGroupId,
+    name: g.name + ' (kopio)',
+    items: g.items.map(i => ({ ...i, id: 'i_' + Date.now() + Math.random(), supabaseId: null }))
+  };
   groups.push(newG);
   updateGroupSelect();
   renderGroups();
   updateSummary();
+  // Tallennetaan kaikki kopion pellit Supabaseen
+  newG.items.forEach(item => saveItemToSupabase(item, newGroupId));
+  setSaveStatus('ok', 'Ryhmä kopioitu!');
 }
 
 function deleteGroup(id) {
@@ -2750,11 +2758,12 @@ function copyItem(groupId, itemId) {
   const item = group.items.find(i => i.id === itemId);
   if (!item) return;
 
-  // Luodaan kopio itemistä uudella id:llä
+  // Luodaan kopio itemistä uudella id:llä — nollataan supabaseId jotta saa oman uuden
   const kopio = {
     ...item,
     id: 'item_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
     nimike: item.nimike + ' (kopio)',
+    supabaseId: null,
   };
 
   // Lisätään kopion jälkeen alkuperäisen perään
@@ -2762,7 +2771,10 @@ function copyItem(groupId, itemId) {
   group.items.splice(idx + 1, 0, kopio);
 
   renderGroups();
-  saveOrder();
+  updateSummary();
+  // Tallennetaan kopio Supabaseen
+  saveItemToSupabase(kopio, groupId);
+  setSaveStatus('ok', 'Pelti kopioitu!');
 }
 
 function editItem(groupId, itemId) {
