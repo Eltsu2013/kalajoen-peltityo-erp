@@ -2051,13 +2051,11 @@ async function loadOrderById(orderId) {
 async function copyOrderById(sourceId, keepCustomer) {
   setSaveStatus('', 'Kopioidaan...');
 
-  // Haetaan alkuperäinen tilaus
   const r1 = await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + sourceId + '&select=*', { headers });
   const srcOrders = await r1.json();
-  if (!srcOrders || !srcOrders[0]) { setSaveStatus('err', 'Alkuperäistä tilausta ei löydy'); return; }
+  if (!srcOrders || !srcOrders[0]) { setSaveStatus('err', 'Tilausta ei löydy'); return; }
   const src = srcOrders[0];
 
-  // Haetaan alkuperäiset rivit + pituusrivit + kulmat
   const r2 = await fetch(
     SUPABASE_URL + '/rest/v1/order_items?order_id=eq.' + sourceId +
     '&order=group_order,item_order&select=*,order_item_rows(*),order_item_angles(*)',
@@ -2065,20 +2063,18 @@ async function copyOrderById(sourceId, keepCustomer) {
   );
   const srcItems = await r2.json();
 
-  // Luodaan uusi tilaus — asiakas säilyy jos keepCustomer, muuten tyhjä
   const today = new Date().toISOString().slice(0,10);
-  const newOrderBody = {
-    status: 'DRAFT',
-    order_date: today,
-    customer_id: keepCustomer ? (src.customer_id || null) : null,
-    kohde: null,
-    delivery_date: null,
-    notes: ''
-  };
   const r3 = await fetch(SUPABASE_URL + '/rest/v1/orders', {
     method: 'POST',
     headers: { ...headers, 'Prefer': 'return=representation' },
-    body: JSON.stringify(newOrderBody)
+    body: JSON.stringify({
+      status: 'DRAFT',
+      order_date: today,
+      customer_id: keepCustomer ? (src.customer_id || null) : null,
+      kohde: null,
+      delivery_date: null,
+      notes: ''
+    })
   });
   if (!r3.ok) { setSaveStatus('err', 'Uuden tilauksen luonti epäonnistui'); return; }
   const newOrders = await r3.json();
@@ -2088,26 +2084,21 @@ async function copyOrderById(sourceId, keepCustomer) {
   document.getElementById('order-date').value = today;
   document.getElementById('order-status').value = 'DRAFT';
 
-  // Asetetaan asiakas jos kopioidaan
+  await fetchCustomers();
   if (keepCustomer && src.customer_id) {
-    await fetchCustomers();
-    const c = customers.find(c => c.id === src.customer_id);
+    const c = customers.find(cx => cx.id === src.customer_id);
     if (c) {
       document.getElementById('customer-search').value = c.name;
       document.getElementById('customer-select').value = c.id;
       document.getElementById('customer-edit-btn').style.display = 'block';
     }
-  } else {
-    await fetchCustomers();
   }
 
-  // Kopioidaan rivit ryhmittäin
   if (!srcItems || !srcItems.length) {
     setSaveStatus('ok', 'Kopioitu — ei rivejä');
     return;
   }
 
-  // Kerätään ryhmät järjestyksessä
   const groupNames = [];
   srcItems.forEach(item => {
     if (!groupNames.includes(item.group_name)) groupNames.push(item.group_name);
@@ -2115,15 +2106,13 @@ async function copyOrderById(sourceId, keepCustomer) {
 
   groups = [];
   for (const gName of groupNames) {
-    const gItems = srcItems.filter(i => i.group_name === gName);
+    const gItems = srcItems.filter(it => it.group_name === gName);
     const groupId = 'g_' + Date.now() + '_' + groups.length;
     const newGroup = { id: groupId, name: gName, items: [] };
     groups.push(newGroup);
 
     for (let gi = 0; gi < gItems.length; gi++) {
       const srcItem = gItems[gi];
-
-      // Pituusrivit
       let rows = [];
       if (srcItem.order_item_rows && srcItem.order_item_rows.length > 0) {
         rows = srcItem.order_item_rows
@@ -2132,8 +2121,6 @@ async function copyOrderById(sourceId, keepCustomer) {
       } else if (srcItem.profile_data && srcItem.profile_data.rows) {
         rows = srcItem.profile_data.rows;
       }
-
-      // Kulmat
       const angles = (srcItem.order_item_angles || [])
         .sort((a, b) => a.position_index - b.position_index)
         .map(a => ({ position_index: a.position_index, angle_value: a.angle_value }));
@@ -2155,26 +2142,24 @@ async function copyOrderById(sourceId, keepCustomer) {
       };
       newGroup.items.push(newItem);
 
-      // Tallennetaan rivi Supabaseen
-      const itemBody = {
-        order_id: newOrderId,
-        group_name: gName,
-        group_order: groups.length - 1,
-        item_order: gi,
-        nimike: srcItem.nimike,
-        profile_type: srcItem.profile_type,
-        profile_data: { ...(srcItem.profile_data || {}), rows },
-        aihio_width_mm: srcItem.aihio_width_mm,
-        material: srcItem.material || null,
-        color: srcItem.color || null,
-        thickness_mm: srcItem.thickness_mm || null,
-        product_group: srcItem.product_group || null,
-        quantity: rows.reduce((s, r) => s + (r.kpl || 0), 0),
-      };
       const r4 = await fetch(SUPABASE_URL + '/rest/v1/order_items', {
         method: 'POST',
         headers: { ...headers, 'Prefer': 'return=representation' },
-        body: JSON.stringify(itemBody)
+        body: JSON.stringify({
+          order_id: newOrderId,
+          group_name: gName,
+          group_order: groups.length - 1,
+          item_order: gi,
+          nimike: srcItem.nimike,
+          profile_type: srcItem.profile_type,
+          profile_data: { ...(srcItem.profile_data || {}), rows },
+          aihio_width_mm: srcItem.aihio_width_mm,
+          material: srcItem.material || null,
+          color: srcItem.color || null,
+          thickness_mm: srcItem.thickness_mm || null,
+          product_group: srcItem.product_group || null,
+          quantity: rows.reduce((s, r) => s + (r.kpl || 0), 0),
+        })
       });
       if (r4.ok) {
         const saved = await r4.json();
@@ -2190,7 +2175,6 @@ async function copyOrderById(sourceId, keepCustomer) {
   updateSummary();
   setSaveStatus('ok', 'Kopioitu ✓');
 }
-
 
 async function fetchCustomers() {
   const r = await fetch(SUPABASE_URL + '/rest/v1/customers?is_active=eq.true&order=name', { headers });
@@ -3058,7 +3042,6 @@ if (openOrderId) {
   copyOrderById(copyOrderId, copyKeepCustomer);
 } else {
   fetchCustomers().then(() => {
-    // Luetaan asiakkaat.html:stä tullut esivalinta
     const preCustomerId = localStorage.getItem('newOrderCustomerId');
     const preCustomerName = localStorage.getItem('newOrderCustomerName');
     if (preCustomerId && preCustomerName) {
