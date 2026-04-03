@@ -271,6 +271,7 @@
   .order-row:hover { background: var(--accent-glow); cursor: pointer; }
   .order-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 90px; }
   .order-desc { flex: 1; color: var(--text); }
+  .order-kohde { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 80px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .order-status {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
     padding: 2px 7px; border-radius: 3px;
@@ -2491,7 +2492,8 @@ async function loadOrders(customerId) {
   document.getElementById('orderList').innerHTML = orders.map(o => `
     <div class="order-row" onclick="avaaTilaus('${o.id}')">
       <span class="order-date">${(o.order_date || '').slice(0,10)}</span>
-      <span class="order-desc">${o.notes || o.kohde || 'Tilaus'}</span>
+      <span class="order-kohde">${o.kohde || '—'}</span>
+      <span class="order-desc">${o.notes || ''}</span>
       <span class="order-status ${statusClass[o.status] || 'status-draft'}">${statusLabel[o.status] || o.status}</span>
     </div>
   `).join('');
