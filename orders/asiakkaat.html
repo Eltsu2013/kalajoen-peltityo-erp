@@ -269,6 +269,13 @@
   }
   .order-row:last-child { border-bottom: none; }
   .order-row:hover { background: var(--accent-glow); cursor: pointer; }
+  .copy-order-btn {
+    margin-left: auto; background: none; border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 2px 7px; border-radius: 3px; cursor: pointer;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .copy-order-btn:hover { border-color: var(--accent); color: var(--accent); }
   .order-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 90px; }
   .order-desc { flex: 1; color: var(--text); }
   .order-kohde { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 80px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2495,6 +2502,7 @@ async function loadOrders(customerId) {
       <span class="order-kohde">${o.kohde || '—'}</span>
       <span class="order-desc">${o.notes || ''}</span>
       <span class="order-status ${statusClass[o.status] || 'status-draft'}">${statusLabel[o.status] || o.status}</span>
+      <button class="copy-order-btn" onclick="event.stopPropagation(); kopioi('${o.id}', true)" title="Kopioi uudeksi tilaukseksi samalle asiakkaalle">⧉ Kopioi</button>
     </div>
   `).join('');
 }
@@ -2508,6 +2516,12 @@ function uusiTilaus() {
 
 function avaaTilaus(orderId) {
   localStorage.setItem('openOrderId', orderId);
+  window.open('../orders/tilaus.html', '_blank');
+}
+
+function kopioi(orderId, keepCustomer) {
+  localStorage.setItem('copyOrderId', orderId);
+  localStorage.setItem('copyKeepCustomer', keepCustomer ? 'true' : 'false');
   window.open('../orders/tilaus.html', '_blank');
 }
 
