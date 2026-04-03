@@ -206,6 +206,13 @@
   .order-date { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
   .order-kohde { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); }
   .order-arrow { color: var(--border); font-size: 16px; }
+  .copy-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 3px 8px; border-radius: 3px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
   .orders-table tbody tr:hover .order-arrow { color: var(--accent); }
 
   /* FOOTER */
@@ -1922,7 +1929,7 @@
           <th class="col-delivery" onclick="sortBy('delivery_date')" id="th-delivery">
             Toimitus <span class="sort-arrow" id="sa-delivery"></span>
           </th>
-          <th style="width:32px;"></th>
+          <th style="width:80px;"></th>
         </tr>
       </thead>
       <tbody id="ordersBody">
@@ -2079,13 +2086,22 @@ function renderTable(rows) {
       <td class="col-kohde order-kohde">${kohde}</td>
       <td><span class="badge badge-${cls}">${fi}</span></td>
       <td class="col-delivery order-date">${deliv}</td>
-      <td class="order-arrow">›</td>
+      <td style="white-space:nowrap;display:flex;gap:6px;align-items:center;">
+        <button class="copy-btn" onclick="event.stopPropagation(); kopioi('${o.id}')" title="Kopioi uudeksi tilaukseksi">⧉ Kopioi</button>
+        <span class="order-arrow">›</span>
+      </td>
     </tr>`;
   }).join('');
 }
 
 function openOrder(id) {
   localStorage.setItem('openOrderId', id);
+  window.location.href = 'tilaus.html';
+}
+
+function kopioi(id) {
+  localStorage.setItem('copyOrderId', id);
+  localStorage.setItem('copyKeepCustomer', 'false');
   window.location.href = 'tilaus.html';
 }
 
