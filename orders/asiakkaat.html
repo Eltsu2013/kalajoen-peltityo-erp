@@ -1891,7 +1891,10 @@
     <div class="nav-dropdown" id="navDropdown">
       <div class="nav-section-label">Sivut</div>
       <a class="nav-item current" href="asiakkaat.html">👤 Asiakkaat</a>
-      <a class="nav-item" href="tilaus.html">📋 Tilaukset</a>
+      <a class="nav-item" href="tilaukset.html">📋 Tilaukset</a>
+      <a class="nav-item" href="tilaus.html">✏️ Uusi tilaus</a>
+      <a class="nav-item" href="peltipiirturi.html">🔨 Mallisto</a>
+      <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
       <hr class="nav-divider">
       <div class="nav-section-label">Sovellukset</div>
       <a class="nav-item external" href="https://kalajoenpeltityo.retool.com/apps/03e2ccb8-0e5c-11f1-abca-8fb585b85c11/Varaston%C3%A4kym%C3%A4/Varasto" target="_blank">📦 Varasto</a>
@@ -2468,19 +2471,27 @@ async function createCustomer() {
 async function loadOrders(customerId) {
   document.getElementById('orderList').innerHTML = '<div class="empty-state" style="padding:24px;">Ladataan...</div>';
   document.getElementById('orderCount').textContent = '...';
-  const data = await supabaseGet('orders', `?customer_id=eq.${customerId}&order=order_date.desc&select=id,order_date,status,notes`);
+  const data = await supabaseGet('orders', `?customer_id=eq.${customerId}&order=order_date.desc&select=id,order_date,status,notes,kohde`);
   const orders = Array.isArray(data) ? data : [];
   document.getElementById('orderCount').textContent = `${orders.length} tilausta`;
   if (!orders.length) {
     document.getElementById('orderList').innerHTML = '<div class="empty-state" style="padding:28px;">Ei tilauksia</div>';
     return;
   }
-  const statusLabel = { draft: 'Luonnos', active: 'Aktiivinen', done: 'Valmis' };
-  const statusClass = { draft: 'status-draft', active: 'status-active', done: 'status-done' };
+  const statusLabel = {
+    DRAFT: 'Luonnos', IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu',
+    ORDERED: 'Tilattu', IN_PRODUCTION: 'Työn alla',
+    COMPLETED: 'Valmis', INVOICED: 'Laskutettu', ARCHIVED: 'Arkisto'
+  };
+  const statusClass = {
+    DRAFT: 'status-draft', IN_PROGRESS: 'status-active', QUOTED: 'status-active',
+    ORDERED: 'status-active', IN_PRODUCTION: 'status-active',
+    COMPLETED: 'status-done', INVOICED: 'status-done', ARCHIVED: 'status-draft'
+  };
   document.getElementById('orderList').innerHTML = orders.map(o => `
     <div class="order-row" onclick="avaaTilaus('${o.id}')">
       <span class="order-date">${(o.order_date || '').slice(0,10)}</span>
-      <span class="order-desc">${o.notes || 'Tilaus'}</span>
+      <span class="order-desc">${o.notes || o.kohde || 'Tilaus'}</span>
       <span class="order-status ${statusClass[o.status] || 'status-draft'}">${statusLabel[o.status] || o.status}</span>
     </div>
   `).join('');
