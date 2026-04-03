@@ -1708,6 +1708,7 @@
     <span class="saving" id="save-status"></span>
     <a href="peltipiirturi.html" style="color:var(--text-dim);font-size:12px;font-family:IBM Plex Mono,monospace;text-decoration:none">← Mallisto</a>
     <button onclick="openVakiomallit()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 12px;border-radius:3px;cursor:pointer;" onmouseover="this.style.borderColor='#e8a020';this.style.color='#e8a020'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">Vakiomallit →</button>
+    <button id="kopioi-btn" onclick="kopiointiTilaus()" style="display:none;background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 12px;border-radius:3px;cursor:pointer;" onmouseover="this.style.borderColor='#3a8fe8';this.style.color='#3a8fe8'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">⧉ Kopioi tilaus</button>
   </div>
 </header>
 
@@ -2045,6 +2046,7 @@ async function loadOrderById(orderId) {
   renderGroups();
   updateSummary();
   setSaveStatus('ok', 'Tilaus ladattu');
+  const kb = document.getElementById('kopioi-btn'); if (kb) kb.style.display = 'inline-block';
 }
 
 // ── Tilauksen kopiointi ───────────────────────────────────────────
@@ -2174,7 +2176,17 @@ async function copyOrderById(sourceId, keepCustomer) {
   renderGroups();
   updateSummary();
   setSaveStatus('ok', 'Kopioitu ✓');
+  const kb2 = document.getElementById('kopioi-btn'); if (kb2) kb2.style.display = 'inline-block';
 }
+
+function kopiointiTilaus() {
+  if (!currentOrderId) return;
+  if (!confirm('Kopioidaan tilaus uudeksi luonnokseksi ilman asiakasta. Jatketaanko?')) return;
+  localStorage.setItem('copyOrderId', currentOrderId);
+  localStorage.setItem('copyKeepCustomer', 'false');
+  window.open('tilaus.html', '_blank');
+}
+
 
 async function fetchCustomers() {
   const r = await fetch(SUPABASE_URL + '/rest/v1/customers?is_active=eq.true&order=name', { headers });
