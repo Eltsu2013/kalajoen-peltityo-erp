@@ -290,18 +290,32 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 13px;
     color: var(--blue); margin-bottom: 6px;
   }
-  .cut-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; table-layout: fixed; }
-  .cut-table th {
-    font-size: 10px; color: var(--text-dim); text-align: left;
-    padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); font-weight: 400;
+  .cut-list { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .cut-list-header {
+    display: flex; gap: 0; padding: 3px 0 3px 6px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px; color: var(--text-dim);
   }
-  .cut-table td { padding: 4px 8px 4px 0; color: var(--text); overflow: hidden; }
-  .cut-table tr:last-child td { border-bottom: none; }
-  .cut-table .kpl  { color: var(--accent); font-weight: 600; width: 40px; }
-  .cut-table .mitta { color: var(--text); width: 70px; }
-  .cut-table .paat  { color: var(--blue); width: 55px; }
-  .cut-table .kok   { color: var(--warn); font-weight: 600; width: 60px; }
-  .cut-table .done-qty-cell { width: 70px; }
+  .cut-row-wrap { padding-left: 6px; margin-bottom: 1px; }
+  .cut-row-wrap.row-done { opacity: 0.55; }
+  .cut-row-top {
+    display: flex; gap: 0; padding: 4px 0;
+    align-items: center;
+  }
+  .cut-row-bottom {
+    display: flex; gap: 8px; padding: 3px 0 5px 0;
+    align-items: center; flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .cut-row-wrap:last-child .cut-row-bottom { border-bottom: none; }
+
+  /* Sarakeleveydet — sekä header että data-riveille */
+  .cut-list .mitta, .cut-list-header .mitta { width: 72px; color: var(--text); }
+  .cut-list .paat,  .cut-list-header .paat  { width: 58px; color: var(--blue); }
+  .cut-list .kok,   .cut-list-header .kok   { width: 64px; color: var(--warn); font-weight: 600; }
+  .cut-list .kpl,   .cut-list-header .kpl   { width: 40px; color: var(--accent); font-weight: 600; }
+  .cut-list .done-qty-cell,
+  .cut-list-header .done-qty-cell            { width: 70px; }
 
   /* KANTAUS-lohko (SVG-placeholder) */
   .kantaus-block {
@@ -369,11 +383,10 @@
   .done-all { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); }
   .done-partial { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--warn); }
 
-  /* Print — rivikohtaiset napit piilotetaan */
   @media print {
-    .row-status-cell, .done-qty-input, .cut-row-sub { display: none !important; }
+    .cut-row-bottom { display: none !important; }
     .done-all, .done-partial { display: inline !important; }
-    .cut-row { border-left: 2px solid #aaa; }
+    .cut-row-wrap { border-left: 2px solid #aaa !important; }
   }
 
   /* Kappaletavara-lohko */
@@ -2503,32 +2516,34 @@ function renderItemCards(order) {
                   onchange="setRowDoneQty('${r.id}', this.value, ${idx}, '${item.id}')" title="Tehty kpl">`
               : '';
 
-        return `<tr class="cut-row${rsDone ? ' row-done' : ''}" id="row-${r.id}" style="--row-color:${rsColor}">
-          <td class="mitta">${r.mitta_mm || ''}</td>
-          <td class="paat">${r.paat_mm || ''}</td>
-          <td class="kok">${r.kok_mm || ''}</td>
-          <td class="kpl">${totalKpl}</td>
-          <td class="done-qty-cell">${doneQtyCell}</td>
-        </tr>
-        <tr class="cut-row-sub${rsDone ? ' row-done' : ''}" style="--row-color:${rsColor}">
-          <td colspan="5" class="sub-row-cell">
+        return `<div class="cut-row-wrap${rsDone ? ' row-done' : ''}" style="border-left:3px solid ${rsColor};margin-bottom:2px">
+          <div class="cut-row-top">
+            <span class="mitta">${r.mitta_mm || ''}</span>
+            <span class="paat">${r.paat_mm || ''}</span>
+            <span class="kok">${r.kok_mm || ''}</span>
+            <span class="kpl">${totalKpl}</span>
+            <span class="done-qty-cell">${doneQtyCell}</span>
+          </div>
+          <div class="cut-row-bottom">
             ${r.huomio ? `<span class="huomio-tag">⚠ ${r.huomio}</span>` : ''}
             <div class="row-steps">${rowSteps}</div>
-          </td>
-        </tr>`;
+          </div>
+        </div>`;
       }).join('');
 
       cutTable = `
         <div>
           <div class="block-title">Leikkaus</div>
           ${item.aihio_width_mm ? `<div class="aihio-width">Aihio: ${item.aihio_width_mm} mm</div>` : ''}
-          <div style="overflow-x:auto">
-          <table class="cut-table">
-            <thead><tr>
-              <th>mitta mm</th><th>päät mm</th><th>kok mm</th><th>kpl</th><th>tehty</th>
-            </tr></thead>
-            <tbody>${rowsHtml}</tbody>
-          </table>
+          <div class="cut-list">
+            <div class="cut-list-header">
+              <span class="mitta">mitta mm</span>
+              <span class="paat">päät mm</span>
+              <span class="kok">kok mm</span>
+              <span class="kpl">kpl</span>
+              <span class="done-qty-cell">tehty</span>
+            </div>
+            ${rowsHtml}
           </div>
         </div>`;
     }
