@@ -274,6 +274,39 @@
   .status-step.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   .status-step.passed { background: var(--panel); border-color: var(--accent); color: var(--accent); }
 
+  /* Rivikohtaiset statusnapit */
+  .cut-row { border-left: 3px solid var(--row-color, var(--border)); }
+  .cut-row.row-done { opacity: 0.55; }
+  .row-status-cell { min-width: 260px; padding: 3px 0; }
+  .row-steps { display: flex; gap: 3px; flex-wrap: nowrap; }
+  .row-status-btn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; padding: 3px 5px; border-radius: 3px;
+    cursor: pointer; white-space: nowrap; transition: all 0.1s;
+  }
+  .row-status-btn:hover { border-color: var(--text-dim); color: var(--text); }
+  .row-status-btn.ractive { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .row-status-btn.rpassed { border-color: var(--accent); color: var(--accent); }
+
+  /* done_qty kenttä */
+  .done-qty-cell { min-width: 70px; text-align: right; }
+  .done-qty-input {
+    width: 52px; background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 2px 5px; border-radius: 3px; text-align: center;
+  }
+  .done-qty-input:focus { outline: none; border-color: var(--accent); }
+  .done-all { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); }
+  .done-partial { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--warn); }
+
+  /* Print — rivikohtaiset napit piilotetaan */
+  @media print {
+    .row-status-cell, .done-qty-input { display: none !important; }
+    .done-all, .done-partial { display: inline !important; }
+    .cut-row { border-left: 2px solid #aaa; }
+  }
+
   /* Kappaletavara-lohko */
   .kap-block {
     display: flex; align-items: baseline; gap: 12px;
@@ -2019,7 +2052,7 @@ async function loadOrders() {
 
   const r2 = await fetch(
     `${SUPABASE_URL}/rest/v1/order_items?order_id=in.(${orderIds})` +
-    `&select=id,order_id,group_name,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,product_group,quantity,profile_data,production_status,order_item_rows(mitta_mm,paat_mm,kok_mm,kpl,huomio,row_order)`,
+    `&select=id,order_id,group_name,group_order,item_order,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,product_group,quantity,profile_data,order_item_rows(id,mitta_mm,paat_mm,kok_mm,kpl,huomio,row_order,production_status,done_qty)`,
     { headers }
   );
   const items = await r2.json();
@@ -2215,6 +2248,22 @@ function showList() {
 
 const STEPS = ['Odottaa', 'Leikattu', 'Kantattu', 'Lisätyöt', 'Valmis'];
 const STEP_KEYS = ['WAITING', 'CUT', 'BENT', 'EXTRA', 'DONE'];
+const STEP_COLORS = {
+  WAITING: 'var(--border)',
+  CUT: 'var(--blue)',
+  BENT: 'var(--warn)',
+  EXTRA: '#a855f7',
+  DONE: 'var(--accent)'
+};
+
+// Laskee order_item tason "kokonaistatus" pituusriveistä
+function calcItemStatus(rows) {
+  if (!rows || !rows.length) return 'WAITING';
+  const statuses = rows.map(r => r.production_status || 'WAITING');
+  if (statuses.every(s => s === 'DONE')) return 'DONE';
+  if (statuses.some(s => s !== 'WAITING')) return 'CUT'; // aloitettu
+  return 'WAITING';
+}
 
 function renderItemCards(order) {
   const grid = document.getElementById('itemsGrid');
@@ -2223,39 +2272,76 @@ function renderItemCards(order) {
     return;
   }
 
-  grid.innerHTML = order.items.map((item, idx) => {
-    const mat = [item.material, item.color, item.thickness_mm ? item.thickness_mm + 'mm' : ''].filter(Boolean).join(' · ');
-    const isDone = item.production_status === 'DONE';
-    const currentStep = STEP_KEYS.indexOf(item.production_status || 'WAITING');
+  // Lajitellaan group_order + item_order mukaan
+  const sorted = [...order.items].sort((a,b) =>
+    ((a.group_order||0) - (b.group_order||0)) || ((a.item_order||0) - (b.item_order||0))
+  );
 
-    // Pituustaulukko
-    let cutTable = '';
+  grid.innerHTML = sorted.map((item, idx) => {
+    const mat = [item.material, item.color, item.thickness_mm ? item.thickness_mm + 'mm' : ''].filter(Boolean).join(' · ');
     const rows = (item.order_item_rows || []).sort((a,b) => (a.row_order||0)-(b.row_order||0));
+
+    // Kokonaistatus lasketaan riveistä (tai suoraan itemistä jos ei rivejä)
+    const overallStatus = rows.length ? calcItemStatus(rows) : 'WAITING';
+    const isDone = overallStatus === 'DONE';
+
+    // Pituustaulukko — sarakkeet: mitta | päät | kok | huomio | kpl | status | tehty
+    let cutTable = '';
     if (rows.length) {
+      const rowsHtml = rows.map(r => {
+        const rs = r.production_status || 'WAITING';
+        const rsIdx = STEP_KEYS.indexOf(rs);
+        const rsColor = STEP_COLORS[rs] || 'var(--border)';
+        const rsDone = rs === 'DONE';
+        const doneQty = r.done_qty || 0;
+        const totalKpl = r.kpl || 0;
+
+        // Statusnapit per rivi — kompaktit
+        const rowSteps = STEP_KEYS.map((key, si) => {
+          const active = si === rsIdx ? ' ractive' : si < rsIdx ? ' rpassed' : '';
+          return `<button class="row-status-btn${active}"
+            onclick="setRowStatus('${r.id}', '${key}', ${idx}, '${item.id}')"
+            title="${STEPS[si]}">${STEPS[si]}</button>`;
+        }).join('');
+
+        // done_qty kenttä — näkyy vain jos ei WAITING eikä DONE
+        const doneQtyHtml = (rs !== 'WAITING' && rs !== 'DONE') ? `
+          <input type="number" class="done-qty-input"
+            value="${doneQty}" min="0" max="${totalKpl}"
+            onchange="setRowDoneQty('${r.id}', this.value, ${idx}, '${item.id}')"
+            title="Tehty kpl">` : '';
+
+        return `<tr class="cut-row${rsDone ? ' row-done' : ''}" id="row-${r.id}" style="--row-color:${rsColor}">
+          <td class="mitta">${r.mitta_mm ? r.mitta_mm + ' mm' : ''}</td>
+          <td class="paat">${r.paat_mm ? r.paat_mm + ' mm' : ''}</td>
+          <td class="kok">${r.kok_mm ? r.kok_mm + ' mm' : ''}</td>
+          <td class="huomio">${r.huomio || ''}</td>
+          <td class="kpl">${totalKpl}</td>
+          <td class="row-status-cell">
+            <div class="row-steps">${rowSteps}</div>
+          </td>
+          <td class="done-qty-cell">${doneQtyHtml}${rs === 'DONE' ? '<span class="done-all">✓ kaikki</span>' : doneQty > 0 ? `<span class="done-partial">${doneQty}/${totalKpl}</span>` : ''}</td>
+        </tr>`;
+      }).join('');
+
       cutTable = `
         <div>
           <div class="block-title">Leikkaus</div>
           ${item.aihio_width_mm ? `<div class="aihio-width">Aihio: ${item.aihio_width_mm} mm</div>` : ''}
+          <div style="overflow-x:auto">
           <table class="cut-table">
             <thead><tr>
-              <th>kpl</th><th>mitta</th><th>päät</th><th>kok</th><th>huomio</th>
+              <th>mitta</th><th>päät</th><th>kok</th><th>huomio</th><th>kpl</th><th>vaihe</th><th>tehty</th>
             </tr></thead>
-            <tbody>
-              ${rows.map(r => `<tr>
-                <td class="kpl">${r.kpl || ''}</td>
-                <td class="mitta">${r.mitta_mm ? r.mitta_mm + ' mm' : ''}</td>
-                <td class="paat">${r.paat_mm ? r.paat_mm + ' mm' : ''}</td>
-                <td class="kok">${r.kok_mm ? r.kok_mm + ' mm' : ''}</td>
-                <td class="huomio">${r.huomio || ''}</td>
-              </tr>`).join('')}
-            </tbody>
+            <tbody>${rowsHtml}</tbody>
           </table>
+          </div>
         </div>`;
     }
 
-    // Kantaus-lohko (SVG-placeholder — toiminnallisuuschatti täyttää)
+    // Kantaus-lohko (SVG-placeholder)
     let kantausBlock = '';
-    if (item.profile_type && item.profile_type !== 'kappaletavara') {
+    if (item.profile_type && item.profile_type !== 'KAPPALE') {
       kantausBlock = `
         <div>
           <div class="block-title">Kantaus</div>
@@ -2269,23 +2355,21 @@ function renderItemCards(order) {
 
     // Kappaletavara-lohko
     let kapBlock = '';
-    if (!rows.length && !item.profile_type) {
+    if (item.profile_type === 'KAPPALE' || (!rows.length && !item.profile_type)) {
+      const pd = item.profile_data || {};
       kapBlock = `
         <div class="kap-block">
           <span class="kap-nimike">${item.nimike || '—'}</span>
-          <span class="kap-maara">${item.quantity || ''}</span>
-          <span class="kap-unit">${item.product_group || ''}</span>
+          <span class="kap-maara">${pd.maara || item.quantity || ''}</span>
+          <span class="kap-unit">${pd.yksikko || item.product_group || ''}</span>
+          ${pd.huomio ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">⚠ ${pd.huomio}</span>` : ''}
         </div>`;
     }
 
-    // Statusnapit
-    const stepsHtml = STEPS.map((label, si) => {
-      const stepClass = si === currentStep ? 'active' : si < currentStep ? 'passed' : '';
-      return `<button class="status-step ${stepClass}"
-        onclick="setItemStatus('${item.id}', '${STEP_KEYS[si]}', this, ${idx})">${label}</button>`;
-    }).join('');
+    // Kokonaistilan ilmaisin kortin otsikossa
+    const statusColor = STEP_COLORS[overallStatus] || 'var(--border)';
 
-    return `<div class="item-card${isDone ? ' done' : ''}" id="item-card-${idx}">
+    return `<div class="item-card${isDone ? ' done' : ''}" id="item-card-${idx}" style="border-left:4px solid ${statusColor}">
       <div class="item-card-header">
         <span class="item-nimike">${item.nimike || item.profile_type || '—'}</span>
         ${mat ? `<span class="item-material">${mat}</span>` : ''}
@@ -2296,42 +2380,49 @@ function renderItemCards(order) {
         ${kantausBlock}
         ${kapBlock}
       </div>
-      <div class="status-row">${stepsHtml}</div>
     </div>`;
   }).join('');
 }
 
-async function setItemStatus(itemId, status, btn, idx) {
-  // Päivitetään UI heti
-  const card = document.getElementById('item-card-' + idx);
-  if (card) {
-    card.querySelectorAll('.status-step').forEach((b, si) => {
-      const stepIdx = STEP_KEYS.indexOf(status);
-      b.className = 'status-step' + (si === stepIdx ? ' active' : si < stepIdx ? ' passed' : '');
-    });
-    if (status === 'DONE') {
-      card.classList.add('done');
-      card.querySelector('.item-card-header').insertAdjacentHTML('beforeend',
-        '<span class="item-done-badge">✓ VALMIS</span>');
-    } else {
-      card.classList.remove('done');
-      const badge = card.querySelector('.item-done-badge');
-      if (badge) badge.remove();
-    }
-  }
-
+// ── Rivikohtainen status ───────────────────────────────────────────
+async function setRowStatus(rowId, status, itemIdx, itemId) {
   // Tallennetaan Supabaseen
-  await fetch(`${SUPABASE_URL}/rest/v1/order_items?id=eq.${itemId}`, {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
     method: 'PATCH',
     headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
     body: JSON.stringify({ production_status: status })
   });
 
+  if (!res.ok) { alert('Tallennus epäonnistui'); return; }
+
   // Päivitetään paikallinen tila
   const o = allOrders.find(x => x.id === activeOrderId);
   if (o) {
     const item = o.items.find(i => i.id === itemId);
-    if (item) item.production_status = status;
+    if (item) {
+      const row = (item.order_item_rows || []).find(r => r.id === rowId);
+      if (row) row.production_status = status;
+    }
+    // Rendataan kortti uudelleen
+    renderItemCards(o);
+  }
+}
+
+async function setRowDoneQty(rowId, qty, itemIdx, itemId) {
+  const val = parseInt(qty) || 0;
+  await fetch(`${SUPABASE_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ done_qty: val })
+  });
+
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (o) {
+    const item = o.items.find(i => i.id === itemId);
+    if (item) {
+      const row = (item.order_item_rows || []).find(r => r.id === rowId);
+      if (row) row.done_qty = val;
+    }
   }
 }
 
