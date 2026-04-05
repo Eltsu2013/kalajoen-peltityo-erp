@@ -290,18 +290,18 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 13px;
     color: var(--blue); margin-bottom: 6px;
   }
-  .cut-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .cut-table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; table-layout: fixed; }
   .cut-table th {
     font-size: 10px; color: var(--text-dim); text-align: left;
-    padding: 3px 6px 3px 0; border-bottom: 1px solid var(--border); font-weight: 400;
+    padding: 3px 8px 3px 0; border-bottom: 1px solid var(--border); font-weight: 400;
   }
-  .cut-table td { padding: 4px 6px 4px 0; color: var(--text); }
+  .cut-table td { padding: 4px 8px 4px 0; color: var(--text); overflow: hidden; }
   .cut-table tr:last-child td { border-bottom: none; }
-  .cut-table .kpl { color: var(--accent); font-weight: 600; min-width: 28px; }
-  .cut-table .mitta { color: var(--text); min-width: 60px; }
-  .cut-table .paat { color: var(--blue); min-width: 55px; }
-  .cut-table .kok { color: var(--warn); font-weight: 600; min-width: 55px; }
-  .cut-table .huomio { color: var(--text-dim); font-size: 11px; }
+  .cut-table .kpl  { color: var(--accent); font-weight: 600; width: 40px; }
+  .cut-table .mitta { color: var(--text); width: 70px; }
+  .cut-table .paat  { color: var(--blue); width: 55px; }
+  .cut-table .kok   { color: var(--warn); font-weight: 600; width: 60px; }
+  .cut-table .done-qty-cell { width: 70px; }
 
   /* KANTAUS-lohko (SVG-placeholder) */
   .kantaus-block {
@@ -2291,15 +2291,33 @@ function renderCombinedList(orders, mat, color, thick) {
       const rows = (item.order_item_rows || []).sort((a,b) => (a.row_order||0)-(b.row_order||0));
       const rowsHtml = rows.map(r => {
         const rs = r.production_status || 'WAITING';
+        const rsIdx = STEP_KEYS.indexOf(rs);
+        const rsColor = STEP_COLORS[rs] || 'var(--border)';
         const dq = r.done_qty || 0;
-        const doneStr = rs === 'DONE' ? '' : dq > 0 ? ` (${dq}/${r.kpl} tehty)` : '';
-        return `<div class="combined-pituusrivi">
-          <span class="cm">${r.mitta_mm ? r.mitta_mm + ' mm' : ''}</span>
-          <span class="cp">${r.paat_mm ? '+ ' + r.paat_mm + ' mm' : ''}</span>
-          <span class="cko">${r.kok_mm ? r.kok_mm + ' mm' : ''}</span>
-          <span class="ck">${r.kpl || ''} kpl${doneStr}</span>
+        const totalKpl = r.kpl || 0;
+
+        const rowSteps = STEP_KEYS.map((key, si) => {
+          const active = si === rsIdx ? ' ractive' : si < rsIdx ? ' rpassed' : '';
+          return `<button class="row-status-btn${active}"
+            onclick="setCombinedRowStatus('${r.id}', '${key}', '${item.id}', '${o.id}')"
+            title="${STEPS[si]}">${STEPS[si]}</button>`;
+        }).join('');
+
+        const doneQtyHtml = rs === 'DONE'
+          ? `<span class="done-all">✓</span>`
+          : rs !== 'WAITING'
+            ? `<input type="number" class="done-qty-input" value="${dq}" min="0" max="${totalKpl}"
+                onchange="setCombinedRowDoneQty('${r.id}', this.value, '${item.id}', '${o.id}')"
+                title="Tehty kpl" style="width:44px">/<span style="color:var(--text-dim)">${totalKpl}</span>`
+            : `<span style="color:var(--text-dim);font-size:10px">${totalKpl} kpl</span>`;
+
+        return `<div class="combined-pituusrivi" id="crow-${r.id}" style="--row-color:${rsColor};border-left:3px solid ${rsColor};padding-left:6px;margin-bottom:4px;flex-wrap:wrap;gap:6px;align-items:center">
+          <span class="cm">${r.mitta_mm || ''}</span>
+          <span class="cp">${r.paat_mm ? '+ ' + r.paat_mm : ''}</span>
+          <span class="cko">${r.kok_mm || ''}</span>
+          <span class="done-qty-cell" style="min-width:60px">${doneQtyHtml}</span>
           ${r.huomio ? `<span class="ch">⚠ ${r.huomio}</span>` : ''}
-          <span class="cs ${rs}">${STATUS_FI_ROW[rs] || rs}</span>
+          <div class="row-steps" style="margin-left:auto">${rowSteps}</div>
         </div>`;
       }).join('');
 
@@ -2486,9 +2504,9 @@ function renderItemCards(order) {
               : '';
 
         return `<tr class="cut-row${rsDone ? ' row-done' : ''}" id="row-${r.id}" style="--row-color:${rsColor}">
-          <td class="mitta">${r.mitta_mm ? r.mitta_mm + ' mm' : ''}</td>
-          <td class="paat">${r.paat_mm ? r.paat_mm + ' mm' : ''}</td>
-          <td class="kok">${r.kok_mm ? r.kok_mm + ' mm' : ''}</td>
+          <td class="mitta">${r.mitta_mm || ''}</td>
+          <td class="paat">${r.paat_mm || ''}</td>
+          <td class="kok">${r.kok_mm || ''}</td>
           <td class="kpl">${totalKpl}</td>
           <td class="done-qty-cell">${doneQtyCell}</td>
         </tr>
@@ -2507,7 +2525,7 @@ function renderItemCards(order) {
           <div style="overflow-x:auto">
           <table class="cut-table">
             <thead><tr>
-              <th>mitta</th><th>päät</th><th>kok</th><th>kpl</th><th>tehty</th>
+              <th>mitta mm</th><th>päät mm</th><th>kok mm</th><th>kpl</th><th>tehty</th>
             </tr></thead>
             <tbody>${rowsHtml}</tbody>
           </table>
@@ -2593,6 +2611,57 @@ async function setRowDoneQty(rowId, qty, itemIdx, itemId) {
   });
 
   const o = allOrders.find(x => x.id === activeOrderId);
+  if (o) {
+    const item = o.items.find(i => i.id === itemId);
+    if (item) {
+      const row = (item.order_item_rows || []).find(r => r.id === rowId);
+      if (row) row.done_qty = val;
+    }
+  }
+}
+
+// ── Yhteislistan status- ja done_qty-funktiot ─────────────────────
+async function setCombinedRowStatus(rowId, status, itemId, orderId) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ production_status: status })
+  });
+  if (!res.ok) { alert('Tallennus epäonnistui'); return; }
+
+  // Päivitetään paikallinen tila
+  const o = allOrders.find(x => x.id === orderId);
+  if (o) {
+    const item = o.items.find(i => i.id === itemId);
+    if (item) {
+      const row = (item.order_item_rows || []).find(r => r.id === rowId);
+      if (row) row.production_status = status;
+    }
+  }
+
+  // Rendataan yhteislista uudelleen
+  const mat   = document.getElementById('filterMaterial').value;
+  const color = document.getElementById('filterColor').value;
+  const thick = document.getElementById('filterThickness').value;
+  const filtered = allOrders.filter(x =>
+    x.items.some(i =>
+      i.material === mat &&
+      (!color || i.color === color) &&
+      (!thick  || String(i.thickness_mm) === String(thick))
+    )
+  );
+  renderCombinedList(filtered, mat, color, thick);
+}
+
+async function setCombinedRowDoneQty(rowId, qty, itemId, orderId) {
+  const val = parseInt(qty) || 0;
+  await fetch(`${SUPABASE_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ done_qty: val })
+  });
+
+  const o = allOrders.find(x => x.id === orderId);
   if (o) {
     const item = o.items.find(i => i.id === itemId);
     if (item) {
