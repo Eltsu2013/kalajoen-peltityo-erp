@@ -102,6 +102,67 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     color: var(--accent); margin-left: auto;
   }
+  .filter-list-btn {
+    background: none; border: 1px solid var(--accent); color: var(--accent);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    padding: 5px 12px; border-radius: 4px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-list-btn:hover, .filter-list-btn.active {
+    background: var(--accent); color: #000; font-weight: 600;
+  }
+
+  /* Yhteislista */
+  .combined-list { padding: 16px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .combined-order-block {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+  }
+  .combined-order-header {
+    background: var(--panel2); padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .combined-customer { font-weight: 600; font-size: 14px; }
+  .combined-kohde { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
+  .combined-date { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-left: auto; }
+  .combined-item-row {
+    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .combined-item-row:last-child { border-bottom: none; }
+  .combined-item-nimike {
+    font-size: 12px; font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .combined-aihio {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--blue); font-weight: 400;
+  }
+  .combined-rows { display: flex; flex-direction: column; gap: 2px; padding-left: 8px; }
+  .combined-pituusrivi {
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--text-dim); display: flex; gap: 10px; align-items: center;
+  }
+  .combined-pituusrivi .ck { color: var(--text); min-width: 50px; }
+  .combined-pituusrivi .cm { color: var(--text); min-width: 65px; }
+  .combined-pituusrivi .cp { color: var(--blue); min-width: 55px; }
+  .combined-pituusrivi .cko { color: var(--warn); font-weight: 600; min-width: 65px; }
+  .combined-pituusrivi .ch { color: var(--text-dim); font-size: 10px; }
+  .combined-pituusrivi .cs {
+    font-size: 10px; padding: 1px 5px; border-radius: 3px;
+    border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .combined-pituusrivi .cs.DONE { border-color: var(--accent); color: var(--accent); }
+  .combined-pituusrivi .cs.CUT { border-color: var(--blue); color: var(--blue); }
+  .combined-pituusrivi .cs.BENT { border-color: var(--warn); color: var(--warn); }
+  .combined-pituusrivi .cs.EXTRA { border-color: #a855f7; color: #a855f7; }
+
+  @media print {
+    .combined-order-block { break-inside: avoid; }
+    .combined-order-header { background: #f5f5f5; }
+    .combined-pituusrivi .cs { display: none; }
+  }
 
   /* Tilauskorttilista */
   .orders-grid {
@@ -274,9 +335,17 @@
   .status-step.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
   .status-step.passed { background: var(--panel); border-color: var(--accent); color: var(--accent); }
 
-  /* Rivikohtaiset statusnapit */
   .cut-row { border-left: 3px solid var(--row-color, var(--border)); }
-  .cut-row.row-done { opacity: 0.55; }
+  .cut-row-sub { border-left: 3px solid var(--row-color, var(--border)); }
+  .cut-row.row-done, .cut-row-sub.row-done { opacity: 0.55; }
+  .sub-row-cell {
+    padding: 3px 6px 6px 0 !important;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .huomio-tag {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--warn); white-space: nowrap;
+  }
   .row-status-cell { min-width: 260px; padding: 3px 0; }
   .row-steps { display: flex; gap: 3px; flex-wrap: nowrap; }
   .row-status-btn {
@@ -302,7 +371,7 @@
 
   /* Print — rivikohtaiset napit piilotetaan */
   @media print {
-    .row-status-cell, .done-qty-input { display: none !important; }
+    .row-status-cell, .done-qty-input, .cut-row-sub { display: none !important; }
     .done-all, .done-partial { display: inline !important; }
     .cut-row { border-left: 2px solid #aaa; }
   }
@@ -1988,6 +2057,7 @@
       <option value="">— Kaikki paksuudet —</option>
     </select>
     <button class="filter-clear" onclick="clearFilters()">✕ Tyhjennä</button>
+    <button class="filter-list-btn" id="combinedListBtn" onclick="toggleCombinedList()" style="display:none">☰ Yhteislista</button>
     <span class="filter-info" id="filterInfo"></span>
   </div>
 
@@ -1995,6 +2065,9 @@
   <div class="orders-grid" id="ordersGrid">
     <div class="empty-state">Ladataan...</div>
   </div>
+
+  <!-- Yhteislista (näkyy vain kun nappi aktiivinen) -->
+  <div class="combined-list" id="combinedList" style="display:none"></div>
 
 </div>
 
@@ -2032,6 +2105,7 @@ const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` 
 // ── Tila ──────────────────────────────────────────────────────────
 let allOrders = [];       // Kaikki tilaukset + order_items
 let activeOrderId = null;
+let combinedListActive = false;
 
 // ── Supabase-haku ─────────────────────────────────────────────────
 async function loadOrders() {
@@ -2113,9 +2187,19 @@ function applyFilter() {
   const color = document.getElementById('filterColor').value;
   const thick = document.getElementById('filterThickness').value;
 
+  // Yhteislista-nappi näkyy vain kun jokin suodatin on valittu
+  const combinedBtn = document.getElementById('combinedListBtn');
+  combinedBtn.style.display = mat ? 'block' : 'none';
+  if (!mat) {
+    // Piilotetaan yhteislista jos suodatin tyhjennetään
+    combinedListActive = false;
+    combinedBtn.classList.remove('active');
+    document.getElementById('combinedList').style.display = 'none';
+    document.getElementById('ordersGrid').style.display = 'grid';
+  }
+
   let filtered = allOrders;
   if (mat) {
-    // Näytetään vain tilaukset joissa on tämän materiaalin rivejä
     filtered = allOrders.filter(o =>
       o.items.some(i =>
         i.material === mat &&
@@ -2141,6 +2225,9 @@ function applyFilter() {
   }
 
   renderOrderList(filtered, mat, color, thick);
+
+  // Päivitetään yhteislista jos se on auki
+  if (combinedListActive) renderCombinedList(filtered, mat, color, thick);
 }
 
 function clearFilters() {
@@ -2150,6 +2237,90 @@ function clearFilters() {
   document.getElementById('filterColor').style.display = 'none';
   document.getElementById('filterThickness').style.display = 'none';
   applyFilter();
+}
+
+function toggleCombinedList() {
+  combinedListActive = !combinedListActive;
+  const btn = document.getElementById('combinedListBtn');
+  const grid = document.getElementById('ordersGrid');
+  const list = document.getElementById('combinedList');
+
+  if (combinedListActive) {
+    btn.classList.add('active');
+    grid.style.display = 'none';
+    list.style.display = 'flex';
+    const mat   = document.getElementById('filterMaterial').value;
+    const color = document.getElementById('filterColor').value;
+    const thick = document.getElementById('filterThickness').value;
+    const filtered = allOrders.filter(o =>
+      o.items.some(i =>
+        i.material === mat &&
+        (!color || i.color === color) &&
+        (!thick  || String(i.thickness_mm) === String(thick))
+      )
+    );
+    renderCombinedList(filtered, mat, color, thick);
+  } else {
+    btn.classList.remove('active');
+    grid.style.display = 'grid';
+    list.style.display = 'none';
+  }
+}
+
+const STATUS_FI_ROW = { WAITING: 'Odottaa', CUT: 'Leikattu', BENT: 'Kantattu', EXTRA: 'Lisätyöt', DONE: 'Valmis' };
+
+function renderCombinedList(orders, mat, color, thick) {
+  const list = document.getElementById('combinedList');
+  if (!orders.length) {
+    list.innerHTML = '<div class="empty-state">Ei rivejä valituilla suodattimilla</div>';
+    return;
+  }
+
+  list.innerHTML = orders.map(o => {
+    // Vain suodatetut rivit tästä tilauksesta
+    const matchItems = o.items.filter(i =>
+      i.material === mat &&
+      (!color || i.color === color) &&
+      (!thick  || String(i.thickness_mm) === String(thick))
+    );
+    if (!matchItems.length) return '';
+
+    const date = (o.order_date || '').slice(0,10).split('-').reverse().join('.');
+
+    const itemsHtml = matchItems.map(item => {
+      const rows = (item.order_item_rows || []).sort((a,b) => (a.row_order||0)-(b.row_order||0));
+      const rowsHtml = rows.map(r => {
+        const rs = r.production_status || 'WAITING';
+        const dq = r.done_qty || 0;
+        const doneStr = rs === 'DONE' ? '' : dq > 0 ? ` (${dq}/${r.kpl} tehty)` : '';
+        return `<div class="combined-pituusrivi">
+          <span class="cm">${r.mitta_mm ? r.mitta_mm + ' mm' : ''}</span>
+          <span class="cp">${r.paat_mm ? '+ ' + r.paat_mm + ' mm' : ''}</span>
+          <span class="cko">${r.kok_mm ? r.kok_mm + ' mm' : ''}</span>
+          <span class="ck">${r.kpl || ''} kpl${doneStr}</span>
+          ${r.huomio ? `<span class="ch">⚠ ${r.huomio}</span>` : ''}
+          <span class="cs ${rs}">${STATUS_FI_ROW[rs] || rs}</span>
+        </div>`;
+      }).join('');
+
+      return `<div class="combined-item-row">
+        <div class="combined-item-nimike">
+          ${item.nimike || item.profile_type || '—'}
+          ${item.aihio_width_mm ? `<span class="combined-aihio">aihio ${item.aihio_width_mm} mm</span>` : ''}
+        </div>
+        <div class="combined-rows">${rowsHtml}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="combined-order-block">
+      <div class="combined-order-header">
+        <span class="combined-customer">${o.customers?.name || '— ei asiakasta —'}</span>
+        <span class="combined-kohde">${o.kohde || o.notes || ''}</span>
+        <span class="combined-date">${date}</span>
+      </div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
 }
 
 // ── Tilauslista ───────────────────────────────────────────────────
@@ -2305,22 +2476,27 @@ function renderItemCards(order) {
         }).join('');
 
         // done_qty kenttä — näkyy vain jos ei WAITING eikä DONE
-        const doneQtyHtml = (rs !== 'WAITING' && rs !== 'DONE') ? `
-          <input type="number" class="done-qty-input"
-            value="${doneQty}" min="0" max="${totalKpl}"
-            onchange="setRowDoneQty('${r.id}', this.value, ${idx}, '${item.id}')"
-            title="Tehty kpl">` : '';
+        const doneQtyCell = rs === 'DONE'
+          ? `<span class="done-all">✓ kaikki</span>`
+          : rs !== 'WAITING' && doneQty > 0
+            ? `<span class="done-partial">${doneQty}/${totalKpl}</span>`
+            : rs !== 'WAITING'
+              ? `<input type="number" class="done-qty-input" value="${doneQty}" min="0" max="${totalKpl}"
+                  onchange="setRowDoneQty('${r.id}', this.value, ${idx}, '${item.id}')" title="Tehty kpl">`
+              : '';
 
         return `<tr class="cut-row${rsDone ? ' row-done' : ''}" id="row-${r.id}" style="--row-color:${rsColor}">
           <td class="mitta">${r.mitta_mm ? r.mitta_mm + ' mm' : ''}</td>
           <td class="paat">${r.paat_mm ? r.paat_mm + ' mm' : ''}</td>
           <td class="kok">${r.kok_mm ? r.kok_mm + ' mm' : ''}</td>
-          <td class="huomio">${r.huomio || ''}</td>
           <td class="kpl">${totalKpl}</td>
-          <td class="row-status-cell">
+          <td class="done-qty-cell">${doneQtyCell}</td>
+        </tr>
+        <tr class="cut-row-sub${rsDone ? ' row-done' : ''}" style="--row-color:${rsColor}">
+          <td colspan="5" class="sub-row-cell">
+            ${r.huomio ? `<span class="huomio-tag">⚠ ${r.huomio}</span>` : ''}
             <div class="row-steps">${rowSteps}</div>
           </td>
-          <td class="done-qty-cell">${doneQtyHtml}${rs === 'DONE' ? '<span class="done-all">✓ kaikki</span>' : doneQty > 0 ? `<span class="done-partial">${doneQty}/${totalKpl}</span>` : ''}</td>
         </tr>`;
       }).join('');
 
@@ -2331,7 +2507,7 @@ function renderItemCards(order) {
           <div style="overflow-x:auto">
           <table class="cut-table">
             <thead><tr>
-              <th>mitta</th><th>päät</th><th>kok</th><th>huomio</th><th>kpl</th><th>vaihe</th><th>tehty</th>
+              <th>mitta</th><th>päät</th><th>kok</th><th>kpl</th><th>tehty</th>
             </tr></thead>
             <tbody>${rowsHtml}</tbody>
           </table>
