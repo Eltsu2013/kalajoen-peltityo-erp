@@ -2623,66 +2623,70 @@ const TYPES = {
       const points = [];
       const labels = [];
       const extraLines = [];
-      let x = 0, y = 0;
-      let suunta = 0;
 
-      // === VASEN REUNA: Uran pohja — sama logiikka kuin päätypelti ===
-      const uraStart = { x, y };
-      const uraSuunta = 180 - vals.ura_ang; // vasemmalle alas
-      const uraEnd = {
-        x: x + vals.ura_len * Math.cos(deg(uraSuunta)),
-        y: y + vals.ura_len * Math.sin(deg(uraSuunta))
+      // Seinälle = pystysuora (90°), Katolle lähtee seinän alapäästä vasemmalle
+      const seinaSuunta = 90;
+      const pSeinaYla = { x: 0, y: 0 };
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pSeinaAla = { x: 0, y: bLen };
+
+      // Katolle lähtee seinän alapäästä vasemmalle, kulma muuttaa suuntaa
+      const katolleSuunta = 180 - (90 - vals.seg0_ang);
+      const pKatolle = {
+        x: pSeinaAla.x + vals.seg0_len * Math.cos(deg(katolleSuunta)),
+        y: pSeinaAla.y + vals.seg0_len * Math.sin(deg(katolleSuunta))
       };
-      points.push(uraEnd);
-      labels.push(vals.ura_len);
-      points.push(uraStart);
-      labels.push('');
 
-      // Tupla A: lähtee uran päästä 8° avoimempaan suuntaan
-      const tupAAng = uraSuunta - 172; // jatkuu uran suuntaan avautuen
+      // Uran pohja lähtee Katolle-viivan päästä
+      const uraLahtoSuunta = katolleSuunta - vals.ura_ang;
+      const uraEnd = {
+        x: pKatolle.x + vals.ura_len * Math.cos(deg(uraLahtoSuunta)),
+        y: pKatolle.y + vals.ura_len * Math.sin(deg(uraLahtoSuunta))
+      };
+
+      // Tupla A lähtee uran päästä avautuen
+      const tupAAng = uraLahtoSuunta - 172;
       const tupAEnd = {
         x: uraEnd.x + vals.tupA_len * Math.cos(deg(tupAAng)),
         y: uraEnd.y + vals.tupA_len * Math.sin(deg(tupAAng))
       };
       extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len, labelOffset: [20, 0] });
 
-      // === SIVU A (Katolle): vaakasuora — sama kuin sisänurkka ===
-      suunta = 0;
-      const pA0 = { x, y };
-      points.push(pA0);
-      x += vals.seg0_len * Math.cos(deg(suunta));
-      y += vals.seg0_len * Math.sin(deg(suunta));
-      labels.push(vals.seg0_len);
-
-      // === KULMA: sisänurkan tapaan -kulma ===
-      suunta -= vals.seg0_ang;
-
-      // === SIVU B (Seinälle): sama kuin sisänurkka ===
-      const pKulma = { x, y };
-      points.push(pKulma);
-      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
-      x += bLen * Math.cos(deg(suunta));
-      y += bLen * Math.sin(deg(suunta));
-      const pBend = { x, y };
-      points.push(pBend);
-      labels.push(bLen);
-
-      let tiiBEnd = { x, y };
+      // Tiiviste B ja Tupla B — seinän yläpäässä
+      let tiiBEnd = { ...pSeinaYla };
       if (opts?.tiiB) {
-        const tiiSuunta = suunta + 8;
-        tiiBEnd = { x: x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
-        points.push(tiiBEnd);
-        labels.push(vals.tiiB_len);
-        points.push(pBend);
-        labels.push('');
+        const tiiSuunta = seinaSuunta + 180 + 8;
+        tiiBEnd = {
+          x: pSeinaYla.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)),
+          y: pSeinaYla.y + vals.tiiB_len * Math.sin(deg(tiiSuunta))
+        };
       }
       if (opts?.tupB) {
-        const tupSuunta = opts?.tiiB ? suunta + 180 : suunta + 172;
-        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        const tupSuunta = opts?.tiiB ? seinaSuunta + 180 + 180 : seinaSuunta + 180 + 172;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)),
+          y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta))
+        };
         extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [25, 0] });
       }
 
-      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
+      // Pisteet: ura → katolle → seinä ala → seinä yla [→ tiiviste B]
+      points.push(uraEnd);
+      labels.push(vals.ura_len);
+      points.push(pKatolle);
+      labels.push(vals.seg0_len);
+      points.push(pSeinaAla);
+      labels.push(bLen);
+      points.push(pSeinaYla);
+      labels.push('');
+      if (opts?.tiiB) {
+        points.push(pSeinaYla);
+        labels.push(vals.tiiB_len);
+        points.push(tiiBEnd);
+        labels.push('');
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pKatolle, p2: pSeinaAla } };
     },
     aihio: (vals, opts) => {
       let lev = vals.seg0_len + vals.seg1_len + vals.ura_len + vals.tupA_len;
