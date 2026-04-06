@@ -2992,7 +2992,16 @@ function editItem(groupId, itemId) {
     existingThickness: item.thickness || null,
   };
   localStorage.setItem('kpt_open_profile', JSON.stringify(context));
-  window.open('peltipiirturi.html', '_blank');
+
+  // Vakiomallit-profiilit avataan vakiomallit.html:ssä, muut peltipiirturi.html:ssä
+  const vakiomalliTyypit = ['kynnys1', 'alaslaskun', 'hattupelti', 'kattolista', 'raystaslista', 'ikkunapellit'];
+  // avp ja avp2 voivat tulla peltipiirturista tai vakiomalleista
+  // Jos vals on tyhjä tai puuttuu → vakiomalli
+  const isVakiomalli = vakiomalliTyypit.includes(item.profileType) ||
+    ((item.profileType === 'avp' || item.profileType === 'avp2') &&
+     (!item.profile_data?.vals || Object.keys(item.profile_data.vals || {}).length === 0));
+
+  window.open(isVakiomalli ? 'vakiomallit.html' : 'peltipiirturi.html', '_blank');
 }
 
 function deleteItem(groupId, itemId) {
