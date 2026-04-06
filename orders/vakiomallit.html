@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vakiomallit — Kalajoen Peltityö</title>
+<title>Mallisto — Kalajoen Peltityö</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
   :root {
-    --bg: #2a342e;
-    --panel: #333f38;
-    --border: #505f56;
+    --bg: #2a2e3a;
+    --panel: #353a47;
+    --border: #555563;
     --accent: #e8a020;
     --accent2: #3a8fe8;
     --text: #ededf0;
     --text-dim: #9595a0;
-    --input-bg: #3c4840;
+    --input-bg: #3e4250;
     --success: #3dba6e;
     --danger: #e84040;
   }
@@ -51,30 +51,37 @@
   .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
   .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    min-height: 100vh;
+  }
 
   header {
     background: var(--panel);
     border-bottom: 2px solid var(--accent);
     padding: 12px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header .logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: var(--accent); letter-spacing: 0.05em; }
-  header h1 { font-size: 16px; font-weight: 500; }
-
-  /* Tilaus-palkki */
-  #tilaus-bar {
-    display: none;
-    background: #1e3d2e;
-    border-bottom: 1px solid #2a6a4a;
-    padding: 8px 24px;
+    display: flex;
     align-items: center;
     gap: 16px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
   }
 
-  /* Type-bar */
+  header .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
   .type-bar {
     background: var(--panel);
     border-bottom: 1px solid var(--border);
@@ -85,116 +92,364 @@
     align-items: center;
     flex-wrap: wrap;
   }
-  .type-group { display: flex; align-items: center; gap: 0; }
-  .type-group-label {
-    font-size: 10px; font-family: 'IBM Plex Mono', monospace;
-    color: var(--text-dim); padding: 0 8px 0 12px;
-    white-space: nowrap; opacity: 0.6;
-    border-left: 1px solid var(--border); margin-left: 4px;
+
+  .type-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
   }
-  .type-group:first-child .type-group-label { border-left: none; margin-left: 0; padding-left: 0; }
+
+  .type-group-label {
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text-dim);
+    padding: 0 8px 0 12px;
+    white-space: nowrap;
+    opacity: 0.6;
+    border-left: 1px solid var(--border);
+    margin-left: 4px;
+  }
+
+  .type-group:first-child .type-group-label {
+    border-left: none;
+    margin-left: 0;
+    padding-left: 0;
+  }
+
   .type-btn {
-    background: none; border: none;
+    background: none;
+    border: none;
     border-bottom: 3px solid transparent;
     color: var(--text-dim);
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; padding: 10px 16px;
-    cursor: pointer; white-space: nowrap; transition: all 0.15s;
+    font-size: 13px;
+    padding: 10px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
   }
-  .type-btn:hover { color: var(--text); }
-  .type-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  /* Main layout */
+  .type-btn:hover { color: var(--text); }
+
+  .type-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
   .main {
     display: grid;
-    grid-template-columns: var(--sidebar-width, 360px) 1fr;
-    height: calc(100vh - 62px - 42px); /* header + type-bar */
+    grid-template-columns: 360px 1fr;
+    height: calc(100vh - 90px);
   }
-  .main.with-tilausbar { height: calc(100vh - 62px - 42px - 41px); }
 
   .left-panel {
     background: var(--panel);
     border-right: 1px solid var(--border);
     overflow-y: auto;
-    display: flex; flex-direction: column;
+    display: flex;
+    flex-direction: column;
     position: relative;
   }
+
   .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
   .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
-  .left-panel.wide .field-grid { grid-template-columns: repeat(3, 1fr); }
-  .left-panel.xwide .field-grid { grid-template-columns: repeat(4, 1fr); }
+  /* Kaksi saraketta kun sidebar tarpeeksi leveä */
+  .left-panel.wide .section { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
+  .left-panel.wide .section .section-title { grid-column: 1 / -1; }
+  .left-panel.wide .section .btn-add { grid-column: 1 / -1; }
+  .left-panel.wide .section .table-wrap { grid-column: 1 / -1; }
+  .left-panel.wide .summary-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 
-  .section { padding: 16px; border-bottom: 1px solid var(--border); }
+  .section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
   .section-title {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--accent); letter-spacing: 0.1em;
-    text-transform: uppercase; margin-bottom: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
   }
-  .field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .field { display: flex; flex-direction: column; gap: 4px; }
-  .field label { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .field input, .field select {
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px; padding: 7px 10px; border-radius: 3px; width: 100%;
-  }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); }
-  .field input.angle { border-color: #3a5a8a; color: #7ab3e8; }
-  .field input.angle:focus { border-color: var(--accent2); }
-  .field input.computed { border-color: #2a5a3a; color: var(--success); cursor: default; }
 
-  /* Pituustaulukko */
-  .table-wrap { width: 100%; }
-  .table-header { display: grid; grid-template-columns: 80px 70px 75px 45px 1fr 28px; gap: 4px; margin-bottom: 4px; }
-  .table-header span { font-size: 10px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; padding: 0 4px; }
-  .table-rows { display: flex; flex-direction: column; gap: 4px; }
-  .table-row { display: grid; grid-template-columns: 80px 70px 75px 45px 1fr 28px; gap: 4px; align-items: center; }
-  .table-row input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 5px 6px; border-radius: 3px; width: 100%; }
-  .table-row input:focus { outline: none; border-color: var(--accent2); }
-  .table-row input.computed-row { color: var(--accent2); background: #1e2a38; border-color: #2a3a50; cursor: default; }
-  .table-row input.huomio { color: #ffaa44; }
-  .btn-remove { background: none; border: 1px solid #444; color: var(--text-dim); border-radius: 3px; cursor: pointer; font-size: 14px; height: 30px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(80px, 1fr));
+    gap: 6px;
+  }
+
+  /* Kolme saraketta leveällä sidebarilla */
+  .left-panel.wide .field-grid {
+    grid-template-columns: repeat(3, minmax(80px, 1fr));
+  }
+
+  /* Neljä saraketta erittäin leveällä */
+  .left-panel.xwide .field-grid {
+    grid-template-columns: repeat(4, minmax(80px, 1fr));
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .field input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    width: 100%;
+    transition: border-color 0.15s;
+  }
+
+  /* Kompaktimmat kentät leveällä sidebarilla */
+  .left-panel.wide .field input,
+  .left-panel.wide .field select {
+    padding: 5px 7px;
+    font-size: 13px;
+  }
+  .left-panel.wide .field label { font-size: 10px; }
+
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .field input.angle {
+    border-color: #3a5a8a;
+    color: #7ab3e8;
+  }
+
+  .field input.angle:focus {
+    border-color: #3a8fe8;
+  }
+
+  .field label.angle-label {
+    color: #7ab3e8;
+  }
+
+  /* Segments editor */
+  .segments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .segment-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 28px;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .segment-row .seg-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 0 4px;
+  }
+
+  .btn-remove {
+    background: none;
+    border: 1px solid #444;
+    color: var(--text-dim);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
   .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
-  .btn-add { background: none; border: 1px dashed var(--border); color: var(--text-dim); font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; padding: 8px; border-radius: 3px; cursor: pointer; width: 100%; margin-top: 8px; transition: all 0.15s; }
+
+  .btn-add {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-dim);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+
   .btn-add:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Yhteenveto */
-  .summary-bar { background: #1e1e1e; border-top: 1px solid var(--border); padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
-  .summary-row { display: flex; justify-content: space-between; align-items: baseline; }
-  .summary-label { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
-  .summary-value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 600; color: var(--accent2); }
-  .summary-value.aihio { font-size: 14px; color: var(--accent); }
+  /* Pituustaulukko */
+  .table-wrap {
+    width: 100%;
+  }
 
-  /* Nimike + lisää tilaukseen */
-  .tilaus-action { background: var(--panel); border-top: 2px solid var(--border); padding: 10px 16px; display: none; align-items: center; gap: 12px; }
-  .tilaus-action.visible { display: flex; }
-  .nimike-input { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 7px 10px; border-radius: 3px; flex: 1; }
-  .nimike-input:focus { outline: none; border-color: var(--accent); }
-  .btn-primary { background: var(--success); color: #1a1a1a; border: none; border-radius: 4px; padding: 8px 20px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
-  .btn-primary:hover { opacity: 0.85; }
+  .table-header {
+    display: grid;
+    grid-template-columns: 75px 60px 60px 45px 1fr 28px;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
 
-  /* SVG */
-  .right-panel { background: #f5f5f0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px; overflow: auto; gap: 16px; }
-  .drawing-area { background: white; border: 1px solid #ccc; border-radius: 4px; width: 100%; max-width: 700px; }
-  .cut-list { background: white; border: 1px solid #ccc; border-radius: 4px; padding: 16px 20px; width: 100%; max-width: 700px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
-  .cut-list h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
-  .cut-row { padding: 4px 0; border-bottom: 1px solid #f0f0f0; display: flex; gap: 16px; align-items: baseline; }
+  .table-header span {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    padding: 0 4px;
+  }
+
+  .table-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .table-row {
+    display: grid;
+    grid-template-columns: 75px 60px 60px 45px 1fr 28px;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .table-row input {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 5px 6px;
+    border-radius: 3px;
+    width: 100%;
+  }
+
+  .table-row input:focus {
+    outline: none;
+    border-color: var(--accent2);
+  }
+
+  .table-row input.huomio { color: #ffaa44; }
+
+  .summary-bar {
+    background: #1e1e1e;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .summary-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .summary-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  .summary-value.aihio {
+    font-size: 14px;
+    color: var(--accent);
+  }
+
+  /* SVG panel */
+  .right-panel {
+    background: #f5f5f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  .drawing-area {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 700px;
+  }
+
+  .cut-list {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 700px;
+    margin-top: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .cut-list h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #666;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  .cut-row {
+    padding: 4px 0;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+  }
+
   .cut-row .kpl { color: #333; font-weight: 600; min-width: 50px; }
   .cut-row .mitta { color: #222; flex: 1; }
-  .cut-row .paatmitta { color: #1a6fc4; min-width: 80px; }
-  .cut-row .kokmitta { color: #c41a1a; font-weight: 600; min-width: 80px; }
   .cut-row .huomio-text { color: #cc4400; font-size: 11px; }
-  .cut-total { margin-top: 10px; padding-top: 8px; border-top: 2px solid #333; display: flex; justify-content: space-between; align-items: baseline; }
+
+  .cut-total {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 2px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
   .cut-total .label { font-size: 11px; color: #666; }
   .cut-total .value { font-size: 20px; font-weight: 600; color: #1a6fc4; }
 </style>
 </head>
 <body>
 
-
-
 <header>
-<div class="logo-img" style="height:50px;display:flex;align-items:center;filter:brightness(0) invert(1)"><!-- Created with Inkscape (http://www.inkscape.org/) -->
+  <div class="logo-img" style="height:50px;display:flex;align-items:center;filter:brightness(0) invert(1)"><!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
    width="160"
@@ -1792,1033 +2047,1536 @@
       <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
       <a class="nav-item" href="tilaukset.html">📋 Tilaukset</a>
       <a class="nav-item" href="tilaus.html">✏️ Uusi tilaus</a>
-      <a class="nav-item" href="peltipiirturi.html">🔨 Mallisto</a>
-      <a class="nav-item current" href="vakiomallit.html">🔧 Vakiomallit</a>
+      <a class="nav-item current" href="peltipiirturi.html">🔨 Mallisto</a>
+      <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
       <hr class="nav-divider">
       <div class="nav-section-label">Sovellukset</div>
       <a class="nav-item external" href="https://kalajoenpeltityo.retool.com/apps/03e2ccb8-0e5c-11f1-abca-8fb585b85c11/Varaston%C3%A4kym%C3%A4/Varasto" target="_blank">📦 Varasto</a>
     </div>
   </div>
-  <h1>Vakiomallit</h1>
-  <a href="tilaus.html" style="margin-left:auto;color:var(--text-dim);font-size:12px;font-family:'IBM Plex Mono',monospace;text-decoration:none;" onclick="goBack(event)">← Tilauslomake</a>
+  <h1>Mallisto</h1>
 </header>
 
-<!-- Tilaus-palkki -->
-<div id="tilaus-bar">
-  <span style="color:#3dba6e;font-weight:600">● TILAUS AUKI</span>
-  <span id="tilaus-ryhma" style="color:#e8e8e8"></span>
-  <input type="text" id="nmikeInput" placeholder="Nimike..." style="background:#1e2e1e;border:1px solid #2a6a4a;color:#e8e8e8;font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 10px;border-radius:3px;width:180px;">
-  <button onclick="lisaaTilaukseen()" style="margin-left:auto;background:#3dba6e;color:#1a1a1a;border:none;border-radius:4px;padding:6px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;cursor:pointer;">
+<!-- Tilausyhteys-palkki — näkyy vain kun avattu tilauslomakkeelta -->
+<div id="tilaus-bar" style="display:none; background:#1e3d2e; border-bottom:1px solid #2a6a4a; padding:8px 24px; align-items:center; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:12px;">
+  <span style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
+  <span id="tilaus-ryhmä" style="color:#e8e8e8"></span>
+  <span id="tilaus-nimike" style="color:#e8a020; font-weight:600"></span>
+  <button onclick="lisaaTilaukseen()" style="margin-left:auto; background:#3dba6e; color:#1a1a1a; border:none; border-radius:4px; padding:6px 16px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer;">
     ✓ Lisää tilaukseen
   </button>
-  <button onclick="peruutaTilaus()" style="background:#333;color:#aaa;border:none;border-radius:4px;padding:6px 10px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;">
+  <button onclick="peruutaTilaus()" style="background:#333; color:#aaa; border:none; border-radius:4px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer;">
     Peruuta
   </button>
 </div>
 
-<!-- Profiilivalinta -->
 <div class="type-bar">
   <div class="type-group">
-    <span class="type-group-label">PARMACO</span>
-    <button class="type-btn active" onclick="setType('ikkunapellit')">Ikkunapellit</button>
-    <button class="type-btn" onclick="setType('kynnys1')">Kynnyspelti 1</button>
-    <button class="type-btn" onclick="setType('alaslaskun')">Alaslaskun kappalista</button>
-    <button class="type-btn" onclick="setType('hattupelti')">Hattupelti</button>
-    <button class="type-btn" onclick="setType('katkaisulista')">Ulkoverh. katkaisulista</button>
-    <button class="type-btn" onclick="setType('kattolista')">Kattolista</button>
-    <button class="type-btn" onclick="setType('raystaslista')">Räystäslista</button>
+    <span class="type-group-label">MUUT</span>
+    <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
+    <button class="type-btn" onclick="setType('avp2')">Alavp 2</button>
+    <button class="type-btn" onclick="setType('ulkonurkka')">Ulkonurkka</button>
+    <button class="type-btn" onclick="setType('sisanurkka')">Sisänurkka</button>
+    <button class="type-btn" onclick="setType('ulista')">U-lista u</button>
+    <button class="type-btn" onclick="setType('ulistas')">U-lista s</button>
+    <button class="type-btn" onclick="setType('kynnys')">Kynnys</button>
+    <button class="type-btn" onclick="setType('hattulista')">Hattulista</button>
+    <button class="type-btn" onclick="setType('zlista')">Z-lista</button>
+    <button class="type-btn" onclick="setType('peitelista')">Peitelista</button>
+    <button class="type-btn" onclick="setType('vapaa')">⊕ Vapaa profiili</button>
+  </div>
+  <div class="type-group">
+    <span class="type-group-label">KATOLLE</span>
+    <button class="type-btn" onclick="setType('jiiri')">Jiiripelti</button>
+    <button class="type-btn" onclick="setType('seinänvieripelti')">Seinänvieripelti</button>
+    <button class="type-btn" onclick="setType('eturaaystaspelti')">Eturäystäspelti</button>
+    <button class="type-btn" onclick="setType('paatypelti')">Päätypelti</button>
+    <button class="type-btn" onclick="setType('paatypelti_huopa')">Päätypelti huopa</button>
   </div>
 </div>
 
-<div class="main" id="mainGrid">
-  <div class="left-panel" id="leftPanel">
-    <div class="sidebar-resizer" id="sidebarResizer"></div>
+<div class="main">
+  <div class="left-panel" id="left-panel">
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
 
-    <!-- Materiaalivalinta -->
-    <div class="section">
+    <!-- Materiaali -->
+    <div class="section" id="material-section">
       <div class="section-title">Materiaali</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Tuoteryhmä</label>
-          <div style="position:relative">
-            <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off"
-              oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)" style="width:100%">
-            <div id="pm-group-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-top:none;max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
-            <input type="hidden" id="pm-group">
-          </div>
+      <div class="field">
+        <label>Tuoteryhmä</label>
+        <div style="position:relative">
+          <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off"
+            oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)" style="width:100%">
+          <div id="pm-group-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="pm-group">
         </div>
-        <div class="field">
-          <label>Materiaali</label>
-          <div style="position:relative">
-            <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
-              oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)" style="width:100%">
-            <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-top:none;max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
-            <input type="hidden" id="pm-mat">
-          </div>
+      </div>
+      <div class="field">
+        <label>Materiaali</label>
+        <div style="position:relative">
+          <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
+            oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)" style="width:100%">
+          <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="pm-mat">
         </div>
-        <div class="field" id="pm-color-row">
-          <label>Väri</label>
-          <div style="position:relative">
-            <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off"
-              oninput="pmFilterColor(this.value)" onfocus="pmFilterColor(this.value)" style="width:100%">
-            <div id="pm-color-dd" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-top:none;max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
-            <input type="hidden" id="pm-color">
-          </div>
+      </div>
+      <div class="field" id="pm-color-row">
+        <label>Väri</label>
+        <div style="position:relative">
+          <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off"
+            oninput="pmFilterColor(this.value)" onfocus="pmFilterColor(this.value)" style="width:100%">
+          <div id="pm-color-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="pm-color">
         </div>
-        <div class="field">
-          <label>Paksuus</label>
-          <select id="pm-thick">
-            <option value="">— valitse —</option>
-          </select>
-        </div>
+      </div>
+      <div class="field">
+        <label>Paksuus</label>
+        <select id="pm-thick">
+          <option value="">— valitse —</option>
+        </select>
       </div>
     </div>
 
-    <!-- Profiilin kentät — vaihtelee profiilityypeittäin -->
-    <div id="profile-fields"></div>
+    <!-- Profiilimitat -->
+    <div class="section" id="profile-section">
+      <div class="section-title">Profiilimitat</div>
+      <div id="profile-fields"></div>
+    </div>
+
+    <!-- Vapaa segmenttieditori (piilotettu vakioprofiileilla) -->
+    <div class="section" id="free-section" style="display:none">
+      <div class="section-title">Taitokset</div>
+      <div class="segments-list" id="segments-list"></div>
+      <button class="btn-add" onclick="addSegment()">+ Lisää taitos</button>
+    </div>
 
     <!-- Pituustaulukko -->
     <div class="section">
       <div class="section-title">Pituudet</div>
       <div class="table-wrap">
-        <div class="table-header" id="tableHeader">
-          <span>L mm</span>
+        <div class="table-header">
+          <span>Mitta mm</span>
           <span>Päät mm</span>
           <span>Kok mm</span>
           <span>Kpl</span>
           <span>Huomio</span>
           <span></span>
         </div>
-        <div class="table-rows" id="tableRows"></div>
+        <div class="table-rows" id="length-rows"></div>
       </div>
-      <button class="btn-add" onclick="lisaaRivi()">+ Lisää rivi</button>
+      <button class="btn-add" onclick="addRow()">+ Lisää rivi</button>
     </div>
 
     <!-- Yhteenveto -->
     <div class="summary-bar">
       <div class="summary-row">
-        <span class="summary-label">Aihioleveys</span>
-        <span class="summary-value aihio" id="summAihio">—</span>
+        <span class="summary-label">AIHIOLEVEYS</span>
+        <span class="summary-value aihio" id="aihio-val">— mm</span>
+      </div>
+      <div id="kaato-row" class="summary-row" style="display:none">
+        <span class="summary-label">KAATO</span>
+        <span class="summary-value aihio" id="kaato-val">— mm</span>
+      </div>
+      <div id="etenemä-row" class="summary-row" style="display:none">
+        <span class="summary-label">ETENEMÄ</span>
+        <span class="summary-value aihio" id="etenemä-val">— mm</span>
+      </div>
+      <div id="kok-row" class="summary-row" style="display:none">
+        <span class="summary-label">KOK MITTA</span>
+        <span class="summary-value aihio" id="kok-val">— mm</span>
       </div>
       <div class="summary-row">
-        <span class="summary-label">Kpl yhteensä</span>
-        <span class="summary-value" id="summKpl">0</span>
+        <span class="summary-label">YHTEENSÄ</span>
+        <span class="summary-value" id="total-m2">0.00 m²</span>
       </div>
     </div>
-
-    <!-- Nimike pidetään piilossa, käytetään tilaus-barin nmikeInput -->
-
   </div>
 
-  <!-- SVG -->
   <div class="right-panel">
-    <svg class="drawing-area" id="svgEl" viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg"></svg>
-    <div class="cut-list" id="cutList" style="display:none">
+    <svg id="drawing" class="drawing-area" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="cut-list">
       <h3>Leikkauslista</h3>
-      <div id="cutRows"></div>
-      <div class="cut-total">
-        <span class="label">Kpl yhteensä</span>
-        <span class="value" id="cutTotal">0</span>
-      </div>
+      <div id="cut-list-rows"></div>
     </div>
   </div>
 </div>
 
-<script>
-// =============================================
-// SUPABASE
-// =============================================
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ─── Profiilityypit ───────────────────────────────────────────────
+const TYPES = {
+  avp: {
+    name: 'Alavesipelti',
+    fields: [
+      { id: 'seg0_len', label: 'Takareuna mm', default: 15 },
+      { id: 'seg1_len', label: 'Pinta mm', default: 150 },
+      { id: 'seg2_len', label: 'Etureuna mm', default: 30 },
+      { id: 'seg3_len', label: 'Etukäännös mm', default: 10 },
+      { id: 'seg0_ang', label: 'Käännös taka °', default: 75, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Käännös etu °', default: 75, cls: 'angle' },
+      { id: 'seg3_ang', label: 'Etur °', default: 125, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+
+      // Kumulatiivinen ketjulogiikka — jokainen viiva jatkuu edellisen suunnasta
+      // Aloitetaan etureunan yläpäästä, etureuna menee suoraan alas = 90°
+      // Suunnat: 0°=oikealle, 90°=alas, 180°=vasemmalle, 270°=ylös (SVG-koordinaatisto)
+
+      const pEtuylapaa = { x: 0, y: 0 };
+
+      // 1. Etureuna: suoraan alas (90°)
+      let suunta = 90;
+      const pEtualapaa = {
+        x: pEtuylapaa.x + vals.seg2_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg2_len * Math.sin(deg(suunta))
+      };
+
+      // 2. Etukäännös
+      suunta += vals.seg3_ang;
+      const pEtukaannos = vals.seg3_len > 0 ? {
+        x: pEtualapaa.x + vals.seg3_len * Math.cos(deg(suunta)),
+        y: pEtualapaa.y + vals.seg3_len * Math.sin(deg(suunta))
+      } : null;
+
+      // Pinta lähtee etureunan yläpäästä
+      suunta = 90 + (180 - vals.seg1_ang);
+      const pPintapaaty = {
+        x: pEtuylapaa.x + vals.seg1_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg1_len * Math.sin(deg(suunta))
+      };
+
+      // 4. Takareuna
+      suunta += vals.seg0_ang;
+      const pTakaylapaa = {
+        x: pPintapaaty.x + vals.seg0_len * Math.cos(deg(suunta)),
+        y: pPintapaaty.y + vals.seg0_len * Math.sin(deg(suunta))
+      };
+
+      const pts = [pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+      if (pEtukaannos) pts.push(pEtukaannos);
+      return { points: pts, labels: null, extraLines: [], pintaViiva: { p1: pPintapaaty, p2: pEtuylapaa } };
+    }
+  },
+  avp2: {
+    name: 'Alavp 2',
+    fields: [
+      { id: 'ikkuna_len', label: 'Karmiin mm', default: 10 },
+      { id: 'seg0_len', label: 'Takareuna mm', default: 15 },
+      { id: 'seg1_len', label: 'Pinta mm', default: 150 },
+      { id: 'seg2_len', label: 'Etureuna mm', default: 30 },
+      { id: 'seg3_len', label: 'Etukäännös mm', default: 10 },
+      { id: 'ikkuna_ang', label: 'Käännös karmi °', default: 90, cls: 'angle' },
+      { id: 'seg0_ang', label: 'Käännös taka °', default: 75, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Käännös etu °', default: 75, cls: 'angle' },
+      { id: 'seg3_ang', label: 'Etur °', default: 125, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+
+      const pEtuylapaa = { x: 0, y: 0 };
+
+      // Etureuna alas
+      let suunta = 90;
+      const pEtualapaa = {
+        x: pEtuylapaa.x + vals.seg2_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg2_len * Math.sin(deg(suunta))
+      };
+
+      // Etukäännös
+      suunta += vals.seg3_ang;
+      const pEtukaannos = vals.seg3_len > 0 ? {
+        x: pEtualapaa.x + vals.seg3_len * Math.cos(deg(suunta)),
+        y: pEtualapaa.y + vals.seg3_len * Math.sin(deg(suunta))
+      } : null;
+
+      // Pinta
+      suunta = 90 + (180 - vals.seg1_ang);
+      const pPintapaaty = {
+        x: pEtuylapaa.x + vals.seg1_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg1_len * Math.sin(deg(suunta))
+      };
+
+      // Takareuna
+      suunta += vals.seg0_ang;
+      const pTakaylapaa = {
+        x: pPintapaaty.x + vals.seg0_len * Math.cos(deg(suunta)),
+        y: pPintapaaty.y + vals.seg0_len * Math.sin(deg(suunta))
+      };
+
+      // Karmi viiva: 90° = suoraan vasemmalle, kulma käännetty
+      const karmiSuunta = 180 + (90 - vals.ikkuna_ang);
+      const pKarmi = {
+        x: pTakaylapaa.x + vals.ikkuna_len * Math.cos(deg(karmiSuunta)),
+        y: pTakaylapaa.y + vals.ikkuna_len * Math.sin(deg(karmiSuunta))
+      };
+
+      const pts = [pKarmi, pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+      if (pEtukaannos) pts.push(pEtukaannos);
+
+      const labels = [vals.ikkuna_len, vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
+
+      return { points: pts, labels, extraLines: [], pintaViiva: { p1: pPintapaaty, p2: pEtuylapaa } };
+    },
+    aihio: (vals) => vals.seg0_len + vals.seg1_len + vals.seg2_len + vals.seg3_len + vals.ikkuna_len
+  },
+  ulkonurkka: {
+    name: 'Ulkonurkka',
+    fields: [
+      { id: 'seg0_len', label: 'Sivu A mm', default: 50 },
+      { id: 'seg1_len', label: 'Sivu B mm', default: 50 },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+      { id: 'tiiA_len', label: 'Tiiviste A mm', default: 15 },
+      { id: 'tiiB_len', label: 'Tiiviste B mm', default: 15 },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiA', label: 'Tiiviste A (vasen reuna)' },
+      { id: 'tiiB', label: 'Tiiviste B (alapää)' },
+      { id: 'tupA', label: 'Tupla A (vasen reuna)' },
+      { id: 'tupB', label: 'Tupla B (alapää)' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+
+      let x = 0, y = 0;
+      let suunta = 0; // vaakasuora oikealle
+
+      // === VASEN REUNA ===
+      // Tiiviste A: vasemmalle ylöspäin 172°
+      let tiiAEnd = { x, y }; // tiivisteen kärki (oletuksena alkupiste)
+      if (opts?.tiiA) {
+        const tiiStart = { x, y };
+        const tiiSuunta = 180 - 8;
+        tiiAEnd = { x: x + vals.tiiA_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiA_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiAEnd);
+        labels.push(vals.tiiA_len);
+        points.push(tiiStart);
+        labels.push('');
+      }
+
+      // Tupla A: ilman tiivistettä 8°, tiivisteen kanssa 0° (vaakasuora)
+      const extraLines = [];
+      if (opts?.tupA) {
+        const tupAng = opts?.tiiA ? 0 : 8;
+        const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(deg(tupAng)), y: tiiAEnd.y + vals.tupA_len * Math.sin(deg(tupAng)) };
+        extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len, labelOffset: [0, 20] });
+      }
+
+      // Sivu A: aina vaakasuora (suunta = 0, lukittu)
+      suunta = 0;
+
+      // === SIVU A ===
+      const pA0 = { x, y };
+      points.push(pA0);
+      const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
+      x += aLen * Math.cos(deg(suunta));
+      y += aLen * Math.sin(deg(suunta));
+      labels.push(aLen);
+
+      // === KULMA ===
+      suunta += vals.seg0_ang;
+
+      // === SIVU B ===
+      const pKulma = { x, y };
+      points.push(pKulma);
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      x += bLen * Math.cos(deg(suunta));
+      y += bLen * Math.sin(deg(suunta));
+      const pBend = { x, y };
+      points.push(pBend);
+      labels.push(bLen); // näytetään lyhennetty mitta kun tiiviste päällä
+
+      // === ALAPÄÄ ===
+      // Tiiviste B
+      let tiiBEnd = { x, y }; // tiivisteen kärki (oletuksena B:n loppupiste)
+      if (opts?.tiiB) {
+        const tiiSuunta = suunta + 8;
+        tiiBEnd = { x: x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiBEnd);
+        labels.push(vals.tiiB_len);
+        points.push(pBend);
+        labels.push('');
+      }
+
+      // Tupla B: ilman tiivistettä suunta+172, tiivisteen kanssa suunta+180
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? suunta + 180 : suunta + 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [-25, 0] });
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
+    },
+    aihio: (vals, opts) => {
+      // Tiivisteet EI lisää aihioleveyttä, tuplat lisää
+      let lev = vals.seg0_len + vals.seg1_len;
+      if (opts?.tupA) lev += vals.tupA_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      return lev;
+    }
+  },
+  sisanurkka: {
+    name: 'Sisänurkka',
+    fields: [
+      { id: 'seg0_len', label: 'Sivu A mm', default: 50 },
+      { id: 'seg1_len', label: 'Sivu B mm', default: 50 },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+      { id: 'tiiA_len', label: 'Tiiviste A mm', default: 15 },
+      { id: 'tiiB_len', label: 'Tiiviste B mm', default: 15 },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiA', label: 'Tiiviste A (vasen reuna)' },
+      { id: 'tiiB', label: 'Tiiviste B (yläpää)' },
+      { id: 'tupA', label: 'Tupla A (vasen reuna)' },
+      { id: 'tupB', label: 'Tupla B (yläpää)' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      let x = 0, y = 0;
+      let suunta = 0;
+
+      // === VASEN REUNA === (sama kuin ulkonurkka)
+      let tiiAEnd = { x, y };
+      if (opts?.tiiA) {
+        const tiiStart = { x, y };
+        const tiiSuunta = 180 - 8;
+        tiiAEnd = { x: x + vals.tiiA_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiA_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiAEnd);
+        labels.push(vals.tiiA_len);
+        points.push(tiiStart);
+        labels.push('');
+      }
+      if (opts?.tupA) {
+        const tupAng = opts?.tiiA ? 0 : 8;
+        const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(deg(tupAng)), y: tiiAEnd.y + vals.tupA_len * Math.sin(deg(tupAng)) };
+        extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len, labelOffset: [0, 20] });
+      }
+
+      // Sivu A: aina vaakasuora
+      suunta = 0;
+      const pA0 = { x, y };
+      points.push(pA0);
+      const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
+      x += aLen * Math.cos(deg(suunta));
+      y += aLen * Math.sin(deg(suunta));
+      labels.push(aLen);
+
+      // === KULMA: sisänurkassa kääntyy -kulma (vastakkaiseen suuntaan) ===
+      suunta -= vals.seg0_ang;
+
+      // === SIVU B ===
+      const pKulma = { x, y };
+      points.push(pKulma);
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      x += bLen * Math.cos(deg(suunta));
+      y += bLen * Math.sin(deg(suunta));
+      const pBend = { x, y };
+      points.push(pBend);
+      labels.push(bLen);
+
+      // === YLÄPÄÄ (sisänurkassa B kääntyy ylös) ===
+      let tiiBEnd = { x, y };
+      if (opts?.tiiB) {
+        const tiiSuunta = suunta + 8; // sisänurkassa +8 menee oikeaan suuntaan
+        tiiBEnd = { x: x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiBEnd);
+        labels.push(vals.tiiB_len);
+        points.push(pBend);
+        labels.push('');
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? suunta + 180 : suunta + 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [25, 0] });
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len;
+      if (opts?.tupA) lev += vals.tupA_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      return lev;
+    }
+  },
+  jiiri: {
+    name: 'Jiiripelti',
+    fields: [
+      { id: 'ji_siv_a', label: 'Sivu A mm', default: 480 },
+      { id: 'ji_siv_b', label: 'Sivu B mm', default: 480 },
+      { id: 'ji_taitos_len', label: 'Taitos mm', default: 20 },
+      { id: 'ji_kulma', label: 'Kulma °', default: 30, cls: 'angle' },
+      { id: 'ji_taitos_ang', label: 'Taitos kulma °', default: 25, cls: 'angle' },
+    ],
+    options: [
+      { id: 'taitosA', label: 'Taitos 1 (vasen)' },
+      { id: 'taitosB', label: 'Taitos 2 (oikea)' },
+    ],
+    build: (vals, opts) => {
+      // Oletuksena molemmat taitokset päällä
+      if (opts === undefined || opts === null) opts = { taitosA: true, taitosB: true };
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      // Origin = V:n alimmainen piste
+      // Sivu A lähtee origosta vasemmalle ylöspäin
+      // Sivu B lähtee origosta oikealle ylöspäin (peilikuva)
+      // Kulma = kanttikonekulma, 30° = loiva V
+
+      // Sivu A suunta: 180° - (90° - kulma) = 90° + kulma
+      const suuntaA = 180 + vals.ji_kulma / 2; // vasemmalle ylöspäin
+      const pOrigin = { x: 0, y: 0 };
+
+      // Sivu A yläpää
+      const pA_top = {
+        x: pOrigin.x + vals.ji_siv_a * Math.cos(deg(suuntaA)),
+        y: pOrigin.y + vals.ji_siv_a * Math.sin(deg(suuntaA))
+      };
+
+      // Sivu B suunta: peilikuva A:sta (oikealle ylöspäin)
+      const suuntaB = 360 - vals.ji_kulma / 2; // oikealle ylöspäin
+      const pB_top = {
+        x: pOrigin.x + vals.ji_siv_b * Math.cos(deg(suuntaB)),
+        y: pOrigin.y + vals.ji_siv_b * Math.sin(deg(suuntaB))
+      };
+
+      // Taitos A: kääntyy V:n sisään (oikealle päin) 25°
+      if (opts?.taitosA) {
+        const taitosSuunta = suuntaA + (180 - vals.ji_taitos_ang); // sisään päin
+        const pTaitosA = {
+          x: pA_top.x + vals.ji_taitos_len * Math.cos(deg(taitosSuunta)),
+          y: pA_top.y + vals.ji_taitos_len * Math.sin(deg(taitosSuunta))
+        };
+        extraLines.push({ p1: pA_top, p2: pTaitosA, label: vals.ji_taitos_len, labelOffset: [10, -10] });
+      }
+
+      // Taitos B: kääntyy V:n sisään (vasemmalle päin) 25°
+      if (opts?.taitosB) {
+        const taitosSuunta = suuntaB - (180 - vals.ji_taitos_ang); // sisään päin
+        const pTaitosB = {
+          x: pB_top.x + vals.ji_taitos_len * Math.cos(deg(taitosSuunta)),
+          y: pB_top.y + vals.ji_taitos_len * Math.sin(deg(taitosSuunta))
+        };
+        extraLines.push({ p1: pB_top, p2: pTaitosB, label: vals.ji_taitos_len, labelOffset: [-10, -10] });
+      }
+
+      // Pisteketju: A yläpää → origin → B yläpää
+      points.push(pA_top);   labels.push(vals.ji_siv_a);
+      points.push(pOrigin);  labels.push(vals.ji_siv_b);
+      points.push(pB_top);   labels.push('');
+
+      // Pintamerkki sivu A:n puoliväliin
+      const pPintaMid = {
+        x: (pOrigin.x + pA_top.x) / 2,
+        y: (pOrigin.y + pA_top.y) / 2
+      };
+      const pPintaMid2 = {
+        x: pPintaMid.x + 20 * Math.cos(deg(suuntaA)),
+        y: pPintaMid.y + 20 * Math.sin(deg(suuntaA))
+      };
+
+      return { points, labels, extraLines, pintaViiva: { p1: pPintaMid, p2: pPintaMid2 } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.ji_siv_a + vals.ji_siv_b;
+      if (opts?.taitosA) lev += vals.ji_taitos_len;
+      if (opts?.taitosB) lev += vals.ji_taitos_len;
+      return lev;
+    }
+  },
+  'seinänvieripelti': {
+    name: 'Seinänvieripelti',
+    fields: [
+      { id: 'ura_len', label: 'Uran pohja mm', default: 20 },
+      { id: 'seg0_len', label: 'Katolle mm', default: 150 },
+      { id: 'seg1_len', label: 'Seinälle mm', default: 200 },
+      { id: 'ura_ang', label: 'Uraan °', default: 45, cls: 'angle' },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
+      { id: 'tiiB_len', label: 'Tiiviste B mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiB', label: 'Tiiviste B (yläpää)' },
+      { id: 'tupB', label: 'Tupla B (yläpää)' },
+    ],
+    build: (vals, opts) => {
+      opts = { ...opts, tupA: true };
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      // Seinälle = pystysuora (90°), Katolle lähtee seinän alapäästä vasemmalle
+      const seinaSuunta = 90;
+      const pSeinaYla = { x: 0, y: 0 };
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pSeinaAla = { x: 0, y: bLen };
+
+      // Katolle lähtee seinän alapäästä vasemmalle, kulma muuttaa suuntaa
+      const katolleSuunta = 180 - (90 - vals.seg0_ang);
+      const pKatolle = {
+        x: pSeinaAla.x + vals.seg0_len * Math.cos(deg(katolleSuunta)),
+        y: pSeinaAla.y + vals.seg0_len * Math.sin(deg(katolleSuunta))
+      };
+
+      // Uran pohja lähtee Katolle-viivan päästä
+      const uraLahtoSuunta = katolleSuunta - vals.ura_ang;
+      const uraEnd = {
+        x: pKatolle.x + vals.ura_len * Math.cos(deg(uraLahtoSuunta)),
+        y: pKatolle.y + vals.ura_len * Math.sin(deg(uraLahtoSuunta))
+      };
+
+      // Tupla A lähtee uran päästä avautuen
+      const tupAAng = uraLahtoSuunta - 172;
+      const tupAEnd = {
+        x: uraEnd.x + vals.tupA_len * Math.cos(deg(tupAAng)),
+        y: uraEnd.y + vals.tupA_len * Math.sin(deg(tupAAng))
+      };
+      extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len, labelOffset: [20, 0] });
+
+      // Tiiviste B ja Tupla B — seinän yläpäässä
+      let tiiBEnd = { ...pSeinaYla };
+      if (opts?.tiiB) {
+        const tiiSuunta = seinaSuunta + 180 + 8;
+        tiiBEnd = {
+          x: pSeinaYla.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)),
+          y: pSeinaYla.y + vals.tiiB_len * Math.sin(deg(tiiSuunta))
+        };
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? seinaSuunta + 180 + 180 : seinaSuunta + 180 + 172;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)),
+          y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [25, 0] });
+      }
+
+      // Pisteet: ura → katolle → seinä ala → seinä yla [→ tiiviste B]
+      points.push(uraEnd);
+      labels.push(vals.ura_len);
+      points.push(pKatolle);
+      labels.push(vals.seg0_len);
+      points.push(pSeinaAla);
+      labels.push(bLen);
+      points.push(pSeinaYla);
+      labels.push('');
+      if (opts?.tiiB) {
+        points.push(pSeinaYla);
+        labels.push(vals.tiiB_len);
+        points.push(tiiBEnd);
+        labels.push('');
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pKatolle, p2: pSeinaAla } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len + vals.ura_len + vals.tupA_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      return lev;
+    }
+  },
+  eturaaystaspelti: {
+    name: 'Eturäystäspelti',
+    fields: [
+      { id: 'seg0_len', label: 'Katolle mm', default: 150 },
+      { id: 'seg1_len', label: 'Räystäälle mm', default: 30 },
+      { id: 'nokka_len', label: 'Tippanokka mm', default: 15 },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+      { id: 'nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'tiiA_len', label: 'Tiiviste A mm', default: 15 },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla B mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiA', label: 'Tiiviste A (vasen reuna)' },
+      { id: 'tupA', label: 'Tupla A (vasen reuna)' },
+    ],
+    build: (vals, opts) => {
+      // nokka ja tupB aina päällä
+      opts = { ...opts, nokka: true, tupB: true };
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      let x = 0, y = 0;
+      let suunta = 0;
+
+      // === VASEN REUNA (sama kuin ulkonurkka) ===
+      let tiiAEnd = { x, y };
+      if (opts?.tiiA) {
+        const tiiStart = { x, y };
+        const tiiSuunta = 180 - 8;
+        tiiAEnd = { x: x + vals.tiiA_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiA_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiAEnd);
+        labels.push(vals.tiiA_len);
+        points.push(tiiStart);
+        labels.push('');
+      }
+      if (opts?.tupA) {
+        const tupAng = opts?.tiiA ? 0 : 8;
+        const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(deg(tupAng)), y: tiiAEnd.y + vals.tupA_len * Math.sin(deg(tupAng)) };
+        extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len, labelOffset: [0, 20] });
+      }
+
+      // === SIVU A ===
+      suunta = 0;
+      const pA0 = { x, y };
+      points.push(pA0);
+      const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
+      x += aLen * Math.cos(deg(suunta));
+      y += aLen * Math.sin(deg(suunta));
+      labels.push(aLen);
+
+      // === KULMA ===
+      suunta += vals.seg0_ang;
+
+      // === SIVU B: ei lyhene tippanokasta ===
+      const pKulma = { x, y };
+      points.push(pKulma);
+      x += vals.seg1_len * Math.cos(deg(suunta));
+      y += vals.seg1_len * Math.sin(deg(suunta));
+      const pBend = { x, y };
+      points.push(pBend);
+      labels.push(vals.seg1_len);
+
+      // === TIPPANOKKA: kääntyy -45° sivu B:stä ===
+      let nokkEnd = { x, y };
+      if (opts?.nokka) {
+        const nokkSuunta = suunta - vals.nokka_ang; // negatiivinen = toiseen suuntaan
+        nokkEnd = { x: x + vals.nokka_len * Math.cos(deg(nokkSuunta)), y: y + vals.nokka_len * Math.sin(deg(nokkSuunta)) };
+        points.push(nokkEnd);
+        labels.push(vals.nokka_len);
+        points.push(pBend);
+        labels.push('');
+      }
+
+      // === TUPLA B: 8° avoimempi kuin tippanokka ===
+      if (opts?.tupB) {
+        const tupSuunta = opts?.nokka ? suunta - vals.nokka_ang + 180 - 8 : suunta + 172;
+        const tupEnd = { x: nokkEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: nokkEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: nokkEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [-25, 0] });
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len;
+      if (opts?.tupA) lev += vals.tupA_len;
+      lev += vals.nokka_len; // aina mukana
+      lev += vals.tupB_len;  // aina mukana
+      return lev;
+    }
+  },
+  paatypelti: {
+    name: 'Päätypelti',
+    fields: [
+      { id: 'harja_len', label: 'Uran pohja mm', default: 20 },
+      { id: 'seg0_len', label: 'Katolle mm', default: 80 },
+      { id: 'seg1_len', label: 'Räystäälle mm', default: 70 },
+      { id: 'nokka_len', label: 'Tippanokka mm', default: 15 },
+      { id: 'harja_ang', label: 'Uraan °', default: 45, cls: 'angle' },
+      { id: 'seg0_ang', label: 'Kulma °', default: 90, cls: 'angle' },
+      { id: 'nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'tupA_len', label: 'Tupla A mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla B mm', default: 12 },
+    ],
+    options: [],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      let x = 0, y = 0;
+      let suunta = 0;
+
+      // === URAN POHJA: x- ja y- suuntaan (vasemmalle ylöspäin) ===
+      const harjaStart = { x, y };
+      const harjaEnd = {
+        x: x - vals.harja_len * Math.cos(deg(vals.harja_ang)),
+        y: y + vals.harja_len * Math.sin(deg(vals.harja_ang))
+      };
+      points.push(harjaEnd);
+      labels.push(vals.harja_len);
+      points.push(harjaStart);
+      labels.push('');
+
+      // Tupla A: lähtee harjan PÄÄSTÄ, kulma = harjakulma - 8°
+      const tupASuunta = -(vals.harja_ang - 8);
+      const tupAEnd = {
+        x: harjaEnd.x + vals.tupA_len * Math.cos(deg(tupASuunta)),
+        y: harjaEnd.y + vals.tupA_len * Math.sin(deg(tupASuunta))
+      };
+      extraLines.push({ p1: harjaEnd, p2: tupAEnd, label: vals.tupA_len, labelOffset: [0, 20] });
+
+      // === SIVU A (Katolle) ===
+      suunta = 0;
+      const pA0 = { x, y };
+      points.push(pA0);
+      x += vals.seg0_len * Math.cos(deg(suunta));
+      y += vals.seg0_len * Math.sin(deg(suunta));
+      labels.push(vals.seg0_len);
+
+      // === KULMA ===
+      suunta += vals.seg0_ang;
+
+      // === SIVU B (Räystäälle) ===
+      const pKulma = { x, y };
+      points.push(pKulma);
+      x += vals.seg1_len * Math.cos(deg(suunta));
+      y += vals.seg1_len * Math.sin(deg(suunta));
+      const pBend = { x, y };
+      points.push(pBend);
+      labels.push(vals.seg1_len);
+
+      // === TIPPANOKKA ===
+      const nokkSuunta = suunta - vals.nokka_ang;
+      const nokkEnd = {
+        x: x + vals.nokka_len * Math.cos(deg(nokkSuunta)),
+        y: y + vals.nokka_len * Math.sin(deg(nokkSuunta))
+      };
+      points.push(nokkEnd);
+      labels.push(vals.nokka_len);
+      points.push(pBend);
+      labels.push('');
+
+      // === TUPLA B ===
+      const tupBSuunta = nokkSuunta + 180 - 8;
+      const tupBEnd = {
+        x: nokkEnd.x + vals.tupB_len * Math.cos(deg(tupBSuunta)),
+        y: nokkEnd.y + vals.tupB_len * Math.sin(deg(tupBSuunta))
+      };
+      extraLines.push({ p1: nokkEnd, p2: tupBEnd, label: vals.tupB_len, labelOffset: [-25, 0] });
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pKulma } };
+    },
+    aihio: (vals) => {
+      return vals.seg0_len + vals.seg1_len + vals.harja_len + vals.nokka_len + vals.tupA_len + vals.tupB_len;
+    }
+  },
+  paatypelti_huopa: {
+    name: 'Päätypelti huopa',
+    fields: [
+      { id: 'hp_katolle_len', label: 'Katolle mm', default: 100 },
+      { id: 'hp_nousu_len', label: 'Nousu mm', default: 20 },
+      { id: 'hp_raystas_len', label: 'Räystäälle mm', default: 110 },
+      { id: 'hp_nokka_len', label: 'Tippanokka mm', default: 15 },
+      { id: 'hp_katolle_ang', label: 'Katolle °', default: 50, cls: 'angle', flip: true },
+      { id: 'hp_kulma_ang', label: 'Nousu °', default: 130, cls: 'angle' },
+      { id: 'hp_nokka_ang', label: 'Tippanokka kulma °', default: 45, cls: 'angle' },
+      { id: 'hp_tupla_len', label: 'Tupla mm', default: 12 },
+    ],
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      // Origin = (0,0) — räystään yläpää / kulmapisteen paikka
+      // Rakenne:
+      //   Nousu: origosta YLÖSPÄIN (-y suuntaan SVG:ssä)
+      //   Katolle: nousun yläpäästä vasemmalle (kulma säädettävissä)
+      //   Räystäs: origosta suoraan alas (+y)
+      //   Nokka: räystään alapäästä
+
+      const pOrigin = { x: 0, y: 0 };
+
+      // === NOUSU: origosta, kulma säädettävissä (oletus 130° = vasemmalle ylöspäin) ===
+      const nousSuunta = 270 - vals.hp_kulma_ang; // kanttikulma 130° → geometria
+      const pNousuEnd = {
+        x: vals.hp_nousu_len * Math.cos(deg(nousSuunta)),
+        y: vals.hp_nousu_len * Math.sin(deg(nousSuunta))
+      };
+
+      // === KATOLLE: nousun päästä, kanttikulma 50° ===
+      const katSuunta = nousSuunta + (90 - vals.hp_katolle_ang);
+      const pKatolleEnd = {
+        x: pNousuEnd.x + vals.hp_katolle_len * Math.cos(deg(katSuunta)),
+        y: pNousuEnd.y + vals.hp_katolle_len * Math.sin(deg(katSuunta))
+      };
+
+      // === RÄYSTÄÄLLE: origosta pystysuora alas ===
+      const pRaysEnd = { x: 0, y: vals.hp_raystas_len };
+
+      // === TIPPANOKKA ===
+      const nokkSuunta = 90 - vals.hp_nokka_ang;
+      const pNokkEnd = {
+        x: pRaysEnd.x + vals.hp_nokka_len * Math.cos(deg(nokkSuunta)),
+        y: pRaysEnd.y + vals.hp_nokka_len * Math.sin(deg(nokkSuunta))
+      };
+      const tupBSuunta = nokkSuunta + 180 - 8;
+      const pTupBEnd = {
+        x: pNokkEnd.x + vals.hp_tupla_len * Math.cos(deg(tupBSuunta)),
+        y: pNokkEnd.y + vals.hp_tupla_len * Math.sin(deg(tupBSuunta))
+      };
+      extraLines.push({ p1: pNokkEnd, p2: pTupBEnd, label: vals.hp_tupla_len, labelOffset: [-20, 0] });
+
+      // Pisteketju: katolleEnd → nousEnd → origin → räystäs → nokka
+      points.push(pKatolleEnd); labels.push(vals.hp_katolle_len);
+      points.push(pNousuEnd);   labels.push(vals.hp_nousu_len);
+      points.push(pOrigin);     labels.push(vals.hp_raystas_len);
+      points.push(pRaysEnd);    labels.push(vals.hp_nokka_len);
+      points.push(pNokkEnd);    labels.push('');
+      points.push(pRaysEnd);    labels.push('');
+
+      // Korkeus = y-etäisyys nokasta katolle-viivan oikeaan reunaan (nousun yläpää)
+      const korkeus = Math.abs(pNokkEnd.y - pNousuEnd.y).toFixed(0);
+
+      return { points, labels, extraLines, pintaViiva: { p1: pNousuEnd, p2: pOrigin }, korkeus };
+    },
+    aihio: (vals) => vals.hp_katolle_len + vals.hp_nousu_len + vals.hp_raystas_len + vals.hp_nokka_len + vals.hp_tupla_len
+  },
+  ulista: {
+    name: 'U-lista u',
+    fields: [
+      { id: 'seg0_len', label: 'A (pinta) mm', default: 100 },
+      { id: 'seg1_len', label: 'Sivu B (vasen) mm', default: 100 },
+      { id: 'seg2_len', label: 'Sivu C (oikea) mm', default: 100 },
+      { id: 'seg0_ang', label: 'Kulma vasen °', default: 90, cls: 'angle', flip: true },
+      { id: 'seg1_ang', label: 'Kulma oikea °', default: 90, cls: 'angle' },
+      { id: 'tiiB_len', label: 'Tiiviste vasen mm', default: 15 },
+      { id: 'tiiC_len', label: 'Tiiviste oikea mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla vasen mm', default: 15 },
+      { id: 'tupC_len', label: 'Tupla oikea mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiB', label: 'Tiiviste vasen (alapää)' },
+      { id: 'tiiC', label: 'Tiiviste oikea (alapää)' },
+      { id: 'tupB', label: 'Tupla vasen (alapää)' },
+      { id: 'tupC', label: 'Tupla oikea (alapää)' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      const pA0 = { x: 0, y: 0 };
+      const pA1 = { x: vals.seg0_len, y: 0 };
+
+      // Kulma vasen: käyttäjä syöttää kanttikonekulman, geometrinen = 180 - syötetty
+      const suuntaB = 180 - vals.seg0_ang;
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pBend = {
+        x: pA0.x + vals.seg1_len * Math.cos(deg(suuntaB)),
+        y: pA0.y + vals.seg1_len * Math.sin(deg(suuntaB))
+      };
+      const pBendShort = {
+        x: pA0.x + bLen * Math.cos(deg(suuntaB)),
+        y: pA0.y + bLen * Math.sin(deg(suuntaB))
+      };
+
+      // Sivu C (oikea): A:n oikeasta päästä alas
+      // Kulma oikea = seg1_ang
+      const suuntaC = vals.seg1_ang;
+      const cLen = opts?.tiiC ? vals.seg2_len - vals.tiiC_len : vals.seg2_len;
+      const pCend = {
+        x: pA1.x + vals.seg2_len * Math.cos(deg(suuntaC)),
+        y: pA1.y + vals.seg2_len * Math.sin(deg(suuntaC))
+      };
+      const pCendShort = {
+        x: pA1.x + cLen * Math.cos(deg(suuntaC)),
+        y: pA1.y + cLen * Math.sin(deg(suuntaC))
+      };
+
+      // === VASEN ALAPÄÄ (B) — peilikuva ulkonurkan sivu B:stä ===
+      // Ulkonurkassa tiiB: suuntaB + 8, tupB: suuntaB + 172/180
+      // Vasen peilikuva: suuntaB - 8, tupB: suuntaB - 172/180
+      let tiiBEnd = { x: pBend.x, y: pBend.y };
+      if (opts?.tiiB) {
+        tiiBEnd = {
+          x: pBendShort.x + vals.tiiB_len * Math.cos(deg(suuntaB - 8)),
+          y: pBendShort.y + vals.tiiB_len * Math.sin(deg(suuntaB - 8))
+        };
+        points.push(tiiBEnd);
+        labels.push(vals.tiiB_len);
+        points.push(pBendShort);
+        labels.push('');
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? suuntaB - 180 : suuntaB - 172;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)),
+          y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [16, 0] });
+      }
+
+      // === PIIRRÄ: B alapää → B → A vasen → A oikea → C → C alapää ===
+      // Käytetään lyhyttä pistettä jos tiiviste päällä
+      points.push(opts?.tiiB ? pBendShort : pBend);
+      labels.push(opts?.tiiB ? bLen : vals.seg1_len);
+      points.push(pA0);
+      labels.push(vals.seg0_len);
+      points.push(pA1);
+      labels.push(opts?.tiiC ? cLen : vals.seg2_len);
+      points.push(opts?.tiiC ? pCendShort : pCend);
+
+      // === OIKEA ALAPÄÄ (C) — sama kuin ulkonurkan sivu B ===
+      let tiiCEnd = { x: pCend.x, y: pCend.y };
+      if (opts?.tiiC) {
+        tiiCEnd = {
+          x: pCendShort.x + vals.tiiC_len * Math.cos(deg(suuntaC + 8)),
+          y: pCendShort.y + vals.tiiC_len * Math.sin(deg(suuntaC + 8))
+        };
+        points.push(tiiCEnd);
+        labels.push(vals.tiiC_len);
+        points.push(pCend);
+        labels.push('');
+      }
+      if (opts?.tupC) {
+        const tupSuunta = opts?.tiiC ? suuntaC + 180 : suuntaC + 172;
+        const tupEnd = {
+          x: tiiCEnd.x + vals.tupC_len * Math.cos(deg(tupSuunta)),
+          y: tiiCEnd.y + vals.tupC_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiCEnd, p2: tupEnd, label: vals.tupC_len, labelOffset: [-16, 0] });
+      }
+
+      // Tupla B labelOffset oikealle
+      // (päivitetään jo lisättyyn extraLineen jos se on olemassa)
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      if (opts?.tupC) lev += vals.tupC_len;
+      return lev;
+    }
+  },
+  ulistas: {
+    name: 'U-lista s',
+    fields: [
+      { id: 'seg0_len', label: 'A (pinta) mm', default: 100 },
+      { id: 'seg1_len', label: 'Sivu B (vasen) mm', default: 100 },
+      { id: 'seg2_len', label: 'Sivu C (oikea) mm', default: 100 },
+      { id: 'seg0_ang', label: 'Kulma vasen °', default: 90, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Kulma oikea °', default: 90, cls: 'angle' },
+      { id: 'tiiB_len', label: 'Tiiviste vasen mm', default: 15 },
+      { id: 'tiiC_len', label: 'Tiiviste oikea mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla vasen mm', default: 15 },
+      { id: 'tupC_len', label: 'Tupla oikea mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiB', label: 'Tiiviste vasen (yläpää)' },
+      { id: 'tiiC', label: 'Tiiviste oikea (yläpää)' },
+      { id: 'tupB', label: 'Tupla vasen (yläpää)' },
+      { id: 'tupC', label: 'Tupla oikea (yläpää)' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      const pA0 = { x: 0, y: 0 };
+      const pA1 = { x: vals.seg0_len, y: 0 };
+
+      // Sivu B (vasen): A:n vasemmasta päästä YLÖS
+      // Kulma vasen: käyttäjä syöttää kanttikonekulman, geometrinen = -(180 - syötetty)
+      const suuntaB = -(180 - vals.seg0_ang);
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pBend = {
+        x: pA0.x + vals.seg1_len * Math.cos(deg(suuntaB)),
+        y: pA0.y + vals.seg1_len * Math.sin(deg(suuntaB))
+      };
+      const pBendShort = {
+        x: pA0.x + bLen * Math.cos(deg(suuntaB)),
+        y: pA0.y + bLen * Math.sin(deg(suuntaB))
+      };
+
+      // Sivu C (oikea): A:n oikeasta päästä YLÖS
+      const suuntaC = -vals.seg1_ang;
+      const cLen = opts?.tiiC ? vals.seg2_len - vals.tiiC_len : vals.seg2_len;
+      const pCend = {
+        x: pA1.x + vals.seg2_len * Math.cos(deg(suuntaC)),
+        y: pA1.y + vals.seg2_len * Math.sin(deg(suuntaC))
+      };
+      const pCendShort = {
+        x: pA1.x + cLen * Math.cos(deg(suuntaC)),
+        y: pA1.y + cLen * Math.sin(deg(suuntaC))
+      };
+
+      // === VASEN YLÄPÄÄ (B) — peilikuva ulistan B:stä ===
+      let tiiBEnd = { x: pBend.x, y: pBend.y };
+      if (opts?.tiiB) {
+        tiiBEnd = {
+          x: pBendShort.x + vals.tiiB_len * Math.cos(deg(suuntaB - 8)),
+          y: pBendShort.y + vals.tiiB_len * Math.sin(deg(suuntaB - 8))
+        };
+        points.push(tiiBEnd);
+        labels.push(vals.tiiB_len);
+        points.push(pBendShort);
+        labels.push('');
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? suuntaB - 180 : suuntaB - 172;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)),
+          y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [-16, 0] });
+      }
+
+      // === PIIRRÄ: B yläpää → B → A vasen → A oikea → C → C yläpää ===
+      points.push(opts?.tiiB ? pBendShort : pBend);
+      labels.push(opts?.tiiB ? bLen : vals.seg1_len);
+      points.push(pA0);
+      labels.push(vals.seg0_len);
+      points.push(pA1);
+      labels.push(opts?.tiiC ? cLen : vals.seg2_len);
+      points.push(opts?.tiiC ? pCendShort : pCend);
+
+      // === OIKEA YLÄPÄÄ (C) ===
+      let tiiCEnd = { x: pCend.x, y: pCend.y };
+      if (opts?.tiiC) {
+        tiiCEnd = {
+          x: pCendShort.x + vals.tiiC_len * Math.cos(deg(suuntaC + 8)),
+          y: pCendShort.y + vals.tiiC_len * Math.sin(deg(suuntaC + 8))
+        };
+        points.push(tiiCEnd);
+        labels.push(vals.tiiC_len);
+        points.push(pCend);
+        labels.push('');
+      }
+      if (opts?.tupC) {
+        const tupSuunta = opts?.tiiC ? suuntaC + 180 : suuntaC + 172;
+        const tupEnd = {
+          x: tiiCEnd.x + vals.tupC_len * Math.cos(deg(tupSuunta)),
+          y: tiiCEnd.y + vals.tupC_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiCEnd, p2: tupEnd, label: vals.tupC_len, labelOffset: [16, 0] });
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      if (opts?.tupC) lev += vals.tupC_len;
+      return lev;
+    }
+  },
+  kynnys: {
+    name: 'Kynnys',
+    fields: [
+      { id: 'seg0_len', label: 'Takareuna mm', default: 10 },
+      { id: 'seg1_len', label: 'Pinta mm', default: 120 },
+      { id: 'seg2_len', label: 'Etureuna mm', default: 30 },
+      { id: 'seg3_len', label: 'Etukäännös mm', default: 0 },
+      { id: 'seg0_ang', label: 'Käännös taka °', default: 80, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Käännös etu °', default: 80, cls: 'angle' },
+      { id: 'seg3_ang', label: 'Etur °', default: 125, cls: 'angle' },
+    ],
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+
+      const pEtuylapaa = { x: 0, y: 0 };
+
+      // 1. Etureuna: suoraan alas (90°)
+      let suunta = 90;
+      const pEtualapaa = {
+        x: pEtuylapaa.x + vals.seg2_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg2_len * Math.sin(deg(suunta))
+      };
+
+      // 2. Etukäännös
+      suunta += vals.seg3_ang;
+      const pEtukaannos = vals.seg3_len > 0 ? {
+        x: pEtualapaa.x + vals.seg3_len * Math.cos(deg(suunta)),
+        y: pEtualapaa.y + vals.seg3_len * Math.sin(deg(suunta))
+      } : null;
+
+      // 3. Pinta
+      suunta = 90 + (180 - vals.seg1_ang);
+      const pPintapaaty = {
+        x: pEtuylapaa.x + vals.seg1_len * Math.cos(deg(suunta)),
+        y: pEtuylapaa.y + vals.seg1_len * Math.sin(deg(suunta))
+      };
+
+      // 4. Takareuna
+      suunta += vals.seg0_ang;
+      const pTakaylapaa = {
+        x: pPintapaaty.x + vals.seg0_len * Math.cos(deg(suunta)),
+        y: pPintapaaty.y + vals.seg0_len * Math.sin(deg(suunta))
+      };
+
+      const pts = [pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+      if (pEtukaannos) pts.push(pEtukaannos);
+      return { points: pts, labels: null, extraLines: [], pintaViiva: { p1: pPintapaaty, p2: pEtuylapaa } };
+    }
+  },
+  hattulista: {
+    name: 'Hattulista',
+    fields: [
+      { id: 'seg0_len', label: 'Pinta mm', default: 100 },
+      { id: 'seg1_len', label: 'Vasen sivu mm', default: 100 },
+      { id: 'seg2_len', label: 'Oikea sivu mm', default: 100 },
+      { id: 'laippaV_len', label: 'Laippa vasen mm', default: 30 },
+      { id: 'laippaO_len', label: 'Laippa oikea mm', default: 30 },
+      { id: 'seg0_ang', label: 'Kulma vasen °', default: 90, cls: 'angle', flip: true },
+      { id: 'laippaV_ang', label: 'Laippa vasen kulma °', default: 90, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Kulma oikea °', default: 90, cls: 'angle' },
+      { id: 'laippaO_ang', label: 'Laippa oikea kulma °', default: 90, cls: 'angle' },
+      { id: 'tiiB_len', label: 'Tiiviste vasen mm', default: 15 },
+      { id: 'tiiC_len', label: 'Tiiviste oikea mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla vasen mm', default: 15 },
+      { id: 'tupC_len', label: 'Tupla oikea mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiB', label: 'Tiiviste vasen (laippa)' },
+      { id: 'tiiC', label: 'Tiiviste oikea (laippa)' },
+      { id: 'tupB', label: 'Tupla vasen (laippa)' },
+      { id: 'tupC', label: 'Tupla oikea (laippa)' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      const pA0 = { x: 0, y: 0 };
+      const pA1 = { x: vals.seg0_len, y: 0 };
+
+      // Sivu B (vasen): alas, kulma vasen käännetty
+      const suuntaB = 180 - vals.seg0_ang;
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pBend = { x: pA0.x + vals.seg1_len * Math.cos(deg(suuntaB)), y: pA0.y + vals.seg1_len * Math.sin(deg(suuntaB)) };
+      const pBendShort = { x: pA0.x + bLen * Math.cos(deg(suuntaB)), y: pA0.y + bLen * Math.sin(deg(suuntaB)) };
+
+      // Sivu C (oikea): alas
+      const suuntaC = vals.seg1_ang;
+      const cLen = opts?.tiiC ? vals.seg2_len - vals.tiiC_len : vals.seg2_len;
+      const pCend = { x: pA1.x + vals.seg2_len * Math.cos(deg(suuntaC)), y: pA1.y + vals.seg2_len * Math.sin(deg(suuntaC)) };
+      const pCendShort = { x: pA1.x + cLen * Math.cos(deg(suuntaC)), y: pA1.y + cLen * Math.sin(deg(suuntaC)) };
+
+      // Laippa vasen: sivu B:n päästä vasemmalle
+      // suuntaB on alas, laippa kääntyy vasemmalle = suuntaB + 90°
+      const laippaVSuunta = suuntaB + vals.laippaV_ang;
+      const laippaVLen = opts?.tiiB ? vals.laippaV_len - vals.tiiB_len : vals.laippaV_len;
+      const pLaippaV = { x: pBend.x + vals.laippaV_len * Math.cos(deg(laippaVSuunta)), y: pBend.y + vals.laippaV_len * Math.sin(deg(laippaVSuunta)) };
+      const pLaippaVShort = { x: pBend.x + laippaVLen * Math.cos(deg(laippaVSuunta)), y: pBend.y + laippaVLen * Math.sin(deg(laippaVSuunta)) };
+
+      // Laippa oikea: sivu C:n päästä oikealle = suuntaC - 90°
+      const laippaOSuunta = suuntaC - vals.laippaO_ang;
+      const laippaOLen = opts?.tiiC ? vals.laippaO_len - vals.tiiC_len : vals.laippaO_len;
+      const pLaippaO = { x: pCend.x + vals.laippaO_len * Math.cos(deg(laippaOSuunta)), y: pCend.y + vals.laippaO_len * Math.sin(deg(laippaOSuunta)) };
+      const pLaippaOShort = { x: pCend.x + laippaOLen * Math.cos(deg(laippaOSuunta)), y: pCend.y + laippaOLen * Math.sin(deg(laippaOSuunta)) };
+
+      // === VASEN LAIPPA REUNAT ===
+      let tiiBEnd = opts?.tiiB ? pLaippaVShort : pLaippaV;
+      if (opts?.tiiB) {
+        const tiiSuunta = laippaVSuunta - 8;
+        tiiBEnd = { x: pLaippaVShort.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: pLaippaVShort.y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        extraLines.push({ p1: pLaippaVShort, p2: tiiBEnd, label: vals.tiiB_len, labelOffset: [16, 0] });
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? laippaVSuunta - 180 : laippaVSuunta - 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [0, 16] });
+      }
+
+      // === OIKEA LAIPPA REUNAT (peilikuva vasemmasta) ===
+      let tiiCEnd = opts?.tiiC ? pLaippaOShort : pLaippaO;
+      if (opts?.tiiC) {
+        const tiiSuunta = laippaOSuunta + 8;
+        tiiCEnd = { x: pLaippaOShort.x + vals.tiiC_len * Math.cos(deg(tiiSuunta)), y: pLaippaOShort.y + vals.tiiC_len * Math.sin(deg(tiiSuunta)) };
+        extraLines.push({ p1: pLaippaOShort, p2: tiiCEnd, label: vals.tiiC_len, labelOffset: [-16, 0] });
+      }
+      if (opts?.tupC) {
+        const tupSuunta = opts?.tiiC ? laippaOSuunta + 180 : laippaOSuunta + 172;
+        const tupEnd = { x: tiiCEnd.x + vals.tupC_len * Math.cos(deg(tupSuunta)), y: tiiCEnd.y + vals.tupC_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: tiiCEnd, p2: tupEnd, label: vals.tupC_len, labelOffset: [0, 16] });
+      }
+
+      // PIIRRÄ: laippaV → B → A vasen → A oikea → C → laippaO
+      points.push(opts?.tiiB ? pLaippaVShort : pLaippaV);
+      labels.push(opts?.tiiB ? laippaVLen : vals.laippaV_len);
+      points.push(pBend);
+      labels.push(vals.seg1_len);
+      points.push(pA0);
+      labels.push(vals.seg0_len);
+      points.push(pA1);
+      labels.push(vals.seg2_len);
+      points.push(pCend);
+      labels.push(opts?.tiiC ? laippaOLen : vals.laippaO_len);
+      points.push(opts?.tiiC ? pLaippaOShort : pLaippaO);
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pA0, p2: pBend, p3: pA1, p4: pCend, p5: pLaippaV, p6: pLaippaO } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len + vals.laippaV_len + vals.laippaO_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      if (opts?.tupC) lev += vals.tupC_len;
+      return lev;
+    }
+  },
+  zlista: {
+    name: 'Z-lista',
+    fields: [
+      { id: 'seg0_len', label: 'A pinta mm', default: 80 },
+      { id: 'seg1_len', label: 'Nousu mm', default: 30 },
+      { id: 'seg2_len', label: 'B pinta mm', default: 80 },
+      { id: 'seg0_ang', label: 'Alakulma °', default: 90, cls: 'angle' },
+      { id: 'seg1_ang', label: 'Yläkulma °', default: 90, cls: 'angle' },
+      { id: 'tiiA_len', label: 'Tiiviste A vasen mm', default: 15 },
+      { id: 'tupA_len', label: 'Tupla A vasen mm', default: 15 },
+      { id: 'tiiB_len', label: 'Tiiviste B oikea mm', default: 15 },
+      { id: 'tupB_len', label: 'Tupla B oikea mm', default: 15 },
+    ],
+    options: [
+      { id: 'tiiA', label: 'Tiiviste A (vasen reuna)' },
+      { id: 'tiiB', label: 'Tiiviste B (oikea reuna)' },
+      { id: 'tupA', label: 'Tupla A (vasen reuna)' },
+      { id: 'tupB', label: 'Tupla B (oikea reuna)' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      // A pinta: vaakasuora vasemmalta oikealle
+      // Tiiviste A lyhentää vasemmasta päästä — pA0 siirtyy oikealle tiivisteen verran
+
+      const pA0 = { x: 0, y: 0 };
+      const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
+      const pA1 = { x: vals.seg0_len, y: 0 };
+      const pA1Short = { x: aLen, y: 0 }; // lyhennetty oikea pää
+
+      // === VASEN REUNA — tiiviste lähtee pA0:sta vasemmalle ===
+      let tiiAEnd = { x: 0, y: 0 };
+      if (opts?.tiiA) {
+        const tiiSuunta = 180 - 8;
+        tiiAEnd = { x: pA0.x + vals.tiiA_len * Math.cos(deg(tiiSuunta)), y: pA0.y + vals.tiiA_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiAEnd);
+        labels.push(vals.tiiA_len);
+        points.push(pA0);
+        labels.push('');
+      }
+      if (opts?.tupA) {
+        const tupAng = opts?.tiiA ? 0 : 8;
+        const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(deg(tupAng)), y: tiiAEnd.y + vals.tupA_len * Math.sin(deg(tupAng)) };
+        extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len, labelOffset: [0, 20] });
+      }
+
+      // PIIRRÄ: sivu A pA0 → pA1Short (lyhennetty), nousu lähtee pA1Short:sta
+      points.push(pA0);
+      labels.push(aLen);
+      points.push(opts?.tiiA ? pA1Short : pA1);
+      labels.push(vals.seg1_len);
+      const suuntaNousu = -(vals.seg0_ang);
+      const nousAlku = opts?.tiiA ? pA1Short : pA1;
+      const pNousuEnd = {
+        x: nousAlku.x + vals.seg1_len * Math.cos(deg(suuntaNousu)),
+        y: nousAlku.y + vals.seg1_len * Math.sin(deg(suuntaNousu))
+      };
+
+      // B pinta: nousun päästä oikealle
+      const suuntaB = suuntaNousu + vals.seg1_ang;
+      const bLen = opts?.tiiB ? vals.seg2_len - vals.tiiB_len : vals.seg2_len;
+      const pB0 = pNousuEnd;
+      const pB1 = {
+        x: pB0.x + vals.seg2_len * Math.cos(deg(suuntaB)),
+        y: pB0.y + vals.seg2_len * Math.sin(deg(suuntaB))
+      };
+      const pB1Short = {
+        x: pB0.x + bLen * Math.cos(deg(suuntaB)),
+        y: pB0.y + bLen * Math.sin(deg(suuntaB))
+      };
+      points.push(pNousuEnd);
+      labels.push(bLen);
+      points.push(opts?.tiiB ? pB1Short : pB1);
+
+      // === OIKEA REUNA (B:n oikea pää) ===
+      let tiiBEnd = opts?.tiiB ? pB1Short : pB1;
+      if (opts?.tiiB) {
+        const tiiSuunta = suuntaB + 8;
+        tiiBEnd = { x: pB1Short.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: pB1Short.y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        points.push(tiiBEnd);
+        labels.push(vals.tiiB_len);
+        points.push(opts?.tiiB ? pB1Short : pB1);
+        labels.push('');
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? suuntaB + 180 : suuntaB + 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelOffset: [0, 16] });
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA0, p2: pA1 }, nousuViiva: { p1: pA1, p2: pNousuEnd }, kokonaisViiva: { p1: pA0, p2: (opts?.tiiB ? pB1Short : pB1) } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.seg0_len + vals.seg1_len + vals.seg2_len;
+      if (opts?.tiiA) lev -= 0; // tiiviste ei lisää eikä vähennä aihiota
+      if (opts?.tupA) lev += vals.tupA_len;
+      if (opts?.tupB) lev += vals.tupB_len;
+      return lev;
+    }
+  },
+  peitelista: {
+    name: 'Peitelista',
+    fields: [
+      { id: 'pl_lev', label: 'Leveys mm', default: 100 },
+      { id: 'pl_tiiA_len', label: 'Tiiviste vasen mm', default: 15 },
+      { id: 'pl_tiiB_len', label: 'Tiiviste oikea mm', default: 15 },
+      { id: 'pl_tupA_len', label: 'Tupla vasen mm', default: 15 },
+      { id: 'pl_tupB_len', label: 'Tupla oikea mm', default: 15 },
+      { id: 'pl_tiiA_ang', label: 'Tiiviste vasen °', default: 8, cls: 'angle' },
+      { id: 'pl_tiiB_ang', label: 'Tiiviste oikea °', default: 8, cls: 'angle' },
+    ],
+    options: [
+      { id: 'tiiA', label: 'Tiiviste vasen' },
+      { id: 'tiiB', label: 'Tiiviste oikea' },
+      { id: 'tupA', label: 'Tupla vasen' },
+      { id: 'tupB', label: 'Tupla oikea' },
+    ],
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const points = [];
+      const labels = [];
+      const extraLines = [];
+
+      const pA = { x: 0, y: 0 };
+      const pB = { x: vals.pl_lev, y: 0 };
+
+      // Pääviiva ensin — alkaa tiivisteen sisäreunasta
+      const pAinner = opts?.tiiA ? { x: pA.x + vals.pl_tiiA_len, y: 0 } : pA;
+      const pBinner = opts?.tiiB ? { x: pB.x - vals.pl_tiiB_len, y: 0 } : pB;
+      const levNaytto = vals.pl_lev
+        - (opts?.tiiA ? vals.pl_tiiA_len : 0)
+        - (opts?.tiiB ? vals.pl_tiiB_len : 0);
+      points.push(pAinner); labels.push(levNaytto);
+      points.push(pBinner); labels.push('');
+
+      // Tiiviste vasen: lähtee pAinner:stä vasemmalle alas 172°
+      let tiiAEnd = pAinner;
+      if (opts?.tiiA) {
+        const tiiSuunta = 180 - vals.pl_tiiA_ang;
+        tiiAEnd = {
+          x: pAinner.x + vals.pl_tiiA_len * Math.cos(deg(tiiSuunta)),
+          y: pAinner.y + vals.pl_tiiA_len * Math.sin(deg(tiiSuunta))
+        };
+        extraLines.push({ p1: pAinner, p2: tiiAEnd, label: vals.pl_tiiA_len, labelOffset: [-20, 8] });
+      }
+      // Tupla vasen
+      if (opts?.tupA) {
+        const tupSuunta = opts?.tiiA ? 0 : 8;
+        const tupEnd = {
+          x: tiiAEnd.x + vals.pl_tupA_len * Math.cos(deg(tupSuunta)),
+          y: tiiAEnd.y + vals.pl_tupA_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.pl_tupA_len, labelOffset: [0, 16] });
+      }
+
+      // Tiiviste oikea: lähtee pBinner:stä oikealle alas 8°
+      let tiiBEnd = pBinner;
+      if (opts?.tiiB) {
+        const tiiSuunta = vals.pl_tiiB_ang;
+        tiiBEnd = {
+          x: pBinner.x + vals.pl_tiiB_len * Math.cos(deg(tiiSuunta)),
+          y: pBinner.y + vals.pl_tiiB_len * Math.sin(deg(tiiSuunta))
+        };
+        extraLines.push({ p1: pBinner, p2: tiiBEnd, label: vals.pl_tiiB_len, labelOffset: [20, 8] });
+      }
+      // Tupla oikea
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? 180 : 180 - 8;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.pl_tupB_len * Math.cos(deg(tupSuunta)),
+          y: tiiBEnd.y + vals.pl_tupB_len * Math.sin(deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.pl_tupB_len, labelOffset: [0, 16] });
+      }
+
+      return { points, labels, extraLines, pintaViiva: { p1: pA, p2: pB } };
+    },
+    aihio: (vals, opts) => {
+      let lev = vals.pl_lev;
+      if (opts?.tupA) lev += vals.pl_tupA_len;
+      if (opts?.tupB) lev += vals.pl_tupB_len;
+      return lev;
+    }
+  },
+  vapaa: {
+    name: 'Vapaa profiili',
+    fields: [],
+    build: () => buildFromFreeSegments()
+  }
+};
+
+// ─── Vapaat segmentit ─────────────────────────────────────────────
+let freeSegments = [
+  { len: 50, angle: 90 },
+  { len: 100, angle: 180 },
+  { len: 50, angle: 90 },
+];
+
+// ─── Pituusrivit ──────────────────────────────────────────────────
+let lengthRows = [{ mitta: 1000, paat: 0, kpl: 1, huomio: '' }];
+
+// ─── Aktiivinen tyyppi ────────────────────────────────────────────
+let activeType = 'avp';
+
+function setType(t) {
+  activeType = t;
+  document.querySelectorAll('.type-btn').forEach((b) => {
+    b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
+  });
+  renderProfileFields();
+  // Resetoi kentät oletusarvoihin
+  const type = TYPES[activeType];
+  if (type.fields) {
+    type.fields.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (el) el.value = f.default;
+    });
+  }
+  document.getElementById('free-section').style.display = t === 'vapaa' ? '' : 'none';
+  document.getElementById('profile-section').style.display = t === 'vapaa' ? 'none' : '';
+  redraw();
+}
+
+// ─── Profiilikentät ───────────────────────────────────────────────
+let tilausContext = null;
+
+// ── Supabase + tuotteet ───────────────────────────────────────────
 const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
 const pmHeaders = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
-const bc = new BroadcastChannel('kpt_mallisto');
-
-// =============================================
-// PROFIILIMÄÄRITTELYT
-// =============================================
-const PROFILES = {
-
-  ikkunapellit: {
-    // Näytetään ikkunapellit-alaprofiilivalinta — käsitellään erikseen
-    isIkkunapellit: true
-  },
-
-  kynnys1: {
-    name: 'Kynnyspelti 1',
-    nimike: 'Kynnyspelti 1',
-    manualPaat: true,
-    fields: `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>Suora 1 mm</label><input type="number" id="f_suora1" value="32" oninput="laske()"></div>
-          <div class="field"><label>Pinta mm</label><input type="number" id="f_pinta" value="88" oninput="laske()"></div>
-          <div class="field"><label>Etureuna mm</label><input type="number" id="f_etureuna" value="113" oninput="laske()"></div>
-          <div class="field"><label>Tippanokka mm</label><input type="number" id="f_tippanokka" value="7" oninput="laske()"></div>
-          <div class="field"><label>Takareuna mm</label><input type="number" id="f_takareuna" value="20" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Suora °</label><input type="number" id="f_suora_ang" value="6" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Kulma °</label><input type="number" id="f_kulma_ang" value="84" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Tippanokka kulma °</label><input type="number" id="f_nokka_ang" value="45" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Käännös taka °</label><input type="number" id="f_kaannos_taka" value="0" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`,
-    aihio: () => gv('f_suora1') + gv('f_pinta') + gv('f_etureuna') + gv('f_tippanokka') + gv('f_takareuna'),
-    build: buildKynnys1
-  },
-
-  alaslaskun: {
-    name: 'Alaslaskun kappalista',
-    nimike: 'Alaslaskun kappalista',
-    manualPaat: true,
-    fields: `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>A (pinta) mm</label><input type="number" id="f_seg0" value="82" oninput="laske()"></div>
-          <div class="field"><label>Sivu B (vasen) mm</label><input type="number" id="f_seg1" value="40" oninput="laske()"></div>
-          <div class="field"><label>Sivu C (oikea) mm</label><input type="number" id="f_seg2" value="10" oninput="laske()"></div>
-          <div class="field"><label>Tupla vasen mm</label><input type="number" id="f_tupB" value="15" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Kulma vasen °</label><input type="number" id="f_ang0" value="97" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Kulma oikea °</label><input type="number" id="f_ang1" value="90" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`,
-    aihio: () => gv('f_seg0') + gv('f_seg1') + gv('f_seg2') + gv('f_tupB'),
-    build: buildAlaslaskun
-  },
-
-  hattupelti: {
-    name: 'Hattupelti viipalesaumaan',
-    nimike: 'Hattupelti',
-    manualPaat: true,
-    fields: `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>A (pinta) mm</label><input type="number" id="f_seg0" value="280" oninput="laske()"></div>
-          <div class="field"><label>Sivu B (vasen) mm</label><input type="number" id="f_seg1" value="55" oninput="laske()"></div>
-          <div class="field"><label>Sivu C (oikea) mm</label><input type="number" id="f_seg2" value="55" oninput="laske()"></div>
-          <div class="field"><label>Tupla vasen mm</label><input type="number" id="f_tupB" value="10" oninput="laske()"></div>
-          <div class="field"><label>Tupla oikea mm</label><input type="number" id="f_tupC" value="10" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Kulma vasen °</label><input type="number" id="f_ang0" value="45" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Kulma oikea °</label><input type="number" id="f_ang1" value="45" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`,
-    aihio: () => gv('f_seg0') + gv('f_seg1') + gv('f_seg2') + gv('f_tupB') + gv('f_tupC'),
-    build: buildHattupelti
-  },
-
-  katkaisulista: {
-    name: 'Ulkoverhouksen katkaisulista',
-    nimike: 'Ulkoverh. katkaisulista',
-    manualPaat: false,
-    fields: `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>Takareuna mm</label><input type="number" id="f_takareuna" value="90" oninput="laske()"></div>
-          <div class="field"><label>Pinta mm</label><input type="number" id="f_pinta" value="100" oninput="laske()"></div>
-          <div class="field"><label>Etureuna mm</label><input type="number" id="f_etureuna" value="50" oninput="laske()"></div>
-          <div class="field"><label>Etukäännös mm</label><input type="number" id="f_etukaannos" value="10" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Käännös taka °</label><input type="number" id="f_kaannos_taka" value="72" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Käännös etu °</label><input type="number" id="f_kaannos_etu" value="72" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Etur °</label><input type="number" id="f_etur" value="125" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`,
-    aihio: () => gv('f_takareuna') + gv('f_pinta') + gv('f_etureuna') + gv('f_etukaannos'),
-    laskePaat: laskePaatAVP,
-    build: buildAVP
-  },
-
-  kattolista: {
-    name: 'Kattolista',
-    nimike: 'Kattolista',
-    manualPaat: true,
-    fields: `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>Sivu A mm</label><input type="number" id="f_seg0" value="50" oninput="laske()"></div>
-          <div class="field"><label>Sivu B mm</label><input type="number" id="f_seg1" value="50" oninput="laske()"></div>
-          <div class="field"><label>Tupla A mm</label><input type="number" id="f_tupA" value="15" oninput="laske()"></div>
-          <div class="field"><label>Tupla B mm</label><input type="number" id="f_tupB" value="15" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Kulma °</label><input type="number" id="f_ang0" value="85" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`,
-    aihio: () => gv('f_seg0') + gv('f_seg1') + gv('f_tupA') + gv('f_tupB'),
-    build: buildKattolista
-  },
-
-  raystaslista: {
-    name: 'Räystäslista',
-    nimike: 'Räystäslista',
-    manualPaat: false,
-    fields: `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>Yläreuna mm</label><input type="number" id="f_ikkuna" value="30" oninput="laske()"></div>
-          <div class="field"><label>Takareuna mm</label><input type="number" id="f_takareuna" value="120" oninput="laske()"></div>
-          <div class="field"><label>Pinta mm</label><input type="number" id="f_pinta" value="95" oninput="laske()"></div>
-          <div class="field"><label>Etureuna mm</label><input type="number" id="f_etureuna" value="135" oninput="laske()"></div>
-          <div class="field"><label>Etukäännös mm</label><input type="number" id="f_etukaannos" value="15" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Yläkäännös °</label><input type="number" id="f_ikkuna_ang" value="90" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Käännös taka °</label><input type="number" id="f_kaannos_taka" value="72" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Käännös etu °</label><input type="number" id="f_kaannos_etu" value="72" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Etur °</label><input type="number" id="f_etur" value="125" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`,
-    aihio: () => gv('f_ikkuna') + gv('f_takareuna') + gv('f_pinta') + gv('f_etureuna') + gv('f_etukaannos'),
-    laskePaat: laskePaatAVP,
-    build: buildRaystaslista
-  }
-};
-
-// Ikkunapellit-alaprofiilit
-const IKKUNAPELLIT = {
-  ylapelti: {
-    name: 'Yläpelti',
-    nimike: 'Yläpelti',
-    takareuna: 70, paanYlos: 57, paanAlas: 35, etureuna: 30, etukaannos: 10,
-    kaannos_taka: 73, kaannos_etu: 73, etur: 125, pykala: 10, tyovara: 2
-  },
-  alapelti: {
-    name: 'Alapelti',
-    nimike: 'Alapelti',
-    takareuna: 20, paanYlos: 145, paanAlas: 35, etureuna: 60, etukaannos: 10,
-    kaannos_taka: 64, kaannos_etu: 64, etur: 125, pykala: 0, tyovara: 1, paankaantoMm: 30
-  }
-};
-
-// =============================================
-// TILA
-// =============================================
-let activeType = 'kynnys1';
-let activeIkkuna = null; // 'ylapelti' tai 'alapelti' kun ikkunapellit auki
-let rivit = [{ mitta: '', paat: '', kok: '', kpl: 1, huomio: '' }];
-let tilausContext = null;
-
-// =============================================
-// APUFUNKTIOT
-// =============================================
-const deg = d => d * Math.PI / 180;
-function gv(id) {
-  const el = document.getElementById(id);
-  return el ? (parseFloat(el.value) || 0) : 0;
-}
-
-// =============================================
-// PROFIILITYYPINVAIHTO
-// =============================================
-function setType(t) {
-  // Varoitus jos rivejä täytetty
-  const hasData = rivit.some(r => (parseFloat(r.mitta) || 0) > 0);
-  if (hasData && t !== activeType) {
-    if (!confirm('Profiilia vaihtamalla pituusrivit tyhjennetään. Jatketaanko?')) return;
-  }
-
-  activeType = t;
-  activeIkkuna = null;
-
-  // Päivitä napit
-  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.type-btn').forEach(b => {
-    if (b.getAttribute('onclick') === `setType('${t}')`) b.classList.add('active');
-  });
-
-  // Näytä ikkunapellit-alaprofiilit tai normaali
-  const ikkEl = document.getElementById('ikkuna-subbar');
-  if (t === 'ikkunapellit') {
-    if (ikkEl) ikkEl.style.display = 'flex';
-    setIkkunapelti('ylapelti');
-  } else {
-    if (ikkEl) ikkEl.style.display = 'none';
-    renderFields();
-    nollaaRivit();
-    laske();
-  }
-}
-
-function setIkkunapelti(sub) {
-  const hasData = rivit.some(r => (parseFloat(r.mitta) || 0) > 0);
-  if (hasData && sub !== activeIkkuna) {
-    if (!confirm('Profiilia vaihtamalla pituusrivit tyhjennetään. Jatketaanko?')) return;
-  }
-  activeIkkuna = sub;
-  document.querySelectorAll('.ikkuna-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.ikkuna-btn').forEach(b => {
-    if (b.getAttribute('onclick') === `setIkkunapelti('${sub}')`) b.classList.add('active');
-  });
-  renderFields();
-  nollaaRivit();
-  laske();
-}
-
-function nollaaRivit() {
-  rivit = [{ mitta: '', paat: '', kok: '', kpl: 1, huomio: '' }];
-  renderRivit();
-}
-
-function renderFields() {
-  const container = document.getElementById('profile-fields');
-  if (activeType === 'ikkunapellit' && activeIkkuna) {
-    const p = IKKUNAPELLIT[activeIkkuna];
-    container.innerHTML = `
-      <div class="section">
-        <div class="section-title">Profiilin mitat</div>
-        <div class="field-grid">
-          <div class="field"><label>Takareuna mm</label><input type="number" id="f_takareuna" value="${p.takareuna}" oninput="laske()"></div>
-          <div class="field"><label>Päänkääntö ylös mm</label><input type="number" id="f_paanYlos" value="${p.paanYlos}" oninput="laske()"></div>
-          <div class="field"><label>Päänkääntö alas mm</label><input type="number" id="f_paanAlas" value="${p.paanAlas}" oninput="laske()"></div>
-          <div class="field"><label>Pinta mm</label><input type="text" id="f_pinta_mm" class="computed" readonly tabindex="-1"></div>
-          <div class="field"><label>Etureuna mm</label><input type="number" id="f_etureuna" value="${p.etureuna}" oninput="laske()"></div>
-          <div class="field"><label>Etukäännös mm</label><input type="number" id="f_etukaannos" value="${p.etukaannos}" oninput="laske()"></div>
-          <div class="field"><label>Pykälä mm</label><input type="number" id="f_pykala" value="${p.pykala}" oninput="laske()"></div>
-          <div class="field"><label>Päänkääntö mm</label><input type="number" id="f_paankaanto_mm" value="${p.paankaantoMm || 10}" oninput="laske()"></div>
-        </div>
-      </div>
-      <div class="section">
-        <div class="section-title">Kulmat</div>
-        <div class="field-grid">
-          <div class="field"><label>Käännös taka °</label><input type="number" id="f_kaannos_taka" value="${p.kaannos_taka}" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Käännös etu °</label><input type="number" id="f_kaannos_etu" value="${p.kaannos_etu}" class="angle" oninput="laske()"></div>
-          <div class="field"><label>Etur °</label><input type="number" id="f_etur" value="${p.etur}" class="angle" oninput="laske()"></div>
-        </div>
-      </div>`;
-  } else if (PROFILES[activeType]) {
-    container.innerHTML = PROFILES[activeType].fields;
-  }
-  // Päivitä nimike
-  const nimike = activeType === 'ikkunapellit' && activeIkkuna
-    ? IKKUNAPELLIT[activeIkkuna].nimike
-    : (PROFILES[activeType]?.nimike || '');
-  const ni = document.getElementById('nmikeInput');
-  if (ni) ni.value = nimike;
-  // Päivitä profiilin nimi ylös kentän yläpuolelle
-  let nameEl = document.getElementById('active-profile-name');
-  if (!nameEl) {
-    nameEl = document.createElement('div');
-    nameEl.id = 'active-profile-name';
-    nameEl.style.cssText = 'padding:8px 16px 0;font-family:IBM Plex Mono,monospace;font-size:12px;color:var(--accent);font-weight:600;';
-    container.before(nameEl);
-  }
-  nameEl.textContent = activeType === 'ikkunapellit' && activeIkkuna
-    ? IKKUNAPELLIT[activeIkkuna].name
-    : (PROFILES[activeType]?.name || '');
-}
-
-// =============================================
-// PITUUSRIVIT
-// =============================================
-function lisaaRivi() {
-  rivit.push({ mitta: '', paat: '', kok: '', kpl: 1, huomio: '' });
-  renderRivit();
-}
-
-function poistaRivi(i) {
-  if (rivit.length > 1) rivit.splice(i, 1);
-  renderRivit();
-  laske();
-}
-
-function renderRivit() {
-  const isManual = isManualPaat();
-  const container = document.getElementById('tableRows');
-  container.innerHTML = '';
-
-  // Päivitä header
-  const header = document.getElementById('tableHeader');
-  if (isManual) {
-    header.style.gridTemplateColumns = '80px 70px 75px 45px 1fr 28px';
-  } else {
-    header.style.gridTemplateColumns = '80px 70px 75px 45px 1fr 28px';
-  }
-
-  rivit.forEach((r, i) => {
-    const div = document.createElement('div');
-    div.className = 'table-row';
-    if (isManual) {
-      div.innerHTML = `
-        <input type="number" placeholder="L" value="${r.mitta}" oninput="rivit[${i}].mitta=this.value; laskeKok(${i})">
-        <input type="number" placeholder="Päät" value="${r.paat}" oninput="rivit[${i}].paat=+this.value; laskeKok(${i})">
-        <input type="text" class="computed-row" placeholder="—" value="${r.kok}" readonly tabindex="-1">
-        <input type="number" value="${r.kpl}" min="1" oninput="rivit[${i}].kpl=+this.value; paivitaYhteenveto(); paivitaLeikkauslista()">
-        <input type="text" class="huomio" placeholder="huomio" value="${r.huomio}" oninput="rivit[${i}].huomio=this.value">
-        <button class="btn-remove" onclick="poistaRivi(${i})">×</button>`;
-    } else {
-      div.innerHTML = `
-        <input type="number" placeholder="L" value="${r.mitta}" oninput="rivit[${i}].mitta=this.value; laskePaatJaKok(${i})">
-        <input type="text" class="computed-row" placeholder="—" value="${r.paat}" readonly tabindex="-1">
-        <input type="text" class="computed-row" placeholder="—" value="${r.kok}" readonly tabindex="-1">
-        <input type="number" value="${r.kpl}" min="1" oninput="rivit[${i}].kpl=+this.value; paivitaYhteenveto(); paivitaLeikkauslista()">
-        <input type="text" class="huomio" placeholder="huomio" value="${r.huomio}" oninput="rivit[${i}].huomio=this.value">
-        <button class="btn-remove" onclick="poistaRivi(${i})">×</button>`;
-    }
-    container.appendChild(div);
-  });
-}
-
-function isManualPaat() {
-  if (activeType === 'ikkunapellit') return false;
-  return PROFILES[activeType]?.manualPaat || false;
-}
-
-function laskeKok(i) {
-  const mitta = parseFloat(rivit[i].mitta) || 0;
-  const paat  = parseFloat(rivit[i].paat)  || 0;
-  rivit[i].kok = (mitta > 0 || paat > 0) ? Math.round(mitta + paat) : '';
-  const rows = document.querySelectorAll('#tableRows .table-row');
-  if (rows[i]) rows[i].querySelectorAll('input')[2].value = rivit[i].kok;
-  paivitaYhteenveto();
-  paivitaLeikkauslista();
-  piirra();
-}
-
-// =============================================
-// LASKENTA — IKKUNAPELLIT (Pythagoraan kaava)
-// =============================================
-function laskePaatIkkuna() {
-  const paanAlas = gv('f_paanAlas');
-  const kaannos_etu = gv('f_kaannos_etu');
-  const pykala = gv('f_pykala');
-  const p = activeIkkuna === 'alapelti' ? IKKUNAPELLIT.alapelti : IKKUNAPELLIT.ylapelti;
-  const tyovara = p.tyovara;
-  const kallistusDeg = 90 - kaannos_etu;
-  const kallistusRad = kallistusDeg * Math.PI / 180;
-  const kaato = paanAlas * Math.sin(kallistusRad);
-  const yksipaa = Math.sqrt(paanAlas * paanAlas - kaato * kaato);
-  return Math.floor(yksipaa - tyovara + pykala) * 2;
-}
-
-// =============================================
-// LASKENTA — AVP-POHJAINEN (katkaisulista, räystäslista)
-// =============================================
-function laskePaatAVP() { return 0; } // käyttäjä ei syötä päätä näihin
-
-function laskePaatJaKok(i) {
-  let paat = 0;
-  if (activeType === 'ikkunapellit') {
-    paat = laskePaatIkkuna();
-  }
-  const mitta = parseFloat(rivit[i].mitta) || 0;
-  if (mitta > 0) {
-    rivit[i].paat = Math.round(paat);
-    rivit[i].kok = Math.round(mitta + paat);
-  } else {
-    rivit[i].paat = '';
-    rivit[i].kok = '';
-  }
-  const rows = document.querySelectorAll('#tableRows .table-row');
-  if (rows[i]) {
-    rows[i].querySelectorAll('input')[1].value = rivit[i].paat;
-    rows[i].querySelectorAll('input')[2].value = rivit[i].kok;
-  }
-  paivitaYhteenveto();
-  paivitaLeikkauslista();
-  piirra();
-}
-
-// =============================================
-// LASKE — päivitä kaikki
-// =============================================
-function laske() {
-  // Päivitä laskettu Pinta mm ikkunapellissä
-  if (activeType === 'ikkunapellit') {
-    const pintaMm = gv('f_paanYlos') + gv('f_paanAlas');
-    const el = document.getElementById('f_pinta_mm');
-    if (el) el.value = pintaMm + ' mm';
-    // Laske kaikki rivit uudelleen
-    const paat = laskePaatIkkuna();
-    const pykala = gv('f_pykala');
-    rivit.forEach((r, i) => {
-      const mitta = parseFloat(r.mitta) || 0;
-      if (mitta > 0) {
-        rivit[i].paat = Math.round(paat);
-        rivit[i].kok = Math.round(mitta + paat);
-      }
-    });
-    renderRivit();
-  }
-  paivitaYhteenveto();
-  paivitaLeikkauslista();
-  piirra();
-}
-
-function paivitaYhteenveto() {
-  let aihio = 0;
-  if (activeType === 'ikkunapellit' && activeIkkuna) {
-    aihio = gv('f_takareuna') + gv('f_paanYlos') + gv('f_paanAlas') + gv('f_etureuna') + gv('f_etukaannos');
-  } else if (PROFILES[activeType]?.aihio) {
-    aihio = PROFILES[activeType].aihio();
-  }
-  document.getElementById('summAihio').textContent = Math.round(aihio) + ' mm';
-  const kpl = rivit.reduce((s, r) => s + (parseFloat(r.kpl) || 0), 0);
-  document.getElementById('summKpl').textContent = kpl + ' kpl';
-}
-
-// =============================================
-// LEIKKAUSLISTA
-// =============================================
-function paivitaLeikkauslista() {
-  const voimassa = rivit.filter(r => (parseFloat(r.mitta) || 0) > 0 && (parseFloat(r.kpl) || 0) > 0);
-  const cutList = document.getElementById('cutList');
-  const cutRows = document.getElementById('cutRows');
-  if (voimassa.length === 0) { cutList.style.display = 'none'; return; }
-  cutList.style.display = 'block';
-  cutRows.innerHTML = '';
-  let kplYht = 0;
-  voimassa.forEach(r => {
-    const kpl = parseFloat(r.kpl) || 0;
-    kplYht += kpl;
-    const div = document.createElement('div');
-    div.className = 'cut-row';
-    div.innerHTML = `
-      <span class="kpl">${kpl} kpl</span>
-      <span class="mitta">L = ${r.mitta} mm</span>
-      <span class="paatmitta">Päät: ${r.paat} mm</span>
-      <span class="kokmitta">= ${r.kok} mm</span>
-      ${r.huomio ? `<span class="huomio-text">${r.huomio}</span>` : ''}`;
-    cutRows.appendChild(div);
-  });
-  document.getElementById('cutTotal').textContent = kplYht + ' kpl';
-}
-
-// =============================================
-// PIIRTURIT
-// =============================================
-function piirra() {
-  if (activeType === 'ikkunapellit' && activeIkkuna) { buildIkkunapelti(); return; }
-  if (PROFILES[activeType]?.build) PROFILES[activeType].build();
-}
-
-function setupSVG(pts) {
-  const svg = document.getElementById('svgEl');
-  const margin = 60, svgW = 700, svgH = 300;
-  const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const scaleX = (svgW - margin*2) / (maxX - minX || 1);
-  const scaleY = (svgH - margin*2) / (maxY - minY || 1);
-  const scale  = Math.min(scaleX, scaleY, 3.5);
-  const tx = p => margin + (p.x - minX) * scale;
-  const ty = p => margin + (p.y - minY) * scale;
-  const totalH = (maxY - minY) * scale + margin*2;
-  svg.setAttribute('viewBox', `0 0 ${svgW} ${Math.max(totalH, 120)}`);
-  return { svg, tx, ty, scale };
-}
-
-const LS = 'font-family:IBM Plex Mono,monospace;font-size:11px;fill:#555';
-const BL = 'font-family:IBM Plex Mono,monospace;font-size:11px;fill:#3a8fe8';
-const OR = 'font-family:IBM Plex Mono,monospace;font-size:11px;fill:#e8a020';
-const AN = 'font-family:IBM Plex Mono,monospace;font-size:10px;fill:#7ab3e8';
-function ml(tx, ty, p1, p2, txt, style, offX=0, offY=-10) {
-  const mx = (tx(p1)+tx(p2))/2+offX, my = (ty(p1)+ty(p2))/2+offY;
-  return `<text x="${mx.toFixed(0)}" y="${my.toFixed(0)}" text-anchor="middle" style="${style}">${txt}</text>`;
-}
-
-// --- Ikkunapelti (yläpelti/alapelti) ---
-function buildIkkunapelti() {
-  const takareuna  = gv('f_takareuna');
-  const paanYlos   = gv('f_paanYlos');
-  const paanAlas   = gv('f_paanAlas');
-  const pinta      = paanYlos + paanAlas;
-  const etureuna   = gv('f_etureuna');
-  const etukaannos = gv('f_etukaannos');
-  const kaannos_taka = gv('f_kaannos_taka');
-  const kaannos_etu  = gv('f_kaannos_etu');
-  const etur         = gv('f_etur');
-  const paankaanto_mm = gv('f_paankaanto_mm');
-
-  const pEtuYla = { x: 0, y: 0 };
-  let suunta = 90;
-  const pEtuAla = { x: pEtuYla.x + etureuna*Math.cos(deg(suunta)), y: pEtuYla.y + etureuna*Math.sin(deg(suunta)) };
-  suunta += etur;
-  const pEtuK = etukaannos > 0 ? { x: pEtuAla.x + etukaannos*Math.cos(deg(suunta)), y: pEtuAla.y + etukaannos*Math.sin(deg(suunta)) } : null;
-  suunta = 90 + (180 - kaannos_etu);
-  const pPinta = { x: pEtuYla.x + pinta*Math.cos(deg(suunta)), y: pEtuYla.y + pinta*Math.sin(deg(suunta)) };
-  suunta += kaannos_taka;
-  const pTaka = { x: pPinta.x + takareuna*Math.cos(deg(suunta)), y: pPinta.y + takareuna*Math.sin(deg(suunta)) };
-
-  const pts = [pTaka, pPinta, pEtuYla, pEtuAla];
-  if (pEtuK) pts.push(pEtuK);
-  const { svg, tx, ty, scale } = setupSVG(pts);
-
-  const pPaanYlosEnd = {
-    x: pPinta.x + (pEtuYla.x - pPinta.x) * (paanYlos / pinta),
-    y: pPinta.y + (pEtuYla.y - pPinta.y) * (paanYlos / pinta)
-  };
-
-  const kallistusDeg = 90 - kaannos_etu;
-  const takaUx = (pPinta.x - pEtuYla.x) / pinta;
-  const takaUy = (pPinta.y - pEtuYla.y) / pinta;
-
-  // Apuviivat
-  const apu1_B = { x: pEtuAla.x + takaUx*paanAlas, y: pEtuAla.y + takaUy*paanAlas };
-  const apu1_C = { x: apu1_B.x, y: pPaanYlosEnd.y };
-  const td = 45 - kallistusDeg;
-  const apu2_dy = paankaanto_mm;
-  const apu2_dx = apu2_dy * Math.tan(td * Math.PI / 180);
-  const apu2_piilo = { x: pPaanYlosEnd.x - apu2_dx, y: pPaanYlosEnd.y - apu2_dy };
-  let apu2_C;
-  if (Math.abs(takaUx) < 0.001) {
-    apu2_C = { x: apu2_piilo.x + takaUx*paanYlos, y: apu2_piilo.y + takaUy*paanYlos };
-  } else {
-    const t = (pPinta.x - apu2_piilo.x) / takaUx;
-    apu2_C = { x: apu2_piilo.x + t*takaUx, y: apu2_piilo.y + t*takaUy };
-  }
-
-  const dash = 'stroke="#bbb" stroke-width="1" stroke-dasharray="4,3"';
-  svg.innerHTML = `
-    <rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <polyline points="${tx(pEtuAla).toFixed(1)},${ty(pEtuAla).toFixed(1)} ${tx(apu1_B).toFixed(1)},${ty(apu1_B).toFixed(1)} ${tx(apu1_C).toFixed(1)},${ty(apu1_C).toFixed(1)}" fill="none" ${dash} stroke-linejoin="round"/>
-    <line x1="${tx(apu1_C).toFixed(1)}" y1="${ty(apu1_C).toFixed(1)}" x2="${tx(apu2_piilo).toFixed(1)}" y2="${ty(apu2_piilo).toFixed(1)}" ${dash}/>
-    <line x1="${tx(apu2_piilo).toFixed(1)}" y1="${ty(apu2_piilo).toFixed(1)}" x2="${tx(apu2_C).toFixed(1)}" y2="${ty(apu2_C).toFixed(1)}" ${dash}/>
-    <text x="${(Math.max(tx(pTaka),tx(pPinta))+8).toFixed(0)}" y="${((ty(pTaka)+ty(pPinta))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${takareuna}</text>
-    <text x="${((tx(pPinta)+tx(pEtuYla))/2).toFixed(0)}" y="${(Math.min(ty(pPinta),ty(pEtuYla))-14).toFixed(0)}" text-anchor="middle" style="font-family:IBM Plex Mono,monospace;font-size:12px;fill:#1a6fc4;font-weight:600">${pinta} mm</text>
-    <text x="${((tx(pPinta)+tx(pPaanYlosEnd))/2).toFixed(0)}" y="${(Math.max(ty(pPinta),ty(pPaanYlosEnd))+14).toFixed(0)}" text-anchor="middle" style="${OR}">${paanYlos}</text>
-    <text x="${((tx(pPaanYlosEnd)+tx(pEtuYla))/2).toFixed(0)}" y="${(Math.max(ty(pPaanYlosEnd),ty(pEtuYla))+14).toFixed(0)}" text-anchor="middle" style="${OR}">${paanAlas}</text>
-    <text x="${(tx(pEtuYla)+8).toFixed(0)}" y="${((ty(pEtuYla)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
-    <text x="${(tx(pEtuYla)+28).toFixed(0)}" y="${(ty(pEtuYla)-8).toFixed(0)}" style="${AN}">${kaannos_etu}° (kaato ${kallistusDeg}°)</text>
-    <text x="8" y="${(Math.max(ty(pEtuAla),ty(pTaka))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${Math.abs(pPinta.y-pEtuYla.y).toFixed(1)} mm</text>
-    <text x="8" y="${(Math.max(ty(pEtuAla),ty(pTaka))+34).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Etenemä: ${Math.abs(pPinta.x-pEtuYla.x).toFixed(1)} mm</text>
-  `;
-}
-
-// --- Kynnyspelti 1 ---
-function buildKynnys1() {
-  const suora1 = gv('f_suora1'), pinta = gv('f_pinta'), etureuna = gv('f_etureuna');
-  const tippanokka = gv('f_tippanokka'), takareuna = gv('f_takareuna');
-  const suora_ang = gv('f_suora_ang'), kulma_ang = gv('f_kulma_ang');
-  const nokka_ang = gv('f_nokka_ang'), kaannos_taka = gv('f_kaannos_taka');
-
-  const pA0 = { x: 0, y: 0 };
-  const pintaKaato = 90 - kulma_ang;
-  const pKulma = { x: pA0.x + pinta*Math.cos(deg(pintaKaato)), y: pA0.y + pinta*Math.sin(deg(pintaKaato)) };
-  const pEtuAla = { x: pKulma.x, y: pKulma.y + etureuna };
-  const nokkaSuunta = 90 - nokka_ang;
-  const pNokka = { x: pEtuAla.x + tippanokka*Math.cos(deg(nokkaSuunta)), y: pEtuAla.y + tippanokka*Math.sin(deg(nokkaSuunta)) };
-  const suora1Suunta = pintaKaato + (180 - suora_ang);
-  const harjaEnd = { x: pA0.x + suora1*Math.cos(deg(suora1Suunta)), y: pA0.y + suora1*Math.sin(deg(suora1Suunta)) };
-  const takaAng = suora1Suunta + kaannos_taka;
-  const takaEnd = { x: harjaEnd.x + takareuna*Math.cos(deg(takaAng)), y: harjaEnd.y + takareuna*Math.sin(deg(takaAng)) };
-
-  const pts = [pNokka, pEtuAla, pKulma, pA0, harjaEnd, takaEnd];
-  const { svg, tx, ty } = setupSVG(pts);
-  const kaato = Math.abs(pKulma.y - pA0.y).toFixed(1);
-
-  // Päännostot
-  let paanNostoSVG = '';
-  const paatInputs = document.querySelectorAll('#tableRows .table-row input:nth-child(2)');
-  let paatPuoli = 0;
-  paatInputs.forEach(inp => { const v = parseFloat(inp.value); if (v > 0) paatPuoli = v / 2; });
-  if (paatPuoli > 0) {
-    const dash = 'stroke="#bbb" stroke-width="1" stroke-dasharray="4,3"';
-    const pintaDx = pKulma.x - pA0.x, pintaDy = pKulma.y - pA0.y;
-    const pintaLen = Math.sqrt(pintaDx*pintaDx + pintaDy*pintaDy);
-    const pNx = pintaDy/pintaLen, pNy = -pintaDx/pintaLen;
-    const pA0s    = { x: pA0.x    + pNx*paatPuoli, y: pA0.y    + pNy*paatPuoli };
-    const pKulmas = { x: pKulma.x + pNx*paatPuoli, y: pKulma.y + pNy*paatPuoli };
-    const sDx = harjaEnd.x - pA0.x, sDy = harjaEnd.y - pA0.y;
-    const sLen = Math.sqrt(sDx*sDx + sDy*sDy);
-    const sNx = -sDy/sLen, sNy = sDx/sLen;
-    const hSs = { x: pA0.x     + sNx*paatPuoli, y: pA0.y     + sNy*paatPuoli };
-    const hEs = { x: harjaEnd.x + sNx*paatPuoli, y: harjaEnd.y + sNy*paatPuoli };
-    paanNostoSVG = [
-      `<line x1="${tx(pA0).toFixed(1)}" y1="${ty(pA0).toFixed(1)}" x2="${tx(pA0s).toFixed(1)}" y2="${ty(pA0s).toFixed(1)}" ${dash}/>`,
-      `<line x1="${tx(pA0s).toFixed(1)}" y1="${ty(pA0s).toFixed(1)}" x2="${tx(pKulmas).toFixed(1)}" y2="${ty(pKulmas).toFixed(1)}" ${dash}/>`,
-      `<line x1="${tx(pKulma).toFixed(1)}" y1="${ty(pKulma).toFixed(1)}" x2="${tx(pKulmas).toFixed(1)}" y2="${ty(pKulmas).toFixed(1)}" ${dash}/>`,
-      `<line x1="${tx(pA0).toFixed(1)}" y1="${ty(pA0).toFixed(1)}" x2="${tx(hSs).toFixed(1)}" y2="${ty(hSs).toFixed(1)}" ${dash}/>`,
-      `<line x1="${tx(hSs).toFixed(1)}" y1="${ty(hSs).toFixed(1)}" x2="${tx(hEs).toFixed(1)}" y2="${ty(hEs).toFixed(1)}" ${dash}/>`,
-      `<line x1="${tx(harjaEnd).toFixed(1)}" y1="${ty(harjaEnd).toFixed(1)}" x2="${tx(hEs).toFixed(1)}" y2="${ty(hEs).toFixed(1)}" ${dash}/>`
-    ].join('');
-  }
-
-  svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    ${paanNostoSVG}
-    <text x="${(tx(pKulma)+8).toFixed(0)}" y="${((ty(pKulma)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
-    <text x="${(tx(pNokka)+8).toFixed(0)}" y="${((ty(pEtuAla)+ty(pNokka))/2+12).toFixed(0)}" text-anchor="middle" style="${BL}">${tippanokka}</text>
-    <text x="${((tx(pA0)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${pinta}</text>
-    <text x="${((tx(pA0)+tx(harjaEnd))/2-12).toFixed(0)}" y="${((ty(pA0)+ty(harjaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${suora1}</text>
-    <text x="${((tx(harjaEnd)+tx(takaEnd))/2-12).toFixed(0)}" y="${((ty(harjaEnd)+ty(takaEnd))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${takareuna}</text>
-    <text x="${(tx(pKulma)-28).toFixed(0)}" y="${(ty(pKulma)+18).toFixed(0)}" style="${AN}">${kulma_ang}°</text>
-    <text x="${(tx(pA0)-10).toFixed(0)}" y="${(ty(pA0)+18).toFixed(0)}" style="${AN}">${suora_ang}°</text>
-    <text x="8" y="${(Math.max(...pts.map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
-}
-
-function buildUlista(seg0, seg1, seg2, tupB, ang0, ang1, tupC) {
-  // Geometria täsmälleen kuten vanhoissa erillisissä sivuissa (alaslaskun_kappalista.html, hattupelti.html)
-  const pA0 = { x: 0, y: 0 };
-  const pA1 = { x: seg0, y: 0 };
-
-  // Vasen sivu: geometrinen suunta = 180 - syötetty kulma
-  const suuntaB = 180 - ang0;
-  const pBend = {
-    x: pA0.x + seg1 * Math.cos(deg(suuntaB)),
-    y: pA0.y + seg1 * Math.sin(deg(suuntaB))
-  };
-
-  // Tupla vasen: lähtee B:n päästä, suunta = suuntaB - 172°
-  const tupSuunta = suuntaB - 172;
-  const pTupB = {
-    x: pBend.x + tupB * Math.cos(deg(tupSuunta)),
-    y: pBend.y + tupB * Math.sin(deg(tupSuunta))
-  };
-
-  // Oikea sivu: suunta = syötetty kulma suoraan (ei peilausta)
-  const suuntaC = ang1;
-  const pCend = {
-    x: pA1.x + seg2 * Math.cos(deg(suuntaC)),
-    y: pA1.y + seg2 * Math.sin(deg(suuntaC))
-  };
-
-  // Tupla oikea: lähtee C:n päästä, suunta = suuntaC + 172° (valinnainen)
-  let pTupC = null;
-  if (tupC && tupC > 0) {
-    const tupCSuunta = suuntaC + 172;
-    pTupC = {
-      x: pCend.x + tupC * Math.cos(deg(tupCSuunta)),
-      y: pCend.y + tupC * Math.sin(deg(tupCSuunta))
-    };
-  }
-
-  const pts = pTupC
-    ? [pTupB, pBend, pA0, pA1, pCend, pTupC]
-    : [pTupB, pBend, pA0, pA1, pCend];
-
-  return { pA0, pA1, pBend, pCend, pTupB, pTupC, pts };
-}
-
-function buildAlaslaskun() {
-  const seg0=gv('f_seg0'), seg1=gv('f_seg1'), seg2=gv('f_seg2'), tupB=gv('f_tupB');
-  const ang0=gv('f_ang0'), ang1=gv('f_ang1');
-  const { pA0, pA1, pBend, pCend, pTupB, pts } = buildUlista(seg0, seg1, seg2, tupB, ang0, ang1);
-  const { svg, tx, ty } = setupSVG(pts);
-  svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <text x="${((tx(pA0)+tx(pA1))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pA1))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${seg0}</text>
-    <text x="${((tx(pA0)+tx(pBend))/2-12).toFixed(0)}" y="${((ty(pA0)+ty(pBend))/2).toFixed(0)}" text-anchor="middle" style="${BL}">${seg1}</text>
-    <text x="${(tx(pA1)+10).toFixed(0)}" y="${((ty(pA1)+ty(pCend))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${seg2}</text>
-    <text x="${((tx(pBend)+tx(pTupB))/2+14).toFixed(0)}" y="${((ty(pBend)+ty(pTupB))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupB}</text>
-    <text x="${(tx(pA0)+8).toFixed(0)}" y="${(ty(pA0)+20).toFixed(0)}" style="${AN}">${ang0}°</text>
-    <text x="${(tx(pA1)-28).toFixed(0)}" y="${(ty(pA1)+18).toFixed(0)}" style="${AN}">${ang1}°</text>
-    <text x="8" y="${(Math.max(...[pA0,pA1,pBend,pCend,pTupB].map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Etenemä B: ${Math.abs(pA0.x-pBend.x).toFixed(1)} mm</text>`;
-}
-
-function buildHattupelti() {
-  const seg0=gv('f_seg0'), seg1=gv('f_seg1'), seg2=gv('f_seg2');
-  const tupB=gv('f_tupB'), tupC=gv('f_tupC'), ang0=gv('f_ang0'), ang1=gv('f_ang1');
-  const { pA0, pA1, pBend, pCend, pTupB, pTupC, pts } = buildUlista(seg0, seg1, seg2, tupB, ang0, ang1, tupC);
-  const { svg, tx, ty } = setupSVG(pts);
-  svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <text x="${((tx(pA0)+tx(pA1))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pA1))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${seg0}</text>
-    <text x="${((tx(pA0)+tx(pBend))/2-12).toFixed(0)}" y="${((ty(pA0)+ty(pBend))/2-10).toFixed(0)}" text-anchor="middle" style="${BL}">${seg1}</text>
-    <text x="${(tx(pCend)+10).toFixed(0)}" y="${((ty(pA1)+ty(pCend))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${seg2}</text>
-    <text x="${((tx(pBend)+tx(pTupB))/2+14).toFixed(0)}" y="${((ty(pBend)+ty(pTupB))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupB}</text>
-    ${pTupC ? `<text x="${((tx(pCend)+tx(pTupC))/2-14).toFixed(0)}" y="${((ty(pCend)+ty(pTupC))/2).toFixed(0)}" dominant-baseline="middle" text-anchor="middle" style="${BL}">${tupC}</text>` : ''}
-    <text x="${(tx(pA0)+8).toFixed(0)}" y="${(ty(pA0)+20).toFixed(0)}" style="${AN}">${ang0}°</text>
-    <text x="${(tx(pA1)-28).toFixed(0)}" y="${(ty(pA1)+18).toFixed(0)}" style="${AN}">${ang1}°</text>`;
-}
-
-// --- AVP-pohjainen (katkaisulista) ---
-function buildAVP() {
-  const takareuna=gv('f_takareuna'), pinta=gv('f_pinta'), etureuna=gv('f_etureuna');
-  const etukaannos=gv('f_etukaannos'), kaannos_taka=gv('f_kaannos_taka');
-  const kaannos_etu=gv('f_kaannos_etu'), etur=gv('f_etur');
-
-  const pEtuYla = { x:0, y:0 };
-  let suunta = 90;
-  const pEtuAla = { x: pEtuYla.x+etureuna*Math.cos(deg(suunta)), y: pEtuYla.y+etureuna*Math.sin(deg(suunta)) };
-  suunta += etur;
-  const pEtuK = etukaannos > 0 ? { x: pEtuAla.x+etukaannos*Math.cos(deg(suunta)), y: pEtuAla.y+etukaannos*Math.sin(deg(suunta)) } : null;
-  suunta = 90 + (180 - kaannos_etu);
-  const pPinta = { x: pEtuYla.x+pinta*Math.cos(deg(suunta)), y: pEtuYla.y+pinta*Math.sin(deg(suunta)) };
-  suunta += kaannos_taka;
-  const pTaka = { x: pPinta.x+takareuna*Math.cos(deg(suunta)), y: pPinta.y+takareuna*Math.sin(deg(suunta)) };
-
-  const pts = [pTaka, pPinta, pEtuYla, pEtuAla];
-  if (pEtuK) pts.push(pEtuK);
-  const { svg, tx, ty } = setupSVG(pts);
-  const kallistusDeg = 90 - kaannos_etu;
-  const kaato = Math.abs(pPinta.y - pEtuYla.y).toFixed(1);
-
-  svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <text x="${(Math.max(tx(pTaka),tx(pPinta))+8).toFixed(0)}" y="${((ty(pTaka)+ty(pPinta))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${takareuna}</text>
-    <text x="${((tx(pPinta)+tx(pEtuYla))/2).toFixed(0)}" y="${(Math.min(ty(pPinta),ty(pEtuYla))-12).toFixed(0)}" text-anchor="middle" style="font-family:IBM Plex Mono,monospace;font-size:12px;fill:#1a6fc4;font-weight:600">${pinta} mm</text>
-    <text x="${(tx(pEtuYla)+8).toFixed(0)}" y="${((ty(pEtuYla)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
-    ${pEtuK ? `<text x="${((tx(pEtuAla)+tx(pEtuK))/2).toFixed(0)}" y="${((ty(pEtuAla)+ty(pEtuK))/2+14).toFixed(0)}" text-anchor="middle" style="${BL}">${etukaannos}</text>` : ''}
-    <text x="${(tx(pEtuYla)+28).toFixed(0)}" y="${(ty(pEtuYla)-8).toFixed(0)}" style="${AN}">${kaannos_etu}° (kaato ${kallistusDeg}°)</text>
-    <text x="8" y="${(Math.max(ty(pEtuAla),ty(pTaka))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
-}
-
-// --- Kattolista (sisänurkka) ---
-function buildKattolista() {
-  const seg0=gv('f_seg0'), seg1=gv('f_seg1'), tupA=gv('f_tupA'), tupB=gv('f_tupB'), ang0=gv('f_ang0');
-  let suunta = 0;
-  const pA0 = { x:0, y:0 };
-  const pKulma = { x: pA0.x+seg0, y: 0 };
-  suunta -= ang0;
-  const pBend = { x: pKulma.x+seg1*Math.cos(deg(suunta)), y: pKulma.y+seg1*Math.sin(deg(suunta)) };
-  const pTupA = { x: pA0.x+tupA*Math.cos(deg(8)), y: pA0.y+tupA*Math.sin(deg(8)) };
-  const tupBSuunta = suunta + 172;
-  const pTupB = { x: pBend.x+tupB*Math.cos(deg(tupBSuunta)), y: pBend.y+tupB*Math.sin(deg(tupBSuunta)) };
-  const pts = [pTupA, pA0, pKulma, pBend];
-  const allPts = [...pts, pTupB];
-  const { svg, tx, ty } = setupSVG(allPts);
-  svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <line x1="${tx(pA0).toFixed(1)}" y1="${ty(pA0).toFixed(1)}" x2="${tx(pTupA).toFixed(1)}" y2="${ty(pTupA).toFixed(1)}" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="${tx(pBend).toFixed(1)}" y1="${ty(pBend).toFixed(1)}" x2="${tx(pTupB).toFixed(1)}" y2="${ty(pTupB).toFixed(1)}" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-    <text x="${((tx(pA0)+tx(pKulma))/2).toFixed(0)}" y="${(Math.min(ty(pA0),ty(pKulma))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${seg0}</text>
-    <text x="${((tx(pKulma)+tx(pBend))/2-12).toFixed(0)}" y="${((ty(pKulma)+ty(pBend))/2).toFixed(0)}" text-anchor="middle" style="${BL}">${seg1}</text>
-    <text x="${((tx(pA0)+tx(pTupA))/2+14).toFixed(0)}" y="${((ty(pA0)+ty(pTupA))/2+14).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupA}</text>
-    <text x="${((tx(pBend)+tx(pTupB))/2+12).toFixed(0)}" y="${((ty(pBend)+ty(pTupB))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${tupB}</text>
-    <text x="${(tx(pKulma)+8).toFixed(0)}" y="${(ty(pKulma)+18).toFixed(0)}" style="${AN}">${ang0}°</text>
-    <text x="8" y="${(Math.max(...[pA0,pBend,pKulma,pTupA,pTupB].map(p=>ty(p)))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Etenemä B: ${Math.abs(pKulma.x-pBend.x).toFixed(1)} mm</text>`;
-}
-
-// --- Räystäslista (alavp2) ---
-function buildRaystaslista() {
-  const ikkuna=gv('f_ikkuna'), takareuna=gv('f_takareuna'), pinta=gv('f_pinta');
-  const etureuna=gv('f_etureuna'), etukaannos=gv('f_etukaannos');
-  const ikkuna_ang=gv('f_ikkuna_ang'), kaannos_taka=gv('f_kaannos_taka');
-  const kaannos_etu=gv('f_kaannos_etu'), etur=gv('f_etur');
-
-  const pEtuYla = { x:0, y:0 };
-  let suunta = 90;
-  const pEtuAla = { x: pEtuYla.x+etureuna*Math.cos(deg(suunta)), y: pEtuYla.y+etureuna*Math.sin(deg(suunta)) };
-  suunta += etur;
-  const pEtuK = etukaannos > 0 ? { x: pEtuAla.x+etukaannos*Math.cos(deg(suunta)), y: pEtuAla.y+etukaannos*Math.sin(deg(suunta)) } : null;
-  suunta = 90 + (180 - kaannos_etu);
-  const pPinta = { x: pEtuYla.x+pinta*Math.cos(deg(suunta)), y: pEtuYla.y+pinta*Math.sin(deg(suunta)) };
-  suunta += kaannos_taka;
-  const pTaka = { x: pPinta.x+takareuna*Math.cos(deg(suunta)), y: pPinta.y+takareuna*Math.sin(deg(suunta)) };
-  const karmiSuunta = 180 + (90 - ikkuna_ang);
-  const pKarmi = { x: pTaka.x+ikkuna*Math.cos(deg(karmiSuunta)), y: pTaka.y+ikkuna*Math.sin(deg(karmiSuunta)) };
-
-  const pts = [pKarmi, pTaka, pPinta, pEtuYla, pEtuAla];
-  if (pEtuK) pts.push(pEtuK);
-  const { svg, tx, ty } = setupSVG(pts);
-  const kallistusDeg = 90 - kaannos_etu;
-  const kaato = Math.abs(pPinta.y - pEtuYla.y).toFixed(1);
-
-  svg.innerHTML = `<rect width="100%" height="100%" fill="white"/>
-    <polyline points="${pts.map(p=>`${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ')}" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <text x="${((tx(pTaka)+tx(pKarmi))/2).toFixed(0)}" y="${(Math.min(ty(pTaka),ty(pKarmi))-10).toFixed(0)}" text-anchor="middle" style="${BL}">${ikkuna}</text>
-    <text x="${(Math.max(tx(pTaka),tx(pPinta))+8).toFixed(0)}" y="${((ty(pTaka)+ty(pPinta))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${takareuna}</text>
-    <text x="${((tx(pPinta)+tx(pEtuYla))/2).toFixed(0)}" y="${(Math.min(ty(pPinta),ty(pEtuYla))-12).toFixed(0)}" text-anchor="middle" style="font-family:IBM Plex Mono,monospace;font-size:12px;fill:#1a6fc4;font-weight:600">${pinta} mm</text>
-    <text x="${(tx(pEtuYla)+8).toFixed(0)}" y="${((ty(pEtuYla)+ty(pEtuAla))/2).toFixed(0)}" dominant-baseline="middle" style="${BL}">${etureuna}</text>
-    ${pEtuK ? `<text x="${((tx(pEtuAla)+tx(pEtuK))/2).toFixed(0)}" y="${((ty(pEtuAla)+ty(pEtuK))/2+14).toFixed(0)}" text-anchor="middle" style="${BL}">${etukaannos}</text>` : ''}
-    <text x="${(tx(pEtuYla)+28).toFixed(0)}" y="${(ty(pEtuYla)-8).toFixed(0)}" style="${AN}">${kaannos_etu}° (kaato ${kallistusDeg}°)</text>
-    <text x="8" y="${(Math.max(ty(pEtuAla),ty(pKarmi))+20).toFixed(0)}" style="font-family:IBM Plex Mono,monospace;font-size:11px;fill:#888">Kaato: ${kaato} mm</text>`;
-}
-
-// =============================================
-// LISÄÄ TILAUKSEEN
-// =============================================
-function lisaaTilaukseen() {
-  if (!tilausContext) return;
-  const voimassa = rivit.filter(r => (parseFloat(r.mitta)||0)>0 && (parseFloat(r.kpl)||0)>0);
-  if (voimassa.length === 0) { alert('Lisää ainakin yksi pituusrivi!'); return; }
-
-  let aihio = 0;
-  if (activeType === 'ikkunapellit' && activeIkkuna) {
-    aihio = gv('f_takareuna') + gv('f_paanYlos') + gv('f_paanAlas') + gv('f_etureuna') + gv('f_etukaannos');
-  } else if (PROFILES[activeType]?.aihio) {
-    aihio = PROFILES[activeType].aihio();
-  }
-
-  // Poimitaan kulmat angle-luokan kentistä
-  const angles = [];
-  document.querySelectorAll('.angle').forEach((el, i) => {
-    if (el.value) angles.push({ position_index: i, angle_value: parseFloat(el.value) || 0 });
-  });
-
-  const payload = {
-    type: 'ADD_TO_ORDER',
-    orderId: tilausContext.orderId,
-    groupId: tilausContext.groupId,
-    editItemId: tilausContext.editItemId || null,
-    supabaseId: tilausContext.supabaseId || null,
-    nimike: document.getElementById('nmikeInput').value || tilausContext.nimike || '',
-    aihio_width_mm: Math.round(aihio),
-    profile_data: { vals: {}, opts: {} },
-    rows: voimassa.map(r => ({
-      mitta: parseFloat(r.mitta)||0, paat: parseFloat(r.paat)||0,
-      kok: parseFloat(r.kok)||0, kpl: parseFloat(r.kpl)||1, huomio: r.huomio||''
-    })),
-    angles,
-    totalM2: voimassa.reduce((s,r) => s+(parseFloat(r.kok)/1000)*(aihio/1000)*parseFloat(r.kpl), 0),
-    material: document.getElementById('pm-mat').value || null,
-    color: document.getElementById('pm-color').value || null,
-    thickness: document.getElementById('pm-thick').value || null,
-    productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
-  };
-
-  // Lähetetään localStoragen kautta — BroadcastChannel ei toimi GitHub Pagesilla luotettavasti
-  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
-  setTimeout(() => localStorage.removeItem('kpt_add_to_order'), 2000);
-  const bar = document.getElementById('tilaus-bar');
-  bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
-  setTimeout(() => window.close(), 1500);
-}
-
-function peruutaTilaus() {
-  tilausContext = null;
-  document.getElementById('tilaus-bar').style.display = 'none';
-  document.getElementById('mainGrid').classList.remove('with-tilausbar');
-  if (window.opener && !window.opener.closed) window.close();
-}
-
-function goBack(e) {
-  if (window.opener && !window.opener.closed) { e.preventDefault(); window.close(); }
-}
-
-// =============================================
-// MATERIAALIVALINTA
-// =============================================
 let pmProducts = [];
+
 async function fetchPmProducts() {
   try {
-    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m%C2%B2&order=material,color', { headers: pmHeaders });
+    const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m²&order=material,color', { headers: pmHeaders });
     pmProducts = await r.json();
-  } catch(e) {}
+  } catch(e) { console.log('Tuotteiden haku epäonnistui', e); }
 }
+
 function pmShowDropdown(ddId, items, onClickFn) {
   const dd = document.getElementById(ddId);
-  if (!items.length) { dd.style.display='none'; return; }
+  if (!items.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = '';
   items.forEach(v => {
     const div = document.createElement('div');
@@ -2831,34 +3589,46 @@ function pmShowDropdown(ddId, items, onClickFn) {
   });
   dd.style.display = 'block';
 }
+
 function pmFilterGroup(q) {
-  const groups = [...new Set(pmProducts.map(p=>p.product_group).filter(Boolean))].sort().filter(g=>!q||g.toLowerCase().includes(q.toLowerCase()));
+  const groups = [...new Set(pmProducts.map(p => p.product_group).filter(Boolean))].sort()
+    .filter(g => !q || g.toLowerCase().includes(q.toLowerCase()));
   pmShowDropdown('pm-group-dd', groups, g => {
     document.getElementById('pm-group-search').value = g;
     document.getElementById('pm-group').value = g;
     document.getElementById('pm-group-dd').style.display = 'none';
+    // Nollaa materiaali, väri, paksuus
     document.getElementById('pm-mat-search').value = '';
     document.getElementById('pm-mat').value = '';
     document.getElementById('pm-color-search').value = '';
     document.getElementById('pm-color').value = '';
     document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+    // Tarkista onko tässä tuoteryhmässä värejä
+    const hasColors = pmProducts.filter(p => p.product_group === g).some(p => p.color);
+    document.getElementById('pm-color-row').style.display = hasColors ? '' : 'none';
   });
 }
+
 function pmFilterMat(q) {
   const group = document.getElementById('pm-group').value;
-  const mats = [...new Set(pmProducts.filter(p=>!group||p.product_group===group).map(p=>p.material))].sort().filter(m=>!q||m.toLowerCase().includes(q.toLowerCase()));
+  const mats = [...new Set(pmProducts.filter(p => !group || p.product_group === group).map(p => p.material))].sort()
+    .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
   pmShowDropdown('pm-mat-dd', mats, m => {
     document.getElementById('pm-mat-search').value = m;
     document.getElementById('pm-mat').value = m;
     document.getElementById('pm-mat-dd').style.display = 'none';
     document.getElementById('pm-color-search').value = '';
     document.getElementById('pm-color').value = '';
-    pmUpdateThick();
+    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
+    pmUpdateThick(); // päivitä paksuus heti materiaalin valinnan jälkeen
   });
 }
+
 function pmFilterColor(q) {
   const mat = document.getElementById('pm-mat').value;
-  const colors = [...new Set(pmProducts.filter(p=>!mat||p.material===mat).map(p=>p.color).filter(Boolean))].sort().filter(c=>!q||c.toLowerCase().includes(q.toLowerCase()));
+  const group = document.getElementById('pm-group').value;
+  const colors = [...new Set(pmProducts.filter(p => (!mat || p.material === mat) && (!group || p.product_group === group)).map(p => p.color).filter(Boolean))].sort()
+    .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
   pmShowDropdown('pm-color-dd', colors, c => {
     document.getElementById('pm-color-search').value = c;
     document.getElementById('pm-color').value = c;
@@ -2866,110 +3636,694 @@ function pmFilterColor(q) {
     pmUpdateThick();
   });
 }
+
 function pmUpdateThick() {
   const mat = document.getElementById('pm-mat').value;
   const col = document.getElementById('pm-color').value;
-  const thicks = [...new Set(pmProducts.filter(p=>p.material===mat&&(!col||p.color===col)).map(p=>p.thickness_mm))].sort((a,b)=>a-b);
+  // Jos väri on tyhjä, haetaan kaikki paksuudet materiaalille
+  const thicks = [...new Set(pmProducts.filter(p => p.material===mat && (!col || p.color===col)).map(p => p.thickness_mm))].sort((a,b)=>a-b);
   const sel = document.getElementById('pm-thick');
   sel.innerHTML = '<option value="">— valitse —</option>';
-  thicks.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t+' mm'; sel.appendChild(o); });
-  if (thicks.length===1) sel.value=thicks[0];
+  thicks.forEach(t => { const o = document.createElement('option'); o.value=t; o.textContent=t+' mm'; sel.appendChild(o); });
+  if (thicks.length === 1) sel.value = thicks[0];
 }
+
 document.addEventListener('click', e => {
-  if (!e.target.closest('#pm-group-search')&&!e.target.closest('#pm-group-dd')) document.getElementById('pm-group-dd').style.display='none';
-  if (!e.target.closest('#pm-mat-search')&&!e.target.closest('#pm-mat-dd')) document.getElementById('pm-mat-dd').style.display='none';
-  if (!e.target.closest('#pm-color-search')&&!e.target.closest('#pm-color-dd')) document.getElementById('pm-color-dd').style.display='none';
+  if (!e.target.closest('#pm-group-search') && !e.target.closest('#pm-group-dd'))
+    document.getElementById('pm-group-dd').style.display = 'none';
+  if (!e.target.closest('#pm-mat-search') && !e.target.closest('#pm-mat-dd'))
+    document.getElementById('pm-mat-dd').style.display = 'none';
+  if (!e.target.closest('#pm-color-search') && !e.target.closest('#pm-color-dd'))
+    document.getElementById('pm-color-dd').style.display = 'none';
 });
 
-// =============================================
-// SIDEBAR RESIZE
-// =============================================
+fetchPmProducts();
+
+// ── Sidebar resize ────────────────────────────────────────────────
 (function() {
-  const resizer = document.getElementById('sidebarResizer');
-  const panel = document.getElementById('leftPanel');
-  const saved = localStorage.getItem('vakiomallit_sidebar_w');
-  if (saved) {
-    document.documentElement.style.setProperty('--sidebar-width', saved + 'px');
-    updateWide(parseInt(saved));
+  const STORAGE_KEY = 'kpt_mallisto_sidebar_width';
+  const MIN_WIDTH = 280;
+  const MAX_WIDTH = 800;
+  const WIDE_THRESHOLD = 480;
+  const XWIDE_THRESHOLD = 640;
+
+  const panel = document.getElementById('left-panel');
+  const resizer = document.getElementById('sidebar-resizer');
+  const main = document.querySelector('.main');
+
+  const saved = parseInt(localStorage.getItem(STORAGE_KEY));
+  if (saved && saved >= MIN_WIDTH) {
+    main.style.gridTemplateColumns = saved + 'px 1fr';
+    if (saved >= XWIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.add('xwide'); }
+    else if (saved >= WIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.remove('xwide'); }
   }
-  function updateWide(w) {
-    panel.classList.toggle('wide', w > 480);
-    panel.classList.toggle('xwide', w > 640);
-  }
-  let dragging=false, startX=0, startW=0;
+
+  let startX, startW;
   resizer.addEventListener('mousedown', e => {
-    dragging=true; startX=e.clientX; startW=panel.getBoundingClientRect().width;
-    resizer.classList.add('dragging'); document.body.style.userSelect='none';
-  });
-  document.addEventListener('mousemove', e => {
-    if (!dragging) return;
-    const w = Math.max(280, Math.min(900, startW+e.clientX-startX));
-    document.documentElement.style.setProperty('--sidebar-width', w+'px');
-    updateWide(w);
-  });
-  document.addEventListener('mouseup', () => {
-    if (!dragging) return;
-    dragging=false; resizer.classList.remove('dragging'); document.body.style.userSelect='';
-    localStorage.setItem('vakiomallit_sidebar_w', panel.getBoundingClientRect().width);
+    startX = e.clientX;
+    startW = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (e.clientX - startX)));
+      main.style.gridTemplateColumns = w + 'px 1fr';
+      if (w >= XWIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.add('xwide'); }
+      else if (w >= WIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.remove('xwide'); }
+      else { panel.classList.remove('wide'); panel.classList.remove('xwide'); }
+    }
+
+    function onUp() {
+      localStorage.setItem(STORAGE_KEY, panel.offsetWidth);
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
   });
 })();
 
-// =============================================
-// TILAUSKONTEXT
-// =============================================
+function renderProfileFields() {
+  const type = TYPES[activeType];
+  const el = document.getElementById('profile-fields');
+  if (!type.fields.length) { el.innerHTML = ''; return; }
+
+  const grid = document.createElement('div');
+  grid.className = 'field-grid';
+
+  type.fields.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'field';
+    const existing = document.getElementById(f.id);
+    const val = existing ? existing.value : f.default;
+    div.innerHTML = `
+      <label class="${f.cls === 'angle' ? 'angle-label' : ''}">${f.label}</label>
+      <input type="number" id="${f.id}" value="${val}" class="${f.cls || ''}" oninput="redraw()">
+    `;
+    grid.appendChild(div);
+  });
+  el.innerHTML = '';
+  el.appendChild(grid);
+
+  // Valinnaiset checkboxit jos tyypillä on options
+  if (type.options) {
+    const optDiv = document.createElement('div');
+    optDiv.style.cssText = 'margin-top:12px; display:flex; flex-direction:column; gap:6px;';
+    type.options.forEach(opt => {
+      const row = document.createElement('label');
+      row.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim); cursor:pointer;';
+      const existing = document.getElementById('opt_' + opt.id);
+      const checked = existing ? existing.checked : false;
+      row.innerHTML = `
+        <input type="checkbox" id="opt_${opt.id}" ${checked ? 'checked' : ''} onchange="redraw()" style="accent-color:var(--accent);">
+        ${opt.label}
+      `;
+      optDiv.appendChild(row);
+    });
+    el.appendChild(optDiv);
+  }
+
+  // Nimike-kenttä aina näkyvissä
+  const nDiv = document.createElement('div');
+  nDiv.style.cssText = 'margin-top:12px; border-top:1px solid var(--border); padding-top:10px;';
+  const currentNimike = (typeof tilausContext !== 'undefined' && tilausContext?.nimike) || type.name || '';
+  nDiv.innerHTML = `
+    <label style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">NIMIKE</label>
+    <input type="text" id="profile-nimike" value="${currentNimike}"
+      style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);
+             font-family:IBM Plex Mono,monospace;font-size:13px;padding:6px 8px;
+             border-radius:4px;width:100%;margin-top:4px;"
+      oninput="if(typeof tilausContext !== 'undefined' && tilausContext) tilausContext.nimike=this.value">
+  `;
+  el.appendChild(nDiv);
+}
+
+// ─── Vapaa segmenttieditori ───────────────────────────────────────
+function renderFreeSegments() {
+  const list = document.getElementById('segments-list');
+  list.innerHTML = '';
+  freeSegments.forEach((seg, i) => {
+    const row = document.createElement('div');
+    row.className = 'segment-row';
+    row.innerHTML = `
+      <input type="number" value="${seg.len}" placeholder="mm" oninput="freeSegments[${i}].len=+this.value;redraw()">
+      <input type="number" value="${seg.angle}" placeholder="°" class="angle" oninput="freeSegments[${i}].angle=+this.value;redraw()">
+      <button class="btn-remove" onclick="removeSegment(${i})">×</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addSegment() {
+  freeSegments.push({ len: 50, angle: 90 });
+  renderFreeSegments();
+  redraw();
+}
+
+function removeSegment(i) {
+  freeSegments.splice(i, 1);
+  renderFreeSegments();
+  redraw();
+}
+
+// ─── Pituusrivit ──────────────────────────────────────────────────
+function renderLengthRows() {
+  const container = document.getElementById('length-rows');
+  container.innerHTML = '';
+  lengthRows.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'table-row';
+    row.innerHTML = `
+      <input type="number" value="${r.mitta}" placeholder="1000" oninput="lengthRows[${i}].mitta=+this.value;redraw()">
+      <input type="number" value="${r.paat}" placeholder="0" oninput="lengthRows[${i}].paat=+this.value;redraw()">
+      <input type="number" value="${(r.mitta||0)+(r.paat||0)}" placeholder="—" readonly style="color:var(--accent);cursor:default;" id="kok_${i}">
+      <input type="number" value="${r.kpl}" placeholder="1" oninput="lengthRows[${i}].kpl=+this.value;redraw()">
+      <input type="text" value="${r.huomio}" placeholder="—" class="${r.huomio ? 'huomio' : ''}" oninput="lengthRows[${i}].huomio=this.value;this.className=this.value?'huomio':'';redraw()">
+      <button class="btn-remove" onclick="removeRow(${i})">×</button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function addRow() {
+  lengthRows.push({ mitta: 1000, paat: 0, kpl: 1, huomio: '' });
+  renderLengthRows();
+  redraw();
+}
+
+function removeRow(i) {
+  if (lengthRows.length === 1) return;
+  lengthRows.splice(i, 1);
+  renderLengthRows();
+  redraw();
+}
+
+// ─── Geometria ────────────────────────────────────────────────────
+function getVals() {
+  const vals = {};
+  document.querySelectorAll('#profile-fields input').forEach(inp => {
+    vals[inp.id] = parseFloat(inp.value) || 0;
+  });
+  return vals;
+}
+
+function buildFromAngles(angles, lengths) {
+  // angles: absoluuttiset suuntakulmat (radiaaneina)
+  // lengths: segmenttien pituudet
+  let points = [{ x: 0, y: 0 }];
+  for (let i = 0; i < lengths.length; i++) {
+    const prev = points[points.length - 1];
+    points.push({
+      x: prev.x + lengths[i] * Math.cos(angles[i]),
+      y: prev.y + lengths[i] * Math.sin(angles[i])
+    });
+  }
+  return points;
+}
+
+function buildFromSegments(segs) {
+  let points = [{ x: 0, y: 0 }];
+  segs.forEach(s => {
+    const prev = points[points.length - 1];
+    points.push({
+      x: prev.x + s.len * Math.cos(s.angle),
+      y: prev.y + s.len * Math.sin(s.angle)
+    });
+  });
+  return points;
+}
+
+function buildFromFreeSegments() {
+  let points = [{ x: 0, y: 0 }];
+  let cumAngle = 0;
+  freeSegments.forEach(s => {
+    cumAngle += s.angle * Math.PI / 180;
+    const prev = points[points.length - 1];
+    points.push({
+      x: prev.x + s.len * Math.cos(cumAngle),
+      y: prev.y + s.len * Math.sin(cumAngle)
+    });
+  });
+  return points;
+}
+
+function getSegmentLengths() {
+  if (activeType === 'vapaa') {
+    return freeSegments.map(s => s.len);
+  }
+  const vals = getVals();
+  return TYPES[activeType].fields
+    .filter(f => f.id.endsWith('_len'))
+    .map(f => vals[f.id] || 0);
+}
+
+function getOpts() {
+  const opts = {};
+  document.querySelectorAll('#profile-fields input[type="checkbox"]').forEach(cb => {
+    const key = cb.id.replace('opt_', '');
+    opts[key] = cb.checked;
+  });
+  return opts;
+}
+
+// ─── SVG-piirto ───────────────────────────────────────────────────
+function redraw() {
+  const type = TYPES[activeType];
+  let points;
+  let segmentLabels = null;
+  let extraLines = [];
+  let pintaViiva = null;
+  let nousuViiva = null;
+  let kokonaisViiva = null;
+  let korkeus = null;
+
+  try {
+    if (activeType === 'vapaa') {
+      points = buildFromFreeSegments();
+    } else {
+      const vals = getVals();
+      const opts = getOpts();
+      const result = type.build(vals, opts);
+      // Tuki sekä vanhalle points[] että uudelle {points, labels} formaatille
+      if (Array.isArray(result)) {
+        points = result;
+        segmentLabels = null;
+        extraLines = [];
+        pintaViiva = null;
+      } else {
+        points = result.points;
+        segmentLabels = result.labels;
+        extraLines = result.extraLines || [];
+        pintaViiva = result.pintaViiva || null;
+        nousuViiva = result.nousuViiva || null;
+        kokonaisViiva = result.kokonaisViiva || null;
+        korkeus = result.korkeus || null;
+      }
+    }
+  } catch(e) { return; }
+
+  // Normalisoi koordinaatit SVG-näkymään
+  const pad = 60;
+  const svgW = 700, svgH = 340;
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const scale = Math.min((svgW - pad*2) / rangeX, (svgH - pad*2) / rangeY, 2);
+
+  const tx = p => pad + (p.x - minX) * scale;
+  const ty = p => pad + (p.y - minY) * scale;
+
+  // Aihioleveys — käytetään tyyppikohtaista laskentaa jos saatavilla
+  const segLens = getSegmentLengths();
+  const vals2 = getVals();
+  const opts2 = getOpts();
+  const aihio = type.aihio ? type.aihio(vals2, opts2) : segLens.reduce((a, b) => a + b, 0);
+
+  // Leikkauslista
+  let totalM2 = 0;
+  const cutRows = lengthRows.map(r => {
+    const kok = (r.mitta || 0) + (r.paat || 0);
+    const m2 = (kok / 1000) * (aihio / 1000) * (r.kpl || 0);
+    totalM2 += m2;
+    return { ...r, kok, m2 };
+  });
+
+  // Päivitä yhteenvedot
+  document.getElementById('aihio-val').textContent = aihio.toFixed(0) + ' mm';
+  document.getElementById('total-m2').textContent = totalM2.toFixed(2) + ' m²';
+
+  // Kaato ja etenemä pintaViivasta
+  const kaatoRow = document.getElementById('kaato-row');
+  const etenemäRow = document.getElementById('etenemä-row');
+  let kaatoMm = null, etenemäMm = null;
+  if (pintaViiva && (activeType === 'avp' || activeType === 'avp2' || activeType === 'kynnys')) {
+    etenemäMm = Math.abs(pintaViiva.p2.x - pintaViiva.p1.x).toFixed(0);
+    kaatoMm = Math.abs(pintaViiva.p2.y - pintaViiva.p1.y).toFixed(0);
+    document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
+    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm';
+    document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'KAATO';
+    document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
+    kaatoRow.style.display = '';
+    etenemäRow.style.display = '';
+  } else if (activeType === 'hattulista' && nousuViiva) {
+    // p1=pA0, p2=pBend (vasen sivu), p3=pA1, p4=pCend (oikea sivu)
+    // p5=pLaippaV, p6=pLaippaO (kokonaisleveys)
+    const nousV = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
+    const etenV = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
+    const nousO = Math.abs(nousuViiva.p4.y - nousuViiva.p3.y).toFixed(0);
+    const etenO = Math.abs(nousuViiva.p4.x - nousuViiva.p3.x).toFixed(0);
+    const kokLev = Math.abs(nousuViiva.p6.x - nousuViiva.p5.x).toFixed(0);
+    // Näytetään nousu vain jos se on > 0
+    const nousStr = `V:${nousV}  O:${nousO}`;
+    kaatoMm = nousStr;
+    etenemäMm = `V:${etenV}  O:${etenO}`;
+    document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
+    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm';
+    document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
+    document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
+    kaatoRow.style.display = '';
+    etenemäRow.style.display = '';
+    document.getElementById('kok-val').textContent = kokLev + ' mm';
+    document.getElementById('kok-row').querySelector('.summary-label').textContent = 'KOK LEVEYS';
+    document.getElementById('kok-row').style.display = '';
+  } else if (activeType === 'zlista' && nousuViiva) {
+    etenemäMm = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
+    kaatoMm = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
+    document.getElementById('kaato-val').textContent = kaatoMm + ' mm';
+    document.getElementById('etenemä-val').textContent = etenemäMm + ' mm';
+    document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'NOUSU';
+    document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
+    kaatoRow.style.display = '';
+    etenemäRow.style.display = '';
+    // Kokonaismitta omalle riville
+    const kokRow = document.getElementById('kok-row');
+    if (kokonaisViiva) {
+      const kokMm = Math.round(Math.sqrt(
+        Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
+        Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
+      ));
+      document.getElementById('kok-val').textContent = kokMm + ' mm';
+      kokRow.style.display = '';
+    } else {
+      kokRow.style.display = 'none';
+    }
+  } else {
+    kaatoRow.style.display = 'none';
+    etenemäRow.style.display = 'none';
+    document.getElementById('kok-row').style.display = 'none';
+    document.getElementById('kaato-row').querySelector('.summary-label').textContent = 'KAATO';
+    document.getElementById('etenemä-row').querySelector('.summary-label').textContent = 'ETENEMÄ';
+  }
+
+  // Päivitä kokonaismitta-kentät
+  lengthRows.forEach((r, i) => {
+    const el = document.getElementById('kok_' + i);
+    if (el) el.value = (r.mitta || 0) + (r.paat || 0);
+  });
+
+  // Piirrä SVG
+  const svg = document.getElementById('drawing');
+  let html = '';
+
+  // Viivat
+  for (let i = 0; i < points.length - 1; i++) {
+    html += `<line x1="${tx(points[i])}" y1="${ty(points[i])}" x2="${tx(points[i+1])}" y2="${ty(points[i+1])}" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>`;
+  }
+
+  // Erilliset tupla-viivat
+  extraLines.forEach(el => {
+    html += `<line x1="${tx(el.p1)}" y1="${ty(el.p1)}" x2="${tx(el.p2)}" y2="${ty(el.p2)}" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>`;
+    if (el.label) {
+      const mx = (tx(el.p1) + tx(el.p2)) / 2 + el.labelOffset[0];
+      const my = (ty(el.p1) + ty(el.p2)) / 2 + el.labelOffset[1];
+      html += `<text x="${mx}" y="${my}" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${el.label}</text>`;
+    }
+  });
+
+  // Mitat viivan vierellä
+  for (let i = 0; i < points.length - 1; i++) {
+    const mx = (tx(points[i]) + tx(points[i+1])) / 2;
+    const my = (ty(points[i]) + ty(points[i+1])) / 2;
+    const len = segmentLabels ? segmentLabels[i] : (segLens[i] || '');
+    const dx = tx(points[i+1]) - tx(points[i]);
+    const dy = ty(points[i+1]) - ty(points[i]);
+    const segLen = Math.sqrt(dx*dx + dy*dy);
+    const ox = -dy / segLen * 16;
+    const oy = dx / segLen * 16;
+    if (len) {
+      html += `<text x="${mx - ox}" y="${my - oy}" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${len}</text>`;
+    }
+  }
+
+  // Kulmat taitospisteissä (ei alku- eikä loppupiste)
+  const vals = getVals();
+  const angleLabels = activeType === 'avp' ? [
+    null,
+    vals.seg0_ang + '°',
+    vals.seg1_ang + '°',
+    vals.seg3_ang + '°',
+    null
+  ] : [];
+
+  // Kulmaoffsetit per piste: [dx, dy]
+  const angleOffsets = activeType === 'avp' ? [
+    null,
+    [-8, 14],    // käännös taka — oikealle alas
+    [-40, 14],   // käännös etu — vasemmalle
+    [8, 14],     // etur
+    null
+  ] : [];
+
+  points.forEach((p, i) => {
+    const isEnd = i === 0 || i === points.length - 1;
+    html += `<circle cx="${tx(p)}" cy="${ty(p)}" r="${isEnd ? 4 : 3}" fill="${isEnd ? '#e8a020' : '#555'}"/>`;
+    if (angleLabels[i] && angleOffsets[i]) {
+      const [dx, dy] = angleOffsets[i];
+      html += `<text x="${tx(p) + dx}" y="${ty(p) + dy}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c0392b" font-weight="600">${angleLabels[i]}</text>`;
+    }
+  });
+
+  svg.innerHTML = html;
+
+  // Pintamerkintä (kolmio) pintaViivalle
+  if (pintaViiva) {
+    const svgEl = document.getElementById('drawing');
+    const mx = (tx(pintaViiva.p1) + tx(pintaViiva.p2)) / 2;
+    const my = (ty(pintaViiva.p1) + ty(pintaViiva.p2)) / 2;
+    const dx = tx(pintaViiva.p2) - tx(pintaViiva.p1);
+    const dy = ty(pintaViiva.p2) - ty(pintaViiva.p1);
+    const segLen = Math.sqrt(dx*dx + dy*dy);
+    // Normaali viivaa kohti — kärki osoittaa pintaan (yläpuoli SVG:ssä = negatiivinen y)
+    const nx = dy / segLen;
+    const ny = -dx / segLen;
+    // Kolmio kiinteästi mitan yläpuolelle — 16px ylös SVG:ssä
+    const ts = 3.5;
+    const lift = 10; // tekstin alapuolelle, viivan yläpuolelle
+    const tx1 = mx - nx * ts * 2 - ny * lift;
+    const ty1 = my - ny * ts * 2 + nx * lift - lift;
+    const tx2 = mx - (dx/segLen) * ts - ny * lift;
+    const ty2 = my - ts + nx * lift - lift;
+    const tx3 = mx + (dx/segLen) * ts - ny * lift;
+    const ty3 = my - ts + nx * lift - lift;
+    svgEl.innerHTML += `<polygon points="${tx1},${ty1} ${tx2},${ty2} ${tx3},${ty3}" fill="#c0392b" opacity="0.8"/>`;
+
+    // Kaato/Nousu ja etenemä SVG:n vasempaan alareunaan
+    const svgH2 = 340;
+    if (activeType === 'zlista' && kaatoMm !== null) {
+      const kokMmSvg = kokonaisViiva ? Math.round(Math.sqrt(
+        Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
+        Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
+      )) : null;
+      const nousStr = Number(kaatoMm) > 0 ? `NOUSU: ${kaatoMm} mm` : '';
+      svgEl.innerHTML += `
+        ${nousStr ? `<text x="10" y="${svgH2 - 45}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">${nousStr}</text>` : ''}
+        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
+        ${kokMmSvg ? `<text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KOK: ${kokMmSvg} mm</text>` : ''}
+      `;
+    } else if (activeType === 'hattulista' && nousuViiva) {
+      const nousV = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
+      const etenV = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
+      const nousO = Math.abs(nousuViiva.p4.y - nousuViiva.p3.y).toFixed(0);
+      const etenO = Math.abs(nousuViiva.p4.x - nousuViiva.p3.x).toFixed(0);
+      const kokLevSvg = Math.abs(nousuViiva.p6.x - nousuViiva.p5.x).toFixed(0);
+      svgEl.innerHTML += `
+        <text x="10" y="${svgH2 - 45}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">NOUSU: V:${nousV} O:${nousO} mm</text>
+        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: V:${etenV} O:${etenO} mm</text>
+        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KOK LEVEYS: ${kokLevSvg} mm</text>
+      `;
+    } else if (kaatoMm !== null) {
+      svgEl.innerHTML += `
+        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">KAATO: ${kaatoMm} mm</text>
+        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
+      `;
+    }
+
+    // Korkeus päätypelti huopa -kohdassa
+    if (activeType === 'paatypelti_huopa' && korkeus) {
+      svgEl.innerHTML += `
+        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KORKEUS: ${korkeus} mm</text>
+      `;
+    }
+  }
+
+  // Leikkauslista HTML
+  const listEl = document.getElementById('cut-list-rows');
+  const nimike = document.getElementById('nimike')?.value || TYPES[activeType]?.name || '';
+  listEl.innerHTML = `<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-family:IBM Plex Mono,monospace">${nimike} — aihio ${aihio.toFixed(0)} mm</div>` + cutRows.map(r => `
+    <div class="cut-row">
+      <span class="mitta">${r.paat > 0 ? `${r.mitta}+${r.paat} = ` : ''}<strong>${r.kok} mm</strong></span>
+      <span class="kpl">${r.kpl} kpl</span>
+      ${r.huomio ? `<span class="huomio-text">⚠ ${r.huomio}</span>` : ''}
+    </div>
+  `).join('');
+}
+
+// ─── Init ─────────────────────────────────────────────────────────
+renderProfileFields();
+renderFreeSegments();
+renderLengthRows();
+redraw();
+
+// ─── Tilausintegraatio ────────────────────────────────────────────
+const bc = new BroadcastChannel('kpt_mallisto');
+
+function aktivoiTilausPalkki(ctx) {
+  tilausContext = ctx;
+  if (TYPES[tilausContext.profileType]) {
+    setType(tilausContext.profileType);
+  }
+  const bar = document.getElementById('tilaus-bar');
+  bar.style.display = 'flex';
+  document.getElementById('tilaus-ryhmä').textContent = tilausContext.groupName + ' —';
+  document.getElementById('tilaus-nimike').textContent = tilausContext.nimike;
+
+  // Muokkaustila — asetetaan materiaali/väri/paksuus kenttiin
+  if (ctx.existingMaterial) {
+    // Odotetaan että fetchPmProducts on valmis (500ms varmuuden vuoksi)
+    setTimeout(() => {
+      if (ctx.existingProductGroup) {
+        const grpEl = document.getElementById('pm-group-search');
+        const grpHid = document.getElementById('pm-group');
+        if (grpEl) grpEl.value = ctx.existingProductGroup;
+        if (grpHid) grpHid.value = ctx.existingProductGroup;
+      }
+      document.getElementById('pm-mat-search').value = ctx.existingMaterial;
+      document.getElementById('pm-mat').value = ctx.existingMaterial;
+      if (ctx.existingColor) {
+        document.getElementById('pm-color-search').value = ctx.existingColor;
+        document.getElementById('pm-color').value = ctx.existingColor;
+      }
+      pmUpdateThick();
+      if (ctx.existingThickness) {
+        document.getElementById('pm-thick').value = ctx.existingThickness;
+      }
+    }, 500);
+  }
+}
+
+// Luetaan konteksti localStoragesta heti kun sivu aukeaa
 const savedCtx = localStorage.getItem('kpt_open_profile');
 if (savedCtx) {
   try {
-    tilausContext = JSON.parse(savedCtx);
+    const ctx = JSON.parse(savedCtx);
     localStorage.removeItem('kpt_open_profile');
-    if (tilausContext.orderId) {
-      const bar = document.getElementById('tilaus-bar');
-      bar.style.display = 'flex';
-      document.getElementById('mainGrid').classList.add('with-tilausbar');
-      document.getElementById('tilaus-ryhma').textContent = (tilausContext.groupName||'') + (tilausContext.groupName?' —':'');
-      document.getElementById('tilaus-nimike-bar').textContent = tilausContext.nimike||'';
-      // Muokkaustila — asetetaan materiaali/väri/paksuus kun tuotteet on haettu
-      if (tilausContext.existingMaterial) {
-        setTimeout(() => {
-          if (tilausContext.existingProductGroup) {
-            document.getElementById('pm-group-search').value = tilausContext.existingProductGroup;
-            document.getElementById('pm-group').value = tilausContext.existingProductGroup;
-          }
-          document.getElementById('pm-mat-search').value = tilausContext.existingMaterial;
-          document.getElementById('pm-mat').value = tilausContext.existingMaterial;
-          if (tilausContext.existingColor) {
-            document.getElementById('pm-color-search').value = tilausContext.existingColor;
-            document.getElementById('pm-color').value = tilausContext.existingColor;
-          }
-          pmUpdateThick();
-          if (tilausContext.existingThickness) {
-            document.getElementById('pm-thick').value = tilausContext.existingThickness;
-          }
-        }, 500);
+    setTimeout(() => {
+      aktivoiTilausPalkki(ctx);
+      // Jos muokkaustila — ladataan vanhat tiedot
+      if (ctx.editItemId && ctx.existingData) {
+        const { vals, opts } = ctx.existingData;
+        // Asetetaan kenttien arvot
+        if (vals) {
+          Object.entries(vals).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val;
+          });
+        }
+        // Asetetaan checkboxit
+        if (opts) {
+          Object.entries(opts).forEach(([id, val]) => {
+            const el = document.getElementById('opt_' + id);
+            if (el) el.checked = !!val;
+          });
+        }
+        // Ladataan pituusrivit
+        if (ctx.existingRows && ctx.existingRows.length > 0) {
+          lengthRows = ctx.existingRows.map(r => ({
+            mitta: r.mitta || 0,
+            paat: r.paat || 0,
+            kpl: r.kpl || 0,
+            huomio: r.huomio || ''
+          }));
+          renderLengthRows();
+        }
+        redraw();
+        // Muutetaan napin teksti
+        const bar = document.getElementById('tilaus-bar');
+        const btn = bar.querySelector('button');
+        if (btn) btn.textContent = '✓ Päivitä tilaukseen';
       }
-    }
+    }, 200);
   } catch(e) {}
 }
 
-// =============================================
-// IKKUNAPELLIT ALAPROFIILI PALKKI — lisätään dynaamisesti
-// =============================================
-const ikkunaSubbar = document.createElement('div');
-ikkunaSubbar.id = 'ikkuna-subbar';
-ikkunaSubbar.style.cssText = 'display:none;background:#1e1e1e;border-bottom:1px solid var(--border);padding:0 16px;align-items:center;gap:0;';
-ikkunaSubbar.innerHTML = `
-  <span style="font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--text-dim);padding:0 12px 0 0;opacity:0.6;">PROFIILI</span>
-  <button class="type-btn ikkuna-btn active" onclick="setIkkunapelti('ylapelti')" style="font-size:12px;padding:8px 14px;">Yläpelti</button>
-  <button class="type-btn ikkuna-btn" onclick="setIkkunapelti('alapelti')" style="font-size:12px;padding:8px 14px;">Alapelti</button>
-`;
-document.querySelector('.type-bar').after(ikkunaSubbar);
+// BroadcastChannel fallback
+bc.onmessage = (e) => {
+  if (e.data.type === 'OPEN_PROFILE') aktivoiTilausPalkki(e.data);
+};
 
-// =============================================
-// INIT
-// =============================================
-fetchPmProducts();
-setType('ikkunapellit');
-renderRivit();
+function lisaaTilaukseen() {
+  if (!tilausContext) return;
+
+  const vals = getVals();
+  const opts = getOpts();
+  const type = TYPES[activeType];
+  const segLens = getSegmentLengths();
+  const aihio = type.aihio ? type.aihio(vals, opts) : segLens.reduce((a,b)=>a+b,0);
+
+  // Luetaan rivit suoraan DOM:sta — varmistetaan että kaikki muutokset mukana
+  const rows = lengthRows
+    .filter(r => (r.mitta || 0) > 0 && (r.kpl || 0) > 0)
+    .map(r => ({
+      mitta: Number(r.mitta) || 0,
+      paat: Number(r.paat) || 0,
+      kok: (Number(r.mitta) || 0) + (Number(r.paat) || 0),
+      kpl: Number(r.kpl) || 0,
+      huomio: r.huomio || ''
+    }));
+
+  if (rows.length === 0) {
+    alert('Lisää ainakin yksi pituusrivi ennen kuin lisäät tilaukseen!');
+    return;
+  }
+
+  // Poimitaan kulmat vals-objektista (_ang-kentät) järjestyksessä
+  const angles = TYPES[activeType].fields
+    .filter(f => f.id.endsWith('_ang'))
+    .map((f, i) => ({ position_index: i, angle_value: vals[f.id] || 0 }));
+
+  const payload = {
+    type: 'ADD_TO_ORDER',
+    orderId: tilausContext.orderId,
+    groupId: tilausContext.groupId,
+    editItemId: tilausContext.editItemId || null,
+    supabaseId: tilausContext.supabaseId || null,
+    profileType: activeType,
+    nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
+    aihio_width_mm: Math.round(aihio),
+    profile_data: { vals, opts },
+    rows,
+    angles,
+    totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0),
+    material: document.getElementById('pm-mat').value || null,
+    color: document.getElementById('pm-color').value || null,
+    thickness: document.getElementById('pm-thick').value || null,
+    productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
+  };
+
+  // Lähetetään localStoragen kautta — BroadcastChannel ei toimi GitHub Pagesilla luotettavasti
+  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
+  setTimeout(() => localStorage.removeItem('kpt_add_to_order'), 2000);
+
+  const bar = document.getElementById('tilaus-bar');
+  bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
+  tilausContext = null;
+  setTimeout(() => window.close(), 1500);
+}
+
+function peruutaTilaus() {
+  tilausContext = null;
+  document.getElementById('tilaus-bar').style.display = 'none';
+  if (window.opener && !window.opener.closed) window.close();
+}
+
 function toggleNav(e) {
   e.stopPropagation();
   document.getElementById('navDropdown').classList.toggle('open');
