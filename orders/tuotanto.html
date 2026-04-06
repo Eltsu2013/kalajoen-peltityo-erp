@@ -317,18 +317,28 @@
   .cut-list .done-qty-cell,
   .cut-list-header .done-qty-cell            { width: 70px; }
 
-  /* KANTAUS-lohko (SVG-placeholder) */
-  .kantaus-block {
+  /* KANTTAUS-lohko */
+  .kanttaus-block {
     background: #fff;
     border-radius: 4px;
-    padding: 12px;
-    text-align: center;
-    min-height: 80px;
-    display: flex; align-items: center; justify-content: center;
+    padding: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 60px;
   }
-  .kantaus-placeholder {
+  .kanttaus-svg { flex-shrink: 0; }
+  .kanttaus-vals {
+    display: flex; flex-direction: column; gap: 2px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    padding-top: 4px;
+  }
+  .vals-row { display: flex; gap: 6px; align-items: baseline; }
+  .vals-key { color: #888; min-width: 80px; }
+  .vals-val { color: #1a1a1a; font-weight: 600; }
+  .kanttaus-placeholder {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: #aaa;
+    color: #aaa; align-self: center;
   }
 
   /* Statusnappirivi */
@@ -424,7 +434,7 @@
     .cut-table .kok { color: #000; }
     .items-grid { grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 0; }
     .block-title { color: #555; }
-    .kantaus-block { background: #fff; border: 1px solid #ccc; }
+    .kanttaus-block { background: #fff; border: 1px solid #ccc; }
     .item-card-body { padding: 8px 10px; }
     .page { padding: 0; }
   }
@@ -2548,16 +2558,22 @@ function renderItemCards(order) {
         </div>`;
     }
 
-    // Kantaus-lohko (SVG-placeholder)
-    let kantausBlock = '';
+    // Kanttaus-lohko
+    let kanttausBlock = '';
     if (item.profile_type && item.profile_type !== 'KAPPALE') {
-      kantausBlock = `
+      const vals = item.profile_data?.vals || {};
+      const opts = item.profile_data?.opts || {};
+      const svgHtml = drawKanttausSVG(item.profile_type, vals, opts);
+      const valsTable = buildValsTable(item.profile_type, vals);
+      kanttausBlock = `
         <div>
-          <div class="block-title">Kantaus</div>
-          <div class="kantaus-block">
-            <span class="kantaus-placeholder" data-profile="${item.profile_type}" data-item-id="${item.id}">
-              ${item.profile_type} — profiilipiirros tulossa
-            </span>
+          <div class="block-title">Kanttaus</div>
+          <div class="kanttaus-block">
+            ${svgHtml
+              ? `<div class="kanttaus-svg">${svgHtml}</div>
+                 <div class="kanttaus-vals">${valsTable}</div>`
+              : `<span class="kanttaus-placeholder">${item.profile_type} — ei piirrostietoja</span>`
+            }
           </div>
         </div>`;
     }
@@ -2586,7 +2602,7 @@ function renderItemCards(order) {
       </div>
       <div class="item-card-body">
         ${cutTable}
-        ${kantausBlock}
+        ${kanttausBlock}
         ${kapBlock}
       </div>
     </div>`;
@@ -2684,6 +2700,347 @@ async function setCombinedRowDoneQty(rowId, qty, itemId, orderId) {
       if (row) row.done_qty = val;
     }
   }
+}
+
+// ── Profiilien piirtologiikka ─────────────────────────────────────
+// TYPES-objekti kopioitu peltipiirturi.html:stä
+// build(vals, opts) palauttaa { points, labels, extraLines }
+// Käytetään tuotantosivulla kanttaus-lohkon SVG-piirrokseen
+
+const PROD_TYPES = {
+  avp: {
+    name: 'Alavesipelti',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pEtuylapaa = { x: 0, y: 0 };
+      let suunta = 90;
+      const pEtualapaa = { x: pEtuylapaa.x + vals.seg2_len * Math.cos(deg(suunta)), y: pEtuylapaa.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      suunta += vals.seg3_ang;
+      const pEtukaannos = vals.seg3_len > 0 ? { x: pEtualapaa.x + vals.seg3_len * Math.cos(deg(suunta)), y: pEtualapaa.y + vals.seg3_len * Math.sin(deg(suunta)) } : null;
+      suunta = 90 + (180 - vals.seg1_ang);
+      const pPintapaaty = { x: pEtuylapaa.x + vals.seg1_len * Math.cos(deg(suunta)), y: pEtuylapaa.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta += vals.seg0_ang;
+      const pTakaylapaa = { x: pPintapaaty.x + vals.seg0_len * Math.cos(deg(suunta)), y: pPintapaaty.y + vals.seg0_len * Math.sin(deg(suunta)) };
+      const points = [pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+      if (pEtukaannos) points.push(pEtukaannos);
+      const labels = [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
+      return { points, labels, extraLines: [] };
+    }
+  },
+  avp2: {
+    name: 'Alavp 2',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pEtuylapaa = { x: 0, y: 0 };
+      let suunta = 90;
+      const pEtualapaa = { x: pEtuylapaa.x + vals.seg2_len * Math.cos(deg(suunta)), y: pEtuylapaa.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      suunta += vals.seg3_ang;
+      const pEtukaannos = vals.seg3_len > 0 ? { x: pEtualapaa.x + vals.seg3_len * Math.cos(deg(suunta)), y: pEtualapaa.y + vals.seg3_len * Math.sin(deg(suunta)) } : null;
+      suunta = 90 + (180 - vals.seg1_ang);
+      const pPintapaaty = { x: pEtuylapaa.x + vals.seg1_len * Math.cos(deg(suunta)), y: pEtuylapaa.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta += vals.seg0_ang;
+      const pTakaylapaa = { x: pPintapaaty.x + vals.seg0_len * Math.cos(deg(suunta)), y: pPintapaaty.y + vals.seg0_len * Math.sin(deg(suunta)) };
+      const karmiSuunta = 180 + (90 - vals.ikkuna_ang);
+      const pKarmi = { x: pTakaylapaa.x + vals.ikkuna_len * Math.cos(deg(karmiSuunta)), y: pTakaylapaa.y + vals.ikkuna_len * Math.sin(deg(karmiSuunta)) };
+      const points = [pKarmi, pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
+      if (pEtukaannos) points.push(pEtukaannos);
+      const labels = [vals.ikkuna_len, vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
+      return { points, labels, extraLines: [] };
+    }
+  },
+  ulkonurkka: {
+    name: 'Ulkonurkka',
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const extraLines = [];
+      let x = 0, y = 0, suunta = 0;
+      let tiiAEnd = { x, y };
+      if (opts?.tiiA) {
+        const tiiSuunta = 8;
+        tiiAEnd = { x: x + vals.tiiA_len * Math.cos(deg(tiiSuunta)), y: y + vals.tiiA_len * Math.sin(deg(tiiSuunta)) };
+        if (opts?.tupA) {
+          const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(deg(0)), y: tiiAEnd.y + vals.tupA_len * Math.sin(deg(0)) };
+          extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len });
+        }
+      }
+      const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
+      const pA0 = { x, y };
+      suunta += vals.seg0_ang;
+      const pKulma = { x: x + aLen * Math.cos(deg(0)), y };
+      x = pKulma.x; y = pKulma.y;
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pB0 = { x, y };
+      const pBend = { x: x + bLen * Math.cos(deg(suunta)), y: y + bLen * Math.sin(deg(suunta)) };
+      let tiiBEnd = { ...pBend };
+      if (opts?.tiiB) {
+        const tiiSuunta = suunta + 8;
+        tiiBEnd = { x: pBend.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: pBend.y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        if (opts?.tupB) {
+          const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(suunta + 180)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(suunta + 180)) };
+          extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len });
+        }
+      }
+      const points = [tiiAEnd, pA0, pKulma, pBend];
+      if (opts?.tiiB) points.push(tiiBEnd);
+      const labels = [vals.tiiA_len || null, vals.seg0_len, vals.seg1_len, null];
+      return { points, labels, extraLines };
+    }
+  },
+  sisänurkka: {
+    name: 'Sisänurkka',
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const extraLines = [];
+      let x = 0, y = 0, suunta = 0;
+      let tiiAEnd = { x, y };
+      if (opts?.tiiA) {
+        tiiAEnd = { x: x + vals.tiiA_len * Math.cos(deg(8)), y: y + vals.tiiA_len * Math.sin(deg(8)) };
+        if (opts?.tupA) {
+          const tupEnd = { x: tiiAEnd.x + vals.tupA_len, y: tiiAEnd.y };
+          extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len });
+        }
+      }
+      const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
+      const pA0 = { x, y };
+      suunta -= vals.seg0_ang;
+      const pKulma = { x: x + aLen, y };
+      x = pKulma.x; y = pKulma.y;
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pBend = { x: x + bLen * Math.cos(deg(suunta)), y: y + bLen * Math.sin(deg(suunta)) };
+      let tiiBEnd = { ...pBend };
+      if (opts?.tiiB) {
+        const tiiSuunta = suunta + 180 + 8;
+        tiiBEnd = { x: pBend.x + vals.tiiB_len * Math.cos(deg(tiiSuunta)), y: pBend.y + vals.tiiB_len * Math.sin(deg(tiiSuunta)) };
+        if (opts?.tupB) {
+          const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(suunta + 172)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(suunta + 172)) };
+          extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len });
+        }
+      }
+      const points = [tiiAEnd, pA0, pKulma, pBend];
+      if (opts?.tiiB) points.push(tiiBEnd);
+      return { points, labels: [null, vals.seg0_len, vals.seg1_len, null], extraLines };
+    }
+  },
+  jiiripelti: {
+    name: 'Jiiripelti',
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const extraLines = [];
+      const half = vals.ji_siv_a;
+      const half2 = vals.ji_siv_b;
+      const kulma = vals.ji_kulma;
+      const pA0 = { x: 0, y: 0 };
+      const pTop = { x: half * Math.cos(deg(kulma)), y: -half * Math.sin(deg(kulma)) };
+      const pB0 = { x: pTop.x + half2 * Math.cos(deg(180 - kulma)), y: pTop.y - half2 * Math.sin(deg(180 - kulma)) };
+      const points = [pA0, pTop, pB0];
+      if (opts?.taitosA) {
+        const pTaitosA = { x: pA0.x + vals.ji_taitos_len * Math.cos(deg(kulma + 90)), y: pA0.y + vals.ji_taitos_len * Math.sin(deg(kulma + 90)) };
+        extraLines.push({ p1: pA0, p2: pTaitosA, label: vals.ji_taitos_len });
+      }
+      if (opts?.taitosB) {
+        const pTaitosB = { x: pB0.x + vals.ji_taitos_len * Math.cos(deg(180 - kulma + 90)), y: pB0.y + vals.ji_taitos_len * Math.sin(deg(180 - kulma + 90)) };
+        extraLines.push({ p1: pB0, p2: pTaitosB, label: vals.ji_taitos_len });
+      }
+      return { points, labels: [vals.ji_siv_a, vals.ji_siv_b], extraLines };
+    }
+  },
+  'seinänvieripelti': {
+    name: 'Seinänvieripelti',
+    build: (vals, opts) => {
+      const deg = d => d * Math.PI / 180;
+      const extraLines = [];
+      const pSeinaYla = { x: 0, y: 0 };
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pSeinaAla = { x: 0, y: bLen };
+      const katolleSuunta = 180 - (90 - vals.seg0_ang);
+      const pKatolle = { x: pSeinaAla.x + vals.seg0_len * Math.cos(deg(katolleSuunta)), y: pSeinaAla.y + vals.seg0_len * Math.sin(deg(katolleSuunta)) };
+      const uraLahtoSuunta = katolleSuunta - vals.ura_ang;
+      const uraEnd = { x: pKatolle.x + vals.ura_len * Math.cos(deg(uraLahtoSuunta)), y: pKatolle.y + vals.ura_len * Math.sin(deg(uraLahtoSuunta)) };
+      const tupAAng = uraLahtoSuunta - 172;
+      const tupAEnd = { x: uraEnd.x + vals.tupA_len * Math.cos(deg(tupAAng)), y: uraEnd.y + vals.tupA_len * Math.sin(deg(tupAAng)) };
+      extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len });
+      let tiiBEnd = { ...pSeinaYla };
+      if (opts?.tiiB) {
+        tiiBEnd = { x: pSeinaYla.x + vals.tiiB_len * Math.cos(deg(90 + 180 + 8)), y: pSeinaYla.y + vals.tiiB_len * Math.sin(deg(90 + 180 + 8)) };
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? 90 + 360 : 90 + 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(deg(tupSuunta)) };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len });
+      }
+      const points = [uraEnd, pKatolle, pSeinaAla, pSeinaYla];
+      if (opts?.tiiB) points.push(tiiBEnd);
+      return { points, labels: [vals.ura_len, vals.seg0_len, bLen, null], extraLines };
+    }
+  },
+  eturaaystaspelti: {
+    name: 'Eturäystäspelti',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      let suunta = 0;
+      const pB = { x: vals.seg0_len, y: 0 };
+      suunta -= vals.seg0_ang;
+      const pC = { x: pB.x + vals.seg1_len * Math.cos(deg(suunta)), y: pB.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta -= vals.seg1_ang;
+      const pD = { x: pC.x + vals.seg2_len * Math.cos(deg(suunta)), y: pC.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg2_len], extraLines: [] };
+    }
+  },
+  paatyp: {
+    name: 'Päätypelti',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      const pB = { x: vals.seg0_len, y: 0 };
+      let suunta = -vals.seg0_ang;
+      const pC = { x: pB.x + vals.seg1_len * Math.cos(deg(suunta)), y: pB.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta -= vals.seg1_ang;
+      const pD = { x: pC.x + vals.seg2_len * Math.cos(deg(suunta)), y: pC.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg2_len], extraLines: [] };
+    }
+  },
+  paatyp_huopa: {
+    name: 'Päätypelti huopa',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      const pB = { x: vals.seg0_len, y: 0 };
+      let suunta = -vals.seg0_ang;
+      const pC = { x: pB.x + vals.seg1_len * Math.cos(deg(suunta)), y: pB.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta -= vals.seg1_ang;
+      const pD = { x: pC.x + vals.seg2_len * Math.cos(deg(suunta)), y: pC.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      suunta -= vals.seg2_ang;
+      const pE = { x: pD.x + vals.seg3_len * Math.cos(deg(suunta)), y: pD.y + vals.seg3_len * Math.sin(deg(suunta)) };
+      return { points: [pA, pB, pC, pD, pE], labels: [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len], extraLines: [] };
+    }
+  },
+  ulista: {
+    name: 'U-lista',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      const pB = { x: 0, y: vals.seg0_len };
+      const pC = { x: vals.seg1_len, y: vals.seg0_len };
+      const pD = { x: vals.seg1_len, y: 0 };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg0_len], extraLines: [] };
+    }
+  },
+  kynnys: {
+    name: 'Kynnys',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      let suunta = 0;
+      const pB = { x: vals.seg0_len, y: 0 };
+      suunta -= vals.seg0_ang;
+      const pC = { x: pB.x + vals.seg1_len * Math.cos(deg(suunta)), y: pB.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta -= vals.seg1_ang;
+      const pD = { x: pC.x + vals.seg2_len * Math.cos(deg(suunta)), y: pC.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg2_len], extraLines: [] };
+    }
+  },
+  hattulista: {
+    name: 'Hattulista',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      let suunta = -vals.seg0_ang;
+      const pB = { x: vals.seg0_len * Math.cos(deg(suunta)), y: vals.seg0_len * Math.sin(deg(suunta)) };
+      const pC = { x: pB.x + vals.seg1_len, y: pB.y };
+      suunta = vals.seg0_ang;
+      const pD = { x: pC.x + vals.seg0_len * Math.cos(deg(suunta)), y: pC.y + vals.seg0_len * Math.sin(deg(suunta)) };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg0_len], extraLines: [] };
+    }
+  },
+  zlista: {
+    name: 'Z-lista',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      const pB = { x: vals.seg0_len, y: 0 };
+      let suunta = -vals.seg0_ang;
+      const pC = { x: pB.x + vals.seg1_len * Math.cos(deg(suunta)), y: pB.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      const pD = { x: pC.x + vals.seg2_len, y: pC.y };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg2_len], extraLines: [] };
+    }
+  },
+  peitelista: {
+    name: 'Peitelista',
+    build: (vals) => {
+      const deg = d => d * Math.PI / 180;
+      const pA = { x: 0, y: 0 };
+      const pB = { x: vals.seg0_len, y: 0 };
+      let suunta = -vals.seg0_ang;
+      const pC = { x: pB.x + vals.seg1_len * Math.cos(deg(suunta)), y: pB.y + vals.seg1_len * Math.sin(deg(suunta)) };
+      suunta += 180 - vals.seg1_ang;
+      const pD = { x: pC.x + vals.seg2_len * Math.cos(deg(suunta)), y: pC.y + vals.seg2_len * Math.sin(deg(suunta)) };
+      return { points: [pA, pB, pC, pD], labels: [vals.seg0_len, vals.seg1_len, vals.seg2_len], extraLines: [] };
+    }
+  }
+};
+
+// Piirtää kompaktin SVG:n kanttaus-lohkoon
+function drawKanttausSVG(profileType, vals, opts) {
+  const type = PROD_TYPES[profileType];
+  if (!type || !vals || Object.keys(vals).length === 0) return null;
+
+  let result;
+  try {
+    result = type.build(vals, opts || {});
+  } catch(e) { return null; }
+
+  if (!result || !result.points || result.points.length < 2) return null;
+
+  const points = result.points;
+  const extraLines = result.extraLines || [];
+
+  // Skaalaus pieneen SVG:hen
+  const W = 160, H = 110, pad = 16;
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  extraLines.forEach(el => { xs.push(el.p1.x, el.p2.x); ys.push(el.p1.y, el.p2.y); });
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rangeX = maxX - minX || 1;
+  const rangeY = maxY - minY || 1;
+  const scale = Math.min((W - pad*2) / rangeX, (H - pad*2) / rangeY, 3);
+  const tx = p => pad + (p.x - minX) * scale;
+  const ty = p => pad + (p.y - minY) * scale;
+
+  let html = '';
+  // Pääviivat
+  const ptStr = points.map(p => `${tx(p).toFixed(1)},${ty(p).toFixed(1)}`).join(' ');
+  html += `<polyline points="${ptStr}" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  // Lisäviivat (tuplat, tiivisteet)
+  extraLines.forEach(el => {
+    html += `<line x1="${tx(el.p1).toFixed(1)}" y1="${ty(el.p1).toFixed(1)}" x2="${tx(el.p2).toFixed(1)}" y2="${ty(el.p2).toFixed(1)}" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>`;
+  });
+  // Pisteet
+  points.forEach((p, i) => {
+    const isEnd = i === 0 || i === points.length - 1;
+    html += `<circle cx="${tx(p).toFixed(1)}" cy="${ty(p).toFixed(1)}" r="${isEnd ? 3 : 2}" fill="${isEnd ? '#e8a020' : '#555'}"/>`;
+  });
+
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="display:block">${html}</svg>`;
+}
+
+// Rakentaa mitat-listan vals-arvoista fields-määrittelystä
+function buildValsTable(profileType, vals) {
+  const type = PROD_TYPES[profileType];
+  if (!type || !vals) return '';
+  // Etsitään peltipiirturin TYPES-objektista fields-lista nimille
+  // Jos ei löydy, näytetään raakit vals-arvot
+  const rows = Object.entries(vals)
+    .filter(([k, v]) => v && v !== 0)
+    .map(([k, v]) => {
+      const isAngle = k.endsWith('_ang') || k === 'ji_kulma' || k === 'ura_ang';
+      return `<div class="vals-row">
+        <span class="vals-key">${k.replace(/_/g,' ')}</span>
+        <span class="vals-val">${v}${isAngle ? '°' : ' mm'}</span>
+      </div>`;
+    }).join('');
+  return rows;
 }
 
 // ── Nav ───────────────────────────────────────────────────────────
