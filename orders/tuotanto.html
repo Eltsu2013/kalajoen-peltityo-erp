@@ -2966,7 +2966,8 @@ const PROD_TYPES = {
       const tupBEnd = { x: nokkEnd.x + vals.tupB_len * Math.cos(_deg(tupBSuunta)), y: nokkEnd.y + vals.tupB_len * Math.sin(_deg(tupBSuunta)) };
       extraLines.push({ p1: nokkEnd, p2: tupBEnd, label: vals.tupB_len });
       const points = [harjaEnd, pA0, pKulma, pBend, nokkEnd];
-      const labels = [vals.harja_len, vals.seg0_len, vals.seg1_len, vals.nokka_len, null];
+      // harja_len näkyy extraLinessä — ei labels[0]:ssa jotta ei mene tupla A:n kanssa päällekkäin
+      const labels = [null, vals.seg0_len, vals.seg1_len, vals.nokka_len, null];
       const angleLabels = [null, null, vals.seg0_ang + '°', vals.nokka_ang + '°', null];
       return { points, labels, extraLines, angleLabels };
     }
@@ -3120,6 +3121,28 @@ const PROD_TYPES = {
       const points = [pA, pB];
       const labels = [vals.pl_lev || vals.seg0_len || 100];
       return { points, labels, extraLines, angleLabels: [null, null] };
+    }
+  },
+
+  // katkaisulista = Ulkoverhouksen katkaisulista — sama geometria kuin avp,
+  // samat kentät (takareuna, pinta, etureuna, etukaannos, kaannos_taka, kaannos_etu, etur)
+  katkaisulista: {
+    name: 'Ulkoverh. katkaisulista',
+    build: (vals) => {
+      const pEtuYla = { x: 0, y: 0 };
+      let suunta = 90;
+      const pEtuAla = { x: pEtuYla.x + (vals.etureuna||50) * Math.cos(_deg(suunta)), y: pEtuYla.y + (vals.etureuna||50) * Math.sin(_deg(suunta)) };
+      suunta += (vals.etur || 125);
+      const pEtuK = (vals.etukaannos > 0) ? { x: pEtuAla.x + vals.etukaannos * Math.cos(_deg(suunta)), y: pEtuAla.y + vals.etukaannos * Math.sin(_deg(suunta)) } : null;
+      suunta = 90 + (180 - (vals.kaannos_etu || 72));
+      const pPinta = { x: pEtuYla.x + (vals.pinta||100) * Math.cos(_deg(suunta)), y: pEtuYla.y + (vals.pinta||100) * Math.sin(_deg(suunta)) };
+      suunta += (vals.kaannos_taka || 72);
+      const pTaka = { x: pPinta.x + (vals.takareuna||90) * Math.cos(_deg(suunta)), y: pPinta.y + (vals.takareuna||90) * Math.sin(_deg(suunta)) };
+      const points = [pTaka, pPinta, pEtuYla, pEtuAla];
+      if (pEtuK) points.push(pEtuK);
+      const labels = [vals.takareuna, vals.pinta, vals.etureuna, vals.etukaannos > 0 ? vals.etukaannos : null];
+      const angleLabels = [null, (vals.kaannos_taka||72) + '°', (vals.kaannos_etu||72) + '°', null, null];
+      return { points, labels, extraLines: [], angleLabels };
     }
   },
 
