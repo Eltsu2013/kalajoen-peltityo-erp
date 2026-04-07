@@ -2954,7 +2954,7 @@ const PROD_TYPES = {
       };
       const tupASuunta = -(vals.harja_ang - 8);
       const tupAEnd = { x: harjaEnd.x + vals.tupA_len * Math.cos(_deg(tupASuunta)), y: harjaEnd.y + vals.tupA_len * Math.sin(_deg(tupASuunta)) };
-      extraLines.push({ p1: harjaEnd, p2: tupAEnd, label: vals.tupA_len });
+      extraLines.push({ p1: harjaEnd, p2: tupAEnd, label: vals.tupA_len, labelSide: -1 });
       const pA0 = { x: 0, y: 0 };
       let suunta = 0;
       const pKulma = { x: vals.seg0_len, y: 0 };
@@ -2966,8 +2966,8 @@ const PROD_TYPES = {
       const tupBEnd = { x: nokkEnd.x + vals.tupB_len * Math.cos(_deg(tupBSuunta)), y: nokkEnd.y + vals.tupB_len * Math.sin(_deg(tupBSuunta)) };
       extraLines.push({ p1: nokkEnd, p2: tupBEnd, label: vals.tupB_len });
       const points = [harjaEnd, pA0, pKulma, pBend, nokkEnd];
-      // harja_len näkyy extraLinessä — ei labels[0]:ssa jotta ei mene tupla A:n kanssa päällekkäin
-      const labels = [null, vals.seg0_len, vals.seg1_len, vals.nokka_len, null];
+      // harja_len näkyy pääviivassa, tupA näkyy extraLinessä vastakkaisella puolella
+      const labels = [vals.harja_len, vals.seg0_len, vals.seg1_len, vals.nokka_len, null];
       const angleLabels = [null, null, vals.seg0_ang + '°', vals.nokka_ang + '°', null];
       return { points, labels, extraLines, angleLabels };
     }
@@ -3150,16 +3150,19 @@ const PROD_TYPES = {
   ikkunapellit: {
     name: 'Ikkunapelti',
     build: (vals) => {
-      // ikkunapelti ylä/alapelti — sama geometria kuin avp mutta pinta = paanYlos + paanAlas
-      const takareuna = vals.takareuna || 0;
-      const paanYlos = vals.paanYlos || 0;
-      const paanAlas = vals.paanAlas || 0;
-      const pinta = paanYlos + paanAlas;
-      const etureuna = vals.etureuna || 0;
-      const etukaannos = vals.etukaannos || 0;
+      // ikkunapelti: pinta = paanYlos + paanAlas
+      // vals-kentät: takareuna, paanYlos, paanAlas, etureuna, etukaannos,
+      //              kaannos_taka, kaannos_etu, etur
+      const takareuna   = vals.takareuna   || 0;
+      const paanYlos    = vals.paanYlos    || 0;
+      const paanAlas    = vals.paanAlas    || 0;
+      const pinta       = paanYlos + paanAlas;
+      const etureuna    = vals.etureuna    || 0;
+      const etukaannos  = vals.etukaannos  || 0;
       const kaannos_taka = vals.kaannos_taka || 75;
-      const kaannos_etu = vals.kaannos_etu || 75;
-      const etur = vals.etur || 125;
+      const kaannos_etu  = vals.kaannos_etu  || 75;
+      const etur         = vals.etur         || 125;
+
       const pEtuYla = { x: 0, y: 0 };
       let suunta = 90;
       const pEtuAla = { x: pEtuYla.x + etureuna * Math.cos(_deg(suunta)), y: pEtuYla.y + etureuna * Math.sin(_deg(suunta)) };
@@ -3169,11 +3172,27 @@ const PROD_TYPES = {
       const pPinta = { x: pEtuYla.x + pinta * Math.cos(_deg(suunta)), y: pEtuYla.y + pinta * Math.sin(_deg(suunta)) };
       suunta += kaannos_taka;
       const pTaka = { x: pPinta.x + takareuna * Math.cos(_deg(suunta)), y: pPinta.y + takareuna * Math.sin(_deg(suunta)) };
+
+      // Päänkääntöpiste pinnan sisällä: paanYlos-verran etureunan päästä
+      const pPaanYlosEnd = {
+        x: pPinta.x + (pEtuYla.x - pPinta.x) * (paanYlos / (pinta || 1)),
+        y: pPinta.y + (pEtuYla.y - pPinta.y) * (paanYlos / (pinta || 1))
+      };
+
       const points = [pTaka, pPinta, pEtuYla, pEtuAla];
       if (pEtuK) points.push(pEtuK);
+
+      // Mitat: takareuna, pinta yhteensä, etureuna, etukaannos
+      // paanYlos ja paanAlas näytetään extraLinenä pinnan sisällä
+      const extraLines = [];
+      if (paanYlos > 0 && paanAlas > 0) {
+        extraLines.push({ p1: pPinta, p2: pPaanYlosEnd, label: paanYlos });
+        extraLines.push({ p1: pPaanYlosEnd, p2: pEtuYla, label: paanAlas });
+      }
+
       const labels = [takareuna, pinta, etureuna, etukaannos > 0 ? etukaannos : null];
       const angleLabels = [null, kaannos_taka + '°', kaannos_etu + '°', null, null];
-      return { points, labels, extraLines: [], angleLabels };
+      return { points, labels, extraLines, angleLabels };
     }
   },
 
@@ -3351,16 +3370,16 @@ function drawKanttausSVG(profileType, vals, opts) {
   // Lisäviivat (tuplat, tiivisteet)
   extraLines.forEach(el => {
     html += `<line x1="${tx(el.p1).toFixed(1)}" y1="${ty(el.p1).toFixed(1)}" x2="${tx(el.p2).toFixed(1)}" y2="${ty(el.p2).toFixed(1)}" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4,2"/>`;
-    // Mitta extraLinelle
+    // Mitta extraLinelle — labelSide: 1 = oikea (oletus), -1 = vasen
     if (el.label) {
       const mx = (tx(el.p1) + tx(el.p2)) / 2;
       const my = (ty(el.p1) + ty(el.p2)) / 2;
       const dx = tx(el.p2) - tx(el.p1);
       const dy = ty(el.p2) - ty(el.p1);
       const len = Math.sqrt(dx*dx + dy*dy) || 1;
-      // Normaali viivaa kohti, offset 12px
-      const ox = dy / len * 13;
-      const oy = -dx / len * 13;
+      const side = el.labelSide !== undefined ? el.labelSide : 1;
+      const ox = dy / len * 13 * side;
+      const oy = -dx / len * 13 * side;
       html += `<text x="${(mx + ox).toFixed(1)}" y="${(my + oy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${el.label}</text>`;
     }
   });
