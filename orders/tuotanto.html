@@ -205,6 +205,12 @@
   .badge-IN_PRODUCTION{ color: var(--warn); border-color: var(--warn); }
   .badge-COMPLETED    { color: var(--accent); border-color: var(--accent); }
   .badge-INVOICED     { color: #22d3ee; border-color: #22d3ee; }
+  .card-status-mini {
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; padding: 2px 6px; border-radius: 3px; cursor: pointer;
+  }
+  .card-status-mini:focus { outline: none; border-color: var(--accent); }
 
   .card-body { padding: 12px 16px; }
 
@@ -2377,6 +2383,15 @@ function renderCombinedList(orders, mat, color, thick) {
         <span class="combined-customer">${o.customers?.name || '— ei asiakasta —'}</span>
         <span class="combined-kohde">${o.kohde || o.notes || ''}</span>
         <span class="combined-date">${date}</span>
+        <select class="card-status-mini" onchange="quickChangeStatus('${o.id}', this.value)" style="margin-left:auto">
+          <option value="" selected>${{IN_PROGRESS:'Kesken',QUOTED:'Tarjottu',ORDERED:'Tilattu',IN_PRODUCTION:'Työn alla',COMPLETED:'Valmis',INVOICED:'Laskutettu'}[o.status] || o.status || '—'}</option>
+          <option value="IN_PROGRESS">Kesken</option>
+          <option value="QUOTED">Tarjottu</option>
+          <option value="ORDERED">Tilattu</option>
+          <option value="IN_PRODUCTION">Työn alla</option>
+          <option value="COMPLETED">Valmis</option>
+          <option value="INVOICED">Laskutettu</option>
+        </select>
       </div>
       ${itemsHtml}
     </div>`;
@@ -2425,7 +2440,18 @@ function renderOrderList(orders, mat, color, thick) {
         <div class="card-header-info">
           <div class="card-customer">${o.customers?.name || '— ei asiakasta —'}</div>
           <div class="card-kohde">${o.kohde || o.notes || '—'}</div>
-          <span class="card-status-badge badge-${o.status}">${STATUS_FI[o.status] || o.status}</span>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <span class="card-status-badge badge-${o.status}">${STATUS_FI[o.status] || o.status}</span>
+            <select class="card-status-mini" onchange="quickChangeStatus('${o.id}', this.value)" onclick="event.stopPropagation()">
+              <option value="">muuta...</option>
+              <option value="IN_PROGRESS">Kesken</option>
+              <option value="QUOTED">Tarjottu</option>
+              <option value="ORDERED">Tilattu</option>
+              <option value="IN_PRODUCTION">Työn alla</option>
+              <option value="COMPLETED">Valmis</option>
+              <option value="INVOICED">Laskutettu</option>
+            </select>
+          </div>
         </div>
         <div class="card-date">
           <div>${date}</div>
@@ -2630,6 +2656,21 @@ function renderItemCards(order) {
   }).join('');
 }
 
+// ── Tilauksen statuksen pikamuutos kortilta ───────────────────────
+async function quickChangeStatus(orderId, newStatus) {
+  if (!newStatus) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${orderId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status: newStatus })
+  });
+  if (!res.ok) { alert('Statuksen tallennus epäonnistui'); return; }
+  const o = allOrders.find(x => x.id === orderId);
+  if (o) o.status = newStatus;
+  // Renderöi lista uudelleen jotta badge päivittyy
+  applyFilter();
+}
+
 // ── Tilauksen statuksen muutos ────────────────────────────────────
 async function changeOrderStatus(newStatus) {
   if (!activeOrderId) return;
@@ -2765,41 +2806,93 @@ const PROD_TYPES = {
   avp: {
     name: 'Alavesipelti',
     build: (vals) => {
-      const pEtuylapaa = { x: 0, y: 0 };
+      // Tukee sekä peltipiirturin (seg0_len/seg1_len/seg2_len) että
+      // vakiomallien (takareuna/pinta tai paanYlos+paanAlas/etureuna) kenttänimiä
+      const takareuna  = vals.seg0_len  || vals.takareuna  || 15;
+      const pinta      = vals.seg1_len  || (vals.paanYlos != null ? vals.paanYlos + (vals.paanAlas||0) : null) || vals.pinta || 150;
+      const etureuna   = vals.seg2_len  || vals.etureuna   || 30;
+      const etukaannos = vals.seg3_len  != null ? vals.seg3_len  : (vals.etukaannos  || 0);
+      const kaannos_taka = vals.seg0_ang != null ? vals.seg0_ang : (vals.kaannos_taka || 75);
+      const kaannos_etu  = vals.seg1_ang != null ? vals.seg1_ang : (vals.kaannos_etu  || 75);
+      const etur         = vals.seg3_ang != null ? vals.seg3_ang : (vals.etur         || 125);
+      // Vakiomalleilla paanYlos ja paanAlas ovat erilliset — näytetään ne extraLinenä
+      const paanYlos = vals.paanYlos || 0;
+      const paanAlas = vals.paanAlas || 0;
+
+      const pEtuYla = { x: 0, y: 0 };
       let suunta = 90;
-      const pEtualapaa = { x: pEtuylapaa.x + vals.seg2_len * Math.cos(_deg(suunta)), y: pEtuylapaa.y + vals.seg2_len * Math.sin(_deg(suunta)) };
-      suunta += (vals.seg3_ang || 125);
-      const pEtukaannos = (vals.seg3_len > 0) ? { x: pEtualapaa.x + vals.seg3_len * Math.cos(_deg(suunta)), y: pEtualapaa.y + vals.seg3_len * Math.sin(_deg(suunta)) } : null;
-      suunta = 90 + (180 - vals.seg1_ang);
-      const pPintapaaty = { x: pEtuylapaa.x + vals.seg1_len * Math.cos(_deg(suunta)), y: pEtuylapaa.y + vals.seg1_len * Math.sin(_deg(suunta)) };
-      suunta += vals.seg0_ang;
-      const pTakaylapaa = { x: pPintapaaty.x + vals.seg0_len * Math.cos(_deg(suunta)), y: pPintapaaty.y + vals.seg0_len * Math.sin(_deg(suunta)) };
-      const points = [pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
-      if (pEtukaannos) points.push(pEtukaannos);
-      const labels = [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
-      const angleLabels = [null, vals.seg0_ang + '°', vals.seg1_ang + '°', null, null];
-      return { points, labels, extraLines: [], angleLabels };
+      const pEtuAla = { x: pEtuYla.x + etureuna * Math.cos(_deg(suunta)), y: pEtuYla.y + etureuna * Math.sin(_deg(suunta)) };
+      suunta += etur;
+      const pEtuK = etukaannos > 0 ? { x: pEtuAla.x + etukaannos * Math.cos(_deg(suunta)), y: pEtuAla.y + etukaannos * Math.sin(_deg(suunta)) } : null;
+      suunta = 90 + (180 - kaannos_etu);
+      const pPinta = { x: pEtuYla.x + pinta * Math.cos(_deg(suunta)), y: pEtuYla.y + pinta * Math.sin(_deg(suunta)) };
+      suunta += kaannos_taka;
+      const pTaka = { x: pPinta.x + takareuna * Math.cos(_deg(suunta)), y: pPinta.y + takareuna * Math.sin(_deg(suunta)) };
+      const points = [pTaka, pPinta, pEtuYla, pEtuAla];
+      if (pEtuK) points.push(pEtuK);
+
+      const extraLines = [];
+      // Jos vakiomalli-ikkunapelti: näytä paanYlos ja paanAlas erikseen oranssilla
+      if (paanYlos > 0 && paanAlas > 0) {
+        const pPaanYlosEnd = {
+          x: pPinta.x + (pEtuYla.x - pPinta.x) * (paanYlos / pinta),
+          y: pPinta.y + (pEtuYla.y - pPinta.y) * (paanYlos / pinta)
+        };
+        extraLines.push({ p1: pPinta, p2: pPaanYlosEnd, label: paanYlos, labelSide: -1 });
+        extraLines.push({ p1: pPaanYlosEnd, p2: pEtuYla, label: paanAlas, labelSide: -1 });
+      }
+
+      const labels = [takareuna, pinta, etureuna, etukaannos > 0 ? etukaannos : null];
+      const angleLabels = [null, kaannos_taka + '°', kaannos_etu + '°', null, null];
+      return { points, labels, extraLines, angleLabels };
     }
   },
   avp2: {
     name: 'Alavp 2',
     build: (vals) => {
-      const pEtuylapaa = { x: 0, y: 0 };
+      // Tukee sekä peltipiirturin (seg*) että vakiomallien (takareuna/pinta/ikkuna) kenttänimiä
+      const ikkuna_len   = vals.ikkuna_len  || vals.ikkuna     || 0;
+      const takareuna    = vals.seg0_len    || vals.takareuna   || 15;
+      const pinta        = vals.seg1_len    || (vals.paanYlos != null ? vals.paanYlos + (vals.paanAlas||0) : null) || vals.pinta || 150;
+      const etureuna     = vals.seg2_len    || vals.etureuna    || 30;
+      const etukaannos   = vals.seg3_len    != null ? vals.seg3_len   : (vals.etukaannos   || 0);
+      const ikkuna_ang   = vals.ikkuna_ang  != null ? vals.ikkuna_ang  : (vals.ikkuna_ang   || 90);
+      const kaannos_taka = vals.seg0_ang    != null ? vals.seg0_ang    : (vals.kaannos_taka || 75);
+      const kaannos_etu  = vals.seg1_ang    != null ? vals.seg1_ang    : (vals.kaannos_etu  || 75);
+      const etur         = vals.seg3_ang    != null ? vals.seg3_ang    : (vals.etur         || 125);
+      const paanYlos = vals.paanYlos || 0;
+      const paanAlas = vals.paanAlas || 0;
+
+      const pEtuYla = { x: 0, y: 0 };
       let suunta = 90;
-      const pEtualapaa = { x: pEtuylapaa.x + vals.seg2_len * Math.cos(_deg(suunta)), y: pEtuylapaa.y + vals.seg2_len * Math.sin(_deg(suunta)) };
-      suunta += (vals.seg3_ang || 125);
-      const pEtukaannos = (vals.seg3_len > 0) ? { x: pEtualapaa.x + vals.seg3_len * Math.cos(_deg(suunta)), y: pEtualapaa.y + vals.seg3_len * Math.sin(_deg(suunta)) } : null;
-      suunta = 90 + (180 - vals.seg1_ang);
-      const pPintapaaty = { x: pEtuylapaa.x + vals.seg1_len * Math.cos(_deg(suunta)), y: pEtuylapaa.y + vals.seg1_len * Math.sin(_deg(suunta)) };
-      suunta += vals.seg0_ang;
-      const pTakaylapaa = { x: pPintapaaty.x + vals.seg0_len * Math.cos(_deg(suunta)), y: pPintapaaty.y + vals.seg0_len * Math.sin(_deg(suunta)) };
-      const karmiSuunta = 180 + (90 - vals.ikkuna_ang);
-      const pKarmi = { x: pTakaylapaa.x + vals.ikkuna_len * Math.cos(_deg(karmiSuunta)), y: pTakaylapaa.y + vals.ikkuna_len * Math.sin(_deg(karmiSuunta)) };
-      const points = [pKarmi, pTakaylapaa, pPintapaaty, pEtuylapaa, pEtualapaa];
-      if (pEtukaannos) points.push(pEtukaannos);
-      const labels = [vals.ikkuna_len, vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
-      const angleLabels = [null, vals.ikkuna_ang + '°', vals.seg0_ang + '°', vals.seg1_ang + '°', null, null];
-      return { points, labels, extraLines: [], angleLabels };
+      const pEtuAla = { x: pEtuYla.x + etureuna * Math.cos(_deg(suunta)), y: pEtuYla.y + etureuna * Math.sin(_deg(suunta)) };
+      suunta += etur;
+      const pEtuK = etukaannos > 0 ? { x: pEtuAla.x + etukaannos * Math.cos(_deg(suunta)), y: pEtuAla.y + etukaannos * Math.sin(_deg(suunta)) } : null;
+      suunta = 90 + (180 - kaannos_etu);
+      const pPinta = { x: pEtuYla.x + pinta * Math.cos(_deg(suunta)), y: pEtuYla.y + pinta * Math.sin(_deg(suunta)) };
+      suunta += kaannos_taka;
+      const pTaka = { x: pPinta.x + takareuna * Math.cos(_deg(suunta)), y: pPinta.y + takareuna * Math.sin(_deg(suunta)) };
+      const karmiSuunta = 180 + (90 - ikkuna_ang);
+      const pKarmi = ikkuna_len > 0 ? { x: pTaka.x + ikkuna_len * Math.cos(_deg(karmiSuunta)), y: pTaka.y + ikkuna_len * Math.sin(_deg(karmiSuunta)) } : null;
+
+      const points = pKarmi ? [pKarmi, pTaka, pPinta, pEtuYla, pEtuAla] : [pTaka, pPinta, pEtuYla, pEtuAla];
+      if (pEtuK) points.push(pEtuK);
+
+      const extraLines = [];
+      if (paanYlos > 0 && paanAlas > 0) {
+        const pPaanYlosEnd = {
+          x: pPinta.x + (pEtuYla.x - pPinta.x) * (paanYlos / pinta),
+          y: pPinta.y + (pEtuYla.y - pPinta.y) * (paanYlos / pinta)
+        };
+        extraLines.push({ p1: pPinta, p2: pPaanYlosEnd, label: paanYlos, labelSide: -1 });
+        extraLines.push({ p1: pPaanYlosEnd, p2: pEtuYla, label: paanAlas, labelSide: -1 });
+      }
+
+      const baseLabels = pKarmi ? [ikkuna_len, takareuna, pinta, etureuna, etukaannos > 0 ? etukaannos : null]
+                                 : [takareuna, pinta, etureuna, etukaannos > 0 ? etukaannos : null];
+      const baseAngles = pKarmi ? [null, ikkuna_ang + '°', kaannos_taka + '°', kaannos_etu + '°', null, null]
+                                 : [null, kaannos_taka + '°', kaannos_etu + '°', null, null];
+      return { points, labels: baseLabels, extraLines, angleLabels: baseAngles };
     }
   },
   ulkonurkka: {
