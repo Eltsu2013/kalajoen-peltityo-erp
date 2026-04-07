@@ -133,11 +133,10 @@
   .combined-item-row:last-child { border-bottom: none; }
   .combined-item-nimike {
     font-size: 12px; font-weight: 600; color: var(--text);
-    display: flex; align-items: center; gap: 8px;
   }
   .combined-aihio {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--blue); font-weight: 400;
+    color: var(--blue); font-weight: 400; margin-bottom: 2px;
   }
   .combined-rows { display: flex; flex-direction: column; gap: 2px; padding-left: 8px; }
   .combined-pituusrivi {
@@ -147,7 +146,7 @@
   .combined-pituusrivi .ck { color: var(--text); min-width: 50px; }
   .combined-pituusrivi .cm { color: var(--text); min-width: 65px; }
   .combined-pituusrivi .cp { color: var(--blue); min-width: 55px; }
-  .combined-pituusrivi .cko { color: var(--warn); font-weight: 600; min-width: 65px; }
+  .combined-pituusrivi .cko { color: var(--warn); font-weight: 700; min-width: 65px; font-size: 13px; }
   .combined-pituusrivi .ch { color: var(--text-dim); font-size: 10px; }
   .combined-pituusrivi .cs {
     font-size: 10px; padding: 1px 5px; border-radius: 3px;
@@ -2109,7 +2108,15 @@
     <div class="card-view-meta">
       <span id="cardDate"></span>
       <span id="cardDelivery"></span>
-      <span id="cardStatus"></span>
+      <select id="cardStatusSelect" class="filter-select" style="font-size:11px;padding:4px 8px" onchange="changeOrderStatus(this.value)">
+        <option value="IN_PROGRESS">Kesken</option>
+        <option value="QUOTED">Tarjottu</option>
+        <option value="ORDERED">Tilattu</option>
+        <option value="IN_PRODUCTION">Työn alla</option>
+        <option value="COMPLETED">Valmis</option>
+        <option value="INVOICED">Laskutettu</option>
+      </select>
+      <button class="nav-btn" onclick="openInTilaus()" title="Avaa tilaus muokattavaksi" style="font-size:11px;padding:5px 10px">✏️ Muokkaa</button>
     </div>
   </div>
 
@@ -2347,8 +2354,8 @@ function renderCombinedList(orders, mat, color, thick) {
       return `<div class="combined-item-row">
         <div class="combined-item-nimike">
           ${item.nimike || item.profile_type || '—'}
-          ${item.aihio_width_mm ? `<span class="combined-aihio">aihio ${item.aihio_width_mm} mm</span>` : ''}
         </div>
+        ${item.aihio_width_mm ? `<div class="combined-aihio">aihio ${item.aihio_width_mm} mm</div>` : ''}
         <div class="combined-rows">${rowsHtml}</div>
       </div>`;
     }).join('');
@@ -2447,7 +2454,10 @@ function openOrder(orderId) {
     IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu',
     IN_PRODUCTION: 'Työn alla', COMPLETED: 'Valmis'
   };
-  document.getElementById('cardStatus').textContent = STATUS_FI[o.status] || o.status;
+  document.getElementById('cardStatus') && (document.getElementById('cardStatus').textContent = STATUS_FI[o.status] || o.status);
+  // Aseta dropdown oikeaan arvoon
+  const sel = document.getElementById('cardStatusSelect');
+  if (sel) sel.value = o.status || 'IN_PRODUCTION';
 
   renderItemCards(o);
 }
@@ -2516,15 +2526,13 @@ function renderItemCards(order) {
             title="${STEPS[si]}">${STEPS[si]}</button>`;
         }).join('');
 
-        // done_qty kenttä — näkyy vain jos ei WAITING eikä DONE
+        // done_qty kenttä — aina muokattavissa kun ei WAITING eikä DONE
         const doneQtyCell = rs === 'DONE'
           ? `<span class="done-all">✓ kaikki</span>`
-          : rs !== 'WAITING' && doneQty > 0
-            ? `<span class="done-partial">${doneQty}/${totalKpl}</span>`
-            : rs !== 'WAITING'
-              ? `<input type="number" class="done-qty-input" value="${doneQty}" min="0" max="${totalKpl}"
-                  onchange="setRowDoneQty('${r.id}', this.value, ${idx}, '${item.id}')" title="Tehty kpl">`
-              : '';
+          : rs !== 'WAITING'
+            ? `<input type="number" class="done-qty-input" value="${doneQty}" min="0" max="${totalKpl}"
+                onchange="setRowDoneQty('${r.id}', this.value, ${idx}, '${item.id}')" title="Tehty kpl">`
+            : '';
 
         return `<div class="cut-row-wrap${rsDone ? ' row-done' : ''}" style="border-left:3px solid ${rsColor};margin-bottom:2px">
           <div class="cut-row-top">
@@ -2607,6 +2615,27 @@ function renderItemCards(order) {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── Tilauksen statuksen muutos ────────────────────────────────────
+async function changeOrderStatus(newStatus) {
+  if (!activeOrderId) return;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${activeOrderId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ status: newStatus })
+  });
+  if (!res.ok) { alert('Statuksen tallennus epäonnistui'); return; }
+  // Päivitetään paikallinen tila
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (o) o.status = newStatus;
+}
+
+// ── Avaa tilaus muokattavaksi tilaus.html:ssä ─────────────────────
+function openInTilaus() {
+  if (!activeOrderId) return;
+  localStorage.setItem('openOrderId', activeOrderId);
+  window.open('tilaus.html', '_blank');
 }
 
 // ── Rivikohtainen status ───────────────────────────────────────────
@@ -3307,8 +3336,8 @@ function drawKanttausSVG(profileType, vals, opts) {
       const dy = ty(el.p2) - ty(el.p1);
       const len = Math.sqrt(dx*dx + dy*dy) || 1;
       // Normaali viivaa kohti, offset 12px
-      const ox = -dy / len * 13;
-      const oy = dx / len * 13;
+      const ox = dy / len * 13;
+      const oy = -dx / len * 13;
       html += `<text x="${(mx + ox).toFixed(1)}" y="${(my + oy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${el.label}</text>`;
     }
   });
@@ -3323,8 +3352,8 @@ function drawKanttausSVG(profileType, vals, opts) {
     const dy = ty(points[i+1]) - ty(points[i]);
     const len = Math.sqrt(dx*dx + dy*dy) || 1;
     // Normaali vasemmalle puolelle viivaa (offset 13px)
-    const ox = -dy / len * 13;
-    const oy = dx / len * 13;
+    const ox = dy / len * 13;
+    const oy = -dx / len * 13;
     html += `<text x="${(mx + ox).toFixed(1)}" y="${(my + oy).toFixed(1)}" font-size="11" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${lbl}</text>`;
   }
 
