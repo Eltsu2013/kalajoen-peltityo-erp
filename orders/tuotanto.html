@@ -2918,7 +2918,7 @@ const PROD_TYPES = {
         tiiAEnd = { x: x + vals.tiiA_len * Math.cos(_deg(180 - 8)), y: y + vals.tiiA_len * Math.sin(_deg(180 - 8)) };
         if (opts?.tupA) {
           const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(_deg(8)), y: tiiAEnd.y + vals.tupA_len * Math.sin(_deg(8)) };
-          extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len });
+          extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len, labelSide: -1 });
         }
       }
       const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
@@ -2932,8 +2932,8 @@ const PROD_TYPES = {
       if (opts?.tiiB) {
         tiiBEnd = { x: pBend.x + vals.tiiB_len * Math.cos(_deg(suunta + 8)), y: pBend.y + vals.tiiB_len * Math.sin(_deg(suunta + 8)) };
         if (opts?.tupB) {
-          const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(_deg(suunta + 180)), y: tiiBEnd.y + vals.tupB_len * Math.sin(_deg(suunta + 180)) };
-          extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len });
+          const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(_deg(suunta + 172)), y: tiiBEnd.y + vals.tupB_len * Math.sin(_deg(suunta + 172)) };
+          extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelSide: -1 });
         }
       }
       const points = opts?.tiiA ? [tiiAEnd, pA0, pKulma, pBend] : [pA0, pKulma, pBend];
@@ -2945,7 +2945,7 @@ const PROD_TYPES = {
       return { points, labels, extraLines, angleLabels };
     }
   },
-  sisänurkka: {
+  sisanurkka: {
     name: 'Sisänurkka',
     build: (vals, opts) => {
       const extraLines = [];
@@ -2999,7 +2999,7 @@ const PROD_TYPES = {
       if (opts?.taitosB !== false) {
         const taitosSuunta = suuntaB - (180 - (vals.ji_taitos_ang || 25));
         const pT = { x: pB_top.x + (vals.ji_taitos_len||20) * Math.cos(_deg(taitosSuunta)), y: pB_top.y + (vals.ji_taitos_len||20) * Math.sin(_deg(taitosSuunta)) };
-        extraLines.push({ p1: pB_top, p2: pT, label: vals.ji_taitos_len || 20 });
+        extraLines.push({ p1: pB_top, p2: pT, label: vals.ji_taitos_len || 20, labelSide: -1 });
       }
       const points = [pA_top, pOrigin, pB_top];
       const labels = [vals.ji_siv_a, vals.ji_siv_b, null];
@@ -3020,7 +3020,7 @@ const PROD_TYPES = {
       const uraEnd = { x: pKatolle.x + vals.ura_len * Math.cos(_deg(uraLahtoSuunta)), y: pKatolle.y + vals.ura_len * Math.sin(_deg(uraLahtoSuunta)) };
       const tupAAng = uraLahtoSuunta - 172;
       const tupAEnd = { x: uraEnd.x + vals.tupA_len * Math.cos(_deg(tupAAng)), y: uraEnd.y + vals.tupA_len * Math.sin(_deg(tupAAng)) };
-      extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len });
+      extraLines.push({ p1: uraEnd, p2: tupAEnd, label: vals.tupA_len, labelSide: -1 });
       let tiiBEnd = { ...pSeinaYla };
       if (opts?.tiiB) {
         tiiBEnd = { x: pSeinaYla.x + vals.tiiB_len * Math.cos(_deg(90 + 180 + 8)), y: pSeinaYla.y + vals.tiiB_len * Math.sin(_deg(90 + 180 + 8)) };
@@ -3122,34 +3122,100 @@ const PROD_TYPES = {
       return { points, labels, extraLines, angleLabels };
     }
   },
+  // U-lista u — sivut menevät ALAS (pinta ylhäällä)
+  ulista: {
+    name: 'U-lista u',
+    build: (vals, opts) => {
+      const extraLines = [];
+      const pA0 = { x: 0, y: 0 };
+      const pA1 = { x: vals.seg0_len, y: 0 };
+
+      // Sivu B (vasen): A:n vasemmasta päästä ALAS, kulma = 180 - seg0_ang
+      const suuntaB = 180 - vals.seg0_ang;
+      const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
+      const pBend = { x: pA0.x + vals.seg1_len * Math.cos(_deg(suuntaB)), y: pA0.y + vals.seg1_len * Math.sin(_deg(suuntaB)) };
+      const pBendShort = { x: pA0.x + bLen * Math.cos(_deg(suuntaB)), y: pA0.y + bLen * Math.sin(_deg(suuntaB)) };
+
+      // Sivu C (oikea): A:n oikeasta päästä ALAS, kulma = seg1_ang
+      const suuntaC = vals.seg1_ang;
+      const cLen = opts?.tiiC ? vals.seg2_len - vals.tiiC_len : vals.seg2_len;
+      const pCend = { x: pA1.x + vals.seg2_len * Math.cos(_deg(suuntaC)), y: pA1.y + vals.seg2_len * Math.sin(_deg(suuntaC)) };
+      const pCendShort = { x: pA1.x + cLen * Math.cos(_deg(suuntaC)), y: pA1.y + cLen * Math.sin(_deg(suuntaC)) };
+
+      // Tiiviste/tupla vasen (alapää B)
+      let tiiBEnd = opts?.tiiB ? pBendShort : pBend;
+      if (opts?.tiiB) {
+        tiiBEnd = { x: pBendShort.x + vals.tiiB_len * Math.cos(_deg(suuntaB - 8)), y: pBendShort.y + vals.tiiB_len * Math.sin(_deg(suuntaB - 8)) };
+      }
+      if (opts?.tupB) {
+        const tupSuunta = opts?.tiiB ? suuntaB - 180 : suuntaB - 172;
+        const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(_deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(_deg(tupSuunta)) };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelSide: -1 });
+      }
+
+      // Tiiviste/tupla oikea (alapää C)
+      let tiiCEnd = opts?.tiiC ? pCendShort : pCend;
+      if (opts?.tiiC) {
+        tiiCEnd = { x: pCendShort.x + vals.tiiC_len * Math.cos(_deg(suuntaC + 8)), y: pCendShort.y + vals.tiiC_len * Math.sin(_deg(suuntaC + 8)) };
+      }
+      if (opts?.tupC) {
+        const tupSuunta = opts?.tiiC ? suuntaC + 180 : suuntaC + 172;
+        const tupEnd = { x: tiiCEnd.x + vals.tupC_len * Math.cos(_deg(tupSuunta)), y: tiiCEnd.y + vals.tupC_len * Math.sin(_deg(tupSuunta)) };
+        extraLines.push({ p1: tiiCEnd, p2: tupEnd, label: vals.tupC_len });
+      }
+
+      const bStart = opts?.tiiB ? pBendShort : pBend;
+      const cStart = opts?.tiiC ? pCendShort : pCend;
+      const points = [bStart, pA0, pA1, cStart];
+      const labels = [bLen, vals.seg0_len, cLen, null];
+      const angleLabels = [null, vals.seg0_ang + '°', vals.seg1_ang + '°', null];
+      return { points, labels, extraLines, angleLabels };
+    }
+  },
   ulistas: {
     name: 'U-lista s',
     build: (vals, opts) => {
       const extraLines = [];
       const pA0 = { x: 0, y: 0 };
       const pA1 = { x: vals.seg0_len, y: 0 };
+
+      // Sivu B (vasen): A:n vasemmasta päästä YLÖS, kulma = -(180 - seg0_ang)
       const suuntaB = -(180 - vals.seg0_ang);
       const bLen = opts?.tiiB ? vals.seg1_len - vals.tiiB_len : vals.seg1_len;
       const pBend = { x: pA0.x + vals.seg1_len * Math.cos(_deg(suuntaB)), y: pA0.y + vals.seg1_len * Math.sin(_deg(suuntaB)) };
       const pBendShort = { x: pA0.x + bLen * Math.cos(_deg(suuntaB)), y: pA0.y + bLen * Math.sin(_deg(suuntaB)) };
+
+      // Sivu C (oikea): A:n oikeasta päästä YLÖS, kulma = -seg1_ang
       const suuntaC = -vals.seg1_ang;
       const cLen = opts?.tiiC ? vals.seg2_len - vals.tiiC_len : vals.seg2_len;
       const pCend = { x: pA1.x + vals.seg2_len * Math.cos(_deg(suuntaC)), y: pA1.y + vals.seg2_len * Math.sin(_deg(suuntaC)) };
+      const pCendShort = { x: pA1.x + cLen * Math.cos(_deg(suuntaC)), y: pA1.y + cLen * Math.sin(_deg(suuntaC)) };
+
+      // Tiiviste/tupla vasen (yläpää B)
+      let tiiBEnd = opts?.tiiB ? pBendShort : pBend;
+      if (opts?.tiiB) {
+        tiiBEnd = { x: pBendShort.x + vals.tiiB_len * Math.cos(_deg(suuntaB - 8)), y: pBendShort.y + vals.tiiB_len * Math.sin(_deg(suuntaB - 8)) };
+      }
       if (opts?.tupB) {
         const tupSuunta = opts?.tiiB ? suuntaB - 180 : suuntaB - 172;
-        const bPt = opts?.tiiB ? pBendShort : pBend;
-        const tiiBEnd = opts?.tiiB ? { x: bPt.x + vals.tiiB_len * Math.cos(_deg(suuntaB - 8)), y: bPt.y + vals.tiiB_len * Math.sin(_deg(suuntaB - 8)) } : bPt;
         const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(_deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(_deg(tupSuunta)) };
-        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len });
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelSide: -1 });
+      }
+
+      // Tiiviste/tupla oikea (yläpää C)
+      let tiiCEnd = opts?.tiiC ? pCendShort : pCend;
+      if (opts?.tiiC) {
+        tiiCEnd = { x: pCendShort.x + vals.tiiC_len * Math.cos(_deg(suuntaC + 8)), y: pCendShort.y + vals.tiiC_len * Math.sin(_deg(suuntaC + 8)) };
       }
       if (opts?.tupC) {
         const tupSuunta = opts?.tiiC ? suuntaC + 180 : suuntaC + 172;
-        const cPt = opts?.tiiC ? pCend : pCend;
-        const tiiCEnd = opts?.tiiC ? { x: pCend.x + vals.tiiC_len * Math.cos(_deg(suuntaC + 8)), y: pCend.y + vals.tiiC_len * Math.sin(_deg(suuntaC + 8)) } : pCend;
         const tupEnd = { x: tiiCEnd.x + vals.tupC_len * Math.cos(_deg(tupSuunta)), y: tiiCEnd.y + vals.tupC_len * Math.sin(_deg(tupSuunta)) };
         extraLines.push({ p1: tiiCEnd, p2: tupEnd, label: vals.tupC_len });
       }
-      const points = [opts?.tiiB ? pBendShort : pBend, pA0, pA1, opts?.tiiC ? pCend : pCend];
+
+      const bStart = opts?.tiiB ? pBendShort : pBend;
+      const cStart = opts?.tiiC ? pCendShort : pCend;
+      const points = [bStart, pA0, pA1, cStart];
       const labels = [bLen, vals.seg0_len, cLen, null];
       const angleLabels = [null, vals.seg0_ang + '°', vals.seg1_ang + '°', null];
       return { points, labels, extraLines, angleLabels };
@@ -3215,23 +3281,52 @@ const PROD_TYPES = {
       const pA0 = { x: 0, y: 0 };
       const aLen = opts?.tiiA ? vals.seg0_len - vals.tiiA_len : vals.seg0_len;
       const pA1 = { x: vals.seg0_len, y: 0 };
-      let suunta = -(180 - vals.seg0_ang);
-      const pNousu = { x: pA1.x + vals.seg1_len * Math.cos(_deg(suunta)), y: pA1.y + vals.seg1_len * Math.sin(_deg(suunta)) };
-      suunta = 0;
-      const pB0 = { x: pNousu.x, y: pNousu.y };
-      const bLen = opts?.tiiB ? vals.seg2_len - vals.tiiB_len : vals.seg2_len;
-      const pB1 = { x: pNousu.x + vals.seg2_len, y: pNousu.y };
+      const pA1Short = { x: aLen, y: 0 };
+
+      // Tiiviste A vasemmalta
+      let tiiAEnd = { x: 0, y: 0 };
       if (opts?.tiiA) {
-        const tiiEnd = { x: pA0.x + vals.tiiA_len * Math.cos(_deg(180 - 8)), y: pA0.y + vals.tiiA_len * Math.sin(_deg(180 - 8)) };
-        if (opts?.tupA) extraLines.push({ p1: tiiEnd, p2: { x: tiiEnd.x + vals.tupA_len, y: tiiEnd.y }, label: vals.tupA_len });
+        tiiAEnd = { x: pA0.x + vals.tiiA_len * Math.cos(_deg(180 - 8)), y: pA0.y + vals.tiiA_len * Math.sin(_deg(180 - 8)) };
+        if (opts?.tupA) {
+          const tupEnd = { x: tiiAEnd.x + vals.tupA_len * Math.cos(_deg(8)), y: tiiAEnd.y + vals.tupA_len * Math.sin(_deg(8)) };
+          extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.tupA_len, labelSide: -1 });
+        }
       }
+
+      // Nousu lähtee pA1Short:sta (lyhennetystä kohdasta jos tiiviste)
+      const nousAlku = opts?.tiiA ? pA1Short : pA1;
+      const suuntaNousu = -(vals.seg0_ang);
+      const pNousuEnd = {
+        x: nousAlku.x + vals.seg1_len * Math.cos(_deg(suuntaNousu)),
+        y: nousAlku.y + vals.seg1_len * Math.sin(_deg(suuntaNousu))
+      };
+
+      // B pinta: nousun päästä
+      const suuntaB = suuntaNousu + vals.seg1_ang;
+      const bLen = opts?.tiiB ? vals.seg2_len - vals.tiiB_len : vals.seg2_len;
+      const pB1 = {
+        x: pNousuEnd.x + vals.seg2_len * Math.cos(_deg(suuntaB)),
+        y: pNousuEnd.y + vals.seg2_len * Math.sin(_deg(suuntaB))
+      };
+      const pB1Short = {
+        x: pNousuEnd.x + bLen * Math.cos(_deg(suuntaB)),
+        y: pNousuEnd.y + bLen * Math.sin(_deg(suuntaB))
+      };
+
+      // Tiiviste B oikealta
+      let tiiBEnd = opts?.tiiB ? pB1Short : pB1;
       if (opts?.tiiB) {
-        const tiiEnd = { x: pB1.x + vals.tiiB_len * Math.cos(_deg(8)), y: pB1.y + vals.tiiB_len * Math.sin(_deg(8)) };
-        if (opts?.tupB) extraLines.push({ p1: tiiEnd, p2: { x: tiiEnd.x + vals.tupB_len, y: tiiEnd.y }, label: vals.tupB_len });
+        tiiBEnd = { x: pB1Short.x + vals.tiiB_len * Math.cos(_deg(suuntaB + 8)), y: pB1Short.y + vals.tiiB_len * Math.sin(_deg(suuntaB + 8)) };
+        if (opts?.tupB) {
+          const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(_deg(suuntaB + 172)), y: tiiBEnd.y + vals.tupB_len * Math.sin(_deg(suuntaB + 172)) };
+          extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len });
+        }
       }
-      const points = [pA0, pA1, pNousu, pB1];
+
+      const points = [pA0, nousAlku, pNousuEnd, opts?.tiiB ? pB1Short : pB1];
+      if (opts?.tiiB) points.push(tiiBEnd);
       const labels = [aLen, vals.seg1_len, bLen, null];
-      const angleLabels = [null, vals.seg0_ang + '°', vals.seg1_ang + '°', null];
+      const angleLabels = [null, vals.seg0_ang + '°', vals.seg1_ang + '°', null, null];
       return { points, labels, extraLines, angleLabels };
     }
   },
@@ -3241,17 +3336,57 @@ const PROD_TYPES = {
       const extraLines = [];
       const pA = { x: 0, y: 0 };
       const pB = { x: vals.pl_lev || vals.seg0_len || 100, y: 0 };
-      const aInner = { x: pA.x + (vals.pl_tiiA_len || 0) * Math.cos(_deg(8)), y: pA.y + (vals.pl_tiiA_len || 0) * Math.sin(_deg(8)) };
-      const bInner = { x: pB.x - (vals.pl_tiiB_len || 0) * Math.cos(_deg(8)), y: pB.y - (vals.pl_tiiB_len || 0) * Math.sin(_deg(8)) };
-      if (opts?.tiiA && vals.pl_tiiA_len) extraLines.push({ p1: pA, p2: aInner, label: vals.pl_tiiA_len });
-      if (opts?.tupA && vals.pl_tupA_len) extraLines.push({ p1: aInner, p2: { x: aInner.x + vals.pl_tupA_len, y: aInner.y }, label: vals.pl_tupA_len });
-      if (opts?.tiiB && vals.pl_tiiB_len) extraLines.push({ p1: pB, p2: bInner, label: vals.pl_tiiB_len });
-      if (opts?.tupB && vals.pl_tupB_len) extraLines.push({ p1: bInner, p2: { x: bInner.x - vals.pl_tupB_len, y: bInner.y }, label: vals.pl_tupB_len });
-      const points = [pA, pB];
-      const labels = [vals.pl_lev || vals.seg0_len || 100];
+
+      // Pääviiva tiivisteen sisäreunasta sisäreunaan
+      const pAinner = opts?.tiiA ? { x: pA.x + vals.pl_tiiA_len, y: 0 } : pA;
+      const pBinner = opts?.tiiB ? { x: pB.x - vals.pl_tiiB_len, y: 0 } : pB;
+      const levNaytto = (vals.pl_lev || vals.seg0_len || 100)
+        - (opts?.tiiA ? (vals.pl_tiiA_len || 0) : 0)
+        - (opts?.tiiB ? (vals.pl_tiiB_len || 0) : 0);
+
+      // Tiiviste vasen: lähtee pAinner:stä vasemmalle alas
+      let tiiAEnd = pAinner;
+      if (opts?.tiiA && vals.pl_tiiA_len) {
+        const tiiSuunta = 180 - (vals.pl_tiiA_ang || 8);
+        tiiAEnd = {
+          x: pAinner.x + vals.pl_tiiA_len * Math.cos(_deg(tiiSuunta)),
+          y: pAinner.y + vals.pl_tiiA_len * Math.sin(_deg(tiiSuunta))
+        };
+        extraLines.push({ p1: pAinner, p2: tiiAEnd, label: vals.pl_tiiA_len, labelSide: -1 });
+      }
+      if (opts?.tupA && vals.pl_tupA_len) {
+        const tupSuunta = opts?.tiiA ? 0 : 8;
+        const tupEnd = {
+          x: tiiAEnd.x + vals.pl_tupA_len * Math.cos(_deg(tupSuunta)),
+          y: tiiAEnd.y + vals.pl_tupA_len * Math.sin(_deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiAEnd, p2: tupEnd, label: vals.pl_tupA_len, labelSide: -1 });
+      }
+
+      // Tiiviste oikea: lähtee pBinner:stä oikealle alas
+      let tiiBEnd = pBinner;
+      if (opts?.tiiB && vals.pl_tiiB_len) {
+        const tiiSuunta = vals.pl_tiiB_ang || 8;
+        tiiBEnd = {
+          x: pBinner.x + vals.pl_tiiB_len * Math.cos(_deg(tiiSuunta)),
+          y: pBinner.y + vals.pl_tiiB_len * Math.sin(_deg(tiiSuunta))
+        };
+        extraLines.push({ p1: pBinner, p2: tiiBEnd, label: vals.pl_tiiB_len });
+      }
+      if (opts?.tupB && vals.pl_tupB_len) {
+        const tupSuunta = opts?.tiiB ? 180 : 180 - 8;
+        const tupEnd = {
+          x: tiiBEnd.x + vals.pl_tupB_len * Math.cos(_deg(tupSuunta)),
+          y: tiiBEnd.y + vals.pl_tupB_len * Math.sin(_deg(tupSuunta))
+        };
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.pl_tupB_len });
+      }
+
+      const points = [pAinner, pBinner];
+      const labels = [levNaytto];
       return { points, labels, extraLines, angleLabels: [null, null] };
     }
-  },
+  }
 
   // katkaisulista = Ulkoverhouksen katkaisulista — sama geometria kuin avp,
   // samat kentät (takareuna, pinta, etureuna, etukaannos, kaannos_taka, kaannos_etu, etur)
