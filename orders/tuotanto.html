@@ -2351,7 +2351,7 @@ function renderCombinedList(orders, mat, color, thick) {
     const date = (o.order_date || '').slice(0,10).split('-').reverse().join('.');
 
     const itemsHtml = matchItems.map(item => {
-      const rows = (item.order_item_rows || []).sort((a,b) => (a.row_order||0)-(b.row_order||0));
+      const rows = (item.order_item_rows || []).sort((a,b) => (b.kok_mm||0)-(a.kok_mm||0));
       const rowsHtml = rows.map(r => {
         const rs = r.production_status || 'WAITING';
         const rsIdx = STEP_KEYS.indexOf(rs);
@@ -2555,7 +2555,7 @@ function renderItemCards(order) {
 
   grid.innerHTML = sorted.map((item, idx) => {
     const mat = [item.material, item.color, item.thickness_mm ? item.thickness_mm + 'mm' : ''].filter(Boolean).join(' · ');
-    const rows = (item.order_item_rows || []).sort((a,b) => (a.row_order||0)-(b.row_order||0));
+    const rows = (item.order_item_rows || []).sort((a,b) => (b.kok_mm||0)-(a.kok_mm||0));
 
     // Kokonaistatus lasketaan riveistä (tai suoraan itemistä jos ei rivejä)
     const overallStatus = rows.length ? calcItemStatus(rows) : 'WAITING';
