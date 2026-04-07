@@ -2796,6 +2796,7 @@ function lisaaTilaukseen() {
     thickness: document.getElementById('pm-thick').value || null,
     productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
     profileType: activeType === 'ikkunapellit' ? (activeIkkuna === 'alapelti' ? 'avp2' : 'avp') : activeType,
+    source: 'vakiomallit',
   };
 
   // Lähetetään localStoragen kautta — BroadcastChannel ei toimi GitHub Pagesilla luotettavasti
