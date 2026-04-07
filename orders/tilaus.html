@@ -2406,6 +2406,7 @@ function receiveFromMallisto(data) {
     const item = {
       id: 'i_' + Date.now(),
       profileType: data.profileType,
+      source: data.source || null,
       nimike: data.nimike,
       aihio_width_mm: data.aihio_width_mm,
       profile_data: data.profile_data,
@@ -2994,10 +2995,11 @@ function editItem(groupId, itemId) {
   localStorage.setItem('kpt_open_profile', JSON.stringify(context));
 
   // Vakiomallit-profiilit avataan vakiomallit.html:ssä, muut peltipiirturi.html:ssä
-  const vakiomalliTyypit = ['kynnys1', 'alaslaskun', 'hattupelti', 'kattolista', 'raystaslista', 'ikkunapellit'];
+  const vakiomalliTyypit = ['kynnys1', 'alaslaskun', 'hattupelti', 'kattolista', 'raystaslista', 'ikkunapellit', 'katkaisulista'];
   // avp ja avp2 voivat tulla peltipiirturista tai vakiomalleista
-  // Jos vals on tyhjä tai puuttuu → vakiomalli
+  // Tunnistetaan source-kentästä tai tyhjästä vals:sta
   const isVakiomalli = vakiomalliTyypit.includes(item.profileType) ||
+    item.source === 'vakiomallit' ||
     ((item.profileType === 'avp' || item.profileType === 'avp2') &&
      (!item.profile_data?.vals || Object.keys(item.profile_data.vals || {}).length === 0));
 
