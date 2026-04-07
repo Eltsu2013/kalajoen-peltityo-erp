@@ -2996,8 +2996,6 @@ function editItem(groupId, itemId) {
 
   // Vakiomallit-profiilit avataan vakiomallit.html:ssä, muut peltipiirturi.html:ssä
   const vakiomalliTyypit = ['kynnys1', 'alaslaskun', 'hattupelti', 'kattolista', 'raystaslista', 'ikkunapellit', 'katkaisulista'];
-  // avp ja avp2 voivat tulla peltipiirturista tai vakiomalleista
-  // Tunnistetaan source-kentästä tai tyhjästä vals:sta
   const isVakiomalli = vakiomalliTyypit.includes(item.profileType) ||
     item.source === 'vakiomallit' ||
     ((item.profileType === 'avp' || item.profileType === 'avp2') &&
