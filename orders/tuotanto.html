@@ -193,6 +193,18 @@
   .card-customer { font-weight: 600; font-size: 14px; color: var(--text); }
   .card-kohde { font-size: 12px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
   .card-date { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+  .card-status-badge {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    padding: 2px 7px; border-radius: 3px; margin-top: 4px;
+    border: 1px solid currentColor;
+  }
+  .badge-IN_PROGRESS  { color: var(--text-dim); border-color: var(--border); }
+  .badge-QUOTED       { color: #a855f7; border-color: #a855f7; }
+  .badge-ORDERED      { color: var(--blue); border-color: var(--blue); }
+  .badge-IN_PRODUCTION{ color: var(--warn); border-color: var(--warn); }
+  .badge-COMPLETED    { color: var(--accent); border-color: var(--accent); }
+  .badge-INVOICED     { color: #22d3ee; border-color: #22d3ee; }
 
   .card-body { padding: 12px 16px; }
 
@@ -2413,6 +2425,7 @@ function renderOrderList(orders, mat, color, thick) {
         <div class="card-header-info">
           <div class="card-customer">${o.customers?.name || '— ei asiakasta —'}</div>
           <div class="card-kohde">${o.kohde || o.notes || '—'}</div>
+          <span class="card-status-badge badge-${o.status}">${STATUS_FI[o.status] || o.status}</span>
         </div>
         <div class="card-date">
           <div>${date}</div>
@@ -2625,10 +2638,19 @@ async function changeOrderStatus(newStatus) {
     headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
     body: JSON.stringify({ status: newStatus })
   });
-  if (!res.ok) { alert('Statuksen tallennus epäonnistui'); return; }
-  // Päivitetään paikallinen tila
+  if (!res.ok) {
+    const err = await res.text();
+    alert('Statuksen tallennus epäonnistui: ' + res.status + ' ' + err);
+    return;
+  }
+  // Päivitetään paikallinen tila ja renderöidään lista uudelleen
   const o = allOrders.find(x => x.id === activeOrderId);
-  if (o) o.status = newStatus;
+  if (o) {
+    o.status = newStatus;
+    // Päivitetään myös dropdown oikeaan arvoon
+    const sel = document.getElementById('cardStatusSelect');
+    if (sel) sel.value = newStatus;
+  }
 }
 
 // ── Avaa tilaus muokattavaksi tilaus.html:ssä ─────────────────────
