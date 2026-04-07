@@ -2695,23 +2695,43 @@ function __openMallisto(groupId, profileType, nimike) {
 }
 
 function openVakiomallit() {
-  const open = () => {
-    const context = {
-      type: 'OPEN_PROFILE',
-      orderId: currentOrderId,
-      groupId: document.getElementById('group-select').value || null,
-      groupName: '',
-      nimike: '',
-      profileType: 'avp'
+  let groupId = document.getElementById('group-select').value;
+
+  const doOpen = (gId) => {
+    const group = groups.find(g => g.id === gId);
+    const open = () => {
+      const context = {
+        type: 'OPEN_PROFILE',
+        orderId: currentOrderId,
+        groupId: gId,
+        groupName: group?.name || '',
+        nimike: '',
+        profileType: 'avp'
+      };
+      localStorage.setItem('kpt_open_profile', JSON.stringify(context));
+      window.open('vakiomallit.html', '_blank');
     };
-    localStorage.setItem('kpt_open_profile', JSON.stringify(context));
-    window.open('vakiomallit.html', '_blank');
+    if (!currentOrderId) {
+      createOrder().then(open);
+    } else {
+      open();
+    }
   };
-  if (!currentOrderId) {
-    createOrder().then(open);
-  } else {
-    open();
+
+  // Jos ei ole ryhmää, luodaan uusi — sama kuin openMallisto
+  if (!groupId || groupId === '__new__') {
+    const nimi = document.getElementById('new-group-name').value;
+    if (!nimi) {
+      if (!confirm('Ryhmälle ei ole annettu nimeä. Tehdäänkö tilaus ilman ryhmän nimeä?')) return;
+    }
+    addGroup();
+    const newGroup = groups[groups.length-1];
+    if (newGroup) {
+      setTimeout(() => doOpen(newGroup.id), 100);
+    }
+    return;
   }
+  doOpen(groupId);
 }
 
 // ── Asiakkaan muokkaus / lisäys ──────────────────────────────────
