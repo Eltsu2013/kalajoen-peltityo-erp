@@ -307,6 +307,12 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 13px;
     color: var(--blue); margin-bottom: 6px;
   }
+  .aihio-width-centered {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    color: var(--blue); text-align: center; margin-bottom: 4px;
+  }
+  .kanttaus-section { display: flex; flex-direction: column; align-items: center; }
+  .cut-section { width: 100%; }
   .cut-list { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .cut-list-header {
     display: flex; gap: 0; padding: 3px 0 3px 6px;
@@ -339,12 +345,10 @@
     background: #fff;
     border-radius: 4px;
     padding: 8px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    display: inline-block;
     min-height: 60px;
   }
-  .kanttaus-svg { flex-shrink: 0; }
+  .kanttaus-svg { display: block; }
   .kanttaus-vals {
     display: flex; flex-direction: column; gap: 2px;
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
@@ -434,26 +438,37 @@
   /* TULOSTUS */
   @media print {
     header, .filter-bar, .nav-menu-wrap, .back-btn,
-    .status-row, .card-view-meta .print-hide,
+    .row-steps, .done-qty-cell, .done-qty-input, .done-all,
+    #cardStatusSelect, .nav-btn, .card-status-mini, .card-status-badge,
     .header-right { display: none !important; }
     body { background: #fff; color: #000; }
+    @page { margin: 12mm; }
+    /* Poistaa selaimen automaattisen alatunnisteen (URL, sivunumero) */
+    @page { size: A4; margin: 12mm; }
     .card-view-header {
       background: #fff; border-bottom: 2px solid #000;
-      padding: 8px 0; color: #000;
+      padding: 8px 0; color: #000; text-align: center;
     }
-    .card-view-title { color: #000; font-size: 14px; }
+    .card-view-title { color: #000; font-size: 16px; font-weight: 700; text-align: center; }
+    .card-view-meta { justify-content: center; gap: 16px; }
+    #cardKohde { text-align: center; }
     .item-card { border: 1px solid #ccc; break-inside: avoid; margin-bottom: 12px; }
     .item-card-header { background: #f5f5f5; }
-    .item-material, .aihio-width { color: #000; }
+    .item-material { color: #000; }
+    .aihio-width-centered { color: #1a1a1a; }
     .cut-table th, .cut-table td { color: #000; }
-    .cut-table .kpl { color: #000; }
-    .cut-table .paat { color: #333; }
-    .cut-table .kok { color: #000; }
+    .cut-list .kpl { color: #000; }
+    .cut-list .paat { color: #333; }
+    .cut-list .kok { color: #000; font-weight: 700; }
+    .cut-list .mitta { color: #000; }
+    .cut-row-bottom { border-bottom: none; }
     .items-grid { grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 0; }
-    .block-title { color: #555; }
-    .kanttaus-block { background: #fff; border: 1px solid #ccc; }
+    .kanttaus-section { align-items: center; }
+    .kanttaus-block { background: #fff; border: none; padding: 4px; }
     .item-card-body { padding: 8px 10px; }
     .page { padding: 0; }
+    .cut-list-header .done-qty-cell,
+    .cut-row-top .done-qty-cell { display: none; }
   }
 </style>
 </head>
@@ -2589,9 +2604,7 @@ function renderItemCards(order) {
       }).join('');
 
       cutTable = `
-        <div>
-          <div class="block-title">Leikkaus</div>
-          ${item.aihio_width_mm ? `<div class="aihio-width">Aihio: ${item.aihio_width_mm} mm</div>` : ''}
+        <div class="cut-section">
           <div class="cut-list">
             <div class="cut-list-header">
               <span class="mitta">mitta mm</span>
@@ -2613,12 +2626,11 @@ function renderItemCards(order) {
       const svgHtml = drawKanttausSVG(item.profile_type, vals, opts);
       const valsTable = buildValsTable(item.profile_type, vals);
       kanttausBlock = `
-        <div>
-          <div class="block-title">Kanttaus</div>
+        <div class="kanttaus-section">
+          ${item.aihio_width_mm ? `<div class="aihio-width-centered">Aihio: ${item.aihio_width_mm} mm</div>` : ''}
           <div class="kanttaus-block">
             ${svgHtml
-              ? `<div class="kanttaus-svg">${svgHtml}</div>
-                 <div class="kanttaus-vals">${valsTable}</div>`
+              ? `<div class="kanttaus-svg">${svgHtml}</div>`
               : `<span class="kanttaus-placeholder">${item.profile_type} — ei piirrostietoja</span>`
             }
           </div>
@@ -2648,8 +2660,8 @@ function renderItemCards(order) {
         ${isDone ? '<span class="item-done-badge">✓ VALMIS</span>' : ''}
       </div>
       <div class="item-card-body">
-        ${cutTable}
         ${kanttausBlock}
+        ${cutTable}
         ${kapBlock}
       </div>
     </div>`;
@@ -2844,7 +2856,8 @@ const PROD_TYPES = {
 
       const labels = [takareuna, pinta, etureuna, etukaannos > 0 ? etukaannos : null];
       const angleLabels = [null, kaannos_taka + '°', kaannos_etu + '°', null, null];
-      return { points, labels, extraLines, angleLabels };
+      const angleOffsetSides = [null, 1, -1, null, null]; // etureuna-kulma vasemmalle
+      return { points, labels, extraLines, angleLabels, angleOffsetSides };
     }
   },
   avp2: {
@@ -3158,7 +3171,8 @@ const PROD_TYPES = {
       if (pEtukaannos) points.push(pEtukaannos);
       const labels = [vals.seg0_len, vals.seg1_len, vals.seg2_len, vals.seg3_len > 0 ? vals.seg3_len : null];
       const angleLabels = [null, vals.seg0_ang + '°', vals.seg1_ang + '°', null, null];
-      return { points, labels, extraLines: [], angleLabels };
+      const angleOffsetSides = [null, 1, -1, null, null]; // etureuna-kulma vasemmalle
+      return { points, labels, extraLines: [], angleLabels, angleOffsetSides };
     }
   },
   hattulista: {
@@ -3257,7 +3271,8 @@ const PROD_TYPES = {
       if (pEtuK) points.push(pEtuK);
       const labels = [vals.takareuna, vals.pinta, vals.etureuna, vals.etukaannos > 0 ? vals.etukaannos : null];
       const angleLabels = [null, (vals.kaannos_taka||72) + '°', (vals.kaannos_etu||72) + '°', null, null];
-      return { points, labels, extraLines: [], angleLabels };
+      const angleOffsetSides = [null, 1, -1, null, null];
+      return { points, labels, extraLines: [], angleLabels, angleOffsetSides };
     }
   },
 
@@ -3515,27 +3530,24 @@ function drawKanttausSVG(profileType, vals, opts) {
   }
 
   // Kulmat taitospisteisiin (ei alku- eikä loppupiste)
+  const angleOffsetSides = result.angleOffsetSides || [];
   points.forEach((p, i) => {
     const isEnd = i === 0 || i === points.length - 1;
     const aLbl = angleLabels[i];
     if (aLbl && !isEnd) {
-      // Laskee automaattisen offsetin: kulman bisektori osoittaa sisään
-      // Suunta sisäänpäin = keskiarvo saapuvan ja lähtevän vektorin normaaleista
       const prev = points[i-1];
       const next = points[i+1];
       const inDx = p.x - prev.x, inDy = p.y - prev.y;
       const outDx = next.x - p.x, outDy = next.y - p.y;
       const inLen = Math.sqrt(inDx*inDx + inDy*inDy) || 1;
       const outLen = Math.sqrt(outDx*outDx + outDy*outDy) || 1;
-      // Yksikkövektorit
       const inUx = inDx/inLen, inUy = inDy/inLen;
       const outUx = outDx/outLen, outUy = outDy/outLen;
-      // Bisektori = saapuvan ja lähtevän summa (normalisoitu)
       let bx = inUx + outUx, by = inUy + outUy;
       const bLen = Math.sqrt(bx*bx + by*by) || 1;
       bx /= bLen; by /= bLen;
-      // Offset 16px bisektorin suuntaan
-      const offBx = bx * 16, offBy = by * 16;
+      const side = angleOffsetSides[i] !== undefined ? angleOffsetSides[i] : 1;
+      const offBx = bx * 16 * side, offBy = by * 16 * side;
       html += `<text x="${(tx(p) + offBx).toFixed(1)}" y="${(ty(p) + offBy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="700" fill="#c0392b" text-anchor="middle" dominant-baseline="middle">${aLbl}</text>`;
     }
   });
