@@ -2980,7 +2980,44 @@ document.querySelector('.type-bar').after(ikkunaSubbar);
 // INIT
 // =============================================
 fetchPmProducts();
-setType('ikkunapellit');
+
+// Jos muokkaustila — aseta oikea profiilityyppi ja palauta rivit
+if (tilausContext && tilausContext.editItemId && tilausContext.existingData) {
+  const pt = tilausContext.profileType || 'ikkunapellit';
+  // Muunna profileType vakiomallit-tyyppiin
+  const typeMap = {
+    'avp': 'ikkunapellit', 'avp2': 'ikkunapellit',
+    'kynnys1': 'kynnys1', 'alaslaskun': 'alaslaskun',
+    'hattupelti': 'hattupelti', 'katkaisulista': 'katkaisulista',
+    'kattolista': 'kattolista', 'raystaslista': 'raystaslista'
+  };
+  const mappedType = typeMap[pt] || 'ikkunapellit';
+  setType(mappedType);
+  // Alapelti erikseen
+  if (pt === 'avp2') setIkkunapelti('alapelti');
+  // Palauta pituusrivit
+  if (tilausContext.existingRows && tilausContext.existingRows.length > 0) {
+    rivit = tilausContext.existingRows.map(r => ({
+      mitta: r.mitta || '',
+      paat: r.paat || '',
+      kok: r.kok || '',
+      kpl: r.kpl || 1,
+      huomio: r.huomio || ''
+    }));
+  }
+  // Palauta vals kenttiin
+  if (tilausContext.existingData.vals) {
+    setTimeout(() => {
+      Object.entries(tilausContext.existingData.vals).forEach(([key, val]) => {
+        const el = document.getElementById('f_' + key);
+        if (el) { el.value = val; }
+      });
+      laske();
+    }, 100);
+  }
+} else {
+  setType('ikkunapellit');
+}
 renderRivit();
 function toggleNav(e) {
   e.stopPropagation();
