@@ -3152,11 +3152,14 @@ const PROD_TYPES = {
       extraLines.push({ p1: nokkEnd, p2: tupBEnd, label: vals.tupB_len });
       const points = [harjaEnd, pA0, pKulma, pBend, nokkEnd];
       const labels = [vals.harja_len, vals.seg0_len, vals.seg1_len, vals.nokka_len, null];
+      // nokka_ang bisektorin kautta mutta siirretään alas (angleOffsetSides -1 ei riitä)
+      // käytetään angleOffsetPx joka antaa suoran pikselioffsetin
       const angleLabels = [null, null, vals.seg0_ang + '°', vals.nokka_ang + '°', null];
-      const angleOffsetSides = [null, null, 1, -1, null]; // nokka_ang vasemmalle
-      // Uraan kulma näytetään tupla A:n oikealle puolelle omana extraLine-tekstinä
-      extraLines.push({ p1: harjaEnd, p2: tupAEnd, label: null, angleText: vals.harja_ang + '°' });
-      return { points, labels, extraLines, angleLabels, angleOffsetSides };
+      const angleOffsetSides = [null, null, 1, -1, null];
+      const angleOffsetPx = [null, null, null, [0, 12], null]; // nokka_ang 12px alaspäin
+      // Uraan kulma tupla A:n yläpuolelle ja oikealle
+      extraLines.push({ p1: harjaEnd, p2: tupAEnd, label: null, angleText: vals.harja_ang + '°', angleTextOffsetX: 14, angleTextOffsetY: -14 });
+      return { points, labels, extraLines, angleLabels, angleOffsetSides, angleOffsetPx };
     }
   },
   paatypelti_huopa: {
@@ -3731,9 +3734,8 @@ function drawKanttausSVG(profileType, vals, opts) {
       const dx = tx(el.p2) - tx(el.p1);
       const dy = ty(el.p2) - ty(el.p1);
       const len = Math.sqrt(dx*dx + dy*dy) || 1;
-      // Kulmateksti vastakkaiselle puolelle kuin normaali label
-      const ox = -dy / len * 13;
-      const oy = dx / len * 13;
+      const ox = -dy / len * 13 + (el.angleTextOffsetX || 0);
+      const oy = dx / len * 13 + (el.angleTextOffsetY || 0);
       html += `<text x="${(mx + ox).toFixed(1)}" y="${(my + oy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="700" fill="#c0392b" text-anchor="middle" dominant-baseline="middle">${el.angleText}</text>`;
     }
   });
@@ -3755,6 +3757,7 @@ function drawKanttausSVG(profileType, vals, opts) {
 
   // Kulmat taitospisteisiin (ei alku- eikä loppupiste)
   const angleOffsetSides = result.angleOffsetSides || [];
+  const angleOffsetPx = result.angleOffsetPx || [];
   points.forEach((p, i) => {
     const isEnd = i === 0 || i === points.length - 1;
     const aLbl = angleLabels[i];
@@ -3771,7 +3774,12 @@ function drawKanttausSVG(profileType, vals, opts) {
       const bLen = Math.sqrt(bx*bx + by*by) || 1;
       bx /= bLen; by /= bLen;
       const side = angleOffsetSides[i] !== undefined ? angleOffsetSides[i] : 1;
-      const offBx = bx * 16 * side, offBy = by * 16 * side;
+      let offBx = bx * 16 * side, offBy = by * 16 * side;
+      // Jos angleOffsetPx annettu, lisätään pikselioffset bisektorin päälle
+      if (angleOffsetPx[i]) {
+        offBx += angleOffsetPx[i][0];
+        offBy += angleOffsetPx[i][1];
+      }
       html += `<text x="${(tx(p) + offBx).toFixed(1)}" y="${(ty(p) + offBy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="700" fill="#c0392b" text-anchor="middle" dominant-baseline="middle">${aLbl}</text>`;
     }
   });
