@@ -3576,17 +3576,20 @@ const PROD_TYPES = {
       const tupB = vals.tupB || 15, ang0 = vals.ang0 || 97, ang1 = vals.ang1 || 90;
       const pA0 = { x: 0, y: 0 };
       const pA1 = { x: seg0, y: 0 };
+      // Vasen sivu: alas, suuntaB = 180 - ang0
       const suuntaB = 180 - ang0;
       const pBend = { x: pA0.x + seg1 * Math.cos(_deg(suuntaB)), y: pA0.y + seg1 * Math.sin(_deg(suuntaB)) };
-      const tupSuunta = suuntaB - 172;
-      const pTupB = { x: pBend.x + tupB * Math.cos(_deg(tupSuunta)), y: pBend.y + tupB * Math.sin(_deg(tupSuunta)) };
+      // Tupla vasen: suuntaB - 172
+      const tupBSuunta = suuntaB - 172;
+      const pTupB = { x: pBend.x + tupB * Math.cos(_deg(tupBSuunta)), y: pBend.y + tupB * Math.sin(_deg(tupBSuunta)) };
+      // Oikea sivu: alas, suuntaC = ang1
       const suuntaC = ang1;
       const pCend = { x: pA1.x + seg2 * Math.cos(_deg(suuntaC)), y: pA1.y + seg2 * Math.sin(_deg(suuntaC)) };
-      const extraLines = [{ p1: pBend, p2: pTupB, label: tupB }];
-      const points = [pBend, pA0, pA1, pCend];
-      const labels = [seg1, seg0, seg2, null];
-      const angleLabels = [null, ang0 + '°', ang1 + '°', null];
-      return { points, labels, extraLines, angleLabels };
+      // pTupB pääviivaan (kuten alkuperäisessä buildUlista)
+      const points = [pTupB, pBend, pA0, pA1, pCend];
+      const labels = [tupB, seg1, seg0, seg2, null];
+      const angleLabels = [null, null, ang0 + '°', ang1 + '°', null];
+      return { points, labels, extraLines: [], angleLabels };
     }
   },
   hattupelti: {
@@ -3605,14 +3608,11 @@ const PROD_TYPES = {
       const pCend = { x: pA1.x + seg2 * Math.cos(_deg(suuntaC)), y: pA1.y + seg2 * Math.sin(_deg(suuntaC)) };
       const tupCSuunta = suuntaC + 172;
       const pTupC = { x: pCend.x + tupC * Math.cos(_deg(tupCSuunta)), y: pCend.y + tupC * Math.sin(_deg(tupCSuunta)) };
-      const extraLines = [
-        { p1: pBend, p2: pTupB, label: tupB },
-        { p1: pCend, p2: pTupC, label: tupC }
-      ];
-      const points = [pBend, pA0, pA1, pCend];
-      const labels = [seg1, seg0, seg2, null];
-      const angleLabels = [null, ang0 + '°', ang1 + '°', null];
-      return { points, labels, extraLines, angleLabels };
+      // Molemmat tuplat pääviivaan
+      const points = [pTupB, pBend, pA0, pA1, pCend, pTupC];
+      const labels = [tupB, seg1, seg0, seg2, tupC, null];
+      const angleLabels = [null, null, ang0 + '°', ang1 + '°', null, null];
+      return { points, labels, extraLines: [], angleLabels };
     }
   },
   kattolista: {
@@ -3624,16 +3624,17 @@ const PROD_TYPES = {
       const pKulma = { x: pA0.x + seg0, y: 0 };
       const suunta = -ang0;
       const pBend = { x: pKulma.x + seg1 * Math.cos(_deg(suunta)), y: pKulma.y + seg1 * Math.sin(_deg(suunta)) };
+      // Tupla A: lähtee pA0:sta 8° suuntaan
       const pTupA = { x: pA0.x + tupA * Math.cos(_deg(8)), y: pA0.y + tupA * Math.sin(_deg(8)) };
+      // Tupla B: lähtee pBend:stä suunta+172
       const tupBSuunta = suunta + 172;
       const pTupB = { x: pBend.x + tupB * Math.cos(_deg(tupBSuunta)), y: pBend.y + tupB * Math.sin(_deg(tupBSuunta)) };
-      const extraLines = [
-        { p1: pA0, p2: pTupA, label: tupA },
-        { p1: pBend, p2: pTupB, label: tupB }
-      ];
-      const points = [pA0, pKulma, pBend];
-      const labels = [seg0, seg1, null];
-      const angleLabels = [null, ang0 + '°', null];
+      // Alkuperäisen mukaan: pts = [pTupA, pA0, pKulma, pBend], tuplat erillisinä viivoina
+      // mutta skaalauksen kannalta lisätään pTupB pistelistaan
+      const points = [pTupA, pA0, pKulma, pBend];
+      const labels = [tupA, seg0, seg1, null];
+      const angleLabels = [null, null, ang0 + '°', null];
+      const extraLines = [{ p1: pBend, p2: pTupB, label: tupB }];
       return { points, labels, extraLines, angleLabels };
     }
   },
