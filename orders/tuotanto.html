@@ -90,7 +90,23 @@
     color: var(--text); font-family: 'IBM Plex Mono', monospace;
     font-size: 12px; padding: 6px 10px; border-radius: 4px; cursor: pointer;
   }
-  .filter-select:focus { outline: none; border-color: var(--accent); }
+  .filter-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .status-filter-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .status-filter-btn {
+    background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 4px 8px; border-radius: 3px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .status-filter-btn.active {
+    background: var(--accent-glow); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+  .status-filter-btn[data-status="ORDERED"].active { border-color: var(--blue); color: var(--blue); background: rgba(58,143,232,0.12); }
+  .status-filter-btn[data-status="IN_PRODUCTION"].active { border-color: var(--warn); color: var(--warn); background: rgba(232,160,32,0.12); }
+  .status-filter-btn[data-status="IN_PROGRESS"].active { border-color: var(--text-dim); color: var(--text); background: rgba(149,149,160,0.12); }
+  .status-filter-btn[data-status="QUOTED"].active { border-color: #a855f7; color: #a855f7; background: rgba(168,85,247,0.12); }
+  .status-filter-btn[data-status="COMPLETED"].active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .filter-select option { background: var(--panel2); }
   .filter-clear {
     background: none; border: 1px solid var(--border); color: var(--text-dim);
@@ -455,7 +471,14 @@
     .item-card { border: 1px solid #ccc; break-inside: avoid; margin-bottom: 12px; }
     .item-card-header { background: #f5f5f5; }
     .item-material { color: #000; }
-    .aihio-width-centered { color: #1a1a1a; }
+    .aihio-width-centered { color: #1a1a1a; font-weight: 700; }
+    /* Kaikki SVG-tekstit mustiksi tulostuksessa */
+    .kanttaus-block text { fill: #000 !important; }
+    svg text { fill: #000 !important; }
+    .cut-list .mitta, .cut-list .paat, .cut-list .kok,
+    .cut-list .kpl, .cut-list-header span { color: #000 !important; }
+    .item-nimike, .item-material { color: #000 !important; }
+    .status-filter-btns, .filter-divider { display: none; }
     .cut-table th, .cut-table td { color: #000; }
     .cut-list .kpl { color: #000; }
     .cut-list .paat { color: #333; }
@@ -2099,9 +2122,18 @@
 <!-- ══════════════════════════════════════════════ -->
 <div id="view-list" class="page">
 
-  <!-- Materiaalisuodatin -->
+  <!-- Suodatinpalkki -->
   <div class="filter-bar">
-    <span class="filter-label">MATERIAALI:</span>
+    <span class="filter-label">STATUS:</span>
+    <div class="status-filter-btns" id="statusFilterBtns">
+      <button class="status-filter-btn active" data-status="ORDERED" onclick="toggleStatusFilter('ORDERED')">Tilattu</button>
+      <button class="status-filter-btn active" data-status="IN_PRODUCTION" onclick="toggleStatusFilter('IN_PRODUCTION')">Työn alla</button>
+      <button class="status-filter-btn" data-status="IN_PROGRESS" onclick="toggleStatusFilter('IN_PROGRESS')">Kesken</button>
+      <button class="status-filter-btn" data-status="QUOTED" onclick="toggleStatusFilter('QUOTED')">Tarjottu</button>
+      <button class="status-filter-btn" data-status="COMPLETED" onclick="toggleStatusFilter('COMPLETED')">Valmis</button>
+    </div>
+    <div class="filter-divider"></div>
+    <span class="filter-label">MAT:</span>
     <select class="filter-select" id="filterMaterial" onchange="onMaterialChange()">
       <option value="">— Kaikki —</option>
     </select>
@@ -2169,12 +2201,28 @@ const headers = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` 
 let allOrders = [];       // Kaikki tilaukset + order_items
 let activeOrderId = null;
 let combinedListActive = false;
+// Oletuksena Tilattu + Työn alla näkyvissä
+let activeStatusFilters = new Set(['ORDERED', 'IN_PRODUCTION']);
+
+// ── Statussuodatin ─────────────────────────────────────────────────
+function toggleStatusFilter(status) {
+  if (activeStatusFilters.has(status)) {
+    // Älä poista jos se on viimeinen
+    if (activeStatusFilters.size > 1) activeStatusFilters.delete(status);
+  } else {
+    activeStatusFilters.add(status);
+  }
+  // Päivitä nappien ulkonäkö
+  document.querySelectorAll('.status-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', activeStatusFilters.has(btn.dataset.status));
+  });
+  applyFilter();
+}
 
 // ── Supabase-haku ─────────────────────────────────────────────────
 async function loadOrders() {
-  // Haetaan aktiiviset tilaukset (ei DRAFT, ei ARCHIVED)
+  // Haetaan kaikki aktiiviset tilaukset (ei DRAFT, ei ARCHIVED) — suodatus clientissä
   const statuses = ['IN_PROGRESS','QUOTED','ORDERED','IN_PRODUCTION','COMPLETED'];
-  const statusFilter = statuses.map(s => `"${s}"`).join(',');
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/orders?status=in.(${statuses.join(',')})` +
     `&order=order_date.asc` +
@@ -2254,14 +2302,14 @@ function applyFilter() {
   const combinedBtn = document.getElementById('combinedListBtn');
   combinedBtn.style.display = mat ? 'block' : 'none';
   if (!mat) {
-    // Piilotetaan yhteislista jos suodatin tyhjennetään
     combinedListActive = false;
     combinedBtn.classList.remove('active');
     document.getElementById('combinedList').style.display = 'none';
     document.getElementById('ordersGrid').style.display = 'grid';
   }
 
-  let filtered = allOrders;
+  // Suodatetaan ensin statuksen mukaan
+  let filtered = allOrders.filter(o => activeStatusFilters.has(o.status));
   if (mat) {
     filtered = allOrders.filter(o =>
       o.items.some(i =>
@@ -2627,7 +2675,7 @@ function renderItemCards(order) {
       const valsTable = buildValsTable(item.profile_type, vals);
       kanttausBlock = `
         <div class="kanttaus-section">
-          ${item.aihio_width_mm ? `<div class="aihio-width-centered">Aihio: ${item.aihio_width_mm} mm</div>` : ''}
+          ${item.aihio_width_mm ? `<div class="aihio-width-centered"><strong>LL= ${item.aihio_width_mm} mm</strong></div>` : ''}
           <div class="kanttaus-block">
             ${svgHtml
               ? `<div class="kanttaus-svg">${svgHtml}</div>`
