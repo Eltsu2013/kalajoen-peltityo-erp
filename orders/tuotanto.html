@@ -2964,7 +2964,7 @@ const PROD_TYPES = {
       if (opts?.tupB) {
         const tupSuunta = opts?.tiiB ? suunta + 180 : suunta + 172;
         const tupEnd = { x: tiiBEnd.x + vals.tupB_len * Math.cos(_deg(tupSuunta)), y: tiiBEnd.y + vals.tupB_len * Math.sin(_deg(tupSuunta)) };
-        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelSide: -1 });
+        extraLines.push({ p1: tiiBEnd, p2: tupEnd, label: vals.tupB_len, labelSide: 1 });
       }
 
       const angleLabels = new Array(points.length).fill(null);
@@ -3151,10 +3151,12 @@ const PROD_TYPES = {
       const tupBEnd = { x: nokkEnd.x + vals.tupB_len * Math.cos(_deg(tupBSuunta)), y: nokkEnd.y + vals.tupB_len * Math.sin(_deg(tupBSuunta)) };
       extraLines.push({ p1: nokkEnd, p2: tupBEnd, label: vals.tupB_len });
       const points = [harjaEnd, pA0, pKulma, pBend, nokkEnd];
-      // harja_len näkyy pääviivassa, tupA näkyy extraLinessä vastakkaisella puolella
       const labels = [vals.harja_len, vals.seg0_len, vals.seg1_len, vals.nokka_len, null];
       const angleLabels = [null, null, vals.seg0_ang + '°', vals.nokka_ang + '°', null];
-      return { points, labels, extraLines, angleLabels };
+      const angleOffsetSides = [null, null, 1, -1, null]; // nokka_ang vasemmalle
+      // Uraan kulma näytetään tupla A:n oikealle puolelle omana extraLine-tekstinä
+      extraLines.push({ p1: harjaEnd, p2: tupAEnd, label: null, angleText: vals.harja_ang + '°' });
+      return { points, labels, extraLines, angleLabels, angleOffsetSides };
     }
   },
   paatypelti_huopa: {
@@ -3721,6 +3723,18 @@ function drawKanttausSVG(profileType, vals, opts) {
       const ox = dy / len * 13 * side;
       const oy = -dx / len * 13 * side;
       html += `<text x="${(mx + ox).toFixed(1)}" y="${(my + oy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${el.label}</text>`;
+    }
+    // Kulmateksti extraLinelle (esim. harja_ang päätypellissä)
+    if (el.angleText) {
+      const mx = (tx(el.p1) + tx(el.p2)) / 2;
+      const my = (ty(el.p1) + ty(el.p2)) / 2;
+      const dx = tx(el.p2) - tx(el.p1);
+      const dy = ty(el.p2) - ty(el.p1);
+      const len = Math.sqrt(dx*dx + dy*dy) || 1;
+      // Kulmateksti vastakkaiselle puolelle kuin normaali label
+      const ox = -dy / len * 13;
+      const oy = dx / len * 13;
+      html += `<text x="${(mx + ox).toFixed(1)}" y="${(my + oy).toFixed(1)}" font-size="10" font-family="IBM Plex Mono,monospace" font-weight="700" fill="#c0392b" text-anchor="middle" dominant-baseline="middle">${el.angleText}</text>`;
     }
   });
 
