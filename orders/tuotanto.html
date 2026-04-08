@@ -349,12 +349,14 @@
   .cut-row-wrap:last-child .cut-row-bottom { border-bottom: none; }
 
   /* Sarakeleveydet — sekä header että data-riveille */
-  .cut-list .mitta, .cut-list-header .mitta { width: 72px; color: var(--text); }
-  .cut-list .paat,  .cut-list-header .paat  { width: 58px; color: var(--blue); }
-  .cut-list .kok,   .cut-list-header .kok   { width: 64px; color: var(--warn); font-weight: 600; }
-  .cut-list .kpl,   .cut-list-header .kpl   { width: 40px; color: var(--accent); font-weight: 600; }
+  .cut-list .mitta, .cut-list-header .mitta { width: 56px; color: var(--text); }
+  .cut-list .paat,  .cut-list-header .paat  { width: 46px; color: var(--blue); }
+  .cut-list .kok,   .cut-list-header .kok   { width: 52px; color: var(--warn); font-weight: 600; }
+  .cut-list .kpl,   .cut-list-header .kpl   { width: 32px; color: var(--accent); font-weight: 600; }
   .cut-list .done-qty-cell,
-  .cut-list-header .done-qty-cell            { width: 70px; }
+  .cut-list-header .done-qty-cell            { width: 56px; }
+  .cut-list .huomio-cell,
+  .cut-list-header .huomio-cell              { flex: 1; color: var(--warn); font-size: 11px; min-width: 60px; }
 
   /* KANTTAUS-lohko */
   .kanttaus-block {
@@ -2643,9 +2645,9 @@ function renderItemCards(order) {
             <span class="kok">${r.kok_mm || ''}</span>
             <span class="kpl">${totalKpl}</span>
             <span class="done-qty-cell">${doneQtyCell}</span>
+            <span class="huomio-cell">${r.huomio ? '⚠ ' + r.huomio : ''}</span>
           </div>
           <div class="cut-row-bottom">
-            ${r.huomio ? `<span class="huomio-tag">⚠ ${r.huomio}</span>` : ''}
             <div class="row-steps">${rowSteps}</div>
           </div>
         </div>`;
@@ -2655,11 +2657,12 @@ function renderItemCards(order) {
         <div class="cut-section">
           <div class="cut-list">
             <div class="cut-list-header">
-              <span class="mitta">mitta mm</span>
-              <span class="paat">päät mm</span>
-              <span class="kok">kok mm</span>
+              <span class="mitta">mitta</span>
+              <span class="paat">päät</span>
+              <span class="kok">kok</span>
               <span class="kpl">kpl</span>
               <span class="done-qty-cell">tehty</span>
+              <span class="huomio-cell">huomio</span>
             </div>
             ${rowsHtml}
           </div>
