@@ -2445,6 +2445,7 @@ function renderCombinedList(orders, mat, color, thick) {
           <span class="cm">${r.mitta_mm || ''}</span>
           <span class="cp">${r.paat_mm ? '+ ' + r.paat_mm : ''}</span>
           <span class="cko">${r.kok_mm || ''}</span>
+          <span class="ck">${totalKpl} kpl</span>
           <span class="done-qty-cell" style="min-width:60px">${doneQtyHtml}</span>
           <div class="row-steps">${rowSteps}</div>
           ${r.huomio ? `<span class="ch">⚠ ${r.huomio}</span>` : ''}
