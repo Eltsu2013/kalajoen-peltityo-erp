@@ -2384,12 +2384,14 @@ const STATUS_FI_ROW = { WAITING: 'Odottaa', CUT: 'Leikattu', BENT: 'Kantattu', E
 
 function renderCombinedList(orders, mat, color, thick) {
   const list = document.getElementById('combinedList');
-  if (!orders.length) {
+  // Yhteislistaan vain aktiiviset tuotantotilaukset — ei valmiita eikä muita
+  const activeOrders = orders.filter(o => o.status === 'ORDERED' || o.status === 'IN_PRODUCTION');
+  if (!activeOrders.length) {
     list.innerHTML = '<div class="empty-state">Ei rivejä valituilla suodattimilla</div>';
     return;
   }
 
-  list.innerHTML = orders.map(o => {
+  list.innerHTML = activeOrders.map(o => {
     // Vain suodatetut rivit tästä tilauksesta
     const matchItems = o.items.filter(i =>
       i.material === mat &&
