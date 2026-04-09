@@ -141,7 +141,8 @@
   }
   .combined-customer { font-weight: 600; font-size: 14px; }
   .combined-kohde { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
-  .combined-date { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-left: auto; }
+  .combined-matval { font-size: 11px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-weight: 600; margin-left: auto; }
+  .combined-date { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-left: 12px; }
   .combined-item-row {
     padding: 8px 16px; border-bottom: 1px solid var(--border);
     display: flex; flex-direction: column; gap: 4px;
@@ -479,13 +480,23 @@
     svg text { fill: #000 !important; }
     .cut-list .mitta, .cut-list .paat, .cut-list .kok,
     .cut-list .kpl, .cut-list-header span { color: #000 !important; }
+    .cut-list .huomio-cell { color: #000 !important; }
     .item-nimike, .item-material { color: #000 !important; }
     .status-filter-btns, .filter-divider { display: none; }
     .cut-table th, .cut-table td { color: #000; }
     .cut-list .kpl { color: #000; }
-    .cut-list .paat { color: #333; }
+    .cut-list .paat { color: #000; }
     .cut-list .kok { color: #000; font-weight: 700; }
     .cut-list .mitta { color: #000; }
+    /* Yhteislistan värit mustiksi */
+    .combined-customer, .combined-kohde, .combined-matval,
+    .combined-date, .combined-item-nimike, .combined-aihio { color: #000 !important; }
+    .combined-pituusrivi .ck, .combined-pituusrivi .cm,
+    .combined-pituusrivi .cp, .combined-pituusrivi .cko,
+    .combined-pituusrivi .ch { color: #000 !important; }
+    .aihio-width-centered { color: #000 !important; font-weight: 700; }
+    .combined-order-block { border: 1px solid #ccc; }
+    .combined-order-header { background: #f5f5f5; }
     .cut-row-bottom { border-bottom: none; }
     .items-grid { grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 0; }
     .kanttaus-section { align-items: center; }
@@ -2449,6 +2460,7 @@ function renderCombinedList(orders, mat, color, thick) {
       <div class="combined-order-header">
         <span class="combined-customer">${o.customers?.name || '— ei asiakasta —'}</span>
         <span class="combined-kohde">${o.kohde || o.notes || ''}</span>
+        <span class="combined-matval">${mat}${color ? ' · ' + color : ''}</span>
         <span class="combined-date">${date}</span>
         <select class="card-status-mini" onchange="quickChangeStatus('${o.id}', this.value)" style="margin-left:auto">
           <option value="" selected>${{IN_PROGRESS:'Kesken',QUOTED:'Tarjottu',ORDERED:'Tilattu',IN_PRODUCTION:'Työn alla',COMPLETED:'Valmis',INVOICED:'Laskutettu'}[o.status] || o.status || '—'}</option>
