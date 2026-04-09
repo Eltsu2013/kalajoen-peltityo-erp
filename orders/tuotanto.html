@@ -491,6 +491,8 @@
     /* Yhteislistan värit mustiksi */
     .combined-customer, .combined-kohde, .combined-matval,
     .combined-date, .combined-item-nimike, .combined-aihio { color: #000 !important; }
+    .combined-aihio { font-size: 13px !important; font-weight: 700 !important; }
+    .combined-pituusrivi { border-left: none !important; padding-left: 0 !important; }
     .combined-pituusrivi .ck, .combined-pituusrivi .cm,
     .combined-pituusrivi .cp, .combined-pituusrivi .cko,
     .combined-pituusrivi .ch { color: #000 !important; }
@@ -2456,7 +2458,7 @@ function renderCombinedList(orders, mat, color, thick) {
         <div class="combined-item-nimike">
           ${item.nimike || item.profile_type || '—'}
         </div>
-        ${item.aihio_width_mm ? `<div class="combined-aihio">aihio ${item.aihio_width_mm} mm</div>` : ''}
+        ${item.aihio_width_mm ? `<div class="combined-aihio">LL= ${item.aihio_width_mm} mm</div>` : ''}
         <div class="combined-rows">${rowsHtml}</div>
       </div>`;
     }).join('');
