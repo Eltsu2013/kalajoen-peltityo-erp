@@ -2298,7 +2298,7 @@ function laskeKatto() {
   const kplYht = kplPerLape * lappeita;
 
   // Hyötypinta-ala (hyötyleveys × harjan mitta × lappeet, metreinä)
-  const hyotyM2 = Math.round((hyotyLeveys / 1000) * (harjanMitta / 1000) * lappeita * 100) / 100;
+  const hyotyM2 = Math.round((hyotyLeveys / 1000) * (lappeenPituus / 1000) * lappeita * 100) / 100;
 
   // Rullametrit (1250mm leveä rulla, pellin pituus × kpl)
   const rullametrit = Math.round(pellinMitta / 1000 * kplYht * 10) / 10;
