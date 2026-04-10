@@ -2152,68 +2152,231 @@ function setError(boxId, msg) {
     <div class="result-empty" style="color:var(--danger)">${msg}</div>`;
 }
 
-// ── Laskurit (logiikka täytetään myöhemmin) ──────────────────────
+// ── LEIKKAUSLASKIN ───────────────────────────────────────────────
+// Laskee merkkausmiitat ja rissaleikkurimitat levylle.
+// Merkkausmitta = kumulatiivinen summa siivuista (esim. 180, 360, 540...)
+// Rissaleikkurimitta = etäisyys reunasta TOISEEN saumaan (rullataan toisesta päästä)
 
 function laskeLeikkaus() {
-  // TODO: toimintalogiikka
-  setResult('result-leikkaus', [
-    { label: 'Merkkausmitta 1', value: '—', unit: 'mm' },
-    { label: 'Merkkausmitta 2', value: '—', unit: 'mm' },
-    { divider: true },
-    { label: 'Rissaleikkurimitta 1', value: '—', unit: 'mm', big: false },
-    { label: 'Jäte', value: '—', unit: 'mm' },
-  ]);
+  const levynLeveys = gn('levy-leveys');
+  if (!levynLeveys) { setError('result-leikkaus', 'Syötä levyn leveys'); return; }
+
+  // Kerää siivu-tiedot
+  const siivut = [];
+  for (let i = 1; i <= 7; i++) {
+    const lev = gn('s' + i + '-lev');
+    const kpl = gi('s' + i + '-kpl') || (lev ? 1 : 0);
+    if (lev > 0 && kpl > 0) siivut.push({ lev, kpl });
+  }
+  if (siivut.length === 0) { setError('result-leikkaus', 'Syötä vähintään yksi siivu'); return; }
+
+  // Laske kumulatiiviset leikkausmiitat (merkkausmitta levyn reunasta)
+  const leikkaukset = []; // kaikki leikkauskohtien etäisyydet reunasta
+  let kum = 0;
+  for (const s of siivut) {
+    for (let j = 0; j < s.kpl; j++) {
+      kum += s.lev;
+      leikkaukset.push(Math.round(kum * 10) / 10);
+    }
+  }
+
+  // Tarkista mahtuuko levylle
+  const yhtLeveys = leikkaukset[leikkaukset.length - 1];
+  const jaa = Math.round((levynLeveys - yhtLeveys) * 10) / 10;
+
+  // Rissaleikkurimitta = levyn toisesta reunasta mitattuna (levynLeveys - leikkausmitta)
+  const rissaMitat = leikkaukset.map(m => Math.round((levynLeveys - m) * 10) / 10);
+
+  const rows = [];
+
+  // Merkkausmitat (reunasta)
+  rows.push({ label: 'MERKKAUSMITAT (reunasta)', value: '', unit: '' });
+  leikkaukset.forEach((m, i) => {
+    rows.push({ label: `Leikkaus ${i + 1}`, value: m, unit: 'mm' });
+  });
+
+  rows.push({ divider: true });
+
+  // Rissaleikkurimitat (toisesta reunasta)
+  rows.push({ label: 'RISSALEIKKURI (toisesta reunasta)', value: '', unit: '' });
+  rissaMitat.forEach((m, i) => {
+    const ok = m >= -92 && m <= 92;
+    rows.push({ label: `Leikkaus ${i + 1}`, value: m, unit: 'mm' + (m < 0 ? ' ⚠ yli +-92mm' : '') });
+  });
+
+  rows.push({ divider: true });
+  rows.push({ label: 'Leveyttä yhteensä', value: yhtLeveys, unit: 'mm' });
+  rows.push({ label: 'Levystä jää', value: jaa, unit: 'mm' + (jaa < 0 ? ' ⚠ EI MAHDU!' : '') });
+
+  setResult('result-leikkaus', rows);
 }
+
+// ── LISTALASKIN ──────────────────────────────────────────────────
+// Laskee kuinka monta listaa mahtuu levylle ja paljonko tarvitaan
 
 function laskeLista() {
-  // TODO: toimintalogiikka
-  setResult('result-listat', [
-    { label: 'Listoja per levy', value: '—', unit: 'kpl' },
-    { label: 'Levyjä tarvitaan', value: '—', unit: 'kpl' },
+  const mitta = gn('lista-mitta');     // listan pituus mm
+  const leveys = gn('lista-leveys');   // listan leveys mm
+  const kpl = gi('lista-kpl') || 1;   // tilattava kappalemäärä
+  const levynLeveys = 1250;            // vakio rullan leveys mm
+
+  if (!mitta || !leveys) { setError('result-listat', 'Syötä mitta ja leveys'); return; }
+
+  const kplPerLevy = Math.floor(levynLeveys / leveys);
+  if (kplPerLevy === 0) { setError('result-listat', 'Lista leveämpi kuin levy!'); return; }
+
+  const levyjaYhteensa = Math.ceil(kpl / kplPerLevy);
+  const yhtMitta = Math.round(mitta * kpl);      // mm
+  const yhtMittaM = Math.round(yhtMitta / 100) / 10; // muunnetaan metreihin
+
+  // Jääkö levystä yli?
+  const kaytettyLeveys = kplPerLevy * leveys;
+  const jaaMm = levynLeveys - kaytettyLeveys;
+
+  const rows = [
+    { label: 'Listoja per levy', value: kplPerLevy, unit: 'kpl', big: true },
+    { label: 'Levyjä tarvitaan', value: levyjaYhteensa, unit: 'kpl' },
     { divider: true },
-    { label: 'Kokonaismitta', value: '—', unit: 'mm' },
-  ]);
+    { label: 'Kokonaismitta', value: yhtMitta, unit: 'mm' },
+    { label: 'Kokonaismitta', value: yhtMittaM, unit: 'm' },
+    { divider: true },
+    { label: 'Levystä jää', value: jaaMm, unit: 'mm' },
+  ];
+
+  setResult('result-listat', rows);
 }
+
+// ── KATTOPELTILASKIN ─────────────────────────────────────────────
+// Laskee kattopeltien määrän lappeelle ja yhteensä + materiaalimäärät
 
 function laskeKatto() {
-  // TODO: toimintalogiikka
-  setResult('result-kattopelti', [
-    { label: 'Peltejä per lape', value: '—', unit: 'kpl' },
-    { label: 'Peltejä yhteensä', value: '—', unit: 'kpl', big: true },
+  const pellinMitta = gn('katto-mitta');   // pellin pituus mm
+  const harjanMitta = gn('katto-harja');   // lappeen pituus mm (harjalta räystäälle)
+  const lappeita = gi('katto-lappeet') || 2;
+  const hyotyLeveys = gn('katto-hyoty') || 1090; // mm
+
+  if (!pellinMitta || !harjanMitta) { setError('result-kattopelti', 'Syötä pellin mitta ja harjan mitta'); return; }
+
+  // Peltejä per lape (montako peltiä peräkkäin katon lappeella)
+  const kplPerLapeDec = harjanMitta / pellinMitta;
+  const kplPerLape = Math.ceil(kplPerLapeDec);
+
+  // Yhteensä
+  const kplYht = kplPerLape * lappeita;
+
+  // Hyötypinta-ala (hyötyleveys × harjan mitta × lappeet, metreinä)
+  const hyotyM2 = Math.round((hyotyLeveys / 1000) * (harjanMitta / 1000) * lappeita * 100) / 100;
+
+  // Rullametrit (1250mm leveä rulla, pellin pituus × kpl)
+  const rullametrit = Math.round(pellinMitta / 1000 * kplYht * 10) / 10;
+  const rullaM2 = Math.round(rullametrit * 1.25 * 10) / 10; // 1250mm leveys
+
+  const rows = [
+    { label: 'Peltejä per lape', value: kplPerLape, unit: 'kpl', big: true },
+    { label: 'Peltejä yhteensä', value: kplYht, unit: 'kpl', big: true },
     { divider: true },
-    { label: 'Pinta-ala', value: '—', unit: 'm²' },
-    { label: 'Rullametrit', value: '—', unit: 'm' },
-  ]);
+    { label: 'Hyötypinta-ala', value: hyotyM2, unit: 'm²' },
+    { label: 'Rullametrit', value: rullametrit, unit: 'm' },
+    { label: 'Rulla m²', value: rullaM2, unit: 'm²' },
+  ];
+
+  setResult('result-kattopelti', rows);
 }
 
+// ── PIIPUNHATTU ──────────────────────────────────────────────────
+// Laskee piipunhatun/juuripellin palan koon
+// Kaava: palan leveys = piipun leveys + 2 × korkeuslisä + piippu pyöreä offset
+// Korkeus lasketaan pythagoran kaavan kautta: sqrt(leveys² + korkeus²)
+
 function laskePiippu() {
-  // TODO: toimintalogiikka
-  setResult('result-piipunhattu', [
-    { label: 'Palan pituus', value: '—', unit: 'mm', big: true },
-    { label: 'Palan leveys', value: '—', unit: 'mm', big: true },
+  const piipuPit = gn('piippu-pit');      // piipun mitta (pituus)
+  const piipuLev = gn('piippu-lev');      // piipun leveys
+  const tuplat = gn('piippu-tuplat') || 15; // tuplat päähän mm
+  const korkeus = gn('piippu-korkeus') || 80; // korkeuslisä mm
+
+  if (!piipuPit || !piipuLev) { setError('result-piipunhattu', 'Syötä piipun mitat'); return; }
+
+  // Pellin sivuleveys = piipun leveys + 2 × korkeus (nousee molemmin puolin)
+  // Korkeuslisä vaikuttaa vinojen sivujen kautta → Pythagoraan kaava
+  const sivuLeveys = Math.sqrt(piipuLev * piipuLev + korkeus * korkeus);
+  const sivuLeveysPyoristetty = Math.round(sivuLeveys * 10) / 10;
+
+  // Palan kokonaisleveys: piipun pituus + 2 × tuplat päähän
+  const palanPit = piipuPit + 2 * tuplat;
+
+  // Palan kokonaisleveys: sivuleveys molemmin puolin
+  const palanLev = Math.round(sivuLeveysPyoristetty * 10) / 10;
+
+  const rows = [
+    { label: 'Palan pituus', value: palanPit, unit: 'mm', big: true },
+    { label: 'Palan leveys', value: palanLev, unit: 'mm', big: true },
     { divider: true },
-    { label: 'Aihiokoko', value: '— × —', unit: 'mm' },
-  ]);
+    { label: 'Aihiokoko', value: palanPit + ' × ' + palanLev, unit: 'mm' },
+    { label: 'Piipun koko', value: piipuPit + ' × ' + piipuLev, unit: 'mm' },
+    { label: 'Korkeuslisä', value: korkeus, unit: 'mm' },
+    { label: 'Tuplat päähän', value: tuplat, unit: 'mm' },
+  ];
+
+  setResult('result-piipunhattu', rows);
 }
+
+// ── PUTKILASKIN ──────────────────────────────────────────────────
+// Ympärysmitta = π × halkaisija. Sauma vie 20mm per sivu = 40mm yhteensä.
 
 function valitsePutkiKoko(val) {
   if (val) document.getElementById('putki-halk').value = val;
 }
 
 function laskePutki() {
-  // TODO: toimintalogiikka
-  setResult('result-putket', [
-    { label: 'Ympärysmitta (ilman saumaa)', value: '—', unit: 'mm', big: true },
-    { label: 'Ympärysmitta (sauman kanssa)', value: '—', unit: 'mm', big: true },
-  ]);
+  const halk = gn('putki-halk');
+  if (!halk) { setError('result-putket', 'Syötä halkaisija'); return; }
+
+  const ymparys = Math.round(Math.PI * halk * 10) / 10;
+  const ymparysJaSauma = Math.round((Math.PI * halk + 40) * 10) / 10; // +40mm sauma
+
+  const rows = [
+    { label: 'Ympärysmitta', value: ymparys, unit: 'mm', big: true },
+    { label: 'Sauman kanssa (+40mm)', value: ymparysJaSauma, unit: 'mm', big: true },
+    { divider: true },
+    { label: 'Halkaisija', value: halk, unit: 'mm' },
+    { label: 'Saumalisä', value: 40, unit: 'mm (2 × 20mm)' },
+  ];
+
+  setResult('result-putket', rows);
 }
 
+// ── KOURULASKIN ──────────────────────────────────────────────────
+// Koukkumäärä = ceil(pituus / väli) + 1 (alku + loppu)
+// Ruuvit = koukkuja × 2 (koururuuvit)
+// Pyöreälle koukkulle vakioväli on 600mm ellei muuta syötetty
+
 function laskeKouru() {
-  // TODO: toimintalogiikka
-  setResult('result-kouru', [
-    { label: 'Koukkuja', value: '—', unit: 'kpl', big: true },
-    { label: 'Ruuveja', value: '—', unit: 'kpl' },
-  ]);
+  const pit = gn('kouru-pit');
+  const vali = gn('kouru-vali') || 600;
+  const tyyppi = document.getElementById('kouru-tyyppi').value;
+
+  if (!pit) { setError('result-kouru', 'Syötä kourun pituus'); return; }
+
+  // Koukkujen määrä: jokaisen välin kohdalle + ensimmäinen ja viimeinen
+  const koukkuja = Math.ceil(pit / vali) + 1;
+  const koururuuvit = koukkuja * 2;
+
+  // Pikkuruuvit: päätylappuihin 2 kpl + liitokset (arvioidaan 1 per koukku)
+  const pikkuruuvit = 2 + koukkuja; // 2 päätyyn + 1 per koukku kiinnitykseen
+
+  const tyyppiNimi = tyyppi === 'sisa' ? 'Sisäkoukku' : tyyppi === 'ulko' ? 'Ulkokoukku' : 'Pyöreä koukku';
+
+  const rows = [
+    { label: 'Koukkuja', value: koukkuja, unit: 'kpl', big: true },
+    { label: 'Koururuuveja', value: koururuuvit, unit: 'kpl' },
+    { label: 'Pikkuruuveja', value: pikkuruuvit, unit: 'kpl' },
+    { divider: true },
+    { label: 'Koukun tyyppi', value: tyyppiNimi, unit: '' },
+    { label: 'Kourun pituus', value: pit, unit: 'mm' },
+    { label: 'Koukkuväli', value: vali, unit: 'mm' },
+  ];
+
+  setResult('result-kouru', rows);
 }
 </script>
 </body>
