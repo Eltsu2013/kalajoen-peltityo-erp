@@ -1861,7 +1861,6 @@
   <button class="tab-btn active" onclick="showTab('leikkaus', this)">Leikkaus</button>
   <button class="tab-btn" onclick="showTab('listat', this)">Listat</button>
   <button class="tab-btn" onclick="showTab('kattopelti', this)">Kattopelti</button>
-  <button class="tab-btn" onclick="showTab('piipunhattu', this)">Piipunhattu</button>
   <button class="tab-btn" onclick="showTab('putket', this)">Putket</button>
   <button class="tab-btn" onclick="showTab('kouru', this)">Kouru</button>
 </div>
@@ -1901,26 +1900,44 @@
       <input type="number" id="s3-lev" inputmode="numeric" placeholder="mm">
       <input type="number" id="s3-kpl" inputmode="numeric" placeholder="kpl">
     </div>
-    <div class="siivu-row">
-      <span class="row-label">Siivu 4</span>
-      <input type="number" id="s4-lev" inputmode="numeric" placeholder="mm">
-      <input type="number" id="s4-kpl" inputmode="numeric" placeholder="kpl">
+    <div id="siivu-extra" style="display:none;">
+      <div class="siivu-row">
+        <span class="row-label">Siivu 4</span>
+        <input type="number" id="s4-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s4-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row">
+        <span class="row-label">Siivu 5</span>
+        <input type="number" id="s5-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s5-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row">
+        <span class="row-label">Siivu 6</span>
+        <input type="number" id="s6-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s6-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row">
+        <span class="row-label">Siivu 7</span>
+        <input type="number" id="s7-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s7-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row">
+        <span class="row-label">Siivu 8</span>
+        <input type="number" id="s8-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s8-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row">
+        <span class="row-label">Siivu 9</span>
+        <input type="number" id="s9-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s9-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row">
+        <span class="row-label">Siivu 10</span>
+        <input type="number" id="s10-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s10-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
     </div>
-    <div class="siivu-row">
-      <span class="row-label">Siivu 5</span>
-      <input type="number" id="s5-lev" inputmode="numeric" placeholder="mm">
-      <input type="number" id="s5-kpl" inputmode="numeric" placeholder="kpl">
-    </div>
-    <div class="siivu-row">
-      <span class="row-label">Siivu 6</span>
-      <input type="number" id="s6-lev" inputmode="numeric" placeholder="mm">
-      <input type="number" id="s6-kpl" inputmode="numeric" placeholder="kpl">
-    </div>
-    <div class="siivu-row">
-      <span class="row-label">Siivu 7</span>
-      <input type="number" id="s7-lev" inputmode="numeric" placeholder="mm">
-      <input type="number" id="s7-kpl" inputmode="numeric" placeholder="kpl">
-    </div>
+    <button class="calc-btn" id="lisaa-siivu-btn" onclick="lisaaSiivut()" style="margin-top:8px;background:var(--panel2);border:1px solid var(--border);font-size:13px;padding:8px 16px;">+ Lisää siivuja</button>
   </div>
 
   <button class="calc-btn" onclick="laskeLeikkaus()">Laske</button>
@@ -1994,46 +2011,51 @@
     <div class="result-empty">— syötä arvot ja paina Laske —</div>
   </div>
 
-</div>
-
-<!-- ══════════════════════════════════════ -->
-<!-- VÄLILEHTI 4: PIIPUNHATTU              -->
-<!-- ══════════════════════════════════════ -->
-<div id="tab-piipunhattu" class="tab-content">
-
-  <div class="calc-section">
-    <div class="section-title">Piipun mitat</div>
-    <div class="field-row col2">
-      <div class="field">
-        <label>Piipun pituus mm</label>
-        <input type="number" id="piippu-pit" inputmode="numeric" placeholder="esim. 400">
-      </div>
-      <div class="field">
-        <label>Piipun leveys mm</label>
-        <input type="number" id="piippu-lev" inputmode="numeric" placeholder="esim. 300">
-      </div>
-    </div>
+  <div class="calc-section" style="margin-top:16px;">
+    <div class="section-title">Koneen mitta — milloin katkaistaan?</div>
+    <p class="hint" style="margin-bottom:12px;">Laske montako peltiä jätetään koneeseen ennen katkaisua, jotta kone ei täyty yli.</p>
     <div class="field">
-      <label>Tuplat päähän mm (joka sivu)</label>
-      <input type="number" id="piippu-tuplat" inputmode="numeric" placeholder="esim. 30" value="30">
+      <label>Koneen mitta mm</label>
+      <input type="number" id="kone-mitta" inputmode="numeric" placeholder="8400" value="8400">
     </div>
-    <div class="field">
-      <label>Korkeuslisä mm (hatun korkeus sivuille)</label>
-      <input type="number" id="piippu-korkeus" inputmode="numeric" placeholder="esim. 80" value="80">
+    <div style="display:grid;grid-template-columns:1fr 80px 80px;gap:8px;margin-bottom:8px;margin-top:8px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);">Pellin mitta mm</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);text-align:center;">Kpl</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);text-align:center;">Yht mm</div>
+    </div>
+    <div class="siivu-row" style="grid-template-columns:1fr 80px 80px;">
+      <input type="number" id="kone-m1" inputmode="numeric" oninput="paivitaKoneYht(1)" placeholder="esim. 2800">
+      <input type="number" id="kone-k1" inputmode="numeric" oninput="paivitaKoneYht(1)" placeholder="kpl">
+      <div id="kone-y1" style="display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-dim);">—</div>
+    </div>
+    <div class="siivu-row" style="grid-template-columns:1fr 80px 80px;">
+      <input type="number" id="kone-m2" inputmode="numeric" oninput="paivitaKoneYht(2)" placeholder="esim. 3000">
+      <input type="number" id="kone-k2" inputmode="numeric" oninput="paivitaKoneYht(2)" placeholder="kpl">
+      <div id="kone-y2" style="display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-dim);">—</div>
+    </div>
+    <div class="siivu-row" style="grid-template-columns:1fr 80px 80px;">
+      <input type="number" id="kone-m3" inputmode="numeric" oninput="paivitaKoneYht(3)" placeholder="esim. 3500">
+      <input type="number" id="kone-k3" inputmode="numeric" oninput="paivitaKoneYht(3)" placeholder="kpl">
+      <div id="kone-y3" style="display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-dim);">—</div>
+    </div>
+    <div class="siivu-row" style="grid-template-columns:1fr 80px 80px;">
+      <input type="number" id="kone-m4" inputmode="numeric" oninput="paivitaKoneYht(4)" placeholder="">
+      <input type="number" id="kone-k4" inputmode="numeric" oninput="paivitaKoneYht(4)" placeholder="kpl">
+      <div id="kone-y4" style="display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-dim);">—</div>
     </div>
   </div>
 
-  <button class="calc-btn" onclick="laskePiippu()">Laske</button>
+  <button class="calc-btn" onclick="laskeKone()">Laske konemitta</button>
 
-  <div class="result-box" id="result-piipunhattu">
+  <div class="result-box" id="result-kone">
     <div class="result-title">Tulos</div>
-    <div class="result-empty">— syötä arvot ja paina Laske —</div>
+    <div class="result-empty">— syötä pellin mitat ja paina Laske —</div>
   </div>
 
 </div>
 
 <!-- ══════════════════════════════════════ -->
-<!-- VÄLILEHTI 5: PUTKET                   -->
+<!-- VÄLILEHTI 4: PUTKET                   -->
 <!-- ══════════════════════════════════════ -->
 <div id="tab-putket" class="tab-content">
 
@@ -2066,22 +2088,33 @@
   <div class="calc-section">
     <div class="section-title">Kourun tiedot</div>
     <div class="field">
-      <label>Kourun pituus mm</label>
-      <input type="number" id="kouru-pit" inputmode="numeric" placeholder="esim. 6000">
-    </div>
-    <div class="field">
       <label>Koukun väli mm</label>
-      <input type="number" id="kouru-vali" inputmode="numeric" placeholder="600" value="600">
+      <input type="number" id="kouru-vali" inputmode="numeric" placeholder="800" value="800">
     </div>
-    <div class="field">
-      <label>Koukun tyyppi</label>
-      <select id="kouru-tyyppi">
-        <option value="sisa">Sisäkoukku</option>
-        <option value="ulko">Ulkokoukku</option>
-        <option value="pyorea">Pyöreä koukku</option>
-      </select>
+    <p class="hint">Ensimmäinen ja viimeinen koukku aina päissä. Koururuuveja 2 kpl per koukku.</p>
+  </div>
+
+  <div class="calc-section">
+    <div class="section-title">Koururivit</div>
+    <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);">Kourun pituus mm</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);text-align:center;">Kpl</div>
     </div>
-    <p class="hint">Ruuveja lasketaan 2 kpl per koukku. Ensimmäinen ja viimeinen koukku aina päissä.</p>
+    <div id="kouru-rivit">
+      <div class="siivu-row" style="grid-template-columns:1fr 80px;">
+        <input type="number" class="kouru-pit" inputmode="numeric" placeholder="esim. 3000">
+        <input type="number" class="kouru-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row" style="grid-template-columns:1fr 80px;">
+        <input type="number" class="kouru-pit" inputmode="numeric" placeholder="esim. 4000">
+        <input type="number" class="kouru-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="siivu-row" style="grid-template-columns:1fr 80px;">
+        <input type="number" class="kouru-pit" inputmode="numeric" placeholder="esim. 6000">
+        <input type="number" class="kouru-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="lisaaKouruRivi()" style="margin-top:8px;background:var(--panel2);border:1px solid var(--border);font-size:13px;padding:8px 16px;">+ Lisää rivi</button>
   </div>
 
   <button class="calc-btn" onclick="laskeKouru()">Laske</button>
@@ -2100,6 +2133,20 @@ function showTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
+}
+
+function lisaaSiivut() {
+  document.getElementById('siivu-extra').style.display = 'block';
+  document.getElementById('lisaa-siivu-btn').style.display = 'none';
+}
+
+function lisaaKouruRivi() {
+  const container = document.getElementById('kouru-rivit');
+  const rivi = document.createElement('div');
+  rivi.className = 'siivu-row';
+  rivi.style.gridTemplateColumns = '1fr 80px';
+  rivi.innerHTML = '<input type="number" class="kouru-pit" inputmode="numeric" placeholder="mm"><input type="number" class="kouru-kpl" inputmode="numeric" placeholder="kpl">';
+  container.appendChild(rivi);
 }
 
 // ── Nav ──────────────────────────────────────────────────────────
@@ -2150,7 +2197,7 @@ function laskeLeikkaus() {
 
   // Kerää siivu-tiedot
   const siivut = [];
-  for (let i = 1; i <= 7; i++) {
+  for (let i = 1; i <= 10; i++) {
     const lev = gn('s' + i + '-lev');
     const kpl = gi('s' + i + '-kpl') || (lev ? 1 : 0);
     if (lev > 0 && kpl > 0) siivut.push({ lev, kpl });
@@ -2185,7 +2232,7 @@ function laskeLeikkaus() {
   rows.push({ divider: true });
 
   // Rissaleikkurimitat (toisesta reunasta)
-  rows.push({ label: 'RISSALEIKKURI (toisesta reunasta)', value: '', unit: '' });
+  rows.push({ label: 'TOISESTA REUNASTA', value: '', unit: '' });
   rissaMitat.forEach((m, i) => {
     const ok = m >= -92 && m <= 92;
     rows.push({ label: `Leikkaus ${i + 1}`, value: m, unit: 'mm' + (m < 0 ? ' ⚠ yli +-92mm' : '') });
@@ -2224,7 +2271,6 @@ function laskeLista() {
     { label: 'Listoja per levy', value: kplPerLevy, unit: 'kpl', big: true },
     { label: 'Levyjä tarvitaan', value: levyjaYhteensa, unit: 'kpl' },
     { divider: true },
-    { label: 'Kokonaismitta', value: yhtMitta, unit: 'mm' },
     { label: 'Kokonaismitta', value: yhtMittaM, unit: 'm' },
     { divider: true },
     { label: 'Levystä jää', value: jaaMm, unit: 'mm' },
@@ -2307,6 +2353,56 @@ function laskePiippu() {
   setResult('result-piipunhattu', rows);
 }
 
+// ── KONEENLASKIN (kattokoneen mitta) ─────────────────────────────
+// Laskee montako peltiä jätetään koneeseen ennen katkaisua
+// Logiikka: floor(koneen_mitta / pellin_mitta) = peltejä koneessa
+// Jää yli = koneen_mitta - (peltejä_koneessa × pellin_mitta)
+
+function laskeKone() {
+  const koneMitta = gn('kone-mitta') || 8400;
+
+  const rivit = [];
+  for (let i = 1; i <= 4; i++) {
+    const m = gn('kone-m' + i);
+    const k = gi('kone-k' + i);
+    if (m > 0 && k > 0) rivit.push({ m, k, idx: i });
+    // Päivitä yht-kenttä
+    const yhtEl = document.getElementById('kone-y' + i);
+    if (yhtEl) yhtEl.textContent = (m > 0 && k > 0) ? (m * k) + ' mm' : '—';
+  }
+
+  if (rivit.length === 0) { setError('result-kone', 'Syötä pellin mitat ja kappalemäärät'); return; }
+
+  const rows = [];
+
+  for (const r of rivit) {
+    const koneessa = Math.floor(koneMitta / r.m);
+    const jaaYli = koneMitta - (koneessa * r.m);
+    const teeEnsin = r.k - koneessa;
+
+    rows.push({ label: r.m + ' mm × ' + r.k + ' kpl', value: '', unit: '' });
+    if (teeEnsin > 0) {
+      rows.push({ label: '→ Tee ensin', value: teeEnsin, unit: 'kpl' });
+      rows.push({ label: '→ Katkaise rulla, jätä koneeseen', value: koneessa, unit: 'kpl' });
+    } else {
+      rows.push({ label: '→ Kaikki mahtuu ilman katkaisua', value: r.k, unit: 'kpl' });
+    }
+    rows.push({ label: '→ Jää yli', value: jaaYli, unit: 'mm' });
+    rows.push({ divider: true });
+  }
+
+  rows.push({ label: 'Koneen mitta', value: koneMitta, unit: 'mm' });
+
+  setResult('result-kone', rows);
+}
+
+function paivitaKoneYht(i) {
+  const m = parseFloat(document.getElementById('kone-m' + i).value) || 0;
+  const k = parseInt(document.getElementById('kone-k' + i).value) || 0;
+  const el = document.getElementById('kone-y' + i);
+  if (el) el.textContent = (m > 0 && k > 0) ? (m * k) + ' mm' : '—';
+}
+
 // ── PUTKILASKIN ──────────────────────────────────────────────────
 // Ympärysmitta = π × halkaisija. Sauma vie 20mm per sivu = 40mm yhteensä.
 
@@ -2340,30 +2436,37 @@ function laskePutki() {
 // Pyöreälle koukkulle vakioväli on 600mm ellei muuta syötetty
 
 function laskeKouru() {
-  const pit = gn('kouru-pit');
-  const vali = gn('kouru-vali') || 600;
-  const tyyppi = document.getElementById('kouru-tyyppi').value;
+  const vali = gn('kouru-vali') || 800;
 
-  if (!pit) { setError('result-kouru', 'Syötä kourun pituus'); return; }
+  const pitInputs = document.querySelectorAll('.kouru-pit');
+  const kplInputs = document.querySelectorAll('.kouru-kpl');
 
-  // Koukkujen määrä: jokaisen välin kohdalle + ensimmäinen ja viimeinen
-  const koukkuja = Math.ceil(pit / vali) + 1;
-  const koururuuvit = koukkuja * 2;
+  const rivit = [];
+  for (let i = 0; i < pitInputs.length; i++) {
+    const pit = parseFloat(pitInputs[i].value) || 0;
+    const kpl = parseInt(kplInputs[i].value) || 0;
+    if (pit > 0 && kpl > 0) rivit.push({ pit, kpl });
+  }
 
-  // Pikkuruuvit: päätylappuihin 2 kpl + liitokset (arvioidaan 1 per koukku)
-  const pikkuruuvit = 2 + koukkuja; // 2 päätyyn + 1 per koukku kiinnitykseen
+  if (rivit.length === 0) { setError('result-kouru', 'Syötä ainakin yksi kourun pituus ja kpl'); return; }
 
-  const tyyppiNimi = tyyppi === 'sisa' ? 'Sisäkoukku' : tyyppi === 'ulko' ? 'Ulkokoukku' : 'Pyöreä koukku';
+  let koukkuYht = 0;
+  const rows = [];
 
-  const rows = [
-    { label: 'Koukkuja', value: koukkuja, unit: 'kpl', big: true },
-    { label: 'Koururuuveja', value: koururuuvit, unit: 'kpl' },
-    { label: 'Pikkuruuveja', value: pikkuruuvit, unit: 'kpl' },
-    { divider: true },
-    { label: 'Koukun tyyppi', value: tyyppiNimi, unit: '' },
-    { label: 'Kourun pituus', value: pit, unit: 'mm' },
-    { label: 'Koukkuväli', value: vali, unit: 'mm' },
-  ];
+  for (const r of rivit) {
+    const koukkuja = Math.ceil(r.pit / vali) + 1;
+    const koukkuYhtRivi = koukkuja * r.kpl;
+    koukkuYht += koukkuYhtRivi;
+    rows.push({ label: r.pit + ' mm × ' + r.kpl + ' kpl', value: koukkuYhtRivi, unit: 'koukkua' });
+  }
+
+  const koururuuvit = koukkuYht * 2;
+
+  rows.push({ divider: true });
+  rows.push({ label: 'Koukkuja yhteensä', value: koukkuYht, unit: 'kpl', big: true });
+  rows.push({ label: 'Koururuuveja yhteensä', value: koururuuvit, unit: 'kpl' });
+  rows.push({ divider: true });
+  rows.push({ label: 'Koukkuväli', value: vali, unit: 'mm' });
 
   setResult('result-kouru', rows);
 }
