@@ -1958,6 +1958,10 @@
   <div class="calc-section">
     <div class="section-title">Listan tiedot</div>
     <div class="field">
+      <label>Levyn leveys mm</label>
+      <input type="number" id="lista-levy" inputmode="numeric" placeholder="1250" value="1250">
+    </div>
+    <div class="field">
       <label>Listan mitta mm (pituus)</label>
       <input type="number" id="lista-mitta" inputmode="numeric" placeholder="esim. 2000">
     </div>
@@ -2371,7 +2375,7 @@ function laskeLista() {
   const mitta = gn('lista-mitta');     // listan pituus mm
   const leveys = gn('lista-leveys');   // listan leveys mm
   const kpl = gi('lista-kpl') || 1;   // tilattava kappalemäärä
-  const levynLeveys = 1250;            // vakio rullan leveys mm
+  const levynLeveys = gn('lista-levy') || 1250;
 
   if (!mitta || !leveys) { setError('result-listat', 'Syötä mitta ja leveys'); return; }
 
@@ -2483,7 +2487,6 @@ function laskeKone() {
     const m = gn('kone-m' + i);
     const k = gi('kone-k' + i);
     if (m > 0 && k > 0) rivit.push({ m, k, idx: i });
-    // Päivitä yht-kenttä
     const yhtEl = document.getElementById('kone-y' + i);
     if (yhtEl) yhtEl.textContent = (m > 0 && k > 0) ? (m * k) + ' mm' : '—';
   }
@@ -2493,22 +2496,38 @@ function laskeKone() {
   const rows = [];
 
   for (const r of rivit) {
-    const koneessa = Math.floor(koneMitta / r.m);
-    const jaaYli = koneMitta - (koneessa * r.m);
-    const teeEnsin = r.k - koneessa;
+    // Logiikka:
+    // Ajetaan peltejä kunnes jäljellä olevien yhteismitta <= koneMitta.
+    // loput = ceil(koneMitta / pellinMitta) — nämä jätetään koneeseen
+    // teeEnsin = kpl - loput
+    // Aja lisää = loput * pellinMitta - koneMitta (erotus koneen päähän)
+
+    const loput = Math.ceil(koneMitta / r.m);
+    const teeEnsin = r.k - loput;
+    const ajaLisaaMm = (loput * r.m) - koneMitta;
 
     rows.push({ label: r.m + ' mm × ' + r.k + ' kpl', value: '', unit: '' });
-    if (teeEnsin > 0) {
-      rows.push({ label: '→ Tee ensin', value: teeEnsin, unit: 'kpl' });
-      rows.push({ label: '→ Katkaise rulla, jätä koneeseen', value: koneessa, unit: 'kpl' });
+
+    const kokonaismitta = r.m * r.k;
+
+    if (r.m > koneMitta) {
+      // Pelti pidempi kuin kone — katkaistaan ennen koneen täyttymistä
+      const ajaEnsinMm = r.m - koneMitta;
+      rows.push({ label: '→ Aja ensin', value: ajaEnsinMm, unit: 'mm ja katkaise' });
+      rows.push({ label: '→ Aja loput koneessa', value: koneMitta, unit: 'mm' });
+    } else if (kokonaismitta <= koneMitta) {
+      // Kaikki pellit mahtuvat koneeseen suoraan
+      rows.push({ label: '→ Aja kaikki suoraan, ei katkaisua tarvita', value: '', unit: '' });
     } else {
-      rows.push({ label: '→ Kaikki mahtuu ilman katkaisua', value: r.k, unit: 'kpl' });
+      if (teeEnsin > 0) {
+        rows.push({ label: '→ Tee ensin', value: teeEnsin, unit: 'kpl' });
+      }
+      rows.push({ label: '→ Aja vielä', value: ajaLisaaMm, unit: 'mm ja leikkaa pelti poikki' });
+      rows.push({ label: '→ Aja loput koneessa olevat', value: loput, unit: 'kpl' });
     }
-    rows.push({ label: '→ Jää yli', value: jaaYli, unit: 'mm' });
+    rows.push({ label: '→ Koneen mitta', value: koneMitta, unit: 'mm' });
     rows.push({ divider: true });
   }
-
-  rows.push({ label: 'Koneen mitta', value: koneMitta, unit: 'mm' });
 
   setResult('result-kone', rows);
 }
