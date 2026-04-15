@@ -170,6 +170,18 @@
   .siivu-row input::-webkit-outer-spin-button,
   .siivu-row input::-webkit-inner-spin-button { -webkit-appearance: none; }
   .siivu-row input:focus { outline: none; border-color: var(--accent); }
+  .rissa-hint {
+    display: none;
+    gap: 12px;
+    padding: 2px 0 6px 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+  .rissa-hint.visible { display: flex; }
+  .rissa-hint span { color: var(--text-dim); }
+  .rissa-hint .rissa-val { font-weight: 600; }
+  .rissa-hint .rissa-val.over { color: var(--danger); }
+  .rissa-hint .rissa-val.ok { color: var(--success); }
   .siivu-row .col-header {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
     color: var(--text-dim); text-align: center; margin-bottom: 4px;
@@ -1888,54 +1900,94 @@
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 1</span>
-      <input type="number" id="s1-lev" inputmode="numeric" placeholder="mm">
+      <input type="number" id="s1-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(1)">
       <input type="number" id="s1-kpl" inputmode="numeric" placeholder="kpl">
+    </div>
+    <div class="rissa-hint" id="rissa-1">
+      <span>Leikkoreuna: <span class="rissa-val" id="rissa-1-lko">—</span> mm</span>
+      <span>Konereuna: <span class="rissa-val" id="rissa-1-kone">—</span> mm</span>
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 2</span>
-      <input type="number" id="s2-lev" inputmode="numeric" placeholder="mm">
+      <input type="number" id="s2-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(2)">
       <input type="number" id="s2-kpl" inputmode="numeric" placeholder="kpl">
+    </div>
+    <div class="rissa-hint" id="rissa-2">
+      <span>Leikkoreuna: <span class="rissa-val" id="rissa-2-lko">—</span> mm</span>
+      <span>Konereuna: <span class="rissa-val" id="rissa-2-kone">—</span> mm</span>
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 3</span>
-      <input type="number" id="s3-lev" inputmode="numeric" placeholder="mm">
+      <input type="number" id="s3-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(3)">
       <input type="number" id="s3-kpl" inputmode="numeric" placeholder="kpl">
+    </div>
+    <div class="rissa-hint" id="rissa-3">
+      <span>Leikkoreuna: <span class="rissa-val" id="rissa-3-lko">—</span> mm</span>
+      <span>Konereuna: <span class="rissa-val" id="rissa-3-kone">—</span> mm</span>
     </div>
     <div id="siivu-extra" style="display:none;">
       <div class="siivu-row">
         <span class="row-label">Siivu 4</span>
-        <input type="number" id="s4-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s4-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(4)">
         <input type="number" id="s4-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-4">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-4-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-4-kone">—</span> mm</span>
       </div>
       <div class="siivu-row">
         <span class="row-label">Siivu 5</span>
-        <input type="number" id="s5-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s5-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(5)">
         <input type="number" id="s5-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-5">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-5-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-5-kone">—</span> mm</span>
       </div>
       <div class="siivu-row">
         <span class="row-label">Siivu 6</span>
-        <input type="number" id="s6-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s6-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(6)">
         <input type="number" id="s6-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-6">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-6-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-6-kone">—</span> mm</span>
       </div>
       <div class="siivu-row">
         <span class="row-label">Siivu 7</span>
-        <input type="number" id="s7-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s7-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(7)">
         <input type="number" id="s7-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-7">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-7-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-7-kone">—</span> mm</span>
       </div>
       <div class="siivu-row">
         <span class="row-label">Siivu 8</span>
-        <input type="number" id="s8-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s8-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(8)">
         <input type="number" id="s8-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-8">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-8-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-8-kone">—</span> mm</span>
       </div>
       <div class="siivu-row">
         <span class="row-label">Siivu 9</span>
-        <input type="number" id="s9-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s9-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(9)">
         <input type="number" id="s9-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-9">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-9-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-9-kone">—</span> mm</span>
       </div>
       <div class="siivu-row">
         <span class="row-label">Siivu 10</span>
-        <input type="number" id="s10-lev" inputmode="numeric" placeholder="mm">
+        <input type="number" id="s10-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(10)">
         <input type="number" id="s10-kpl" inputmode="numeric" placeholder="kpl">
+      </div>
+      <div class="rissa-hint" id="rissa-10">
+        <span>Leikkoreuna: <span class="rissa-val" id="rissa-10-lko">—</span> mm</span>
+        <span>Konereuna: <span class="rissa-val" id="rissa-10-kone">—</span> mm</span>
       </div>
     </div>
     <button class="calc-btn" id="lisaa-siivu-btn" onclick="lisaaSiivut()" style="margin-top:8px;background:var(--panel2);border:1px solid var(--border);font-size:13px;padding:8px 16px;">+ Lisää siivuja</button>
@@ -2190,6 +2242,32 @@ function showTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   btn.classList.add('active');
+}
+
+function paivitaRissa(i) {
+  const lev = parseFloat(document.getElementById('s' + i + '-lev').value) || 0;
+  const levynLeveys = parseFloat(document.getElementById('levy-leveys').value) || 0;
+  const hintEl = document.getElementById('rissa-' + i);
+  const lkoEl = document.getElementById('rissa-' + i + '-lko');
+  const koneEl = document.getElementById('rissa-' + i + '-kone');
+
+  if (!lev) {
+    hintEl.classList.remove('visible');
+    return;
+  }
+
+  hintEl.classList.add('visible');
+  const lko = Math.round((lev + 92) * 10) / 10;
+  const kone = Math.round((lev - 92) * 10) / 10;
+
+  // Tarkista ylitys levyn leveydelle
+  const yliLko = levynLeveys > 0 && lko > levynLeveys;
+  const yliKone = kone < 0;
+
+  lkoEl.textContent = lko;
+  lkoEl.className = 'rissa-val ' + (yliLko ? 'over' : 'ok');
+  koneEl.textContent = kone;
+  koneEl.className = 'rissa-val ' + (yliKone ? 'over' : 'ok');
 }
 
 function lisaaSiivut() {
