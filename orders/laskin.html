@@ -1863,6 +1863,7 @@
   <button class="tab-btn" onclick="showTab('kattopelti', this)">Kattopelti</button>
   <button class="tab-btn" onclick="showTab('putket', this)">Putket</button>
   <button class="tab-btn" onclick="showTab('kouru', this)">Kouru</button>
+  <button class="tab-btn" onclick="showTab('pituusmitat', this)">Pituusmitat</button>
 </div>
 
 <!-- ══════════════════════════════════════ -->
@@ -2126,6 +2127,58 @@
 
 </div>
 
+<!-- ══════════════════════════════════════ -->
+<!-- VÄLILEHTI 7: PITUUSMITAT              -->
+<!-- ══════════════════════════════════════ -->
+<div id="tab-pituusmitat" class="tab-content">
+
+  <div class="calc-section">
+    <div class="section-title">Kokonaistarve</div>
+    <div class="field">
+      <label>Tarvittava pituus yhteensä m</label>
+      <input type="number" id="pit-tarve" inputmode="numeric" placeholder="esim. 49" oninput="paivitaPituusmitat()">
+    </div>
+  </div>
+
+  <div class="calc-section">
+    <div class="section-title">Pellin mitat</div>
+    <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:8px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);">Pellin mitta mm</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-dim);text-align:center;">Kpl</div>
+    </div>
+    <div id="pit-rivit">
+      <div class="siivu-row" style="grid-template-columns:1fr 80px;">
+        <input type="number" class="pit-mitta" inputmode="numeric" placeholder="esim. 2500" oninput="paivitaPituusmitat()">
+        <input type="number" class="pit-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaPituusmitat()">
+      </div>
+      <div class="siivu-row" style="grid-template-columns:1fr 80px;">
+        <input type="number" class="pit-mitta" inputmode="numeric" placeholder="esim. 3000" oninput="paivitaPituusmitat()">
+        <input type="number" class="pit-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaPituusmitat()">
+      </div>
+      <div class="siivu-row" style="grid-template-columns:1fr 80px;">
+        <input type="number" class="pit-mitta" inputmode="numeric" placeholder="esim. 3500" oninput="paivitaPituusmitat()">
+        <input type="number" class="pit-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaPituusmitat()">
+      </div>
+    </div>
+    <button class="calc-btn" onclick="lisaaPituusRivi()" style="margin-top:8px;background:var(--panel2);border:1px solid var(--border);font-size:13px;padding:8px 16px;">+ Lisää rivi</button>
+  </div>
+
+  <div id="result-pituusmitat" style="margin:0 16px 16px;border-radius:8px;border:1px solid var(--border);background:var(--panel);padding:16px;display:none;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.08em;">Yhteenveto</div>
+    <div id="pit-rivit-tulos" style="margin-bottom:12px;"></div>
+    <hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+      <span style="color:var(--text-dim);font-size:14px;">Syötetty yhteensä</span>
+      <span id="pit-yht" style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--text);">0 m</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="color:var(--text-dim);font-size:14px;" id="pit-erotus-label">Puuttuu vielä</span>
+      <span id="pit-erotus" style="font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:600;">— m</span>
+    </div>
+  </div>
+
+</div>
+
 <script>
 // ── Välilehtivaihto ──────────────────────────────────────────────
 function showTab(name, btn) {
@@ -2138,6 +2191,72 @@ function showTab(name, btn) {
 function lisaaSiivut() {
   document.getElementById('siivu-extra').style.display = 'block';
   document.getElementById('lisaa-siivu-btn').style.display = 'none';
+}
+
+function lisaaPituusRivi() {
+  const container = document.getElementById('pit-rivit');
+  const rivi = document.createElement('div');
+  rivi.className = 'siivu-row';
+  rivi.style.gridTemplateColumns = '1fr 80px';
+  rivi.innerHTML = '<input type="number" class="pit-mitta" inputmode="numeric" placeholder="mm" oninput="paivitaPituusmitat()"><input type="number" class="pit-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaPituusmitat()">';
+  container.appendChild(rivi);
+}
+
+function paivitaPituusmitat() {
+  const tarveM = parseFloat(document.getElementById('pit-tarve').value) || 0;
+  const mittaInputs = document.querySelectorAll('.pit-mitta');
+  const kplInputs = document.querySelectorAll('.pit-kpl');
+
+  let yhtMm = 0;
+  let riviHTML = '';
+
+  for (let i = 0; i < mittaInputs.length; i++) {
+    const mitta = parseFloat(mittaInputs[i].value) || 0;
+    const kpl = parseInt(kplInputs[i].value) || 0;
+    if (mitta > 0 && kpl > 0) {
+      const rivimm = mitta * kpl;
+      const rivim = Math.round(rivimm / 1000 * 100) / 100;
+      yhtMm += rivimm;
+      riviHTML += `<div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:var(--text-dim);font-size:13px;">${mitta} mm × ${kpl} kpl</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text);">${rivim} m</span>
+      </div>`;
+    }
+  }
+
+  if (yhtMm === 0 && tarveM === 0) {
+    document.getElementById('result-pituusmitat').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('result-pituusmitat').style.display = 'block';
+  document.getElementById('pit-rivit-tulos').innerHTML = riviHTML;
+
+  const yhtM = Math.round(yhtMm / 1000 * 100) / 100;
+  document.getElementById('pit-yht').textContent = yhtM + ' m';
+
+  if (tarveM > 0) {
+    const erotus = Math.round((tarveM - yhtM) * 100) / 100;
+    const erotusEl = document.getElementById('pit-erotus');
+    const labelEl = document.getElementById('pit-erotus-label');
+    if (erotus > 0) {
+      labelEl.textContent = 'Puuttuu vielä';
+      erotusEl.textContent = erotus + ' m';
+      erotusEl.style.color = 'var(--text)';
+    } else if (erotus === 0) {
+      labelEl.textContent = 'Tavoite täytetty!';
+      erotusEl.textContent = '✓';
+      erotusEl.style.color = 'var(--success)';
+    } else {
+      labelEl.textContent = 'Yli tarpeen';
+      erotusEl.textContent = Math.abs(erotus) + ' m';
+      erotusEl.style.color = 'var(--danger)';
+    }
+  } else {
+    document.getElementById('pit-erotus-label').textContent = 'Syötetty';
+    document.getElementById('pit-erotus').textContent = yhtM + ' m';
+    document.getElementById('pit-erotus').style.color = 'var(--text)';
+  }
 }
 
 function lisaaKouruRivi() {
