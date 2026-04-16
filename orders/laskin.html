@@ -1871,11 +1871,11 @@
 <!-- ── VÄLILEHTIPALKKI ── -->
 <div class="tab-bar">
   <button class="tab-btn active" onclick="showTab('leikkaus', this)">Leikkaus</button>
-  <button class="tab-btn" onclick="showTab('listat', this)">Listat</button>
   <button class="tab-btn" onclick="showTab('kattopelti', this)">Kattopelti</button>
-  <button class="tab-btn" onclick="showTab('putket', this)">Putket</button>
-  <button class="tab-btn" onclick="showTab('kouru', this)">Kouru</button>
+  <button class="tab-btn" onclick="showTab('listat', this)">Listat</button>
   <button class="tab-btn" onclick="showTab('pituusmitat', this)">Pituusmitat</button>
+  <button class="tab-btn" onclick="showTab('kouru', this)">Kouru</button>
+  <button class="tab-btn" onclick="showTab('putket', this)">Putket</button>
 </div>
 
 <!-- ══════════════════════════════════════ -->
@@ -1906,7 +1906,7 @@
     <div class="rissa-hint" id="rissa-1">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-1-lko">—</span> mm</span>
       <span>Konereuna: <span class="rissa-val" id="rissa-1-kone">—</span> mm</span>
-      <span style="color:var(--text-dim);font-size:10px;" id="rissa-1-yht"></span>
+      <span style="color:var(--success);font-size:10px;font-weight:600;" id="rissa-1-yht"></span>
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 2</span>
@@ -1916,7 +1916,7 @@
     <div class="rissa-hint" id="rissa-2">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-2-lko">—</span> mm</span>
       <span>Konereuna: <span class="rissa-val" id="rissa-2-kone">—</span> mm</span>
-      <span style="color:var(--text-dim);font-size:10px;" id="rissa-2-yht"></span>
+      <span style="color:var(--success);font-size:10px;font-weight:600;" id="rissa-2-yht"></span>
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 3</span>
@@ -1926,7 +1926,7 @@
     <div class="rissa-hint" id="rissa-3">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-3-lko">—</span> mm</span>
       <span>Konereuna: <span class="rissa-val" id="rissa-3-kone">—</span> mm</span>
-      <span style="color:var(--text-dim);font-size:10px;" id="rissa-3-yht"></span>
+      <span style="color:var(--success);font-size:10px;font-weight:600;" id="rissa-3-yht"></span>
     </div>
     <div id="siivu-extra"><!-- siivut 4-10 lisätään dynaamisesti --></div>
     <button class="calc-btn" id="lisaa-siivu-btn" onclick="lisaaSiivuYksi()" style="margin-top:8px;background:var(--panel2);border:1px solid var(--border);font-size:13px;padding:8px 16px;" data-next="4">+ Lisää siivu</button>
@@ -1946,21 +1946,25 @@
 
   <div class="calc-section">
     <div class="section-title">Listan tiedot</div>
-    <div class="field">
-      <label>Levyn leveys mm</label>
-      <input type="number" id="lista-levy" inputmode="numeric" placeholder="1250" value="1250" oninput="laskeListaAuto()">
+    <div class="field-row col2">
+      <div class="field">
+        <label>Levyn leveys mm</label>
+        <input type="number" id="lista-levy" inputmode="numeric" placeholder="1250" value="1250" oninput="laskeListaAuto()">
+      </div>
+      <div class="field">
+        <label>Leveys mm</label>
+        <input type="number" id="lista-leveys" inputmode="numeric" placeholder="esim. 250" oninput="laskeListaAuto()">
+      </div>
     </div>
-    <div class="field">
-      <label>Listan mitta mm (pituus)</label>
-      <input type="number" id="lista-mitta" inputmode="numeric" placeholder="esim. 2000" oninput="laskeListaAuto()">
-    </div>
-    <div class="field">
-      <label>Leveys mm (aihioleveys)</label>
-      <input type="number" id="lista-leveys" inputmode="numeric" placeholder="esim. 250" oninput="laskeListaAuto()">
-    </div>
-    <div class="field">
-      <label>Kappalemäärä</label>
-      <input type="number" id="lista-kpl" inputmode="numeric" placeholder="esim. 10" oninput="laskeListaAuto()">
+    <div class="field-row col2">
+      <div class="field">
+        <label>Listan mitta mm</label>
+        <input type="number" id="lista-mitta" inputmode="numeric" placeholder="esim. 2000" oninput="laskeListaAuto()">
+      </div>
+      <div class="field">
+        <label>Kappalemäärä</label>
+        <input type="number" id="lista-kpl" inputmode="numeric" placeholder="esim. 10" oninput="laskeListaAuto()">
+      </div>
     </div>
   </div>
 
