@@ -2356,19 +2356,19 @@ function gi(id) { return parseInt(document.getElementById(id).value) || 0; }
 function setResult(boxId, rows) {
   const box = document.getElementById(boxId);
   box.classList.add('has-result');
-  box.innerHTML = '<div class="result-title">Tulos</div>' +
-    rows.map(r => {
-      if (r.divider) return '<hr class="result-divider">';
-      const valClass = r.big ? 'result-value big' : r.small ? 'result-value' : 'result-value';
-      const rowStyle = r.small ? ' style="opacity:0.7;"' : '';
-      return `<div class="result-row"${rowStyle}>
-        <span class="result-label">${r.label}</span>
-        <span>
-          <span class="${valClass}">${r.value}</span>
-          ${r.unit ? `<span class="result-value unit"> ${r.unit}</span>` : ''}
-        </span>
-      </div>`;
-    }).join('');
+  let html = '<div class="result-title">Tulos</div>';
+  for (const r of rows) {
+    if (r.divider) { html += '<hr class="result-divider">'; continue; }
+    const big = r.big ? ' big' : '';
+    const opacity = r.small ? ' style="opacity:0.7"' : '';
+    html += '<div class="result-row"' + opacity + '>';
+    html += '<span class="result-label">' + r.label + '</span>';
+    html += '<span>';
+    html += '<span class="result-value' + big + '">' + r.value + '</span>';
+    if (r.unit) html += '<span class="result-value unit"> ' + r.unit + '</span>';
+    html += '</span></div>';
+  }
+  box.innerHTML = html;
 }
 
 function setError(boxId, msg) {
