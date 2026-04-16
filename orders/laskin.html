@@ -1901,7 +1901,7 @@
     <div class="siivu-row">
       <span class="row-label">Siivu 1</span>
       <input type="number" id="s1-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(1)">
-      <input type="number" id="s1-kpl" inputmode="numeric" placeholder="kpl" oninput="laskeLeikkausAuto()">
+      <input type="number" id="s1-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(1);laskeLeikkausAuto()">
     </div>
     <div class="rissa-hint" id="rissa-1">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-1-lko">—</span> mm</span>
@@ -1911,7 +1911,7 @@
     <div class="siivu-row">
       <span class="row-label">Siivu 2</span>
       <input type="number" id="s2-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(2)">
-      <input type="number" id="s2-kpl" inputmode="numeric" placeholder="kpl" oninput="laskeLeikkausAuto()">
+      <input type="number" id="s2-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(2);laskeLeikkausAuto()">
     </div>
     <div class="rissa-hint" id="rissa-2">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-2-lko">—</span> mm</span>
@@ -1921,7 +1921,7 @@
     <div class="siivu-row">
       <span class="row-label">Siivu 3</span>
       <input type="number" id="s3-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(3)">
-      <input type="number" id="s3-kpl" inputmode="numeric" placeholder="kpl" oninput="laskeLeikkausAuto()">
+      <input type="number" id="s3-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(3);laskeLeikkausAuto()">
     </div>
     <div class="rissa-hint" id="rissa-3">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-3-lko">—</span> mm</span>
@@ -2191,15 +2191,6 @@ function showTab(name, btn) {
 }
 
 function laskeLeikkausAuto() {
-  const levynLeveys = gn('levy-leveys');
-  if (!levynLeveys) return;
-  const siivut = [];
-  for (let i = 1; i <= 10; i++) {
-    const lev = gn('s' + i + '-lev');
-    const kpl = gi('s' + i + '-kpl') || (lev ? 1 : 0);
-    if (lev > 0 && kpl > 0) siivut.push({ lev, kpl });
-  }
-  if (siivut.length === 0) { document.getElementById('result-leikkaus').innerHTML = '<div class="result-title">Tulos</div><div class="result-empty">— syötä siivujen tiedot —</div>'; return; }
   laskeLeikkaus();
 }
 
@@ -2237,9 +2228,15 @@ function paivitaRissa(i) {
   koneEl.className = 'rissa-val ' + (yliKone ? 'over' : 'ok');
 
   // Päivitä myös leveys yht -teksti
-  const kplVal = parseInt(document.getElementById('s' + i + '-kpl').value) || 1;
+  const kplVal = parseInt(document.getElementById('s' + i + '-kpl') ? document.getElementById('s' + i + '-kpl').value : 0) || 0;
   const yhtEl = document.getElementById('rissa-' + i + '-yht');
-  if (yhtEl) yhtEl.textContent = 'Leveys yht. ' + (lev * kplVal) + ' mm';
+  if (yhtEl) {
+    if (kplVal > 1) {
+      yhtEl.textContent = 'Leveys yht. ' + (lev * kplVal) + ' mm  (' + lev + ' × ' + kplVal + ')';
+    } else {
+      yhtEl.textContent = '';
+    }
+  }
 
   laskeLeikkausAuto();
 }
