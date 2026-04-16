@@ -2350,8 +2350,8 @@ document.addEventListener('click', () => {
 });
 
 // ── Apufunktiot ──────────────────────────────────────────────────
-function gn(id) { return parseFloat(document.getElementById(id).value) || 0; }
-function gi(id) { return parseInt(document.getElementById(id).value) || 0; }
+function gn(id) { const el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
+function gi(id) { const el = document.getElementById(id); return el ? (parseInt(el.value) || 0) : 0; }
 
 function setResult(boxId, rows) {
   const box = document.getElementById(boxId);
