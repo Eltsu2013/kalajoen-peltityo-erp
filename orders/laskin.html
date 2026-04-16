@@ -1887,7 +1887,7 @@
     <div class="section-title">Levyn tiedot</div>
     <div class="field">
       <label>Levyn leveys mm</label>
-      <input type="number" id="levy-leveys" inputmode="numeric" placeholder="1250" value="1250" oninput="laskeLeikkausAuto()">
+      <input type="number" id="levy-leveys" inputmode="numeric" placeholder="1250" value="1250" oninput="laskeLeikkaus()">
     </div>
   </div>
 
@@ -1900,8 +1900,8 @@
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 1</span>
-      <input type="number" id="s1-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(1)">
-      <input type="number" id="s1-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(1);laskeLeikkausAuto()">
+      <input type="number" id="s1-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(1);laskeLeikkaus()">
+      <input type="number" id="s1-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(1);laskeLeikkaus()">
     </div>
     <div class="rissa-hint" id="rissa-1">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-1-lko">—</span> mm</span>
@@ -1910,8 +1910,8 @@
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 2</span>
-      <input type="number" id="s2-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(2)">
-      <input type="number" id="s2-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(2);laskeLeikkausAuto()">
+      <input type="number" id="s2-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(2);laskeLeikkaus()">
+      <input type="number" id="s2-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(2);laskeLeikkaus()">
     </div>
     <div class="rissa-hint" id="rissa-2">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-2-lko">—</span> mm</span>
@@ -1920,8 +1920,8 @@
     </div>
     <div class="siivu-row">
       <span class="row-label">Siivu 3</span>
-      <input type="number" id="s3-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(3)">
-      <input type="number" id="s3-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(3);laskeLeikkausAuto()">
+      <input type="number" id="s3-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(3);laskeLeikkaus()">
+      <input type="number" id="s3-kpl" inputmode="numeric" placeholder="kpl" oninput="paivitaRissa(3);laskeLeikkaus()">
     </div>
     <div class="rissa-hint" id="rissa-3">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-3-lko">—</span> mm</span>
@@ -2238,7 +2238,7 @@ function paivitaRissa(i) {
     }
   }
 
-  laskeLeikkausAuto();
+  laskeLeikkaus();
 }
 
 function lisaaSiivuYksi() {
@@ -2251,7 +2251,7 @@ function lisaaSiivuYksi() {
   div.innerHTML = `<div class="siivu-row">
       <span class="row-label">Siivu ${next}</span>
       <input type="number" id="s${next}-lev" inputmode="numeric" placeholder="mm" oninput="paivitaRissa(${next})">
-      <input type="number" id="s${next}-kpl" inputmode="numeric" placeholder="kpl" oninput="laskeLeikkausAuto()">
+      <input type="number" id="s${next}-kpl" inputmode="numeric" placeholder="kpl" oninput="laskeLeikkaus()">
     </div>
     <div class="rissa-hint" id="rissa-${next}">
       <span>Leikkoreuna: <span class="rissa-val" id="rissa-${next}-lko">—</span> mm</span>
