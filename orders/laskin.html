@@ -2060,14 +2060,26 @@
 <div id="tab-putket" class="tab-content">
 
   <div class="calc-section">
-    <div class="section-title">Putken halkaisija</div>
-    <div class="field">
-      <label>Halkaisija mm</label>
-      <input type="number" id="putki-halk" inputmode="numeric" placeholder="esim. 150">
+    <div class="section-title">Putken mitat</div>
+    <div class="field-row col2">
+      <div class="field">
+        <label>Halkaisija mm</label>
+        <input type="number" id="putki-halk" inputmode="numeric" placeholder="esim. 150">
+      </div>
+      <div class="field">
+        <label>Saumalisä mm (per sivu)</label>
+        <input type="number" id="putki-sauma" inputmode="numeric" placeholder="10" value="10">
+      </div>
     </div>
-    <div class="field">
-      <label>Saumalisä mm (per sivu)</label>
-      <input type="number" id="putki-sauma" inputmode="numeric" placeholder="10" value="10">
+    <div class="field-row col2">
+      <div class="field">
+        <label>Pellin paksuus mm</label>
+        <input type="number" id="putki-paksuus" inputmode="numeric" placeholder="0.5" value="0.5" step="0.1">
+      </div>
+      <div class="field">
+        <label>Välys mm (per sivu)</label>
+        <input type="number" id="putki-valys" inputmode="numeric" placeholder="1" value="1" step="0.5">
+      </div>
     </div>
   </div>
 
@@ -2630,18 +2642,35 @@ function laskePutki() {
   const halk = gn('putki-halk');
   if (!halk) { setError('result-putket', 'Syötä halkaisija'); return; }
 
-  const ymparys = Math.round(Math.PI * halk * 10) / 10;
   const saumaRaw = document.getElementById('putki-sauma').value;
   const saumaPerSivu = saumaRaw === '' ? 10 : parseFloat(saumaRaw) || 0;
   const saumaYht = saumaPerSivu * 2;
+  const paksuus = gn('putki-paksuus') || 0;
+  const valys = gn('putki-valys') || 0;
+
+  // Ulompi putki (normaali halkaisija)
+  const ymparys = Math.round(Math.PI * halk * 10) / 10;
   const ymparysJaSauma = Math.round((Math.PI * halk + saumaYht) * 10) / 10;
 
+  // Sisempi putki: halkaisija - pellinpaksuus - välys per sivu
+  const sisaHalk = Math.round((halk - paksuus - valys) * 100) / 100;
+  const sisaYmparys = Math.round(Math.PI * sisaHalk * 10) / 10;
+  const sisaYmparysJaSauma = Math.round((Math.PI * sisaHalk + saumaYht) * 10) / 10;
+
   const rows = [
+    { label: 'ULOMPI PUTKI', value: '', unit: '' },
     { label: 'Ympärysmitta', value: ymparys, unit: 'mm', big: true },
     { label: 'Sauman kanssa', value: ymparysJaSauma, unit: 'mm', big: true },
     { divider: true },
-    { label: 'Halkaisija', value: halk, unit: 'mm' },
-    { label: 'Saumalisä yhteensä', value: saumaYht, unit: 'mm (' + saumaPerSivu + ' × 2)' },
+    { label: 'SISEMPI PUTKI (menee sisään)', value: '', unit: '' },
+    { label: 'Halkaisija', value: sisaHalk, unit: 'mm', small: true },
+    { label: 'Ympärysmitta', value: sisaYmparys, unit: 'mm', big: true },
+    { label: 'Sauman kanssa', value: sisaYmparysJaSauma, unit: 'mm', big: true },
+    { divider: true },
+    { label: 'Halkaisija (syötetty)', value: halk, unit: 'mm', small: true },
+    { label: 'Pellin paksuus', value: paksuus, unit: 'mm', small: true },
+    { label: 'Välys per sivu', value: valys, unit: 'mm', small: true },
+    { label: 'Saumalisä yhteensä', value: saumaYht, unit: 'mm (' + saumaPerSivu + ' × 2)', small: true },
   ];
 
   setResult('result-putket', rows);
