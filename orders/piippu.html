@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Piippu — Kalajoen Peltityö</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --bg2: #1e293b;
+    --bg3: #334155;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --border: #334155;
+    --accent: #22c55e;
+    --accent2: #16a34a;
+    --input-bg: #1e293b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* NAV */
+  nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 16px; display: flex; align-items: center; gap: 12px; height: 48px; position: sticky; top: 0; z-index: 100; }
+  nav img { height: 28px; filter: brightness(0) invert(1); }
+  .nav-title { font-weight: 600; font-size: 15px; color: var(--accent); }
+  .nav-links { display: flex; gap: 4px; margin-left: auto; }
+  .nav-links a { color: var(--text2); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
+  .nav-links a:hover { background: var(--bg3); color: var(--text); }
+  .nav-links a.active { color: var(--accent); }
+  .hamburger { display: none; background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; margin-left: auto; }
+
+  /* LAYOUT */
+  .main { display: grid; grid-template-columns: 320px 1fr; gap: 0; height: calc(100vh - 48px); overflow: hidden; }
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .content { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+  /* SIDEBAR SECTIONS */
+  .section { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .section h3 { font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+
+  /* INPUTS */
+  .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+  .field label { font-size: 12px; color: var(--text2); }
+  .field input[type=number] {
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 6px 10px; font-size: 14px; width: 100%;
+  }
+  .field input[type=number]:focus { outline: none; border-color: var(--accent); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* CHECKBOXIT */
+  .checks { display: flex; flex-direction: column; gap: 6px; }
+  .check-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .check-item label { font-size: 13px; cursor: pointer; }
+  .sauma-options { display: flex; gap: 8px; margin-left: 24px; margin-top: 2px; }
+  .sauma-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; color: var(--text2); padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  .sauma-btn.active { background: var(--accent2); border-color: var(--accent); color: white; }
+
+  /* VAKIOARVOT */
+  .vakio-grid { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; }
+  .vakio-grid label { font-size: 12px; color: var(--text2); }
+  .vakio-grid input[type=number] {
+    background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px;
+    color: var(--text); padding: 3px 6px; font-size: 12px; width: 64px; text-align: right;
+  }
+  .vakio-grid input[type=number]:focus { outline: none; border-color: var(--accent); }
+
+  /* SVG-KUVA */
+  .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .kuva-card svg { width: 100%; display: block; }
+
+  /* PELTILUETTELO */
+  .luettelo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .luettelo-card h3 { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { color: var(--text2); font-weight: 500; text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  td { padding: 5px 8px; border-bottom: 1px solid #1e293b; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .td-osa { color: var(--text2); font-size: 12px; }
+  .total-row td { border-top: 1px solid var(--border); font-weight: 600; color: var(--accent); }
+  .empty-msg { color: var(--text2); font-size: 13px; text-align: center; padding: 20px 0; }
+
+  /* MOBIILI */
+  @media (max-width: 700px) {
+    .main { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .content { padding: 12px; }
+    .nav-links { display: none; }
+    .hamburger { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-title">🏠 Piippu</span>
+  <div class="nav-links">
+    <a href="tilaukset.html">Tilaukset</a>
+    <a href="tilaus.html">Uusi tilaus</a>
+    <a href="peltipiirturi.html">Mallisto</a>
+    <a href="vakiomallit.html">Vakiomallit</a>
+    <a href="piippu.html" class="active">Piippu</a>
+    <a href="asiakkaat.html">Asiakkaat</a>
+    <a href="tuotanto.html">Tuotanto</a>
+  </div>
+  <button class="hamburger" onclick="alert('Valikko tulossa')">☰</button>
+</nav>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Piipun osat -->
+    <div class="section">
+      <h3>Piipun osat</h3>
+      <div class="checks">
+        <div class="check-item">
+          <input type="checkbox" id="chk-juuret" checked onchange="laske()">
+          <label for="chk-juuret">Juuret</label>
+        </div>
+        <div class="check-item">
+          <input type="checkbox" id="chk-huppu" checked onchange="laske()">
+          <label for="chk-huppu">Huppu</label>
+        </div>
+        <div class="sauma-options">
+          <button class="sauma-btn active" id="sauma1" onclick="setSauma(1)">Sauma 1</button>
+          <button class="sauma-btn" id="sauma2" onclick="setSauma(2)">Sauma 2</button>
+        </div>
+        <div class="check-item">
+          <input type="checkbox" id="chk-kansi" checked onchange="laske()">
+          <label for="chk-kansi">Kansi</label>
+        </div>
+        <div class="check-item">
+          <input type="checkbox" id="chk-hattu" checked onchange="laske()">
+          <label for="chk-hattu">Hattu</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Piipun mitat -->
+    <div class="section">
+      <h3>Piipun mitat</h3>
+      <div class="field">
+        <label>Piipun leveys (mm)</label>
+        <input type="number" id="leveys" value="400" min="0" oninput="laske()">
+      </div>
+      <div class="field">
+        <label>Suora mitta — pituus katolla (mm)</label>
+        <input type="number" id="suora" value="600" min="0" oninput="laske()">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Etukorkeus (mm)</label>
+          <input type="number" id="etukork" value="1000" min="0" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Takakorkeus (mm)</label>
+          <input type="number" id="takakork" value="800" min="0" oninput="laske()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Sivumitat -->
+    <div class="section">
+      <h3>Sivumitat (mm)</h3>
+      <div class="field-row">
+        <div class="field">
+          <label>Vasen — poimuun</label>
+          <input type="number" id="vasen" value="150" min="0" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Oikea — poimuun</label>
+          <input type="number" id="oikea" value="100" min="0" oninput="laske()">
+        </div>
+      </div>
+      <div class="field">
+        <label>Poimun ylitys vasemmalle (mm)</label>
+        <input type="number" id="poimu" value="20" min="0" oninput="laske()">
+      </div>
+    </div>
+
+    <!-- Juuri etuosa -->
+    <div class="section">
+      <h3>Juuri — etuosa</h3>
+      <div class="field-row">
+        <div class="field">
+          <label>Eteen piipusta K24 (mm)</label>
+          <input type="number" id="k24" value="200" min="0" oninput="laske()">
+        </div>
+        <div class="field">
+          <label>Alas / saumavara J25 (mm)</label>
+          <input type="number" id="j25" value="20" min="0" oninput="laske()">
+        </div>
+      </div>
+    </div>
+
+    <!-- Takareuna -->
+    <div class="section">
+      <h3>Takareuna</h3>
+      <div class="field">
+        <label>Takareunasta harjalle (mm)</label>
+        <input type="number" id="harjalle" value="1050" min="0" oninput="laske()">
+      </div>
+    </div>
+
+    <!-- Vakioarvot -->
+    <div class="section">
+      <h3>Vakioarvot</h3>
+      <div class="vakio-grid">
+        <label>Tuplat juuriin</label>
+        <input type="number" id="v-tupla" value="15" oninput="laske()">
+        <label>Juuri etu lisäys leveyteen</label>
+        <input type="number" id="v-etulis" value="40" oninput="laske()">
+        <label>Juuri taka leveämpi</label>
+        <input type="number" id="v-takalis" value="10" oninput="laske()">
+        <label>Juuri nousee piipulle</label>
+        <input type="number" id="v-nousu" value="200" oninput="laske()">
+        <label>Hupun alatuplat</label>
+        <input type="number" id="v-huptupla" value="20" oninput="laske()">
+        <label>Kannen ylitys</label>
+        <input type="number" id="v-kannylitys" value="50" oninput="laske()">
+        <label>Hattu piippua isompi</label>
+        <input type="number" id="v-hattulis" value="250" oninput="laske()">
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- SVG-KUVA -->
+    <div class="kuva-card">
+      <svg id="piippu-svg" viewBox="0 0 600 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <g id="svg-content"></g>
+      </svg>
+    </div>
+
+    <!-- PELTILUETTELO -->
+    <div class="luettelo-card">
+      <h3>Peltiluettelo</h3>
+      <div id="luettelo-content"><p class="empty-msg">Syötä mitat laskeaksesi pellit</p></div>
+    </div>
+
+  </div><!-- /content -->
+
+</div><!-- /main -->
+
+<script>
+let saumatyyppi = 1;
+
+function setSauma(n) {
+  saumatyyppi = n;
+  document.getElementById('sauma1').classList.toggle('active', n === 1);
+  document.getElementById('sauma2').classList.toggle('active', n === 2);
+  laske();
+}
+
+function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function chk(id) { return document.getElementById(id).checked; }
+
+function laske() {
+  const leveys   = gv('leveys');
+  const suora    = gv('suora');
+  const etukork  = gv('etukork');
+  const takakork = gv('takakork');
+  const vasen    = gv('vasen');
+  const oikea    = gv('oikea');
+  const poimu    = gv('poimu');
+  const k24      = gv('k24');
+  const j25      = gv('j25');
+  const harjalle = gv('harjalle');
+
+  const tupla      = gv('v-tupla');
+  const etulis     = gv('v-etulis');
+  const takalis    = gv('v-takalis');
+  const nousu      = gv('v-nousu');   // Q8 = juuri nousee piipulle
+  const huptupla   = gv('v-huptupla');
+  const kannylitys = gv('v-kannylitys');
+  const hattulis   = gv('v-hattulis');
+
+  const hasJuuret = chk('chk-juuret');
+  const hasHuppu  = chk('chk-huppu');
+  const hasKansi  = chk('chk-kansi');
+  const hasHattu  = chk('chk-hattu');
+
+  // Geometria
+  const vinomitta = Math.sqrt(suora * suora + (etukork - takakork) * (etukork - takakork));
+  const kattokulma_rad = Math.atan(suora / (etukork - takakork));
+  const kattokulma_deg = kattokulma_rad * 180 / Math.PI;
+
+  // Q9: juuri takaa piipulle
+  // Jos huppu: Q9 = nousu + 20 = 220
+  // Jos ei huppua: Q9 = nousu / sin(kattokulma)
+  const q9 = hasHuppu ? (nousu + 20) : (suora > 0 && etukork !== takakork ? nousu / Math.sin(kattokulma_rad) : nousu);
+
+  // Q8 (P10 apumitta): nousu / sin(kattokulma) — vaakakomponentti sivun pituuslaskennassa
+  const p10 = suora > 0 && etukork !== takakork ? nousu / Math.sin(kattokulma_rad) : nousu;
+
+  // Hupun saumaleveydet Q1-Q3
+  const q1 = saumatyyppi === 1 ? 50 : 40;  // etu
+  const q2 = saumatyyppi === 1 ? 50 : 80;  // taka
+  const q3 = saumatyyppi === 1 ? 10 : 60;  // sivut
+  const q4 = hasHuppu ? 10 : 0;             // lisäys hupun korkoon
+
+  // Hupun yläreuna
+  const hup_ylareunan_lisays = hasKansi ? 20 : 0;
+  const q5 = hup_ylareunan_lisays;
+  const q6 = hasHuppu ? 10 : 0;  // vähennys hupun kork etu
+  const q7 = hasHuppu ? 10 : 0;  // vähennys hupun kork taka
+
+  // Lasketaan katon kallistuman avulla hupun korkeudet
+  // M12 = etukorkeus hupulle (piipun seinän korkeus vinon katon kohdalla, etupuoli)
+  // Tämä on approksimaatio — käytetään etukork suoraan
+  const m12 = etukork; // hupun etu korkeus (piipun etukorkeus)
+  const n12 = takakork; // hupun taka korkeus
+
+  const pellit = [];
+
+  // --- JUURET ---
+  if (hasJuuret) {
+    // Juuri ETU
+    // Leveys: piipun leveys + etulis (vain kerran)
+    const jEtuLev = leveys + etulis;
+    // Pituus: JOS(J25>0, J25, tupla) + K24 + J25 + Q9
+    const jEtuPit = (j25 > 0 ? j25 : tupla) + k24 + j25 + q9;
+    pellit.push({ osa: 'Juuri etu', lev: Math.round(jEtuLev), pit: Math.round(jEtuPit), kpl: 1 });
+
+    // Juuri OIKEA
+    // Leveys: oikea + poimu + nousu + tupla
+    const jOikLev = oikea + poimu + nousu + tupla;
+    // Pituus: K24 + vinomitta + sqrt(p10²-nousu²) + j25 + 30
+    const vinokomp = p10 > nousu ? Math.sqrt(p10 * p10 - nousu * nousu) : 0;
+    const jSivuPit = k24 + vinomitta + vinokomp + j25 + 30;
+    pellit.push({ osa: 'Juuri oikea', lev: Math.round(jOikLev), pit: Math.round(jSivuPit), kpl: 1 });
+
+    // Juuri VASEN
+    // Leveys: vasen + poimu + nousu + tupla
+    const jVasLev = vasen + poimu + nousu + tupla;
+    pellit.push({ osa: 'Juuri vasen', lev: Math.round(jVasLev), pit: Math.round(jSivuPit), kpl: 1 });
+
+    // Juuri TAKA
+    // Leveys: vasen + oikea + leveys + tupla*2 + poimu*2 + takalis
+    const jTakaLev = vasen + oikea + leveys + tupla * 2 + poimu * 2 + takalis;
+    // Pituus: harjalle + Q9
+    const jTakaPit = harjalle + q9;
+    pellit.push({ osa: 'Juuri taka', lev: Math.round(jTakaLev), pit: Math.round(jTakaPit), kpl: 1 });
+  }
+
+  // --- HUPPU ---
+  if (hasHuppu) {
+    // Hupun leveydet: piipun mitat + saumaleva + huptupla*2 + lisäys kokoon(10)
+    const hupLisays = 10; // lisää hupun kokoon
+    // Huppu ETU leveys
+    const hEtuLev = leveys + etulis + q1 * 2 + hupLisays;
+    // Huppu ETU korkeus: m12 + q4 + q5 + huptupla - q6
+    const hEtuKork = m12 + q4 + q5 + huptupla - q6;
+    pellit.push({ osa: 'Huppu etu', lev: Math.round(hEtuLev), pit: Math.round(hEtuKork), kpl: 1 });
+
+    // Huppu SIVUT leveys: suora mitta + q3*2 + hupLisays (approx vinomitta-pohjainen)
+    const hSivLev = leveys + etulis + q3 * 2 + hupLisays + takalis;
+    // Korkeus sama kuin etu
+    pellit.push({ osa: 'Huppu sivut', lev: Math.round(hSivLev), pit: Math.round(hEtuKork), kpl: 2 });
+
+    // Huppu TAKA leveys
+    const hTakaLev = leveys + etulis + q2 * 2 + hupLisays + takalis;
+    // Korkeus: n12 + q4 + q5 + huptupla - q7
+    const hTakaKork = n12 + q4 + q5 + huptupla - q7;
+    pellit.push({ osa: 'Huppu taka', lev: Math.round(hTakaLev), pit: Math.round(hTakaKork), kpl: 1 });
+  }
+
+  // --- KANSI ---
+  if (hasKansi) {
+    // Leveys: leveys + etulis + kannylitys*2 + q4
+    const kLev = leveys + etulis + kannylitys * 2 + q4;
+    // Pituus: suora + q4 + kannylitys*2 + q5*2 (approx)
+    const kPit = suora + q4 + kannylitys * 2 + q5 * 2;
+    pellit.push({ osa: 'Kansi', lev: Math.round(kLev), pit: Math.round(kPit), kpl: 1 });
+  }
+
+  // --- HATTU ---
+  if (hasHattu) {
+    // Leveys: leveys + hattulis
+    const hattLev = leveys + hattulis;
+    // Pituus: suora + hattulis
+    const hattPit = suora + hattulis;
+    pellit.push({ osa: 'Hattu', lev: Math.round(hattLev), pit: Math.round(hattPit), kpl: 1 });
+  }
+
+  // Piirretään kuva
+  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, kattokulma_deg);
+
+  // Peltiluettelo
+  renderLuettelo(pellit);
+}
+
+function renderLuettelo(pellit) {
+  const el = document.getElementById('luettelo-content');
+  if (!pellit.length) {
+    el.innerHTML = '<p class="empty-msg">Valitse vähintään yksi osa</p>';
+    return;
+  }
+
+  let totalM2 = 0;
+  let rows = pellit.map(p => {
+    const m2 = p.lev * p.pit * p.kpl / 1000000;
+    totalM2 += m2;
+    return `<tr>
+      <td>${p.osa}</td>
+      <td class="td-num">${p.lev}</td>
+      <td class="td-osa" style="color:#64748b">×</td>
+      <td class="td-num">${p.pit}</td>
+      <td class="td-num">${p.kpl}</td>
+      <td class="td-num">${m2.toFixed(3)}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<table>
+    <thead>
+      <tr>
+        <th>Osa</th>
+        <th class="td-num">Leveys mm</th>
+        <th></th>
+        <th class="td-num">Pituus mm</th>
+        <th class="td-num">Kpl</th>
+        <th class="td-num">m²</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+      <tr class="total-row">
+        <td colspan="5">Yhteensä</td>
+        <td class="td-num">${totalM2.toFixed(3)} m²</td>
+      </tr>
+    </tbody>
+  </table>`;
+}
+
+function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, kattokulma_deg) {
+  const svg = document.getElementById('svg-content');
+
+  // Skaalaus: sovitetaan 600x320 viewboxiin
+  // Piipun leveys = 300 suora, korkeus max 200px
+  const W = 600, H = 320;
+  const marginX = 90, marginY = 30;
+  const drawW = W - marginX * 2;
+  const drawH = H - marginY * 2 - 40; // 40 selitteelle
+
+  // Skaala suoran mitan mukaan
+  const scaleS = Math.min(drawW * 0.5 / (suora || 1), drawH * 0.6 / (etukork || 1));
+
+  // Piipun alareunan pisteet (katto)
+  // Etureuna x, taka x
+  const cx = marginX + drawW * 0.25; // piipun etureuna x
+  const piipW = (suora || 1) * scaleS;
+  const tx = cx + piipW; // piipun takareuna x
+
+  // Katto kallistuu: etu alempana (suurempi y), taka ylempänä
+  // Kattoviiva: nousee vasemmalta oikealle
+  const etuY_katto = marginY + drawH - 40;
+  const korokuero = (etukork - takakork) * scaleS;
+  const takaY_katto = etuY_katto - korokuero;
+
+  // Kattolinja piipun alla: interpolointi
+  // Koko kattoviiva: vasemmalta (etu - etäisyys) oikealle (taka + harjalle)
+  const kattoSlope = (takaY_katto - etuY_katto) / piipW;
+  const vasenKattoX = marginX + 10;
+  const oikeaKattoX = W - marginX + 30;
+  const vasenKattoY = etuY_katto + kattoSlope * (vasenKattoX - cx);
+  const oikeaKattoY = etuY_katto + kattoSlope * (oikeaKattoX - cx);
+
+  // Piipun yläreuna (vaakasuora, ylimmässä pisteessä)
+  const etuYlaY = etuY_katto - etukork * scaleS;
+  const takaYlaY = takaY_katto - takakork * scaleS;
+  const ylaY = Math.min(etuYlaY, takaYlaY); // ylin piste
+
+  // Värit
+  const c1 = '#f1f5f9';   // runko
+  const c2 = '#64748b';   // mitat
+  const cInfo = '#38bdf8'; // vinomitta
+  const cAccent = '#22c55e';
+
+  let html = '';
+
+  // Kattoviiva
+  html += `<line x1="${vasenKattoX}" y1="${vasenKattoY}" x2="${oikeaKattoX}" y2="${oikeaKattoY}" stroke="${c2}" stroke-width="1.5" stroke-linecap="round"/>`;
+
+  // Piipun etuseinä
+  html += `<line x1="${cx}" y1="${etuY_katto}" x2="${cx}" y2="${ylaY}" stroke="${c1}" stroke-width="2" stroke-linecap="round"/>`;
+  // Piipun takaseinä
+  html += `<line x1="${tx}" y1="${takaY_katto}" x2="${tx}" y2="${ylaY}" stroke="${c1}" stroke-width="2" stroke-linecap="round"/>`;
+  // Piipun yläreuna
+  html += `<line x1="${cx}" y1="${ylaY}" x2="${tx}" y2="${ylaY}" stroke="${c1}" stroke-width="2" stroke-linecap="round"/>`;
+
+  // Juuri etu (katkoviiva eteen)
+  const etuJuurX = cx - k24 * scaleS * 0.3; // pieni skaalattu uloke
+  html += `<line x1="${cx}" y1="${etuY_katto}" x2="${etuJuurX}" y2="${etuY_katto + kattoSlope * (etuJuurX - cx)}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+
+  // Juuri taka (harjalle)
+  const takaJuurX = tx + harjalle * scaleS * 0.15;
+  const takaJuurY = takaY_katto + kattoSlope * (takaJuurX - tx);
+  html += `<line x1="${tx}" y1="${takaY_katto}" x2="${takaJuurX}" y2="${takaJuurY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+
+  // Vinomitta (sininen katkoviiva)
+  html += `<line x1="${cx}" y1="${etuY_katto}" x2="${tx}" y2="${takaY_katto}" stroke="${cInfo}" stroke-width="1" stroke-dasharray="3 3"/>`;
+
+  // --- MITAT ---
+  const mitY = ylaY - 18; // suora mitta yläpuolella
+  // Suora mitta
+  html += `<line x1="${cx}" y1="${mitY}" x2="${tx}" y2="${mitY}" stroke="${c2}" stroke-width="1" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
+  html += `<text x="${(cx+tx)/2}" y="${mitY - 6}" text-anchor="middle" font-size="11" fill="${c2}" font-family="system-ui">Suora ${suora}</text>`;
+
+  // Etukorkeus
+  const etuMitX = cx - 30;
+  html += `<line x1="${etuMitX}" y1="${ylaY}" x2="${etuMitX}" y2="${etuY_katto}" stroke="${c2}" stroke-width="1" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
+  html += `<text x="${etuMitX - 4}" y="${(ylaY + etuY_katto)/2 + 4}" text-anchor="end" font-size="11" fill="${c2}" font-family="system-ui">Etu ${etukork}</text>`;
+
+  // Takakorkeus
+  const takaMitX = tx + 28;
+  html += `<line x1="${takaMitX}" y1="${ylaY}" x2="${takaMitX}" y2="${takaY_katto}" stroke="${c2}" stroke-width="1" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
+  html += `<text x="${takaMitX + 4}" y="${(ylaY + takaY_katto)/2 + 4}" text-anchor="start" font-size="11" fill="${c2}" font-family="system-ui">Taka ${takakork}</text>`;
+
+  // Vinomitta teksti
+  html += `<text x="${(cx+tx)/2}" y="${(etuY_katto + takaY_katto)/2 + 18}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">↗ vino ${Math.round(vinomitta)}</text>`;
+
+  // Harjalle
+  html += `<text x="${(tx + takaJuurX)/2}" y="${takaJuurY + 14}" text-anchor="middle" font-size="10" fill="${c2}" font-family="system-ui">harjalle ${harjalle}</text>`;
+
+  // Kattokulma
+  html += `<text x="${tx + 8}" y="${takaY_katto + 20}" text-anchor="start" font-size="10" fill="${c2}" font-family="system-ui">${Math.round(kattokulma_deg)}°</text>`;
+
+  svg.innerHTML = html;
+}
+
+// Käynnistetään
+laske();
+</script>
+</body>
+</html>
