@@ -4,34 +4,96 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Piippu — Kalajoen Peltityö</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0f172a; --bg2: #1e293b; --bg3: #334155;
-    --text: #f1f5f9; --text2: #94a3b8; --border: #334155;
-    --accent: #22c55e; --accent2: #16a34a; --input-bg: #1e293b;
+    --bg: #0a0f1a;
+    --bg2: #111827;
+    --bg3: #1a2332;
+    --bg4: #1e2d3d;
+    --text: #e2eef5;
+    --text2: #6b8fa8;
+    --border: #1e3a4a;
+    --accent: #22c55e;
+    --accent2: #16a34a;
+    --input-bg: #111827;
     --red: #ef4444;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; min-height: 100vh; }
 
-  nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 16px; display: flex; align-items: center; gap: 12px; height: 48px; position: sticky; top: 0; z-index: 100; }
-  .nav-title { font-weight: 600; font-size: 15px; color: var(--accent); }
-  .nav-links { display: flex; gap: 4px; margin-left: auto; }
-  .nav-links a { color: var(--text2); text-decoration: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; }
-  .nav-links a:hover { background: var(--bg3); color: var(--text); }
-  .nav-links a.active { color: var(--accent); }
+  /* Navigointipalkki */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo { height: 36px; width: auto; filter: brightness(0) invert(1); flex-shrink: 0; }
+  .header-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .menu-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text2);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-dropdown {
+    display: none;
+    position: absolute;
+    top: 52px;
+    right: 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    min-width: 180px;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .nav-dropdown.open { display: block; }
+  .nav-dropdown a {
+    display: block;
+    padding: 10px 16px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-dropdown a:last-child { border-bottom: none; }
+  .nav-dropdown a:hover { background: var(--bg3); color: var(--text); }
+  .nav-dropdown a.active { color: var(--accent); }
 
-  .main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 48px); overflow: hidden; }
+  .main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 52px); overflow: hidden; }
   .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
   .content { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 
-  .section { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .section { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
   .section h3 { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
   .section h3.red { color: var(--red); }
 
   .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
   .field label { font-size: 11px; color: var(--text2); }
-  .field input[type=number] { background: var(--input-bg); border: 1px solid var(--border); border-radius: 5px; color: var(--text); padding: 5px 8px; font-size: 13px; width: 100%; }
+  .field input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 8px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
   .field input[type=number]:focus { outline: none; border-color: var(--accent); }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
@@ -40,23 +102,23 @@
   .check-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
   .check-item label { font-size: 13px; cursor: pointer; }
   .sauma-options { display: flex; gap: 6px; margin-left: 23px; margin-top: 2px; }
-  .sauma-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; color: var(--text2); padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  .sauma-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text2); padding: 3px 10px; font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: border-color 0.15s; }
   .sauma-btn.active { background: var(--accent2); border-color: var(--accent); color: white; }
 
   .vakio-grid { display: grid; grid-template-columns: 1fr 56px; gap: 3px 8px; align-items: center; }
   .vakio-grid label { font-size: 11px; color: var(--text2); }
-  .vakio-grid input[type=number] { background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 3px 5px; font-size: 12px; width: 56px; text-align: right; }
+  .vakio-grid input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 3px 5px; font-size: 12px; width: 56px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
   .vakio-grid input[type=number]:focus { outline: none; border-color: var(--accent); }
   .vakio-grid input.red-input { border-color: var(--red) !important; }
 
-  .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+  .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; }
   .kuva-card svg { width: 100%; display: block; }
   .kulmat { display: flex; gap: 40px; padding: 8px 0 2px; border-top: 1px solid var(--border); margin-top: 8px; }
   .kulma-item { font-size: 12px; color: var(--text2); }
   .kulma-item span { color: var(--text); font-weight: 600; font-size: 14px; margin-left: 6px; }
 
   .luettelo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .luettelo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .luettelo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
   .luettelo-card h3 { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { color: var(--text2); font-weight: 500; text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border); font-size: 11px; }
@@ -78,9 +140,13 @@
 </head>
 <body>
 
-<nav>
-  <span class="nav-title">🏠 Piippu</span>
-  <div class="nav-links">
+<header>
+  <img src="../kpt-logo.png" alt="KPT" class="header-logo" onerror="this.style.display='none'">
+  <span class="header-title">Piippu</span>
+  <div class="header-right">
+    <button class="menu-btn" onclick="toggleMenu()" id="menuBtn">☰ Valikko</button>
+  </div>
+  <div class="nav-dropdown" id="navDropdown">
     <a href="tilaukset.html">Tilaukset</a>
     <a href="tilaus.html">Uusi tilaus</a>
     <a href="peltipiirturi.html">Mallisto</a>
@@ -89,7 +155,7 @@
     <a href="asiakkaat.html">Asiakkaat</a>
     <a href="tuotanto.html">Tuotanto</a>
   </div>
-</nav>
+</header>
 
 <div class="main">
 <div class="sidebar">
@@ -469,6 +535,17 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 
 function r(n) { return Math.round(n); }
 laske();
+</script>
+
+<script>
+function toggleMenu() {
+  document.getElementById('navDropdown').classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#menuBtn') && !e.target.closest('#navDropdown')) {
+    document.getElementById('navDropdown').classList.remove('open');
+  }
+});
 </script>
 </body>
 </html>
