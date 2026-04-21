@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lasku / Tarjous — Kalajoen Peltityö</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161920;
+  --bg3: #1e2130;
+  --bg4: #252840;
+  --border: #2a2d3e;
+  --border2: #363a52;
+  --text: #e8eaf0;
+  --text2: #9096b0;
+  --text3: #5a6080;
+  --accent: #f59e0b;
+  --accent2: #fbbf24;
+  --info: #38bdf8;
+  --success: #4ade80;
+  --danger: #f87171;
+  --warning: #fb923c;
+  --font: 'IBM Plex Sans', sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --radius: 4px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+/* NAV */
+nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 16px; height: 48px; position: sticky; top: 0; z-index: 100; }
+.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.nav-logo svg { height: 28px; width: auto; filter: brightness(0) invert(1); opacity: 0.9; }
+.nav-title { font-family: var(--mono); font-size: 13px; color: var(--text2); }
+.nav-sep { width: 1px; height: 20px; background: var(--border2); }
+.nav-menu-btn { background: none; border: 1px solid var(--border2); color: var(--text2); padding: 4px 10px; border-radius: var(--radius); cursor: pointer; font-size: 13px; font-family: var(--font); }
+.nav-menu-btn:hover { border-color: var(--border); color: var(--text); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.nav-status { font-family: var(--mono); font-size: 11px; padding: 3px 10px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); }
+.nav-status.luonnos { color: var(--text2); border-color: var(--border2); }
+.nav-status.lahetetty { color: var(--info); border-color: var(--info); background: rgba(56,189,248,0.08); }
+.nav-status.maksettu { color: var(--success); border-color: var(--success); background: rgba(74,222,128,0.08); }
+.nav-invoice-num { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 500; }
+
+/* LAYOUT */
+.layout { display: grid; grid-template-columns: 1fr 320px; gap: 0; min-height: calc(100vh - 48px); }
+.main { padding: 24px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--border); }
+.sidebar { padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--bg2); }
+
+/* CARDS */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.card-header { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-header h3 { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); }
+.card-body { padding: 14px; }
+
+/* FORM ELEMENTS */
+label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; }
+input, select, textarea {
+  width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius);
+  color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 10px;
+  outline: none; transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+input::placeholder, textarea::placeholder { color: var(--text3); }
+select option { background: var(--bg3); }
+textarea { resize: vertical; min-height: 60px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field-val { font-size: 13px; color: var(--text); padding: 7px 0; }
+.field-val.mono { font-family: var(--mono); color: var(--accent); font-size: 14px; font-weight: 500; }
+.field-val.muted { color: var(--text2); font-size: 12px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+/* BUTTONS */
+.btn { padding: 7px 14px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; cursor: pointer; border: 1px solid var(--border2); background: var(--bg3); color: var(--text); transition: all 0.15s; }
+.btn:hover { border-color: var(--border); background: var(--bg4); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-accent { background: var(--accent); color: #0f1117; border-color: var(--accent); font-weight: 500; }
+.btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-info { background: rgba(56,189,248,0.12); color: var(--info); border-color: rgba(56,189,248,0.3); }
+.btn-info:hover { background: rgba(56,189,248,0.2); }
+.btn-danger { background: rgba(248,113,113,0.1); color: var(--danger); border-color: rgba(248,113,113,0.3); }
+.btn-danger:hover { background: rgba(248,113,113,0.2); }
+.btn-success { background: rgba(74,222,128,0.1); color: var(--success); border-color: rgba(74,222,128,0.3); }
+.btn-success:hover { background: rgba(74,222,128,0.2); }
+
+/* ASIAKAS SEARCH */
+.search-wrap { position: relative; }
+.search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); z-index: 50; max-height: 220px; overflow-y: auto; margin-top: 2px; }
+.search-result-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: var(--bg4); }
+.search-result-name { font-size: 13px; color: var(--text); }
+.search-result-num { font-size: 11px; color: var(--text2); font-family: var(--mono); }
+.asiakas-selected { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 14px; }
+.asiakas-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+.asiakas-detail { font-size: 12px; color: var(--text2); line-height: 1.6; }
+.asiakas-num { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+/* TYYPPI TOGGLE */
+.type-toggle { display: flex; gap: 0; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
+.type-btn { flex: 1; padding: 7px; font-size: 13px; font-family: var(--font); border: none; background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; }
+.type-btn.active { background: var(--accent); color: #0f1117; font-weight: 500; }
+.type-btn:not(.active):hover { background: var(--bg4); color: var(--text); }
+
+/* RIVIT TABLE */
+.rivit-wrap { overflow-x: auto; }
+table.rivit { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; min-width: 860px; }
+table.rivit th { background: var(--bg3); padding: 8px 8px; text-align: left; font-weight: 500; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+table.rivit th.right { text-align: right; }
+table.rivit td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.rivit tr:last-child td { border-bottom: none; }
+table.rivit tr.hidden-row td { opacity: 0.45; background: rgba(255,255,255,0.02); }
+table.rivit tr.summary-row td { background: rgba(245,158,11,0.06); }
+table.rivit input { padding: 4px 6px; font-size: 12px; background: var(--bg4); border-color: transparent; }
+table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
+.col-kohde { width: 10%; }
+.col-nimike { width: 20%; }
+.col-pit { width: 7%; }
+.col-lev { width: 7%; }
+.col-kpl { width: 6%; }
+.col-hinta { width: 9%; }
+.col-ale { width: 6%; }
+.col-alv0 { width: 10%; }
+.col-alvp { width: 6%; }
+.col-rivi { width: 9%; }
+.col-act { width: 4%; }
+.rivi-total { text-align: right; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); }
+.hidden-badge { font-size: 10px; background: var(--bg4); color: var(--text3); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--border); margin-left: 4px; }
+.summary-badge { font-size: 10px; background: rgba(245,158,11,0.15); color: var(--accent); padding: 1px 6px; border-radius: 2px; border: 1px solid rgba(245,158,11,0.3); margin-left: 4px; }
+
+/* DROPDOWN MENU */
+.dropdown-wrap { position: relative; display: inline-block; }
+.dropdown-menu { position: absolute; right: 0; top: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); z-index: 50; min-width: 160px; margin-top: 2px; overflow: hidden; display: none; }
+.dropdown-menu.open { display: block; }
+.dropdown-item { padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text); border-bottom: 1px solid var(--border); }
+.dropdown-item:last-child { border-bottom: none; }
+.dropdown-item:hover { background: var(--bg4); }
+.dropdown-item.danger { color: var(--danger); }
+
+/* TOTALS */
+.totals-table { width: 100%; }
+.totals-table td { padding: 5px 0; font-size: 13px; }
+.totals-table td:last-child { text-align: right; font-family: var(--mono); font-weight: 500; }
+.totals-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
+.total-yht { font-size: 16px; color: var(--accent); }
+
+/* SIDEBAR SECTIONS */
+.sidebar-label { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); margin-bottom: 8px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.info-row:last-child { border-bottom: none; }
+.info-row-label { color: var(--text2); }
+.info-row-val { font-family: var(--mono); color: var(--text); font-size: 12px; }
+.info-row-val.accent { color: var(--accent); }
+
+/* KAAVAKE */
+.kaavake { border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; font-size: 11px; }
+.kaavake-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.kaavake-row:last-child { border-bottom: none; }
+.kaavake-cell { padding: 8px 10px; border-right: 1px solid var(--border); }
+.kaavake-cell:last-child { border-right: none; }
+.kaavake-cell-label { color: var(--text3); font-size: 10px; margin-bottom: 2px; }
+.kaavake-cell-val { color: var(--text); font-family: var(--mono); font-size: 11px; }
+
+/* TEKSTIPOHJA MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); width: 500px; max-height: 80vh; overflow-y: auto; }
+.modal-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { font-size: 14px; font-weight: 500; }
+.modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; }
+.modal-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.template-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; transition: border-color 0.15s; }
+.template-item:hover { border-color: var(--accent); }
+.template-item-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.template-item-body { font-size: 12px; color: var(--text2); }
+
+/* NOTIFICATION */
+.notif { position: fixed; bottom: 20px; right: 20px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; z-index: 300; display: none; transition: all 0.2s; }
+.notif.success { border-color: rgba(74,222,128,0.4); color: var(--success); }
+.notif.error { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+
+/* PRINT */
+@media print {
+  nav, .sidebar, .rivit-add-row, .btn, .dropdown-wrap, .modal-overlay, .notif { display: none !important; }
+  .layout { grid-template-columns: 1fr; }
+  body { background: white; color: black; }
+  .card { border: none; background: white; }
+  .card-header { border-bottom: 1px solid #ccc; }
+  table.rivit th { background: #f5f5f5; color: #333; }
+  table.rivit td { border-bottom: 1px solid #eee; }
+  .main { padding: 0; border: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="tilaukset.html">
+    <svg viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+      <rect x="2" y="8" width="36" height="24" rx="2" fill="none" stroke="white" stroke-width="2.5"/>
+      <line x1="2" y1="20" x2="38" y2="20" stroke="white" stroke-width="2"/>
+      <text x="46" y="26" font-family="IBM Plex Sans" font-weight="500" font-size="16" fill="white">Peltityö</text>
+    </svg>
+  </a>
+  <div class="nav-sep"></div>
+  <span class="nav-title" id="navTyyppi">Lasku</span>
+  <span class="nav-invoice-num" id="navNum">—</span>
+  <div class="nav-right">
+    <span class="nav-status luonnos" id="navStatus">Luonnos</span>
+    <button class="btn btn-sm" onclick="tallenna()">Tallenna</button>
+    <button class="btn btn-sm btn-accent" onclick="lahetaSahkoposti()" id="btnLaheta" disabled>Lähetä sähköpostilla</button>
+  </div>
+</nav>
+
+<div class="layout">
+<div class="main">
+
+  <!-- TYYPPI + ASIAKAS -->
+  <div class="card">
+    <div class="card-header"><h3>Asiakas ja tyyppi</h3></div>
+    <div class="card-body">
+      <div class="grid2" style="gap:16px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="field">
+            <label>Tyyppi</label>
+            <div class="type-toggle">
+              <button class="type-btn active" id="btnLasku" onclick="setTyyppi('INVOICE')">Lasku</button>
+              <button class="type-btn" id="btnTarjous" onclick="setTyyppi('QUOTE')">Tarjous</button>
+            </div>
+          </div>
+          <div class="field" id="asiakasSearchWrap">
+            <label>Hae asiakas</label>
+            <div class="search-wrap">
+              <input type="text" id="asiakasSearch" placeholder="Kirjoita nimi tai asiakasnumero..." oninput="hakuAsiakkaat(this.value)" autocomplete="off">
+              <div class="search-results" id="searchResults"></div>
+            </div>
+          </div>
+          <div id="asiakasCard" style="display:none">
+            <div class="asiakas-selected">
+              <div class="asiakas-name" id="asiakasNimi">—</div>
+              <div class="asiakas-detail" id="asiakasDetail">—</div>
+              <div class="asiakas-num" id="asiakasNum">—</div>
+              <button class="btn btn-sm" style="margin-top:8px" onclick="vaihdaAsiakas()">Vaihda asiakas</button>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="field">
+            <label>Kohde</label>
+            <input type="text" id="inputKohde" placeholder="esim. Peltokatu 3, katto">
+          </div>
+          <div class="field">
+            <label>Lisäteksti laskulle</label>
+            <div style="display:flex;gap:6px;margin-bottom:4px">
+              <button class="btn btn-sm" onclick="avaaTextipohjaModal()">Valitse tekstipohja</button>
+            </div>
+            <textarea id="inputNotes" rows="3" placeholder="Vapaa teksti, esim. maksuehto tai tarjouksen voimassaoloaika..."></textarea>
+          </div>
+          <div class="field" id="naytaHinnatWrap" style="display:none">
+            <label>Hinnat tarjouksella</label>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="showPrices" checked style="width:auto" onchange="paivitaNaytaHinnat()">
+              <span style="font-size:12px;color:var(--text2)">Näytä rivihinnat tarjouksella</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LASKURIVIT -->
+  <div class="card">
+    <div class="card-header">
+      <h3>Laskurivit</h3>
+      <button class="btn btn-sm" onclick="lisaaRivi()">+ Lisää rivi</button>
+    </div>
+    <div class="rivit-wrap">
+      <table class="rivit" id="riviTable">
+        <colgroup>
+          <col class="col-kohde"><col class="col-nimike"><col class="col-pit">
+          <col class="col-lev"><col class="col-kpl"><col class="col-hinta">
+          <col class="col-ale"><col class="col-alv0"><col class="col-alvp">
+          <col class="col-rivi"><col class="col-act">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Kohde</th><th>Tuote / nimike</th>
+            <th class="right">Pit</th><th class="right">Lev</th>
+            <th class="right">Kpl</th><th class="right">A-hinta</th>
+            <th class="right">Ale%</th><th class="right">Yht alv 0%</th>
+            <th class="right">Alv%</th><th class="right">Rivihinta</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="riviBody">
+          <tr id="riviEmpty">
+            <td colspan="11" style="text-align:center;padding:24px;color:var(--text3);font-size:13px">
+              Ei rivejä — lisää rivi tai valitse tilaus
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TOTALS -->
+  <div style="display:flex;justify-content:flex-end">
+    <div style="width:280px">
+      <div class="card">
+        <div class="card-body">
+          <table class="totals-table">
+            <tr><td style="color:var(--text2)">Alv 0%</td><td id="totalAlv0">0,00 €</td></tr>
+            <tr><td style="color:var(--text2)" id="totalAlvLabel">Alv (25,5%)</td><td id="totalAlv">0,00 €</td></tr>
+          </table>
+          <hr class="totals-divider">
+          <table class="totals-table">
+            <tr><td style="font-weight:500">YHT</td><td class="total-yht" id="totalYht">0,00 €</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TILISIIRTOKAAVAKE -->
+  <div class="card" id="kaavakeCard">
+    <div class="card-header"><h3>Tilisiirtokaavake</h3><span style="font-size:11px;color:var(--text3)">Tulostuu laskun alapuolelle</span></div>
+    <div class="card-body">
+      <div class="kaavake">
+        <div class="kaavake-row">
+          <div class="kaavake-cell"><div class="kaavake-cell-label">Saajan tilinumero</div><div class="kaavake-cell-val">OP KALAJOKI 509907-29431</div></div>
+          <div class="kaavake-cell"><div class="kaavake-cell-label">IBAN / BIC</div><div class="kaavake-cell-val">FI63 5099 0720 0094 31 / OKOYFIHH</div></div>
+        </div>
+        <div class="kaavake-row">
+          <div class="kaavake-cell"><div class="kaavake-cell-label">Saaja</div><div class="kaavake-cell-val">KALAJOEN PELTITYÖ OY</div></div>
+          <div class="kaavake-cell"><div class="kaavake-cell-label">Viitenumero</div><div class="kaavake-cell-val" id="kaavakeViite">—</div></div>
+        </div>
+        <div class="kaavake-row">
+          <div class="kaavake-cell"><div class="kaavake-cell-label">Maksaja</div><div class="kaavake-cell-val" id="kaavakeMaksaja">—</div></div>
+          <div class="kaavake-cell"><div class="kaavake-cell-label">Eräpäivä / Summa</div><div class="kaavake-cell-val" id="kaavakeEra">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div>
+    <div class="sidebar-label">Laskun tiedot</div>
+    <div class="card">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+        <div class="info-row">
+          <span class="info-row-label">Laskunumero</span>
+          <span class="info-row-val accent" id="sbNum">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Viitenumero</span>
+          <span class="info-row-val" id="sbViite" style="font-size:11px">—</span>
+        </div>
+        <div class="field">
+          <label>Laskupäivä</label>
+          <input type="date" id="inputLaskupaiva">
+        </div>
+        <div class="field">
+          <label>Maksuaika (pv)</label>
+          <input type="number" id="inputMaksuaika" value="14" min="0" oninput="laskeErapaiva()">
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Eräpäivä</span>
+          <span class="info-row-val" id="sbEra">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Viivästyskorko</span>
+          <span class="info-row-val">8 %</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="sidebar-label">Toiminnot</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <button class="btn btn-info" onclick="tallenna()">Tallenna luonnos</button>
+      <button class="btn" onclick="window.print()">Esikatsele / tulosta</button>
+      <button class="btn btn-success" id="btnLahetaMain" onclick="lahetaSahkoposti()" disabled>Lähetä sähköpostilla</button>
+      <button class="btn" onclick="kopioi()" id="btnKopioi" style="display:none">Kopioi uudeksi</button>
+      <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+      <button class="btn btn-danger" onclick="poistaLasku()" id="btnPoista" style="display:none">Poista lasku</button>
+    </div>
+  </div>
+
+  <div id="maksuSeuranta" style="display:none">
+    <div class="sidebar-label">Maksuseuranta</div>
+    <div class="card">
+      <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+        <div class="info-row">
+          <span class="info-row-label">Laskutettu</span>
+          <span class="info-row-val accent" id="sbLaskutettu">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Maksettu</span>
+          <span class="info-row-val" id="sbMaksettu" style="color:var(--success)">—</span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-label">Jäljellä</span>
+          <span class="info-row-val" id="sbJaljella" style="color:var(--danger)">—</span>
+        </div>
+        <button class="btn btn-sm btn-success" onclick="kirjaaMaxsu()">+ Kirjaa maksu</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /layout -->
+
+<!-- TEKSTIPOHJA MODAL -->
+<div class="modal-overlay" id="tekstipohjaModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Valitse tekstipohja</h3>
+      <button class="modal-close" onclick="suljeModal('tekstipohjaModal')">✕</button>
+    </div>
+    <div class="modal-body" id="tekstipohjaList">
+      <p style="color:var(--text3);font-size:13px">Ladataan...</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAKSU MODAL -->
+<div class="modal-overlay" id="maksuModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Kirjaa maksu</h3>
+      <button class="modal-close" onclick="suljeModal('maksuModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Päivämäärä</label><input type="date" id="maksuPvm"></div>
+      <div class="field"><label>Summa (€)</label><input type="number" id="maksuSumma" step="0.01" placeholder="0.00"></div>
+      <div class="field"><label>Huomio</label><input type="text" id="maksuHuomio" placeholder="esim. osamaksu 1/3"></div>
+      <button class="btn btn-success" onclick="tallennaMaksu()">Tallenna maksu</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<script>
+const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// TILA
+let state = {
+  invoiceId: null,
+  invoiceNumber: null,
+  viitenumero: null,
+  tyyppi: 'INVOICE',
+  status: 'DRAFT',
+  asiakas: null,
+  rivit: [],
+  locked: false
+};
+
+// INIT
+document.addEventListener('DOMContentLoaded', async () => {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('inputLaskupaiva').value = today;
+  laskeErapaiva();
+
+  // Tarkista tuleeko localStoragesta invoice_id tai order_id
+  const invoiceId = localStorage.getItem('kpt_open_invoice');
+  const orderId = localStorage.getItem('kpt_laskuta_order');
+
+  if (invoiceId) {
+    localStorage.removeItem('kpt_open_invoice');
+    await lataaLasku(invoiceId);
+  } else if (orderId) {
+    localStorage.removeItem('kpt_laskuta_order');
+    await luoLaskuTilauksesta(orderId);
+  } else {
+    // Tyhjä lasku — hae laskunumero heti
+    await haeLaskunumero();
+  }
+});
+
+// LASKUNUMERO
+async function haeLaskunumero() {
+  try {
+    const { data, error } = await sb.rpc('next_invoice_number');
+    if (error) throw error;
+    state.invoiceNumber = data;
+    state.viitenumero = laskeViitenumero(data);
+    paivitaNumeroUI();
+  } catch(e) {
+    naytaNotif('Laskunumeron haku epäonnistui: ' + e.message, 'error');
+  }
+}
+
+// VIITENUMERO (suomalainen 7-3-1)
+function laskeViitenumero(num) {
+  const s = String(num);
+  const weights = [7,3,1,7,3,1,7,3,1,7,3,1,7,3,1,7,3,1,7];
+  let sum = 0;
+  const rev = s.split('').reverse();
+  for (let i = 0; i < rev.length; i++) {
+    sum += parseInt(rev[i]) * weights[i];
+  }
+  const tarkiste = (10 - (sum % 10)) % 10;
+  return s + tarkiste;
+}
+
+function formatViite(viite) {
+  // Ryhmitellään 5 numeron ryhmiin oikealta
+  const rev = viite.split('').reverse().join('');
+  const groups = rev.match(/.{1,5}/g) || [];
+  return groups.map(g => g.split('').reverse().join('')).reverse().join(' ');
+}
+
+function paivitaNumeroUI() {
+  const num = state.invoiceNumber;
+  const viite = state.viitenumero;
+  const viiteFormatted = viite ? formatViite(viite) : '—';
+  document.getElementById('navNum').textContent = num ? '#' + num : '—';
+  document.getElementById('navTyyppi').textContent = state.tyyppi === 'INVOICE' ? 'Lasku' : 'Tarjous';
+  document.getElementById('sbNum').textContent = num || '—';
+  document.getElementById('sbViite').textContent = viiteFormatted;
+  document.getElementById('kaavakeViite').textContent = viiteFormatted;
+  paivitaKaavake();
+}
+
+// TYYPPI
+function setTyyppi(t) {
+  state.tyyppi = t;
+  document.getElementById('btnLasku').classList.toggle('active', t === 'INVOICE');
+  document.getElementById('btnTarjous').classList.toggle('active', t === 'QUOTE');
+  document.getElementById('naytaHinnatWrap').style.display = t === 'QUOTE' ? 'block' : 'none';
+  document.getElementById('kaavakeCard').style.display = t === 'INVOICE' ? 'block' : 'none';
+  document.getElementById('navTyyppi').textContent = t === 'INVOICE' ? 'Lasku' : 'Tarjous';
+}
+
+// ASIAKASHAKU
+let hakuTimeout = null;
+async function hakuAsiakkaat(q) {
+  clearTimeout(hakuTimeout);
+  const res = document.getElementById('searchResults');
+  if (q.length < 2) { res.innerHTML = ''; res.style.display = 'none'; return; }
+  hakuTimeout = setTimeout(async () => {
+    const { data } = await sb.from('customers')
+      .select('id,name,customer_number,billing_address,billing_postal_code,billing_city,phone,email')
+      .or(`name.ilike.%${q}%,customer_number.eq.${isNaN(q)?0:q}`)
+      .eq('is_active', true).limit(10);
+    if (!data || data.length === 0) {
+      res.innerHTML = '<div style="padding:10px 12px;color:var(--text3);font-size:12px">Ei tuloksia</div>';
+    } else {
+      res.innerHTML = data.map(c => `
+        <div class="search-result-item" onclick='valitseAsiakas(${JSON.stringify(c)})'>
+          <span class="search-result-name">${c.name}</span>
+          <span class="search-result-num">${c.customer_number || ''}</span>
+        </div>`).join('');
+    }
+    res.style.display = 'block';
+  }, 250);
+}
+
+function valitseAsiakas(c) {
+  state.asiakas = c;
+  document.getElementById('searchResults').style.display = 'none';
+  document.getElementById('asiakasSearch').value = '';
+  document.getElementById('asiakasSearchWrap').style.display = 'none';
+  document.getElementById('asiakasCard').style.display = 'block';
+  document.getElementById('asiakasNimi').textContent = c.name;
+  document.getElementById('asiakasDetail').innerHTML =
+    [c.billing_address, [c.billing_postal_code, c.billing_city].filter(Boolean).join(' '), c.phone, c.email].filter(Boolean).join('<br>');
+  document.getElementById('asiakasNum').textContent = 'Asiakasnro: ' + (c.customer_number || '—');
+  document.getElementById('kaavakeMaksaja').textContent =
+    [c.name, c.billing_address, [c.billing_postal_code, c.billing_city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  const btnLaheta = document.getElementById('btnLaheta');
+  const btnLahetaMain = document.getElementById('btnLahetaMain');
+  if (c.email) { btnLaheta.disabled = false; btnLahetaMain.disabled = false; }
+  paivitaKaavake();
+}
+
+function vaihdaAsiakas() {
+  state.asiakas = null;
+  document.getElementById('asiakasCard').style.display = 'none';
+  document.getElementById('asiakasSearchWrap').style.display = 'block';
+}
+
+// ERÄPÄIVÄ
+function laskeErapaiva() {
+  const pvm = document.getElementById('inputLaskupaiva').value;
+  const maksuaika = parseInt(document.getElementById('inputMaksuaika').value) || 14;
+  if (!pvm) return;
+  const era = new Date(pvm);
+  era.setDate(era.getDate() + maksuaika);
+  const eraStr = era.toLocaleDateString('fi-FI');
+  document.getElementById('sbEra').textContent = eraStr;
+  paivitaKaavake();
+}
+
+function paivitaKaavake() {
+  const era = document.getElementById('sbEra').textContent;
+  const yht = document.getElementById('totalYht').textContent;
+  document.getElementById('kaavakeEra').textContent = era + ' — ' + yht;
+  if (state.asiakas) {
+    const c = state.asiakas;
+    document.getElementById('kaavakeMaksaja').textContent =
+      [c.name, c.billing_address, [c.billing_postal_code, c.billing_city].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  }
+}
+
+// RIVIT
+let riviId = 0;
+
+function lisaaRivi(data = {}) {
+  const id = 'r' + (++riviId);
+  const tbody = document.getElementById('riviBody');
+  const empty = document.getElementById('riviEmpty');
+  if (empty) empty.remove();
+
+  const rivi = {
+    _id: id,
+    dbId: data.id || null,
+    kohde: data.kohde || '',
+    nimike: data.nimike || '',
+    pit: data.pit_mm || '',
+    lev: data.lev_mm || '',
+    kpl: data.kpl || 1,
+    hinta: data.unit_price || 0,
+    ale: data.discount_percent || 0,
+    alv: data.vat_percent || 25.5,
+    hidden: data.is_hidden || false,
+    summary: data.is_summary_row || false,
+    groupId: data.group_id || null,
+    orderId: data.order_item_id || null
+  };
+  state.rivit.push(rivi);
+
+  const tr = document.createElement('tr');
+  tr.id = 'tr-' + id;
+  if (rivi.hidden) tr.classList.add('hidden-row');
+  if (rivi.summary) tr.classList.add('summary-row');
+  tr.innerHTML = riviHTML(rivi);
+  tbody.appendChild(tr);
+  laskeTotals();
+  return rivi;
+}
+
+function riviHTML(r) {
+  const badge = r.hidden ? '<span class="hidden-badge">piilotettu</span>' :
+                r.summary ? '<span class="summary-badge">yhteisrivi</span>' : '';
+  return `
+    <td><input type="text" value="${r.kohde}" onchange="paivitaRivi('${r._id}','kohde',this.value)" style="width:100%"></td>
+    <td><input type="text" value="${r.nimike}" onchange="paivitaRivi('${r._id}','nimike',this.value)" style="width:100%">${badge}</td>
+    <td><input type="number" value="${r.pit}" onchange="paivitaRivi('${r._id}','pit',this.value)" style="text-align:right"></td>
+    <td><input type="number" value="${r.lev}" onchange="paivitaRivi('${r._id}','lev',this.value)" style="text-align:right"></td>
+    <td><input type="number" value="${r.kpl}" onchange="paivitaRivi('${r._id}','kpl',this.value)" style="text-align:right" step="0.01"></td>
+    <td><input type="number" value="${r.hinta}" onchange="paivitaRivi('${r._id}','hinta',this.value)" style="text-align:right" step="0.01"></td>
+    <td><input type="number" value="${r.ale}" onchange="paivitaRivi('${r._id}','ale',this.value)" style="text-align:right" step="0.1"></td>
+    <td class="rivi-total" id="alv0-${r._id}">${laskeRiviAlv0(r).toFixed(2).replace('.',',')} €</td>
+    <td><input type="number" value="${r.alv}" onchange="paivitaRivi('${r._id}','alv',this.value)" style="text-align:right" step="0.5"></td>
+    <td class="rivi-total" id="rivi-${r._id}">${laskeRiviYht(r).toFixed(2).replace('.',',')} €</td>
+    <td style="text-align:center">
+      <div class="dropdown-wrap">
+        <button class="btn btn-sm" onclick="toggleDropdown('dd-${r._id}')">⋯</button>
+        <div class="dropdown-menu" id="dd-${r._id}">
+          <div class="dropdown-item" onclick="muokkaaHintaa('${r._id}')">Muokkaa hintaa</div>
+          <div class="dropdown-item" onclick="togglePiilota('${r._id}')">${r.hidden ? 'Näytä rivi' : 'Piilota rivi'}</div>
+          <div class="dropdown-item" onclick="lisaaYhteisrivi('${r._id}')">Tee yhteisrivi</div>
+          <div class="dropdown-item danger" onclick="poistaRivi('${r._id}')">Poista rivi</div>
+        </div>
+      </div>
+    </td>`;
+}
+
+function paivitaRivi(id, kentta, arvo) {
+  const r = state.rivit.find(x => x._id === id);
+  if (!r) return;
+  const num = ['pit','lev','kpl','hinta','ale','alv'];
+  r[kentta] = num.includes(kentta) ? parseFloat(arvo) || 0 : arvo;
+  document.getElementById('alv0-' + id).textContent = laskeRiviAlv0(r).toFixed(2).replace('.',',') + ' €';
+  document.getElementById('rivi-' + id).textContent = laskeRiviYht(r).toFixed(2).replace('.',',') + ' €';
+  laskeTotals();
+  paivitaKaavake();
+}
+
+function laskeRiviAlv0(r) {
+  if (r.hidden && !r.summary) return 0;
+  return Math.round(r.kpl * r.hinta * (1 - r.ale/100) * 100) / 100;
+}
+function laskeRiviYht(r) {
+  if (r.hidden && !r.summary) return 0;
+  const alv0 = laskeRiviAlv0(r);
+  return Math.round(alv0 * (1 + r.alv/100) * 100) / 100;
+}
+
+function laskeTotals() {
+  const aktiiviset = state.rivit.filter(r => !r.hidden || r.summary);
+  const alv0 = aktiiviset.reduce((s,r) => s + laskeRiviAlv0(r), 0);
+  const yht = aktiiviset.reduce((s,r) => s + laskeRiviYht(r), 0);
+  const alv = yht - alv0;
+  document.getElementById('totalAlv0').textContent = alv0.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('totalAlv').textContent = alv.toFixed(2).replace('.',',') + ' €';
+  document.getElementById('totalYht').textContent = yht.toFixed(2).replace('.',',') + ' €';
+}
+
+function toggleDropdown(id) {
+  document.querySelectorAll('.dropdown-menu').forEach(m => { if (m.id !== id) m.classList.remove('open'); });
+  document.getElementById(id)?.classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) document.querySelectorAll('.dropdown-menu').forEach(m => m.classList.remove('open'));
+});
+
+function togglePiilota(id) {
+  const r = state.rivit.find(x => x._id === id);
+  if (!r) return;
+  r.hidden = !r.hidden;
+  const tr = document.getElementById('tr-' + id);
+  tr.classList.toggle('hidden-row', r.hidden);
+  tr.innerHTML = riviHTML(r);
+  laskeTotals();
+  paivitaKaavake();
+}
+
+function lisaaYhteisrivi(id) {
+  const r = state.rivit.find(x => x._id === id);
+  if (!r) return;
+  // Piilota alkuperäinen rivi
+  r.hidden = true;
+  const tr = document.getElementById('tr-' + id);
+  tr.classList.add('hidden-row');
+  tr.innerHTML = riviHTML(r);
+  // Luo yhteisrivi
+  const yhteinen = lisaaRivi({
+    nimike: r.nimike,
+    kohde: r.kohde,
+    kpl: 1,
+    unit_price: laskeRiviAlv0(r),
+    vat_percent: r.alv,
+    is_summary_row: true,
+    group_id: r._id
+  });
+  laskeTotals();
+}
+
+function poistaRivi(id) {
+  state.rivit = state.rivit.filter(x => x._id !== id);
+  document.getElementById('tr-' + id)?.remove();
+  if (state.rivit.length === 0) {
+    document.getElementById('riviBody').innerHTML = '<tr id="riviEmpty"><td colspan="11" style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Ei rivejä — lisää rivi tai valitse tilaus</td></tr>';
+  }
+  laskeTotals();
+  paivitaKaavake();
+}
+
+// TALLENNA
+async function tallenna() {
+  if (!state.asiakas) { naytaNotif('Valitse ensin asiakas', 'error'); return; }
+  try {
+    const laskupaiva = document.getElementById('inputLaskupaiva').value;
+    const maksuaika = parseInt(document.getElementById('inputMaksuaika').value) || 14;
+    const era = new Date(laskupaiva);
+    era.setDate(era.getDate() + maksuaika);
+    const eraStr = era.toISOString().split('T')[0];
+
+    if (!state.invoiceId) {
+      // Uusi lasku
+      const { data, error } = await sb.from('invoices').insert({
+        customer_id: state.asiakas.id,
+        type: state.tyyppi,
+        invoice_number: state.invoiceNumber,
+        invoice_date: laskupaiva,
+        due_date: eraStr,
+        payment_terms_days: maksuaika,
+        show_prices: document.getElementById('showPrices')?.checked !== false,
+        notes: document.getElementById('inputNotes').value,
+        status: 'DRAFT'
+      }).select('id').single();
+      if (error) throw error;
+      state.invoiceId = data.id;
+      document.getElementById('btnKopioi').style.display = 'block';
+      document.getElementById('btnPoista').style.display = 'block';
+    } else {
+      // Päivitä olemassa oleva
+      const { error } = await sb.from('invoices').update({
+        type: state.tyyppi,
+        invoice_date: laskupaiva,
+        due_date: eraStr,
+        payment_terms_days: maksuaika,
+        show_prices: document.getElementById('showPrices')?.checked !== false,
+        notes: document.getElementById('inputNotes').value
+      }).eq('id', state.invoiceId);
+      if (error) throw error;
+      // Poista vanhat rivit ja lisää uudet
+      await sb.from('invoice_rows').delete().eq('invoice_id', state.invoiceId);
+    }
+
+    // Tallenna rivit
+    if (state.rivit.length > 0) {
+      const rows = state.rivit.map((r, i) => ({
+        invoice_id: state.invoiceId,
+        order_item_id: r.orderId || null,
+        row_order: i,
+        kohde: r.kohde || null,
+        nimike: r.nimike || null,
+        pit_mm: r.pit || null,
+        lev_mm: r.lev || null,
+        kpl: r.kpl,
+        unit_price: r.hinta,
+        discount_percent: r.ale,
+        vat_percent: r.alv,
+        group_id: r.groupId || null,
+        is_summary_row: r.summary,
+        is_hidden: r.hidden
+      }));
+      const { error } = await sb.from('invoice_rows').insert(rows);
+      if (error) throw error;
+    }
+
+    naytaNotif('Tallennettu!', 'success');
+  } catch(e) {
+    naytaNotif('Tallennus epäonnistui: ' + e.message, 'error');
+  }
+}
+
+// LÄHETÄ SÄHKÖPOSTILLA
+function lahetaSahkoposti() {
+  if (!state.asiakas?.email) { naytaNotif('Asiakkaalla ei ole sähköpostiosoitetta', 'error'); return; }
+  const aihe = encodeURIComponent((state.tyyppi === 'INVOICE' ? 'Lasku' : 'Tarjous') + ' #' + state.invoiceNumber + ' — Kalajoen Peltityö Oy');
+  const kohde = document.getElementById('inputKohde').value;
+  const body = encodeURIComponent(
+    'Hei,\n\nliitteenä ' + (state.tyyppi === 'INVOICE' ? 'lasku' : 'tarjous') +
+    (kohde ? ' kohteesta ' + kohde : '') + '.\n\nYstävällisin terveisin,\nKalajoen Peltityö Oy\nwww.kalajoenpeltityo.com'
+  );
+  window.open('mailto:' + state.asiakas.email + '?subject=' + aihe + '&body=' + body);
+  naytaNotif('Sähköpostiohjelma avattu. Muista liittää PDF!', 'success');
+}
+
+// TEKSTIPOHJAT
+async function avaaTextipohjaModal() {
+  document.getElementById('tekstipohjaModal').classList.add('open');
+  const { data } = await sb.from('invoice_text_templates').select('*').eq('is_active', true).order('sort_order');
+  const list = document.getElementById('tekstipohjaList');
+  if (!data || data.length === 0) {
+    list.innerHTML = '<p style="color:var(--text3);font-size:13px">Ei tekstipohjia</p>';
+    return;
+  }
+  list.innerHTML = data.map(t => `
+    <div class="template-item" onclick="valitseTekstipohja('${t.body.replace(/'/g,"\\'")}')">
+      <div class="template-item-title">${t.title}</div>
+      <div class="template-item-body">${t.body}</div>
+    </div>`).join('');
+}
+
+function valitseTekstipohja(teksti) {
+  const ta = document.getElementById('inputNotes');
+  ta.value = ta.value ? ta.value + '\n' + teksti : teksti;
+  suljeModal('tekstipohjaModal');
+}
+
+// MAKSU
+function kirjaaMaxsu() {
+  document.getElementById('maksuPvm').value = new Date().toISOString().split('T')[0];
+  document.getElementById('maksuModal').classList.add('open');
+}
+
+async function tallennaMaksu() {
+  if (!state.invoiceId) { naytaNotif('Tallenna lasku ensin', 'error'); return; }
+  const pvm = document.getElementById('maksuPvm').value;
+  const summa = parseFloat(document.getElementById('maksuSumma').value);
+  const huomio = document.getElementById('maksuHuomio').value;
+  if (!summa || summa <= 0) { naytaNotif('Syötä summa', 'error'); return; }
+  const { error } = await sb.from('invoice_payments').insert({ invoice_id: state.invoiceId, payment_date: pvm, amount: summa, notes: huomio });
+  if (error) { naytaNotif('Virhe: ' + error.message, 'error'); return; }
+  suljeModal('maksuModal');
+  naytaNotif('Maksu kirjattu!', 'success');
+}
+
+// KOPIOI
+async function kopioi() {
+  if (!state.invoiceId) return;
+  const vastaus = confirm('Kopioidaanko vanhoilla hinnoilla vai lasketaan uudelleen nykyisellä hinnastolla?\n\nOK = vanhat hinnat\nPeruuta = lasketaan uudelleen');
+  naytaNotif('Kopiointia ei vielä toteutettu — tulossa seuraavaan versioon', 'error');
+}
+
+// POISTA
+async function poistaLasku() {
+  if (!state.invoiceId) return;
+  if (!confirm('Poistetaanko lasku #' + state.invoiceNumber + ' pysyvästi?')) return;
+  const { error } = await sb.from('invoices').delete().eq('id', state.invoiceId);
+  if (error) { naytaNotif('Virhe: ' + error.message, 'error'); return; }
+  window.location.href = 'tilaukset.html';
+}
+
+// LATAA OLEMASSA OLEVA LASKU
+async function lataaLasku(id) {
+  const { data, error } = await sb.rpc('get_invoice_detail', { p_invoice_id: id });
+  if (error || !data) { naytaNotif('Laskun lataus epäonnistui', 'error'); return; }
+  const inv = data.invoice;
+  state.invoiceId = inv.id;
+  state.invoiceNumber = inv.invoice_number;
+  state.viitenumero = laskeViitenumero(inv.invoice_number);
+  state.tyyppi = inv.type;
+  state.status = inv.status;
+  state.locked = inv.locked;
+  setTyyppi(inv.type);
+  document.getElementById('inputLaskupaiva').value = inv.invoice_date;
+  document.getElementById('inputMaksuaika').value = inv.payment_terms_days;
+  document.getElementById('inputNotes').value = inv.notes || '';
+  document.getElementById('inputKohde').value = data.order_kohde || '';
+  if (data.customer) valitseAsiakas(data.customer);
+  (data.rows || []).forEach(r => lisaaRivi(r));
+  paivitaNumeroUI();
+  laskeErapaiva();
+  document.getElementById('btnKopioi').style.display = 'block';
+  document.getElementById('btnPoista').style.display = !inv.locked ? 'block' : 'none';
+}
+
+async function luoLaskuTilauksesta(orderId) {
+  await haeLaskunumero();
+  const { data: rows } = await sb.from('order_items')
+    .select('id,nimike,aihio_width_mm,group_order,item_order,orders(kohde,customer_id,customers(id,name,customer_number,billing_address,billing_postal_code,billing_city,phone,email)),order_item_rows(mitta_mm,kpl,row_order)')
+    .eq('order_id', orderId).order('group_order').order('item_order');
+  if (!rows || rows.length === 0) return;
+  const o = rows[0].orders;
+  if (o?.customers) valitseAsiakas(o.customers);
+  if (o?.kohde) document.getElementById('inputKohde').value = o.kohde;
+  rows.forEach(oi => {
+    (oi.order_item_rows || []).sort((a,b) => a.row_order - b.row_order).forEach(r => {
+      lisaaRivi({ kohde: o?.kohde, nimike: oi.nimike, pit_mm: r.mitta_mm, lev_mm: oi.aihio_width_mm, kpl: r.kpl, unit_price: 0, order_item_id: oi.id });
+    });
+  });
+}
+
+// MODAALIT
+function suljeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// NOTIFICATION
+function naytaNotif(teksti, tyyppi = 'success') {
+  const el = document.getElementById('notif');
+  el.textContent = teksti;
+  el.className = 'notif ' + tyyppi;
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+function paivitaNaytaHinnat() {}
+function muokkaaHintaa(id) {
+  const r = state.rivit.find(x => x._id === id);
+  if (!r) return;
+  const uusi = prompt('Anna uusi yksikköhinta (€):', r.hinta);
+  if (uusi === null) return;
+  const val = parseFloat(uusi.replace(',','.'));
+  if (!isNaN(val)) {
+    r.hinta = val;
+    const tr = document.getElementById('tr-' + id);
+    tr.innerHTML = riviHTML(r);
+    laskeTotals();
+    paivitaKaavake();
+  }
+}
+</script>
+</body>
+</html>
