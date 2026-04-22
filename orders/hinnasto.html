@@ -643,7 +643,7 @@ async function loadList() {
 async function loadFixed() {
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/pricing_fixed?select=id,product_code,name,product_group,material,thickness_mm,price,unit&order=product_group,product_code`,
+      `${SUPABASE_URL}/rest/v1/pricing_fixed?select=id,legacy_code,product_name,material,thickness_mm,unit_price,unit&order=legacy_code`,
       { headers: HDR }
     );
     if (!r.ok) { fixedData = []; renderFixedFilters(); renderFixed(); return; }
@@ -657,7 +657,7 @@ async function loadFixed() {
 async function loadMaterials() {
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price_per_m,updated_at&order=material`,
+      `${SUPABASE_URL}/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price,updated_at&order=material`,
       { headers: HDR }
     );
     if (!r.ok) { matData = []; renderMaterials(); return; }
@@ -769,8 +769,18 @@ async function saveListPrice(id) {
 }
 
 // ---- KIINTEÄT HINNAT ----
+function getFixedGroup(code) {
+  if (code >= 1 && code <= 99)     return 'Työt / Tarvikkeet';
+  if (code >= 600 && code <= 699)  return 'Profiilit';
+  if (code >= 800 && code <= 899)  return 'Kourut';
+  if (code >= 900 && code <= 999)  return 'Levyt';
+  if (code >= 7000 && code <= 7999) return 'Kattoturva';
+  return 'Muut';
+}
+
 function renderFixedFilters() {
-  const groups = [...new Set(fixedData.map(r => r.product_group))].filter(Boolean).sort();
+  // Ryhmät koodiston perusteella
+  const groups = [...new Set(fixedData.map(r => getFixedGroup(r.legacy_code)))].sort();
   const container = document.getElementById('fixedGroupFilters');
   container.innerHTML = `<button class="fbtn ${fixedGroupFilter==='all'?'active':''}" onclick="setFixedFilter('all',this)">Kaikki</button>` +
     groups.map(g => `<button class="fbtn ${fixedGroupFilter===g?'active':''}" onclick="setFixedFilter(${JSON.stringify(g)},this)">${g}</button>`).join('');
@@ -785,10 +795,11 @@ function setFixedFilter(val, btn) {
 
 function renderFixed() {
   const search = (document.getElementById('fixedSearch')?.value || '').toLowerCase();
-  let rows = fixedGroupFilter === 'all' ? fixedData : fixedData.filter(r => r.product_group === fixedGroupFilter);
+  let rows = fixedData.map(r => ({ ...r, _group: getFixedGroup(r.legacy_code) }));
+  if (fixedGroupFilter !== 'all') rows = rows.filter(r => r._group === fixedGroupFilter);
   if (search) rows = rows.filter(r =>
-    (r.name || '').toLowerCase().includes(search) ||
-    (r.product_code || '').toLowerCase().includes(search) ||
+    (r.product_name || '').toLowerCase().includes(search) ||
+    String(r.legacy_code || '').includes(search) ||
     (r.material || '').toLowerCase().includes(search)
   );
 
@@ -801,15 +812,15 @@ function renderFixed() {
 
   tbody.innerHTML = rows.map(row => `
     <tr>
-      <td class="mono" style="color:var(--text-dim);font-size:11px">${row.product_code || '—'}</td>
-      <td style="font-weight:500">${row.name || '—'}</td>
-      <td><span class="badge badge-gray">${row.product_group || '—'}</span></td>
+      <td class="mono" style="color:var(--text-dim);font-size:11px">${row.legacy_code ?? '—'}</td>
+      <td style="font-weight:500">${row.product_name || '—'}</td>
+      <td><span class="badge badge-gray">${row._group}</span></td>
       <td style="color:var(--text-dim);font-size:12px">${row.material || '—'}</td>
       <td class="mono" style="color:var(--text-dim);font-size:12px">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
-      <td class="right mono" id="fp-${row.id}">${formatPrice(row.price)}</td>
+      <td class="right mono" id="fp-${row.id}">${formatPrice(row.unit_price)}</td>
       <td style="color:var(--text-dim);font-size:12px">${row.unit || '—'}</td>
       <td style="text-align:right">
-        <button class="btn btn-secondary btn-sm" onclick="startEditFixed(${JSON.stringify(row.id)}, ${row.price ?? 0})">Muokkaa</button>
+        <button class="btn btn-secondary btn-sm" onclick="startEditFixed(${JSON.stringify(row.id)}, ${row.unit_price ?? 0})">Muokkaa</button>
       </td>
     </tr>
   `).join('');
@@ -835,11 +846,11 @@ async function saveFixedPrice(id) {
 
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/pricing_fixed?id=eq.${id}`,
-    { method: 'PATCH', headers: HDR, body: JSON.stringify({ price: val }) }
+    { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: val }) }
   );
   if (r.ok) {
     const row = fixedData.find(x => x.id == id);
-    if (row) row.price = val;
+    if (row) row.unit_price = val;
     showToast('Hinta tallennettu');
     renderFixed();
   } else {
@@ -860,7 +871,7 @@ function renderMaterials() {
       <td class="mono">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
       <td class="right mono">${row.purchase_price?.toFixed(2) ?? '—'} €</td>
       <td class="right mono">${row.multiplier?.toFixed(2) ?? '—'}</td>
-      <td class="right mono">${row.work_price_per_m?.toFixed(2) ?? '—'} €</td>
+      <td class="right mono">${row.work_price?.toFixed(2) ?? '—'} €</td>
       <td class="right" style="font-size:11px;color:var(--text-dim)">${row.updated_at ? row.updated_at.slice(0,10) : '—'}</td>
       <td style="text-align:right">
         <button class="btn btn-secondary btn-sm">Muokkaa</button>
@@ -881,7 +892,7 @@ async function saveMaterial() {
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/pricing_materials`,
     { method: 'POST', headers: HDR,
-      body: JSON.stringify({ material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price_per_m: wrk || 2.00 }) }
+      body: JSON.stringify({ material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price: wrk || 2.00 }) }
   );
   if (r.ok) {
     closeModal('addMatModal');
@@ -1019,12 +1030,12 @@ async function executeMassUpdate() {
   if (existing) {
     await fetch(`${SUPABASE_URL}/rest/v1/pricing_materials?id=eq.${existing.id}`,
       { method: 'PATCH', headers: HDR,
-        body: JSON.stringify({ purchase_price: purchase, multiplier: mult, work_price_per_m: work, updated_at: new Date().toISOString() }) });
+        body: JSON.stringify({ purchase_price: purchase, multiplier: mult, work_price: work, updated_at: new Date().toISOString() }) });
     existing.purchase_price = purchase;
   } else {
     const nr = await fetch(`${SUPABASE_URL}/rest/v1/pricing_materials`,
       { method: 'POST', headers: HDR,
-        body: JSON.stringify({ material: mat, purchase_price: purchase, multiplier: mult, work_price_per_m: work }) });
+        body: JSON.stringify({ material: mat, purchase_price: purchase, multiplier: mult, work_price: work }) });
     if (nr.ok) await loadMaterials();
   }
 
