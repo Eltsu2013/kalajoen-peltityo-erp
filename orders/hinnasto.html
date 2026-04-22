@@ -629,39 +629,47 @@ async function init() {
 // ---- FETCH ----
 async function loadList() {
   const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_list?select=id,material,thickness_mm,width_mm,price_per_m&order=material,thickness_mm,width_mm`,
+    `${SUPABASE_URL}/rest/v1/pricing_list?select=id,material,thickness_mm,width_mm,unit_price,notes&order=material,thickness_mm,width_mm`,
     { headers: HDR }
   );
   listData = await r.json();
   if (!Array.isArray(listData)) listData = [];
+  // normalisoi: käytetään price_per_m nimenä koodissa, mutta tallennetaan unit_price
+  listData.forEach(r => r.price_per_m = r.unit_price);
   renderListFilters();
   renderList();
 }
 
 async function loadFixed() {
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_fixed?select=id,product_code,name,product_group,material,thickness_mm,price,unit&order=product_group,product_code`,
-    { headers: HDR }
-  );
-  fixedData = await r.json();
-  if (!Array.isArray(fixedData)) fixedData = [];
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/pricing_fixed?select=id,product_code,name,product_group,material,thickness_mm,price,unit&order=product_group,product_code`,
+      { headers: HDR }
+    );
+    if (!r.ok) { fixedData = []; renderFixedFilters(); renderFixed(); return; }
+    fixedData = await r.json();
+    if (!Array.isArray(fixedData)) fixedData = [];
+  } catch(e) { fixedData = []; }
   renderFixedFilters();
   renderFixed();
 }
 
 async function loadMaterials() {
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price_per_m,updated_at&order=material`,
-    { headers: HDR }
-  );
-  matData = await r.json();
-  if (!Array.isArray(matData)) matData = [];
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price_per_m,updated_at&order=material`,
+      { headers: HDR }
+    );
+    if (!r.ok) { matData = []; renderMaterials(); return; }
+    matData = await r.json();
+    if (!Array.isArray(matData)) matData = [];
+  } catch(e) { matData = []; }
   renderMaterials();
 }
 
 async function loadSurcharge() {
   const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge?select=id,surcharge_eur,effective_date,notes&order=effective_date.desc`,
+    `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge?select=id,surcharge_per_bend,valid_from,notes&order=valid_from.desc`,
     { headers: HDR }
   );
   surchargeData = await r.json();
@@ -685,7 +693,7 @@ function updateSummary() {
   // Käännöslisä
   if (surchargeData.length > 0) {
     const latest = surchargeData[0];
-    document.getElementById('cnt-surcharge').textContent = latest.surcharge_eur?.toFixed(2) + ' €';
+    document.getElementById('cnt-surcharge').textContent = latest.surcharge_per_bend?.toFixed(2) + ' €';
     document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
   }
 }
@@ -748,11 +756,11 @@ async function saveListPrice(id) {
 
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/pricing_list?id=eq.${id}`,
-    { method: 'PATCH', headers: HDR, body: JSON.stringify({ price_per_m: val }) }
+    { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: val }) }
   );
   if (r.ok) {
     const row = listData.find(x => x.id == id);
-    if (row) row.price_per_m = val;
+    if (row) { row.price_per_m = val; row.unit_price = val; }
     showToast('Hinta tallennettu');
     renderList();
   } else {
@@ -888,10 +896,10 @@ async function saveMaterial() {
 function renderSurcharge() {
   const latest = surchargeData[0];
   if (latest) {
-    document.getElementById('surchargeDisplay').textContent = latest.surcharge_eur?.toFixed(2) + ' €';
+    document.getElementById('surchargeDisplay').textContent = latest.surcharge_per_bend?.toFixed(2) + ' €';
     document.getElementById('surchargeDisplay').classList.add('set');
-    document.getElementById('surchargeNote').textContent = 'Voimassa ' + (latest.effective_date || '');
-    document.getElementById('cnt-surcharge').textContent = latest.surcharge_eur?.toFixed(2) + ' €';
+    document.getElementById('surchargeNote').textContent = 'Voimassa ' + (latest.valid_from || '');
+    document.getElementById('cnt-surcharge').textContent = latest.surcharge_per_bend?.toFixed(2) + ' €';
     document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
   }
 
@@ -902,8 +910,8 @@ function renderSurcharge() {
   }
   tbody.innerHTML = surchargeData.map(row => `
     <tr>
-      <td class="mono" style="font-size:12px">${row.effective_date || '—'}</td>
-      <td class="right mono">${row.surcharge_eur?.toFixed(2) ?? '—'} €</td>
+      <td class="mono" style="font-size:12px">${row.valid_from || '—'}</td>
+      <td class="right mono">${row.surcharge_per_bend?.toFixed(2) ?? '—'} €</td>
       <td style="font-size:12px;color:var(--text-dim)">${row.notes || '—'}</td>
     </tr>
   `).join('');
@@ -917,7 +925,7 @@ async function saveSurcharge() {
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge`,
     { method: 'POST', headers: HDR,
-      body: JSON.stringify({ surcharge_eur: val, effective_date: today }) }
+      body: JSON.stringify({ surcharge_per_bend: val, valid_from: today }) }
   );
   if (r.ok) {
     closeModal('surchargeModal');
