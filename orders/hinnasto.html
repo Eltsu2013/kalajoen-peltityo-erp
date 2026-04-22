@@ -399,6 +399,7 @@
             <th>Paksuus</th>
             <th>Leveys mm</th>
             <th class="right">Hinta €/m <span style="font-weight:400;opacity:0.5">(alv 0%)</span></th>
+            <th>Yks</th>
             <th style="width:90px"></th>
           </tr>
         </thead>
@@ -702,8 +703,9 @@ function updateSummary() {
 function renderListFilters() {
   const materials = [...new Set(listData.map(r => r.material))].filter(Boolean).sort();
   const container = document.getElementById('listMatFilters');
-  container.innerHTML = `<button class="fbtn ${listMatFilter==='all'?'active':''}" onclick="setListFilter('all',this)">Kaikki</button>` +
-    materials.map(m => `<button class="fbtn ${listMatFilter===m?'active':''}" onclick="setListFilter(${JSON.stringify(m)},this)">${m}</button>`).join('');
+  let html = '<button class="fbtn ' + (listMatFilter==='all'?'active':'') + '" onclick="setListFilter(\'all\',this)">Kaikki</button>';
+  html += materials.map(m => '<button class="fbtn ' + (listMatFilter===m?'active':'') + '" onclick="setListFilter(\'' + m + '\',this)">' + m + '</button>').join('');
+  container.innerHTML = html;
 }
 
 function setListFilter(val, btn) {
@@ -718,22 +720,23 @@ function renderList() {
   const tbody = document.getElementById('listBody');
 
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Ei rivejä</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Ei rivejä</td></tr>';
     document.getElementById('listFooter').textContent = '';
     return;
   }
 
-  tbody.innerHTML = rows.map(row => `
-    <tr>
-      <td><span class="badge badge-orange">${row.material || '—'}</span></td>
-      <td class="mono" style="color:var(--text-dim)">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
-      <td class="mono">${row.width_mm != null ? row.width_mm + ' mm' : '—'}</td>
-      <td class="right mono" id="lp-${row.id}">${formatPrice(row.price_per_m)}</td>
-      <td style="text-align:right">
-        <button class="btn btn-secondary btn-sm" onclick="startEditList(${JSON.stringify(row.id)}, ${row.price_per_m})">Muokkaa</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = rows.map(row => {
+    const pid = row.id;
+    const price = row.price_per_m ?? 0;
+    return '<tr>'
+      + '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>'
+      + '<td class="mono" style="color:var(--text-dim)">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>'
+      + '<td class="mono">' + (row.width_mm != null ? row.width_mm + ' mm' : '—') + '</td>'
+      + '<td class="right mono" id="lp-' + pid + '">' + formatPrice(row.price_per_m) + '</td>'
+      + '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>'
+      + '<td style="text-align:right"><button class="btn btn-secondary btn-sm" onclick="startEditList('' + pid + '',' + price + ')">Muokkaa</button></td>'
+      + '</tr>';
+  }).join('');
 
   document.getElementById('listFooter').textContent = `${rows.length} riviä`;
 }
@@ -782,8 +785,9 @@ function renderFixedFilters() {
   // Ryhmät koodiston perusteella
   const groups = [...new Set(fixedData.map(r => getFixedGroup(r.legacy_code)))].sort();
   const container = document.getElementById('fixedGroupFilters');
-  container.innerHTML = `<button class="fbtn ${fixedGroupFilter==='all'?'active':''}" onclick="setFixedFilter('all',this)">Kaikki</button>` +
-    groups.map(g => `<button class="fbtn ${fixedGroupFilter===g?'active':''}" onclick="setFixedFilter(${JSON.stringify(g)},this)">${g}</button>`).join('');
+  let fhtml = '<button class="fbtn ' + (fixedGroupFilter==='all'?'active':'') + '" onclick="setFixedFilter(\'all\',this)">Kaikki</button>';
+  fhtml += groups.map(g => '<button class="fbtn ' + (fixedGroupFilter===g?'active':'') + '" onclick="setFixedFilter(\'' + g.replace(/'/g,"\\\\\'"  ) + '\',this)">' + g + '</button>').join('');
+  container.innerHTML = fhtml;
 }
 
 function setFixedFilter(val, btn) {
@@ -810,20 +814,20 @@ function renderFixed() {
     return;
   }
 
-  tbody.innerHTML = rows.map(row => `
-    <tr>
-      <td class="mono" style="color:var(--text-dim);font-size:11px">${row.legacy_code ?? '—'}</td>
-      <td style="font-weight:500">${row.product_name || '—'}</td>
-      <td><span class="badge badge-gray">${row._group}</span></td>
-      <td style="color:var(--text-dim);font-size:12px">${row.material || '—'}</td>
-      <td class="mono" style="color:var(--text-dim);font-size:12px">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
-      <td class="right mono" id="fp-${row.id}">${formatPrice(row.unit_price)}</td>
-      <td style="color:var(--text-dim);font-size:12px">${row.unit || '—'}</td>
-      <td style="text-align:right">
-        <button class="btn btn-secondary btn-sm" onclick="startEditFixed(${JSON.stringify(row.id)}, ${row.unit_price ?? 0})">Muokkaa</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = rows.map(row => {
+    const fid = row.id;
+    const fprice = row.unit_price ?? 0;
+    return '<tr>'
+      + '<td class="mono" style="color:var(--text-dim);font-size:11px">' + (row.legacy_code ?? '—') + '</td>'
+      + '<td style="font-weight:500">' + (row.product_name || '—') + '</td>'
+      + '<td><span class="badge badge-gray">' + row._group + '</span></td>'
+      + '<td style="color:var(--text-dim);font-size:12px">' + (row.material || '—') + '</td>'
+      + '<td class="mono" style="color:var(--text-dim);font-size:12px">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>'
+      + '<td class="right mono" id="fp-' + fid + '">' + formatPrice(row.unit_price) + '</td>'
+      + '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>'
+      + '<td style="text-align:right"><button class="btn btn-secondary btn-sm" onclick="startEditFixed('' + fid + '',' + fprice + ')">Muokkaa</button></td>'
+      + '</tr>';
+  }).join('');
 
   document.getElementById('fixedFooter').textContent = `${rows.length} nimikettä`;
 }
