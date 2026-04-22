@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hinnasto — Kalajoen Peltityö</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  :root {
+    --bg: #1e2a30;
+    --panel: #253035;
+    --panel2: #2e3a40;
+    --border: #3a5060;
+    --accent: #f97316;
+    --accent-dim: #ea6c08;
+    --accent-glow: rgba(249,115,22,0.10);
+    --text: #ededf0;
+    --text-dim: #9595a0;
+    --input-bg: #2a3840;
+    --success: #3dba6e;
+    --danger: #e84040;
+    --warn: #e8a020;
+    --cyan: #0ea5e9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: #16222a;
+    border-bottom: 2px solid var(--accent);
+    padding: 10px 24px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  header h1 { font-size: 16px; font-weight: 500; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+
+  /* NAV */
+  .nav-menu-wrap { position: relative; }
+  .nav-btn {
+    background: var(--panel2); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; padding: 6px 12px;
+    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
+  }
+  .nav-btn:hover { background: var(--input-bg); }
+  .nav-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); left: 0;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; min-width: 200px; z-index: 999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
+  }
+  .nav-dropdown.open { display: block; }
+  .nav-section-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); padding: 8px 14px 4px;
+  }
+  .nav-item {
+    display: block; padding: 8px 14px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    color: var(--text); text-decoration: none; transition: background 0.1s;
+  }
+  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
+  .nav-item.current { color: var(--accent); font-weight: 600; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+  /* PAGE */
+  .page { padding: 20px 24px; max-width: 1400px; }
+
+  /* SUMMARY */
+  .summary-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 10px; margin-bottom: 16px;
+  }
+  .summary-card {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 16px;
+  }
+  .card-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+  .card-number {
+    font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; line-height: 1;
+  }
+  .card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .card-accent { border-color: rgba(249,115,22,0.4); }
+  .card-accent .card-number { color: var(--accent); }
+
+  /* TABS */
+  .tabs {
+    display: flex; gap: 2px;
+    border-bottom: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .tab {
+    padding: 9px 18px; cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
+    color: var(--text-dim); border-bottom: 2px solid transparent;
+    margin-bottom: -1px; letter-spacing: 0.04em; transition: color 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-badge {
+    display: inline-block; background: var(--panel2); color: var(--text-dim);
+    font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 5px;
+  }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* TOOLBAR */
+  .filter-bar {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 14px;
+    display: flex; gap: 8px; align-items: center;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .filter-label {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--text-dim); letter-spacing: 0.06em; white-space: nowrap;
+  }
+  .fbtn {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; padding: 4px 10px; border-radius: 3px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .fbtn:hover { border-color: var(--accent); color: var(--text); }
+  .fbtn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .filter-search {
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; padding: 5px 10px; border-radius: 3px; width: 200px;
+  }
+  .filter-search:focus { outline: none; border-color: var(--accent); }
+  .filter-search::placeholder { color: var(--text-dim); }
+  .ml-auto { margin-left: auto; }
+
+  /* BUTTONS */
+  .btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
+    padding: 7px 14px; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--border); transition: all 0.15s; letter-spacing: 0.02em;
+  }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-dim); }
+  .btn-secondary { background: var(--panel2); color: var(--text); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm { padding: 4px 10px; font-size: 11px; }
+  .btn-danger { background: transparent; color: var(--danger); border-color: rgba(232,64,64,0.3); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--panel2); }
+  th {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
+    padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th.right, td.right { text-align: right; }
+  td {
+    padding: 8px 14px; border-bottom: 1px solid var(--border);
+    font-size: 13px; vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--accent-glow); }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  .badge {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px;
+    white-space: nowrap;
+  }
+  .badge-orange { background: rgba(249,115,22,0.15); color: var(--accent); }
+  .badge-gray { background: #2a3840; color: var(--text-dim); }
+  .badge-cyan { background: rgba(14,165,233,0.12); color: var(--cyan); }
+  .badge-green { background: rgba(61,186,110,0.15); color: var(--success); }
+
+  .empty-state {
+    text-align: center; color: var(--text-dim); padding: 40px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  }
+
+  /* INLINE EDIT */
+  .price-display { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+  .edit-input {
+    background: var(--input-bg); border: 1px solid var(--accent);
+    color: var(--text); padding: 4px 8px; border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    width: 80px; outline: none; text-align: right;
+  }
+  .icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; }
+  .icon-btn.save { color: var(--success); }
+  .icon-btn.cancel { color: var(--danger); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--success); color: #fff;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    padding: 10px 18px; border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+  .toast.error { background: var(--danger); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+  }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 6px; width: 600px; max-width: 95vw;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.5); max-height: 90vh;
+    display: flex; flex-direction: column;
+  }
+  .modal-header {
+    padding: 16px 20px 14px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .modal-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600;
+    color: var(--accent);
+  }
+  .modal-close {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 20px; cursor: pointer; line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 20px; overflow-y: auto; }
+  .modal-footer {
+    padding: 14px 20px; border-top: 1px solid var(--border);
+    display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
+  }
+  .form-row { display: flex; gap: 14px; margin-bottom: 14px; }
+  .form-group { flex: 1; }
+  .form-label {
+    display: block; font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-dim); margin-bottom: 6px;
+  }
+  .form-input {
+    width: 100%; background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 12px; border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; outline: none;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+
+  /* PREVIEW */
+  .preview-box {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 4px; margin-top: 14px; padding: 12px; max-height: 280px; overflow-y: auto;
+  }
+  .preview-title {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-dim); margin-bottom: 8px;
+  }
+  .preview-row {
+    display: grid; grid-template-columns: 70px 90px 90px 80px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    padding: 3px 0; border-bottom: 1px solid rgba(58,80,96,0.4); gap: 8px;
+  }
+  .preview-row:last-child { border-bottom: none; }
+  .preview-row.header-row { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 6px; }
+  .c-dim { color: var(--text-dim); }
+  .c-old { color: var(--text-dim); text-decoration: line-through; }
+  .c-new { color: var(--accent); font-weight: 600; }
+  .c-up { color: var(--warn); }
+  .c-dn { color: var(--success); }
+  .c-eq { color: var(--text-dim); }
+
+  /* KÄÄNNÖSLISÄ */
+  .surcharge-box {
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 28px 32px;
+    max-width: 380px; margin-bottom: 20px;
+  }
+  .surcharge-value {
+    font-family: 'IBM Plex Mono', monospace; font-size: 40px; font-weight: 600;
+    color: var(--text-dim); line-height: 1; margin: 10px 0 6px;
+  }
+  .surcharge-value.set { color: var(--accent); }
+
+  /* INFO BOX */
+  .info-box {
+    background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.2);
+    border-radius: 4px; padding: 10px 14px;
+    font-size: 12px; color: var(--text-dim); margin-bottom: 14px;
+  }
+  .info-box strong { color: var(--accent); }
+
+  /* TABLE FOOTER */
+  .table-footer {
+    padding: 8px 14px; background: var(--panel2);
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim);
+  }
+
+  /* LOADING */
+  .loading {
+    text-align: center; padding: 40px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav-menu-wrap">
+    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <div class="nav-section-label">Tilaukset</div>
+      <a class="nav-item" href="tilaukset.html">Tilauslista</a>
+      <a class="nav-item" href="tilaus.html">Uusi tilaus</a>
+      <a class="nav-item" href="asiakkaat.html">Asiakkaat</a>
+      <hr class="nav-divider">
+      <div class="nav-section-label">Tuotanto</div>
+      <a class="nav-item" href="tuotanto.html">Tuotanto</a>
+      <hr class="nav-divider">
+      <div class="nav-section-label">Hallinta</div>
+      <a class="nav-item current" href="hinnasto.html">Hinnasto</a>
+      <a class="nav-item" href="lasku.html">Laskutus</a>
+    </div>
+  </div>
+
+  <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+    <path d="M4 22 L8 6 L14 16 L20 6 L24 22" stroke="white" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+  </svg>
+
+  <h1>Hinnasto</h1>
+
+  <div class="header-right">
+    <button class="btn btn-secondary" id="logoutBtn">Kirjaudu ulos</button>
+  </div>
+</header>
+
+<div class="page">
+
+  <!-- SUMMARY -->
+  <div class="summary-row">
+    <div class="summary-card card-accent">
+      <div class="card-label">Peltilistat</div>
+      <div class="card-number" id="cnt-list">—</div>
+      <div class="card-sub">riviä hinnastossa</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Kiinteät hinnat</div>
+      <div class="card-number" id="cnt-fixed">—</div>
+      <div class="card-sub">nimikettä</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Viimeisin ostohinta</div>
+      <div class="card-number mono" id="cnt-purchase" style="font-size:18px">—</div>
+      <div class="card-sub" id="cnt-purchase-sub">Pural/HC25</div>
+    </div>
+    <div class="summary-card">
+      <div class="card-label">Käännöslisä</div>
+      <div class="card-number" id="cnt-surcharge" style="color:var(--text-dim)">—</div>
+      <div class="card-sub">€ per käännös</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('listat',this)">Peltilistat <span class="tab-badge" id="badge-list">—</span></div>
+    <div class="tab" onclick="switchTab('kiinteat',this)">Kiinteät hinnat <span class="tab-badge" id="badge-fixed">—</span></div>
+    <div class="tab" onclick="switchTab('materiaalit',this)">Materiaalit</div>
+    <div class="tab" onclick="switchTab('kaannos',this)">Käännöslisä</div>
+  </div>
+
+  <!-- ===== PANEL: PELTILISTAT ===== -->
+  <div class="panel active" id="panel-listat">
+    <div class="filter-bar">
+      <span class="filter-label">Materiaali:</span>
+      <div id="listMatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div class="ml-auto" style="display:flex;gap:8px">
+        <button class="btn btn-secondary" onclick="showMassModal()">⟳ Laske uudet hinnat</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Materiaali</th>
+            <th>Paksuus</th>
+            <th>Leveys mm</th>
+            <th class="right">Hinta €/m <span style="font-weight:400;opacity:0.5">(alv 0%)</span></th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody id="listBody"><tr><td colspan="5" class="loading">Ladataan...</td></tr></tbody>
+      </table>
+      <div class="table-footer" id="listFooter"></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: KIINTEÄT HINNAT ===== -->
+  <div class="panel" id="panel-kiinteat">
+    <div class="filter-bar">
+      <span class="filter-label">Ryhmä:</span>
+      <div id="fixedGroupFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <input class="filter-search ml-auto" id="fixedSearch" placeholder="Hae nimikkeellä..." oninput="renderFixed()">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Koodi</th>
+            <th>Nimike</th>
+            <th>Ryhmä</th>
+            <th>Materiaali</th>
+            <th>Paksuus</th>
+            <th class="right">Hinta <span style="font-weight:400;opacity:0.5">(alv 0%)</span></th>
+            <th>Yks</th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody id="fixedBody"><tr><td colspan="8" class="loading">Ladataan...</td></tr></tbody>
+      </table>
+      <div class="table-footer" id="fixedFooter"></div>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: MATERIAALIT ===== -->
+  <div class="panel" id="panel-materiaalit">
+    <div class="info-box">
+      <strong>Huom:</strong> Täällä hallitaan materiaalien ostohinnat ja kertoimet laskentakaavaa varten.
+      Taulukko täytetään käyttöönoton yhteydessä. Massapäivitys Peltilistat-välilehdellä tallentaa
+      ostohinnan automaattisesti tähän historiatiedoksi.
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn btn-primary" onclick="showAddMaterialModal()">+ Lisää materiaali</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Materiaali</th>
+            <th>Paksuus mm</th>
+            <th class="right">Ostohinta €/m²</th>
+            <th class="right">Kerroin</th>
+            <th class="right">Työ €/m</th>
+            <th class="right">Päivitetty</th>
+            <th style="width:90px"></th>
+          </tr>
+        </thead>
+        <tbody id="matBody"><tr><td colspan="7" class="empty-state">Ei materiaaleja</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== PANEL: KÄÄNNÖSLISÄ ===== -->
+  <div class="panel" id="panel-kaannos">
+    <div class="surcharge-box">
+      <div class="card-label">Nykyinen käännöslisä / käännös</div>
+      <div class="surcharge-value" id="surchargeDisplay">— €</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px" id="surchargeNote">Ei asetettu</div>
+      <button class="btn btn-primary" onclick="showSurchargeModal()">Aseta käännöslisä</button>
+    </div>
+    <div class="card-label" style="margin-bottom:10px">Historia</div>
+    <div class="table-wrap" style="max-width:420px">
+      <table>
+        <thead>
+          <tr>
+            <th>Päivämäärä</th>
+            <th class="right">€ / käännös</th>
+            <th>Huomio</th>
+          </tr>
+        </thead>
+        <tbody id="surchargeHistory">
+          <tr><td colspan="3" class="empty-state">Ei historiatietoja</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ===== MASSAPÄIVITYS MODAL ===== -->
+<div class="modal-overlay" id="massModal" style="display:none" onclick="closeIfOverlay(event,'massModal')">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⟳ Laske uudet hinnat</div>
+      <button class="modal-close" onclick="closeModal('massModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Materiaali</label>
+          <select class="form-input" id="massMatSelect" onchange="updateMassPreview()">
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Uusi ostohinta €/m²</label>
+          <input class="form-input" type="number" step="0.01" id="massPurchase" value="9.25" oninput="updateMassPreview()">
+          <div class="form-hint" id="massPurchaseHint"></div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kerroin</label>
+          <input class="form-input" type="number" step="0.01" id="massMultiplier" value="1.85" oninput="updateMassPreview()">
+          <div class="form-hint">1,85 = 85% kate</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Työ €/m</label>
+          <input class="form-input" type="number" step="0.01" id="massWork" value="2.00" oninput="updateMassPreview()">
+          <div class="form-hint">Lisätään joka metrille</div>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+          <div class="info-box" style="margin:0;font-size:11px">Pyöristetään lähimpään 5 ¢</div>
+        </div>
+      </div>
+      <div class="preview-box">
+        <div class="preview-title">Esikatselu</div>
+        <div class="preview-row header-row">
+          <span>Leveys</span><span>Vanha €/m</span><span>Uusi €/m</span><span>Muutos</span>
+        </div>
+        <div id="massPreviewRows"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span id="massRowCount" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-right:auto;align-self:center"></span>
+      <button class="btn btn-secondary" onclick="closeModal('massModal')">Peruuta</button>
+      <button class="btn btn-primary" id="massConfirmBtn" onclick="executeMassUpdate()">Päivitä hinnat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== KÄÄNNÖSLISÄ MODAL ===== -->
+<div class="modal-overlay" id="surchargeModal" style="display:none" onclick="closeIfOverlay(event,'surchargeModal')">
+  <div class="modal" style="max-width:360px">
+    <div class="modal-header">
+      <div class="modal-title">Aseta käännöslisä</div>
+      <button class="modal-close" onclick="closeModal('surchargeModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Käännöslisä € per käännös (alv 0%)</label>
+        <input class="form-input" type="number" step="0.05" placeholder="esim. 0.50" id="newSurchargeVal">
+        <div class="form-hint">Lisätään laskettavaan hintaan per taivutus kantikoneella</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('surchargeModal')">Peruuta</button>
+      <button class="btn btn-primary" onclick="saveSurcharge()">Tallenna</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LISÄÄ MATERIAALI MODAL ===== -->
+<div class="modal-overlay" id="addMatModal" style="display:none" onclick="closeIfOverlay(event,'addMatModal')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">+ Lisää materiaali</div>
+      <button class="modal-close" onclick="closeModal('addMatModal')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Materiaali</label>
+          <input class="form-input" id="newMatName" placeholder="esim. Pural">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Paksuus mm</label>
+          <input class="form-input" type="number" step="0.01" id="newMatThickness" placeholder="0.50">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ostohinta €/m²</label>
+          <input class="form-input" type="number" step="0.01" id="newMatPurchase">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kerroin</label>
+          <input class="form-input" type="number" step="0.01" id="newMatMultiplier" value="1.85">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Työ €/m</label>
+          <input class="form-input" type="number" step="0.01" id="newMatWork" value="2.00">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('addMatModal')">Peruuta</button>
+      <button class="btn btn-primary" onclick="saveMaterial()">Tallenna</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+<script>
+const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+const HDR = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
+
+// ---- STATE ----
+let listData = [];
+let fixedData = [];
+let matData = [];
+let surchargeData = [];
+let listMatFilter = 'all';
+let fixedGroupFilter = 'all';
+
+// ---- INIT ----
+async function init() {
+  await Promise.all([loadList(), loadFixed(), loadMaterials(), loadSurcharge()]);
+  updateSummary();
+}
+
+// ---- FETCH ----
+async function loadList() {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_list?select=id,material,thickness_mm,width_mm,price_per_m&order=material,thickness_mm,width_mm`,
+    { headers: HDR }
+  );
+  listData = await r.json();
+  if (!Array.isArray(listData)) listData = [];
+  renderListFilters();
+  renderList();
+}
+
+async function loadFixed() {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_fixed?select=id,product_code,name,product_group,material,thickness_mm,price,unit&order=product_group,product_code`,
+    { headers: HDR }
+  );
+  fixedData = await r.json();
+  if (!Array.isArray(fixedData)) fixedData = [];
+  renderFixedFilters();
+  renderFixed();
+}
+
+async function loadMaterials() {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price_per_m,updated_at&order=material`,
+    { headers: HDR }
+  );
+  matData = await r.json();
+  if (!Array.isArray(matData)) matData = [];
+  renderMaterials();
+}
+
+async function loadSurcharge() {
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge?select=id,surcharge_eur,effective_date,notes&order=effective_date.desc`,
+    { headers: HDR }
+  );
+  surchargeData = await r.json();
+  if (!Array.isArray(surchargeData)) surchargeData = [];
+  renderSurcharge();
+}
+
+// ---- SUMMARY ----
+function updateSummary() {
+  document.getElementById('cnt-list').textContent = listData.length;
+  document.getElementById('cnt-fixed').textContent = fixedData.length;
+  document.getElementById('badge-list').textContent = listData.length;
+  document.getElementById('badge-fixed').textContent = fixedData.length;
+
+  // Viimeisin ostohinta materials-taulusta
+  const pural = matData.find(m => m.material && m.material.toLowerCase().includes('pural'));
+  if (pural) {
+    document.getElementById('cnt-purchase').textContent = pural.purchase_price?.toFixed(2) + ' €/m²';
+  }
+
+  // Käännöslisä
+  if (surchargeData.length > 0) {
+    const latest = surchargeData[0];
+    document.getElementById('cnt-surcharge').textContent = latest.surcharge_eur?.toFixed(2) + ' €';
+    document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
+  }
+}
+
+// ---- PELTILISTAT ----
+function renderListFilters() {
+  const materials = [...new Set(listData.map(r => r.material))].filter(Boolean).sort();
+  const container = document.getElementById('listMatFilters');
+  container.innerHTML = `<button class="fbtn ${listMatFilter==='all'?'active':''}" onclick="setListFilter('all',this)">Kaikki</button>` +
+    materials.map(m => `<button class="fbtn ${listMatFilter===m?'active':''}" onclick="setListFilter(${JSON.stringify(m)},this)">${m}</button>`).join('');
+}
+
+function setListFilter(val, btn) {
+  listMatFilter = val;
+  document.querySelectorAll('#listMatFilters .fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function renderList() {
+  const rows = listMatFilter === 'all' ? listData : listData.filter(r => r.material === listMatFilter);
+  const tbody = document.getElementById('listBody');
+
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Ei rivejä</td></tr>';
+    document.getElementById('listFooter').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(row => `
+    <tr>
+      <td><span class="badge badge-orange">${row.material || '—'}</span></td>
+      <td class="mono" style="color:var(--text-dim)">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
+      <td class="mono">${row.width_mm != null ? row.width_mm + ' mm' : '—'}</td>
+      <td class="right mono" id="lp-${row.id}">${formatPrice(row.price_per_m)}</td>
+      <td style="text-align:right">
+        <button class="btn btn-secondary btn-sm" onclick="startEditList(${JSON.stringify(row.id)}, ${row.price_per_m})">Muokkaa</button>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('listFooter').textContent = `${rows.length} riviä`;
+}
+
+function startEditList(id, currentPrice) {
+  const cell = document.getElementById('lp-' + id);
+  cell.innerHTML = `
+    <span class="price-display">
+      <input class="edit-input" value="${currentPrice ?? ''}" id="ei-${id}" onkeydown="handleEditKey(event,'list','${id}')">
+      <button class="icon-btn save" onclick="saveListPrice('${id}')">✓</button>
+      <button class="icon-btn cancel" onclick="renderList()">✕</button>
+    </span>`;
+  document.getElementById('ei-' + id)?.focus();
+}
+
+async function saveListPrice(id) {
+  const input = document.getElementById('ei-' + id);
+  const val = parseFloat(input?.value?.replace(',', '.'));
+  if (isNaN(val) || val < 0) { showToast('Virheellinen hinta', true); return; }
+
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_list?id=eq.${id}`,
+    { method: 'PATCH', headers: HDR, body: JSON.stringify({ price_per_m: val }) }
+  );
+  if (r.ok) {
+    const row = listData.find(x => x.id == id);
+    if (row) row.price_per_m = val;
+    showToast('Hinta tallennettu');
+    renderList();
+  } else {
+    showToast('Tallennus epäonnistui', true);
+  }
+}
+
+// ---- KIINTEÄT HINNAT ----
+function renderFixedFilters() {
+  const groups = [...new Set(fixedData.map(r => r.product_group))].filter(Boolean).sort();
+  const container = document.getElementById('fixedGroupFilters');
+  container.innerHTML = `<button class="fbtn ${fixedGroupFilter==='all'?'active':''}" onclick="setFixedFilter('all',this)">Kaikki</button>` +
+    groups.map(g => `<button class="fbtn ${fixedGroupFilter===g?'active':''}" onclick="setFixedFilter(${JSON.stringify(g)},this)">${g}</button>`).join('');
+}
+
+function setFixedFilter(val, btn) {
+  fixedGroupFilter = val;
+  document.querySelectorAll('#fixedGroupFilters .fbtn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderFixed();
+}
+
+function renderFixed() {
+  const search = (document.getElementById('fixedSearch')?.value || '').toLowerCase();
+  let rows = fixedGroupFilter === 'all' ? fixedData : fixedData.filter(r => r.product_group === fixedGroupFilter);
+  if (search) rows = rows.filter(r =>
+    (r.name || '').toLowerCase().includes(search) ||
+    (r.product_code || '').toLowerCase().includes(search) ||
+    (r.material || '').toLowerCase().includes(search)
+  );
+
+  const tbody = document.getElementById('fixedBody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Ei tuloksia</td></tr>';
+    document.getElementById('fixedFooter').textContent = '';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(row => `
+    <tr>
+      <td class="mono" style="color:var(--text-dim);font-size:11px">${row.product_code || '—'}</td>
+      <td style="font-weight:500">${row.name || '—'}</td>
+      <td><span class="badge badge-gray">${row.product_group || '—'}</span></td>
+      <td style="color:var(--text-dim);font-size:12px">${row.material || '—'}</td>
+      <td class="mono" style="color:var(--text-dim);font-size:12px">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
+      <td class="right mono" id="fp-${row.id}">${formatPrice(row.price)}</td>
+      <td style="color:var(--text-dim);font-size:12px">${row.unit || '—'}</td>
+      <td style="text-align:right">
+        <button class="btn btn-secondary btn-sm" onclick="startEditFixed(${JSON.stringify(row.id)}, ${row.price ?? 0})">Muokkaa</button>
+      </td>
+    </tr>
+  `).join('');
+
+  document.getElementById('fixedFooter').textContent = `${rows.length} nimikettä`;
+}
+
+function startEditFixed(id, currentPrice) {
+  const cell = document.getElementById('fp-' + id);
+  cell.innerHTML = `
+    <span class="price-display">
+      <input class="edit-input" value="${currentPrice ?? ''}" id="eif-${id}" onkeydown="handleEditKey(event,'fixed','${id}')">
+      <button class="icon-btn save" onclick="saveFixedPrice('${id}')">✓</button>
+      <button class="icon-btn cancel" onclick="renderFixed()">✕</button>
+    </span>`;
+  document.getElementById('eif-' + id)?.focus();
+}
+
+async function saveFixedPrice(id) {
+  const input = document.getElementById('eif-' + id);
+  const val = parseFloat(input?.value?.replace(',', '.'));
+  if (isNaN(val) || val < 0) { showToast('Virheellinen hinta', true); return; }
+
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_fixed?id=eq.${id}`,
+    { method: 'PATCH', headers: HDR, body: JSON.stringify({ price: val }) }
+  );
+  if (r.ok) {
+    const row = fixedData.find(x => x.id == id);
+    if (row) row.price = val;
+    showToast('Hinta tallennettu');
+    renderFixed();
+  } else {
+    showToast('Tallennus epäonnistui', true);
+  }
+}
+
+// ---- MATERIAALIT ----
+function renderMaterials() {
+  const tbody = document.getElementById('matBody');
+  if (!matData.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ei materiaaleja — lisää napilla</td></tr>';
+    return;
+  }
+  tbody.innerHTML = matData.map(row => `
+    <tr>
+      <td><span class="badge badge-orange">${row.material || '—'}</span></td>
+      <td class="mono">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
+      <td class="right mono">${row.purchase_price?.toFixed(2) ?? '—'} €</td>
+      <td class="right mono">${row.multiplier?.toFixed(2) ?? '—'}</td>
+      <td class="right mono">${row.work_price_per_m?.toFixed(2) ?? '—'} €</td>
+      <td class="right" style="font-size:11px;color:var(--text-dim)">${row.updated_at ? row.updated_at.slice(0,10) : '—'}</td>
+      <td style="text-align:right">
+        <button class="btn btn-secondary btn-sm">Muokkaa</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function saveMaterial() {
+  const mat = document.getElementById('newMatName').value.trim();
+  const thk = parseFloat(document.getElementById('newMatThickness').value);
+  const pur = parseFloat(document.getElementById('newMatPurchase').value);
+  const mul = parseFloat(document.getElementById('newMatMultiplier').value);
+  const wrk = parseFloat(document.getElementById('newMatWork').value);
+
+  if (!mat || isNaN(pur)) { showToast('Täytä vaaditut kentät', true); return; }
+
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_materials`,
+    { method: 'POST', headers: HDR,
+      body: JSON.stringify({ material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price_per_m: wrk || 2.00 }) }
+  );
+  if (r.ok) {
+    closeModal('addMatModal');
+    showToast('Materiaali lisätty');
+    await loadMaterials();
+  } else {
+    showToast('Tallennus epäonnistui', true);
+  }
+}
+
+// ---- KÄÄNNÖSLISÄ ----
+function renderSurcharge() {
+  const latest = surchargeData[0];
+  if (latest) {
+    document.getElementById('surchargeDisplay').textContent = latest.surcharge_eur?.toFixed(2) + ' €';
+    document.getElementById('surchargeDisplay').classList.add('set');
+    document.getElementById('surchargeNote').textContent = 'Voimassa ' + (latest.effective_date || '');
+    document.getElementById('cnt-surcharge').textContent = latest.surcharge_eur?.toFixed(2) + ' €';
+    document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
+  }
+
+  const tbody = document.getElementById('surchargeHistory');
+  if (!surchargeData.length) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Ei historiatietoja</td></tr>';
+    return;
+  }
+  tbody.innerHTML = surchargeData.map(row => `
+    <tr>
+      <td class="mono" style="font-size:12px">${row.effective_date || '—'}</td>
+      <td class="right mono">${row.surcharge_eur?.toFixed(2) ?? '—'} €</td>
+      <td style="font-size:12px;color:var(--text-dim)">${row.notes || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+async function saveSurcharge() {
+  const val = parseFloat(document.getElementById('newSurchargeVal').value);
+  if (isNaN(val) || val < 0) { showToast('Virheellinen arvo', true); return; }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const r = await fetch(
+    `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge`,
+    { method: 'POST', headers: HDR,
+      body: JSON.stringify({ surcharge_eur: val, effective_date: today }) }
+  );
+  if (r.ok) {
+    closeModal('surchargeModal');
+    showToast('Käännöslisä tallennettu');
+    await loadSurcharge();
+    updateSummary();
+  } else {
+    showToast('Tallennus epäonnistui', true);
+  }
+}
+
+// ---- MASSAPÄIVITYS ----
+function showMassModal() {
+  // Täytä materiaalisuodatin
+  const materials = [...new Set(listData.map(r => r.material))].filter(Boolean).sort();
+  const sel = document.getElementById('massMatSelect');
+  sel.innerHTML = materials.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  // Hae viimeisin ostohinta valitulle materiaalille
+  updateMassPurchaseHint();
+  updateMassPreview();
+  document.getElementById('massModal').style.display = 'flex';
+}
+
+function updateMassPurchaseHint() {
+  const mat = document.getElementById('massMatSelect')?.value;
+  const found = matData.find(m => m.material === mat);
+  document.getElementById('massPurchaseHint').textContent = found
+    ? `Viimeisin: ${found.purchase_price?.toFixed(2)} €/m²`
+    : 'Ei historiatietoja';
+}
+
+function updateMassPreview() {
+  updateMassPurchaseHint();
+  const mat = document.getElementById('massMatSelect')?.value;
+  const purchase = parseFloat(document.getElementById('massPurchase')?.value) || 0;
+  const mult = parseFloat(document.getElementById('massMultiplier')?.value) || 1.85;
+  const work = parseFloat(document.getElementById('massWork')?.value) || 2.00;
+
+  const rows = listData.filter(r => r.material === mat);
+  document.getElementById('massRowCount').textContent = `${rows.length} riviä päivitetään`;
+
+  // Näytä esimerkkirivejä (joka 5. tai kaikki jos alle 20)
+  const preview = rows.length <= 20 ? rows : rows.filter((_, i) => i % Math.ceil(rows.length / 15) === 0);
+
+  document.getElementById('massPreviewRows').innerHTML = preview.map(row => {
+    const wm = (row.width_mm || 0) / 1000;
+    const newPrice = round5(wm * purchase * mult + work);
+    const old = row.price_per_m;
+    const diff = old != null ? newPrice - old : null;
+    const diffHtml = diff == null ? '' :
+      Math.abs(diff) < 0.001 ? `<span class="c-eq">= sama</span>` :
+      diff > 0 ? `<span class="c-up">▲ +${diff.toFixed(2)}</span>` :
+                 `<span class="c-dn">▼ ${diff.toFixed(2)}</span>`;
+    return `<div class="preview-row">
+      <span class="c-dim">${row.width_mm} mm</span>
+      <span class="c-old">${old?.toFixed(2) ?? '—'}</span>
+      <span class="c-new">${newPrice.toFixed(2)}</span>
+      <span>${diffHtml}</span>
+    </div>`;
+  }).join('');
+}
+
+async function executeMassUpdate() {
+  const mat = document.getElementById('massMatSelect')?.value;
+  const purchase = parseFloat(document.getElementById('massPurchase')?.value);
+  const mult = parseFloat(document.getElementById('massMultiplier')?.value) || 1.85;
+  const work = parseFloat(document.getElementById('massWork')?.value) || 2.00;
+
+  if (!mat || isNaN(purchase)) { showToast('Täytä kaikki kentät', true); return; }
+
+  const btn = document.getElementById('massConfirmBtn');
+  btn.textContent = 'Tallennetaan...'; btn.disabled = true;
+
+  const rows = listData.filter(r => r.material === mat);
+  let ok = 0, fail = 0;
+
+  for (const row of rows) {
+    const wm = (row.width_mm || 0) / 1000;
+    const newPrice = round5(wm * purchase * mult + work);
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/pricing_list?id=eq.${row.id}`,
+      { method: 'PATCH', headers: HDR, body: JSON.stringify({ price_per_m: newPrice }) }
+    );
+    if (r.ok) { row.price_per_m = newPrice; ok++; }
+    else fail++;
+  }
+
+  // Tallenna myös ostohinta pricing_materials-tauluun
+  const existing = matData.find(m => m.material === mat);
+  if (existing) {
+    await fetch(`${SUPABASE_URL}/rest/v1/pricing_materials?id=eq.${existing.id}`,
+      { method: 'PATCH', headers: HDR,
+        body: JSON.stringify({ purchase_price: purchase, multiplier: mult, work_price_per_m: work, updated_at: new Date().toISOString() }) });
+    existing.purchase_price = purchase;
+  } else {
+    const nr = await fetch(`${SUPABASE_URL}/rest/v1/pricing_materials`,
+      { method: 'POST', headers: HDR,
+        body: JSON.stringify({ material: mat, purchase_price: purchase, multiplier: mult, work_price_per_m: work }) });
+    if (nr.ok) await loadMaterials();
+  }
+
+  btn.textContent = 'Päivitä hinnat'; btn.disabled = false;
+  closeModal('massModal');
+
+  if (fail === 0) showToast(`✓ ${ok} hintaa päivitetty`);
+  else showToast(`${ok} ok, ${fail} epäonnistui`, fail > 0);
+
+  renderList();
+  updateSummary();
+}
+
+// ---- APUFUNKTIOT ----
+function round5(v) { return Math.round(v * 20) / 20; }
+
+function formatPrice(v) {
+  if (v == null) return '<span style="color:var(--text-dim)">—</span>';
+  return v.toFixed(2) + ' €';
+}
+
+function handleEditKey(e, type, id) {
+  if (e.key === 'Enter') {
+    if (type === 'list') saveListPrice(id);
+    else saveFixedPrice(id);
+  }
+  if (e.key === 'Escape') {
+    if (type === 'list') renderList();
+    else renderFixed();
+  }
+}
+
+// ---- TAB / MODAL / NAV ----
+function switchTab(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+function showSurchargeModal() { document.getElementById('surchargeModal').style.display = 'flex'; }
+function showAddMaterialModal() { document.getElementById('addMatModal').style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function closeIfOverlay(e, id) { if (e.target.id === id) closeModal(id); }
+
+function toggleNav(e) {
+  e.stopPropagation();
+  document.getElementById('navDropdown').classList.toggle('open');
+}
+document.addEventListener('click', () => document.getElementById('navDropdown').classList.remove('open'));
+
+// ---- TOAST ----
+let toastTimer;
+function showToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ---- LOGOUT ----
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  if (window._supabase) await window._supabase.auth.signOut();
+  window.location.href = 'login.html';
+});
+
+// ---- START ----
+init();
+</script>
+</body>
+</html>
