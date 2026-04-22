@@ -613,7 +613,6 @@ const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
 const HDR = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
-// ---- STATE ----
 let listData = [];
 let fixedData = [];
 let matData = [];
@@ -629,14 +628,16 @@ async function init() {
 
 // ---- FETCH ----
 async function loadList() {
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_list?select=id,material,thickness_mm,width_mm,unit_price,notes&order=material,thickness_mm,width_mm`,
-    { headers: HDR }
-  );
-  listData = await r.json();
-  if (!Array.isArray(listData)) listData = [];
-  // normalisoi: käytetään price_per_m nimenä koodissa, mutta tallennetaan unit_price
-  listData.forEach(r => r.price_per_m = r.unit_price);
+  try {
+    const r = await fetch(
+      SUPABASE_URL + '/rest/v1/pricing_list?select=id,material,thickness_mm,width_mm,unit_price,unit,notes&order=material,thickness_mm,width_mm',
+      { headers: HDR }
+    );
+    if (!r.ok) { listData = []; renderListFilters(); renderList(); return; }
+    listData = await r.json();
+    if (!Array.isArray(listData)) listData = [];
+    listData.forEach(function(r) { r.price_per_m = r.unit_price; });
+  } catch(e) { listData = []; }
   renderListFilters();
   renderList();
 }
@@ -644,7 +645,7 @@ async function loadList() {
 async function loadFixed() {
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/pricing_fixed?select=id,legacy_code,product_name,material,thickness_mm,unit_price,unit&order=legacy_code`,
+      SUPABASE_URL + '/rest/v1/pricing_fixed?select=id,legacy_code,product_name,material,thickness_mm,unit_price,unit&order=legacy_code',
       { headers: HDR }
     );
     if (!r.ok) { fixedData = []; renderFixedFilters(); renderFixed(); return; }
@@ -658,7 +659,7 @@ async function loadFixed() {
 async function loadMaterials() {
   try {
     const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price,updated_at&order=material`,
+      SUPABASE_URL + '/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price,updated_at&order=material',
       { headers: HDR }
     );
     if (!r.ok) { matData = []; renderMaterials(); return; }
@@ -669,12 +670,15 @@ async function loadMaterials() {
 }
 
 async function loadSurcharge() {
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge?select=id,surcharge_per_bend,valid_from,notes&order=valid_from.desc`,
-    { headers: HDR }
-  );
-  surchargeData = await r.json();
-  if (!Array.isArray(surchargeData)) surchargeData = [];
+  try {
+    const r = await fetch(
+      SUPABASE_URL + '/rest/v1/pricing_bend_surcharge?select=id,surcharge_per_bend,valid_from,notes&order=valid_from.desc',
+      { headers: HDR }
+    );
+    if (!r.ok) { surchargeData = []; renderSurcharge(); return; }
+    surchargeData = await r.json();
+    if (!Array.isArray(surchargeData)) surchargeData = [];
+  } catch(e) { surchargeData = []; }
   renderSurcharge();
 }
 
@@ -684,85 +688,100 @@ function updateSummary() {
   document.getElementById('cnt-fixed').textContent = fixedData.length;
   document.getElementById('badge-list').textContent = listData.length;
   document.getElementById('badge-fixed').textContent = fixedData.length;
-
-  // Viimeisin ostohinta materials-taulusta
-  const pural = matData.find(m => m.material && m.material.toLowerCase().includes('pural'));
+  var pural = matData.find(function(m) { return m.material && m.material.toLowerCase().includes('pural'); });
   if (pural) {
-    document.getElementById('cnt-purchase').textContent = pural.purchase_price?.toFixed(2) + ' €/m²';
+    document.getElementById('cnt-purchase').textContent = parseFloat(pural.purchase_price).toFixed(2) + ' €/m²';
   }
-
-  // Käännöslisä
   if (surchargeData.length > 0) {
-    const latest = surchargeData[0];
-    document.getElementById('cnt-surcharge').textContent = latest.surcharge_per_bend?.toFixed(2) + ' €';
+    document.getElementById('cnt-surcharge').textContent = parseFloat(surchargeData[0].surcharge_per_bend).toFixed(2) + ' €';
     document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
   }
 }
 
 // ---- PELTILISTAT ----
 function renderListFilters() {
-  const materials = [...new Set(listData.map(r => r.material))].filter(Boolean).sort();
-  const container = document.getElementById('listMatFilters');
-  let html = '<button class="fbtn ' + (listMatFilter==='all'?'active':'') + '" onclick="setListFilter(\'all\',this)">Kaikki</button>';
-  html += materials.map(m => '<button class="fbtn ' + (listMatFilter===m?'active':'') + '" onclick="setListFilter(\'' + m + '\',this)">' + m + '</button>').join('');
-  container.innerHTML = html;
+  var materials = [];
+  listData.forEach(function(r) { if (r.material && materials.indexOf(r.material) === -1) materials.push(r.material); });
+  materials.sort();
+  var html = '<button class="fbtn ' + (listMatFilter === 'all' ? 'active' : '') + '" data-filter="all" onclick="setListFilterData(this)">Kaikki</button>';
+  materials.forEach(function(m) {
+    html += '<button class="fbtn ' + (listMatFilter === m ? 'active' : '') + '" data-filter="' + m + '" onclick="setListFilterData(this)">' + m + '</button>';
+  });
+  document.getElementById('listMatFilters').innerHTML = html;
 }
 
-function setListFilter(val, btn) {
-  listMatFilter = val;
-  document.querySelectorAll('#listMatFilters .fbtn').forEach(b => b.classList.remove('active'));
+function setListFilterData(btn) {
+  listMatFilter = btn.getAttribute('data-filter');
+  document.querySelectorAll('#listMatFilters .fbtn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   renderList();
 }
 
 function renderList() {
-  const rows = listMatFilter === 'all' ? listData : listData.filter(r => r.material === listMatFilter);
-  const tbody = document.getElementById('listBody');
-
+  var rows = listMatFilter === 'all' ? listData : listData.filter(function(r) { return r.material === listMatFilter; });
+  var tbody = document.getElementById('listBody');
   if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Ei rivejä</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Ei rivijä</td></tr>';
     document.getElementById('listFooter').textContent = '';
     return;
   }
+  var html = '';
+  rows.forEach(function(row) {
+    html += '<tr>';
+    html += '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>';
+    html += '<td class="mono" style="color:var(--text-dim)">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
+    html += '<td class="mono">' + (row.width_mm != null ? row.width_mm + ' mm' : '—') + '</td>';
+    html += '<td class="right mono" id="lp-' + row.id + '">' + formatPrice(row.price_per_m) + '</td>';
+    html += '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>';
+    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.price_per_m || 0) + '" data-edittype="list" onclick="handleEditBtn(this)">Muokkaa</button></td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+  document.getElementById('listFooter').textContent = rows.length + ' riviä';
+}
 
-  tbody.innerHTML = rows.map(row => {
-    const pid = row.id;
-    const price = row.price_per_m ?? 0;
-    return '<tr>'
-      + '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>'
-      + '<td class="mono" style="color:var(--text-dim)">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>'
-      + '<td class="mono">' + (row.width_mm != null ? row.width_mm + ' mm' : '—') + '</td>'
-      + '<td class="right mono" id="lp-' + pid + '">' + formatPrice(row.price_per_m) + '</td>'
-      + '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>'
-      + '<td style="text-align:right"><button class="btn btn-secondary btn-sm" onclick="startEditList('' + pid + '',' + price + ')">Muokkaa</button></td>'
-      + '</tr>';
-  }).join('');
-
-  document.getElementById('listFooter').textContent = `${rows.length} riviä`;
+function handleEditBtn(btn) {
+  var id = btn.getAttribute('data-id');
+  var price = parseFloat(btn.getAttribute('data-price')) || 0;
+  var etype = btn.getAttribute('data-edittype');
+  if (etype === 'list') startEditList(id, price);
+  else startEditFixed(id, price);
 }
 
 function startEditList(id, currentPrice) {
-  const cell = document.getElementById('lp-' + id);
-  cell.innerHTML = `
-    <span class="price-display">
-      <input class="edit-input" value="${currentPrice ?? ''}" id="ei-${id}" onkeydown="handleEditKey(event,'list','${id}')">
-      <button class="icon-btn save" onclick="saveListPrice('${id}')">✓</button>
-      <button class="icon-btn cancel" onclick="renderList()">✕</button>
-    </span>`;
-  document.getElementById('ei-' + id)?.focus();
+  var cell = document.getElementById('lp-' + id);
+  if (!cell) return;
+  cell.innerHTML = '<span class="price-display">'
+    + '<input class="edit-input" value="' + currentPrice + '" id="ei-' + id + '">'
+    + '<button class="icon-btn save" data-id="' + id + '" data-savetype="list" onclick="handleSaveBtn(this)">✓</button>'
+    + '<button class="icon-btn cancel" onclick="renderList()">✕</button>'
+    + '</span>';
+  var inp = document.getElementById('ei-' + id);
+  if (inp) {
+    inp.focus();
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') saveListPrice(id);
+      if (e.key === 'Escape') renderList();
+    });
+  }
+}
+
+function handleSaveBtn(btn) {
+  var id = btn.getAttribute('data-id');
+  var stype = btn.getAttribute('data-savetype');
+  if (stype === 'list') saveListPrice(id);
+  else saveFixedPrice(id);
 }
 
 async function saveListPrice(id) {
-  const input = document.getElementById('ei-' + id);
-  const val = parseFloat(input?.value?.replace(',', '.'));
+  var input = document.getElementById('ei-' + id);
+  if (!input) return;
+  var val = parseFloat(input.value.replace(',', '.'));
   if (isNaN(val) || val < 0) { showToast('Virheellinen hinta', true); return; }
-
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_list?id=eq.${id}`,
-    { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: val }) }
-  );
+  var r = await fetch(SUPABASE_URL + '/rest/v1/pricing_list?id=eq.' + id,
+    { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: val }) });
   if (r.ok) {
-    const row = listData.find(x => x.id == id);
+    var row = listData.find(function(x) { return x.id == id; });
     if (row) { row.price_per_m = val; row.unit_price = val; }
     showToast('Hinta tallennettu');
     renderList();
@@ -771,89 +790,98 @@ async function saveListPrice(id) {
   }
 }
 
-// ---- KIINTEÄT HINNAT ----
+// ---- KIINTEAT HINNAT ----
 function getFixedGroup(code) {
-  if (code >= 1 && code <= 99)     return 'Työt / Tarvikkeet';
-  if (code >= 600 && code <= 699)  return 'Profiilit';
-  if (code >= 800 && code <= 899)  return 'Kourut';
-  if (code >= 900 && code <= 999)  return 'Levyt';
+  if (code >= 1 && code <= 99) return 'Työt / Tarvikkeet';
+  if (code >= 600 && code <= 699) return 'Profiilit';
+  if (code >= 800 && code <= 899) return 'Kourut';
+  if (code >= 900 && code <= 999) return 'Levyt';
   if (code >= 7000 && code <= 7999) return 'Kattoturva';
   return 'Muut';
 }
 
 function renderFixedFilters() {
-  // Ryhmät koodiston perusteella
-  const groups = [...new Set(fixedData.map(r => getFixedGroup(r.legacy_code)))].sort();
-  const container = document.getElementById('fixedGroupFilters');
-  let fhtml = '<button class="fbtn ' + (fixedGroupFilter==='all'?'active':'') + '" onclick="setFixedFilter(\'all\',this)">Kaikki</button>';
-  fhtml += groups.map(g => '<button class="fbtn ' + (fixedGroupFilter===g?'active':'') + '" onclick="setFixedFilter(\'' + g.replace(/'/g,"\\\\\'"  ) + '\',this)">' + g + '</button>').join('');
-  container.innerHTML = fhtml;
+  var groups = [];
+  fixedData.forEach(function(r) {
+    var g = getFixedGroup(r.legacy_code);
+    if (groups.indexOf(g) === -1) groups.push(g);
+  });
+  groups.sort();
+  var html = '<button class="fbtn ' + (fixedGroupFilter === 'all' ? 'active' : '') + '" data-filter="all" onclick="setFixedFilterData(this)">Kaikki</button>';
+  groups.forEach(function(g) {
+    html += '<button class="fbtn ' + (fixedGroupFilter === g ? 'active' : '') + '" data-filter="' + g + '" onclick="setFixedFilterData(this)">' + g + '</button>';
+  });
+  document.getElementById('fixedGroupFilters').innerHTML = html;
 }
 
-function setFixedFilter(val, btn) {
-  fixedGroupFilter = val;
-  document.querySelectorAll('#fixedGroupFilters .fbtn').forEach(b => b.classList.remove('active'));
+function setFixedFilterData(btn) {
+  fixedGroupFilter = btn.getAttribute('data-filter');
+  document.querySelectorAll('#fixedGroupFilters .fbtn').forEach(function(b) { b.classList.remove('active'); });
   btn.classList.add('active');
   renderFixed();
 }
 
 function renderFixed() {
-  const search = (document.getElementById('fixedSearch')?.value || '').toLowerCase();
-  let rows = fixedData.map(r => ({ ...r, _group: getFixedGroup(r.legacy_code) }));
-  if (fixedGroupFilter !== 'all') rows = rows.filter(r => r._group === fixedGroupFilter);
-  if (search) rows = rows.filter(r =>
-    (r.product_name || '').toLowerCase().includes(search) ||
-    String(r.legacy_code || '').includes(search) ||
-    (r.material || '').toLowerCase().includes(search)
-  );
-
-  const tbody = document.getElementById('fixedBody');
+  var search = (document.getElementById('fixedSearch') ? document.getElementById('fixedSearch').value : '').toLowerCase();
+  var rows = fixedData.map(function(r) {
+    return Object.assign({}, r, { _group: getFixedGroup(r.legacy_code) });
+  });
+  if (fixedGroupFilter !== 'all') rows = rows.filter(function(r) { return r._group === fixedGroupFilter; });
+  if (search) rows = rows.filter(function(r) {
+    return (r.product_name || '').toLowerCase().includes(search)
+      || String(r.legacy_code || '').includes(search)
+      || (r.material || '').toLowerCase().includes(search);
+  });
+  var tbody = document.getElementById('fixedBody');
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="8" class="empty-state">Ei tuloksia</td></tr>';
     document.getElementById('fixedFooter').textContent = '';
     return;
   }
-
-  tbody.innerHTML = rows.map(row => {
-    const fid = row.id;
-    const fprice = row.unit_price ?? 0;
-    return '<tr>'
-      + '<td class="mono" style="color:var(--text-dim);font-size:11px">' + (row.legacy_code ?? '—') + '</td>'
-      + '<td style="font-weight:500">' + (row.product_name || '—') + '</td>'
-      + '<td><span class="badge badge-gray">' + row._group + '</span></td>'
-      + '<td style="color:var(--text-dim);font-size:12px">' + (row.material || '—') + '</td>'
-      + '<td class="mono" style="color:var(--text-dim);font-size:12px">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>'
-      + '<td class="right mono" id="fp-' + fid + '">' + formatPrice(row.unit_price) + '</td>'
-      + '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>'
-      + '<td style="text-align:right"><button class="btn btn-secondary btn-sm" onclick="startEditFixed('' + fid + '',' + fprice + ')">Muokkaa</button></td>'
-      + '</tr>';
-  }).join('');
-
-  document.getElementById('fixedFooter').textContent = `${rows.length} nimikettä`;
+  var html = '';
+  rows.forEach(function(row) {
+    html += '<tr>';
+    html += '<td class="mono" style="color:var(--text-dim);font-size:11px">' + (row.legacy_code != null ? row.legacy_code : '—') + '</td>';
+    html += '<td style="font-weight:500">' + (row.product_name || '—') + '</td>';
+    html += '<td><span class="badge badge-gray">' + row._group + '</span></td>';
+    html += '<td style="color:var(--text-dim);font-size:12px">' + (row.material || '—') + '</td>';
+    html += '<td class="mono" style="color:var(--text-dim);font-size:12px">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
+    html += '<td class="right mono" id="fp-' + row.id + '">' + formatPrice(row.unit_price) + '</td>';
+    html += '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>';
+    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.unit_price || 0) + '" data-edittype="fixed" onclick="handleEditBtn(this)">Muokkaa</button></td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+  document.getElementById('fixedFooter').textContent = rows.length + ' nimikkettä';
 }
 
 function startEditFixed(id, currentPrice) {
-  const cell = document.getElementById('fp-' + id);
-  cell.innerHTML = `
-    <span class="price-display">
-      <input class="edit-input" value="${currentPrice ?? ''}" id="eif-${id}" onkeydown="handleEditKey(event,'fixed','${id}')">
-      <button class="icon-btn save" onclick="saveFixedPrice('${id}')">✓</button>
-      <button class="icon-btn cancel" onclick="renderFixed()">✕</button>
-    </span>`;
-  document.getElementById('eif-' + id)?.focus();
+  var cell = document.getElementById('fp-' + id);
+  if (!cell) return;
+  cell.innerHTML = '<span class="price-display">'
+    + '<input class="edit-input" value="' + currentPrice + '" id="eif-' + id + '">'
+    + '<button class="icon-btn save" data-id="' + id + '" data-savetype="fixed" onclick="handleSaveBtn(this)">✓</button>'
+    + '<button class="icon-btn cancel" onclick="renderFixed()">✕</button>'
+    + '</span>';
+  var inp = document.getElementById('eif-' + id);
+  if (inp) {
+    inp.focus();
+    inp.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') saveFixedPrice(id);
+      if (e.key === 'Escape') renderFixed();
+    });
+  }
 }
 
 async function saveFixedPrice(id) {
-  const input = document.getElementById('eif-' + id);
-  const val = parseFloat(input?.value?.replace(',', '.'));
+  var input = document.getElementById('eif-' + id);
+  if (!input) return;
+  var val = parseFloat(input.value.replace(',', '.'));
   if (isNaN(val) || val < 0) { showToast('Virheellinen hinta', true); return; }
-
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_fixed?id=eq.${id}`,
-    { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: val }) }
-  );
+  var r = await fetch(SUPABASE_URL + '/rest/v1/pricing_fixed?id=eq.' + id,
+    { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: val }) });
   if (r.ok) {
-    const row = fixedData.find(x => x.id == id);
+    var row = fixedData.find(function(x) { return x.id == id; });
     if (row) row.unit_price = val;
     showToast('Hinta tallennettu');
     renderFixed();
@@ -864,40 +892,36 @@ async function saveFixedPrice(id) {
 
 // ---- MATERIAALIT ----
 function renderMaterials() {
-  const tbody = document.getElementById('matBody');
+  var tbody = document.getElementById('matBody');
   if (!matData.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ei materiaaleja — lisää napilla</td></tr>';
     return;
   }
-  tbody.innerHTML = matData.map(row => `
-    <tr>
-      <td><span class="badge badge-orange">${row.material || '—'}</span></td>
-      <td class="mono">${row.thickness_mm ? row.thickness_mm + ' mm' : '—'}</td>
-      <td class="right mono">${row.purchase_price?.toFixed(2) ?? '—'} €</td>
-      <td class="right mono">${row.multiplier?.toFixed(2) ?? '—'}</td>
-      <td class="right mono">${row.work_price?.toFixed(2) ?? '—'} €</td>
-      <td class="right" style="font-size:11px;color:var(--text-dim)">${row.updated_at ? row.updated_at.slice(0,10) : '—'}</td>
-      <td style="text-align:right">
-        <button class="btn btn-secondary btn-sm">Muokkaa</button>
-      </td>
-    </tr>
-  `).join('');
+  var html = '';
+  matData.forEach(function(row) {
+    html += '<tr>';
+    html += '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>';
+    html += '<td class="mono">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
+    html += '<td class="right mono">' + (row.purchase_price != null ? parseFloat(row.purchase_price).toFixed(2) : '—') + ' €</td>';
+    html += '<td class="right mono">' + (row.multiplier != null ? parseFloat(row.multiplier).toFixed(2) : '—') + '</td>';
+    html += '<td class="right mono">' + (row.work_price != null ? parseFloat(row.work_price).toFixed(2) : '—') + ' €</td>';
+    html += '<td class="right" style="font-size:11px;color:var(--text-dim)">' + (row.updated_at ? row.updated_at.slice(0,10) : '—') + '</td>';
+    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm">Muokkaa</button></td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
 }
 
 async function saveMaterial() {
-  const mat = document.getElementById('newMatName').value.trim();
-  const thk = parseFloat(document.getElementById('newMatThickness').value);
-  const pur = parseFloat(document.getElementById('newMatPurchase').value);
-  const mul = parseFloat(document.getElementById('newMatMultiplier').value);
-  const wrk = parseFloat(document.getElementById('newMatWork').value);
-
+  var mat = document.getElementById('newMatName').value.trim();
+  var thk = parseFloat(document.getElementById('newMatThickness').value);
+  var pur = parseFloat(document.getElementById('newMatPurchase').value);
+  var mul = parseFloat(document.getElementById('newMatMultiplier').value);
+  var wrk = parseFloat(document.getElementById('newMatWork').value);
   if (!mat || isNaN(pur)) { showToast('Täytä vaaditut kentät', true); return; }
-
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_materials`,
+  var r = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials',
     { method: 'POST', headers: HDR,
-      body: JSON.stringify({ material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price: wrk || 2.00 }) }
-  );
+      body: JSON.stringify({ material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price: wrk || 2.00 }) });
   if (r.ok) {
     closeModal('addMatModal');
     showToast('Materiaali lisätty');
@@ -907,41 +931,39 @@ async function saveMaterial() {
   }
 }
 
-// ---- KÄÄNNÖSLISÄ ----
+// ---- KAANNOSLISA ----
 function renderSurcharge() {
-  const latest = surchargeData[0];
+  var latest = surchargeData[0];
   if (latest) {
-    document.getElementById('surchargeDisplay').textContent = latest.surcharge_per_bend?.toFixed(2) + ' €';
+    document.getElementById('surchargeDisplay').textContent = parseFloat(latest.surcharge_per_bend).toFixed(2) + ' €';
     document.getElementById('surchargeDisplay').classList.add('set');
     document.getElementById('surchargeNote').textContent = 'Voimassa ' + (latest.valid_from || '');
-    document.getElementById('cnt-surcharge').textContent = latest.surcharge_per_bend?.toFixed(2) + ' €';
+    document.getElementById('cnt-surcharge').textContent = parseFloat(latest.surcharge_per_bend).toFixed(2) + ' €';
     document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
   }
-
-  const tbody = document.getElementById('surchargeHistory');
+  var tbody = document.getElementById('surchargeHistory');
   if (!surchargeData.length) {
     tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Ei historiatietoja</td></tr>';
     return;
   }
-  tbody.innerHTML = surchargeData.map(row => `
-    <tr>
-      <td class="mono" style="font-size:12px">${row.valid_from || '—'}</td>
-      <td class="right mono">${row.surcharge_per_bend?.toFixed(2) ?? '—'} €</td>
-      <td style="font-size:12px;color:var(--text-dim)">${row.notes || '—'}</td>
-    </tr>
-  `).join('');
+  var html = '';
+  surchargeData.forEach(function(row) {
+    html += '<tr>';
+    html += '<td class="mono" style="font-size:12px">' + (row.valid_from || '—') + '</td>';
+    html += '<td class="right mono">' + (row.surcharge_per_bend != null ? parseFloat(row.surcharge_per_bend).toFixed(2) : '—') + ' €</td>';
+    html += '<td style="font-size:12px;color:var(--text-dim)">' + (row.notes || '—') + '</td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
 }
 
 async function saveSurcharge() {
-  const val = parseFloat(document.getElementById('newSurchargeVal').value);
+  var val = parseFloat(document.getElementById('newSurchargeVal').value);
   if (isNaN(val) || val < 0) { showToast('Virheellinen arvo', true); return; }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/pricing_bend_surcharge`,
+  var today = new Date().toISOString().slice(0, 10);
+  var r = await fetch(SUPABASE_URL + '/rest/v1/pricing_bend_surcharge',
     { method: 'POST', headers: HDR,
-      body: JSON.stringify({ surcharge_per_bend: val, valid_from: today }) }
-  );
+      body: JSON.stringify({ surcharge_per_bend: val, valid_from: today }) });
   if (r.ok) {
     closeModal('surchargeModal');
     showToast('Käännöslisä tallennettu');
@@ -952,103 +974,90 @@ async function saveSurcharge() {
   }
 }
 
-// ---- MASSAPÄIVITYS ----
+// ---- MASSAPAIVITYS ----
 function showMassModal() {
-  // Täytä materiaalisuodatin
-  const materials = [...new Set(listData.map(r => r.material))].filter(Boolean).sort();
-  const sel = document.getElementById('massMatSelect');
-  sel.innerHTML = materials.map(m => `<option value="${m}">${m}</option>`).join('');
-
-  // Hae viimeisin ostohinta valitulle materiaalille
+  var materials = [];
+  listData.forEach(function(r) { if (r.material && materials.indexOf(r.material) === -1) materials.push(r.material); });
+  materials.sort();
+  var sel = document.getElementById('massMatSelect');
+  sel.innerHTML = materials.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
   updateMassPurchaseHint();
   updateMassPreview();
   document.getElementById('massModal').style.display = 'flex';
 }
 
 function updateMassPurchaseHint() {
-  const mat = document.getElementById('massMatSelect')?.value;
-  const found = matData.find(m => m.material === mat);
+  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var found = matData.find(function(m) { return m.material === mat; });
   document.getElementById('massPurchaseHint').textContent = found
-    ? `Viimeisin: ${found.purchase_price?.toFixed(2)} €/m²`
+    ? 'Viimeisin: ' + parseFloat(found.purchase_price).toFixed(2) + ' €/m²'
     : 'Ei historiatietoja';
 }
 
 function updateMassPreview() {
   updateMassPurchaseHint();
-  const mat = document.getElementById('massMatSelect')?.value;
-  const purchase = parseFloat(document.getElementById('massPurchase')?.value) || 0;
-  const mult = parseFloat(document.getElementById('massMultiplier')?.value) || 1.85;
-  const work = parseFloat(document.getElementById('massWork')?.value) || 2.00;
-
-  const rows = listData.filter(r => r.material === mat);
-  document.getElementById('massRowCount').textContent = `${rows.length} riviä päivitetään`;
-
-  // Näytä esimerkkirivejä (joka 5. tai kaikki jos alle 20)
-  const preview = rows.length <= 20 ? rows : rows.filter((_, i) => i % Math.ceil(rows.length / 15) === 0);
-
-  document.getElementById('massPreviewRows').innerHTML = preview.map(row => {
-    const wm = (row.width_mm || 0) / 1000;
-    const newPrice = round5(wm * purchase * mult + work);
-    const old = row.price_per_m;
-    const diff = old != null ? newPrice - old : null;
-    const diffHtml = diff == null ? '' :
-      Math.abs(diff) < 0.001 ? `<span class="c-eq">= sama</span>` :
-      diff > 0 ? `<span class="c-up">▲ +${diff.toFixed(2)}</span>` :
-                 `<span class="c-dn">▼ ${diff.toFixed(2)}</span>`;
-    return `<div class="preview-row">
-      <span class="c-dim">${row.width_mm} mm</span>
-      <span class="c-old">${old?.toFixed(2) ?? '—'}</span>
-      <span class="c-new">${newPrice.toFixed(2)}</span>
-      <span>${diffHtml}</span>
-    </div>`;
-  }).join('');
+  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var purchase = parseFloat(document.getElementById('massPurchase').value) || 0;
+  var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
+  var work = parseFloat(document.getElementById('massWork').value) || 2.00;
+  var rows = listData.filter(function(r) { return r.material === mat; });
+  document.getElementById('massRowCount').textContent = rows.length + ' riviä päivitetään';
+  var preview = rows.length <= 20 ? rows : rows.filter(function(_, i) { return i % Math.ceil(rows.length / 15) === 0; });
+  var html = '';
+  preview.forEach(function(row) {
+    var wm = (row.width_mm || 0) / 1000;
+    var newPrice = round5(wm * purchase * mult + work);
+    var old = row.price_per_m;
+    var diff = old != null ? newPrice - old : null;
+    var diffHtml = diff == null ? '' :
+      Math.abs(diff) < 0.001 ? '<span class="c-eq">= sama</span>' :
+      diff > 0 ? '<span class="c-up">▲ +' + diff.toFixed(2) + '</span>' :
+                 '<span class="c-dn">▼ ' + diff.toFixed(2) + '</span>';
+    html += '<div class="preview-row">'
+      + '<span class="c-dim">' + (row.width_mm || '—') + ' mm</span>'
+      + '<span class="c-old">' + (old != null ? old.toFixed(2) : '—') + '</span>'
+      + '<span class="c-new">' + newPrice.toFixed(2) + '</span>'
+      + '<span>' + diffHtml + '</span>'
+      + '</div>';
+  });
+  document.getElementById('massPreviewRows').innerHTML = html;
 }
 
 async function executeMassUpdate() {
-  const mat = document.getElementById('massMatSelect')?.value;
-  const purchase = parseFloat(document.getElementById('massPurchase')?.value);
-  const mult = parseFloat(document.getElementById('massMultiplier')?.value) || 1.85;
-  const work = parseFloat(document.getElementById('massWork')?.value) || 2.00;
-
+  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var purchase = parseFloat(document.getElementById('massPurchase').value);
+  var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
+  var work = parseFloat(document.getElementById('massWork').value) || 2.00;
   if (!mat || isNaN(purchase)) { showToast('Täytä kaikki kentät', true); return; }
-
-  const btn = document.getElementById('massConfirmBtn');
+  var btn = document.getElementById('massConfirmBtn');
   btn.textContent = 'Tallennetaan...'; btn.disabled = true;
-
-  const rows = listData.filter(r => r.material === mat);
-  let ok = 0, fail = 0;
-
-  for (const row of rows) {
-    const wm = (row.width_mm || 0) / 1000;
-    const newPrice = round5(wm * purchase * mult + work);
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/pricing_list?id=eq.${row.id}`,
-      { method: 'PATCH', headers: HDR, body: JSON.stringify({ price_per_m: newPrice }) }
-    );
-    if (r.ok) { row.price_per_m = newPrice; ok++; }
+  var rows = listData.filter(function(r) { return r.material === mat; });
+  var ok = 0, fail = 0;
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    var wm = (row.width_mm || 0) / 1000;
+    var newPrice = round5(wm * purchase * mult + work);
+    var r = await fetch(SUPABASE_URL + '/rest/v1/pricing_list?id=eq.' + row.id,
+      { method: 'PATCH', headers: HDR, body: JSON.stringify({ unit_price: newPrice }) });
+    if (r.ok) { row.price_per_m = newPrice; row.unit_price = newPrice; ok++; }
     else fail++;
   }
-
-  // Tallenna myös ostohinta pricing_materials-tauluun
-  const existing = matData.find(m => m.material === mat);
+  var existing = matData.find(function(m) { return m.material === mat; });
   if (existing) {
-    await fetch(`${SUPABASE_URL}/rest/v1/pricing_materials?id=eq.${existing.id}`,
+    await fetch(SUPABASE_URL + '/rest/v1/pricing_materials?id=eq.' + existing.id,
       { method: 'PATCH', headers: HDR,
         body: JSON.stringify({ purchase_price: purchase, multiplier: mult, work_price: work, updated_at: new Date().toISOString() }) });
     existing.purchase_price = purchase;
   } else {
-    const nr = await fetch(`${SUPABASE_URL}/rest/v1/pricing_materials`,
+    var nr = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials',
       { method: 'POST', headers: HDR,
         body: JSON.stringify({ material: mat, purchase_price: purchase, multiplier: mult, work_price: work }) });
     if (nr.ok) await loadMaterials();
   }
-
   btn.textContent = 'Päivitä hinnat'; btn.disabled = false;
   closeModal('massModal');
-
-  if (fail === 0) showToast(`✓ ${ok} hintaa päivitetty`);
-  else showToast(`${ok} ok, ${fail} epäonnistui`, fail > 0);
-
+  if (fail === 0) showToast('✓ ' + ok + ' hintaa päivitetty');
+  else showToast(ok + ' ok, ' + fail + ' epäonnistui', fail > 0);
   renderList();
   updateSummary();
 }
@@ -1058,28 +1067,18 @@ function round5(v) { return Math.round(v * 20) / 20; }
 
 function formatPrice(v) {
   if (v == null) return '<span style="color:var(--text-dim)">—</span>';
-  return v.toFixed(2) + ' €';
-}
-
-function handleEditKey(e, type, id) {
-  if (e.key === 'Enter') {
-    if (type === 'list') saveListPrice(id);
-    else saveFixedPrice(id);
-  }
-  if (e.key === 'Escape') {
-    if (type === 'list') renderList();
-    else renderFixed();
-  }
+  return parseFloat(v).toFixed(2) + ' €';
 }
 
 // ---- TAB / MODAL / NAV ----
 function switchTab(name, el) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
   document.getElementById('panel-' + name).classList.add('active');
   el.classList.add('active');
 }
 
+function showMassModalBtn() { showMassModal(); }
 function showSurchargeModal() { document.getElementById('surchargeModal').style.display = 'flex'; }
 function showAddMaterialModal() { document.getElementById('addMatModal').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -1089,21 +1088,20 @@ function toggleNav(e) {
   e.stopPropagation();
   document.getElementById('navDropdown').classList.toggle('open');
 }
-document.addEventListener('click', () => document.getElementById('navDropdown').classList.remove('open'));
+document.addEventListener('click', function() { document.getElementById('navDropdown').classList.remove('open'); });
 
 // ---- TOAST ----
-let toastTimer;
-function showToast(msg, error = false) {
-  const t = document.getElementById('toast');
+var toastTimer;
+function showToast(msg, error) {
+  var t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (error ? ' error' : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.className = 'toast', 3000);
+  toastTimer = setTimeout(function() { t.className = 'toast'; }, 3000);
 }
 
 // ---- LOGOUT ----
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  if (window._supabase) await window._supabase.auth.signOut();
+document.getElementById('logoutBtn').addEventListener('click', function() {
   window.location.href = 'login.html';
 });
 
