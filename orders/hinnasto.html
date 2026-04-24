@@ -315,6 +315,48 @@
     text-align: center; padding: 40px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
   }
+
+  /* ===== MOBIILI ===== */
+  .mobile-grid { display: none; }
+
+  @media (max-width: 700px) {
+    .page { padding: 12px 12px 48px; }
+    .summary-row { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    .card-number { font-size: 18px; }
+
+    /* Piilota taulukot mobiilissa */
+    .table-wrap { display: none; }
+    .table-footer { display: none; }
+
+    /* Nayta kortit mobiilissa */
+    .mobile-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+
+    /* Filter-bar mobiilissa */
+    .filter-bar { padding: 8px 10px; gap: 6px; }
+    .filter-search { width: 100%; margin-left: 0; margin-top: 6px; }
+    .ml-auto { margin-left: 0; width: 100%; }
+    .ml-auto .btn { width: 100%; }
+
+    /* Tabs mobiilissa */
+    .tab { padding: 8px 10px; font-size: 11px; }
+    .tab-badge { display: none; }
+
+    /* Kortit */
+    .m-card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 6px; padding: 12px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .m-card:active { background: var(--panel2); }
+    .m-card-top { display: flex; align-items: center; gap: 8px; }
+    .m-card-name { font-size: 13px; font-weight: 600; flex: 1; }
+    .m-card-price {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 20px; font-weight: 600; color: var(--accent);
+    }
+    .m-card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .m-card-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
+  }
 </style>
 </head>
 <body>
@@ -406,6 +448,7 @@
         <tbody id="listBody"><tr><td colspan="5" class="loading">Ladataan...</td></tr></tbody>
       </table>
       <div class="table-footer" id="listFooter"></div>
+    <div class="mobile-grid" id="listMobileGrid"></div>
     </div>
   </div>
 
@@ -433,6 +476,7 @@
         <tbody id="fixedBody"><tr><td colspan="8" class="loading">Ladataan...</td></tr></tbody>
       </table>
       <div class="table-footer" id="fixedFooter"></div>
+    <div class="mobile-grid" id="fixedMobileGrid"></div>
     </div>
   </div>
 
@@ -742,6 +786,7 @@ function renderList() {
   });
   tbody.innerHTML = html;
   document.getElementById('listFooter').textContent = rows.length + ' riviä';
+  renderListMobile();
 }
 
 function handleEditBtn(btn) {
@@ -857,6 +902,7 @@ function renderFixed() {
   });
   tbody.innerHTML = html;
   document.getElementById('fixedFooter').textContent = rows.length + ' nimikkettä';
+  renderFixedMobile();
 }
 
 function startEditFixed(id, currentPrice) {
@@ -1144,6 +1190,77 @@ function showToast(msg, error) {
 document.getElementById('logoutBtn').addEventListener('click', function() {
   window.location.href = 'login.html';
 });
+
+
+// ---- MOBIILIKORTTIT ----
+function renderListMobile() {
+  var grid = document.getElementById('listMobileGrid');
+  if (!grid) return;
+  var rows = listMatFilter === 'all' ? listData : listData.filter(function(r) { return r.material === listMatFilter; });
+  if (!rows.length) {
+    grid.innerHTML = '<div class="empty-state">Ei rivejä</div>';
+    return;
+  }
+  var html = '';
+  rows.forEach(function(row) {
+    html += '<div class="m-card">'
+      + '<div class="m-card-top">'
+      + '<div class="m-card-name">'
+      + '<span class="badge badge-orange" style="margin-right:6px">' + (row.material || '') + '</span>'
+      + (row.width_mm != null ? row.width_mm + ' mm' : '—')
+      + '</div>'
+      + '<div class="m-card-price">' + (row.price_per_m != null ? parseFloat(row.price_per_m).toFixed(2) + ' €' : '—') + '</div>'
+      + '</div>'
+      + '<div class="m-card-meta">'
+      + (row.thickness_mm ? '<span style="color:var(--text-dim);font-size:12px">' + row.thickness_mm + ' mm paksu</span>' : '')
+      + '<span style="color:var(--text-dim);font-size:12px">' + (row.unit || 'm') + '</span>'
+      + '</div>'
+      + '<div class="m-card-foot">'
+      + '<button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.price_per_m || 0) + '" data-edittype="list" onclick="handleEditBtn(this)">Muokkaa</button>'
+      + '</div>'
+      + '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+function renderFixedMobile() {
+  var grid = document.getElementById('fixedMobileGrid');
+  if (!grid) return;
+  var search = (document.getElementById('fixedSearch') ? document.getElementById('fixedSearch').value : '').toLowerCase();
+  var rows = fixedData.map(function(r) { return Object.assign({}, r, { _group: getFixedGroup(r.legacy_code) }); });
+  if (fixedGroupFilter !== 'all') rows = rows.filter(function(r) { return r._group === fixedGroupFilter; });
+  if (search) rows = rows.filter(function(r) {
+    return (r.product_name || '').toLowerCase().includes(search)
+      || String(r.legacy_code || '').includes(search)
+      || (r.material || '').toLowerCase().includes(search);
+  });
+  if (!rows.length) {
+    grid.innerHTML = '<div class="empty-state">Ei tuloksia</div>';
+    return;
+  }
+  var html = '';
+  rows.forEach(function(row) {
+    html += '<div class="m-card">'
+      + '<div class="m-card-top">'
+      + '<div class="m-card-name">'
+      + (row.product_name || '—')
+      + '</div>'
+      + '<div class="m-card-price">' + (row.unit_price != null ? parseFloat(row.unit_price).toFixed(2) + ' €' : '—') + '</div>'
+      + '</div>'
+      + '<div class="m-card-meta">'
+      + '<span class="badge badge-gray">' + row._group + '</span>'
+      + (row.material ? '<span style="color:var(--text-dim);font-size:12px">' + row.material + '</span>' : '')
+      + (row.thickness_mm ? '<span style="color:var(--text-dim);font-size:12px">' + row.thickness_mm + ' mm</span>' : '')
+      + '<span style="color:var(--text-dim);font-size:12px">' + (row.unit || '') + '</span>'
+      + (row.legacy_code != null ? '<span style="color:var(--text-dim);font-size:11px">#' + row.legacy_code + '</span>' : '')
+      + '</div>'
+      + '<div class="m-card-foot">'
+      + '<button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.unit_price || 0) + '" data-edittype="fixed" onclick="handleEditBtn(this)">Muokkaa</button>'
+      + '</div>'
+      + '</div>';
+  });
+  grid.innerHTML = html;
+}
 
 // ---- START ----
 init();
