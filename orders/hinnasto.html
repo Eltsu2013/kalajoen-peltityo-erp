@@ -2399,19 +2399,24 @@ function handleEditBtn(btn) {
 }
 
 function startEditList(id, currentPrice) {
-  var cell = document.getElementById('lp-' + id);
+  // Toimii seka taulukossa (lp-) etta mobiilikorteissa (mlp-)
+  var cell = document.getElementById('lp-' + id) || document.getElementById('mlp-' + id);
   if (!cell) return;
-  cell.innerHTML = '<span class="price-display">'
+  var cancelFn = document.getElementById('lp-' + id) ? 'renderList()' : 'renderListMobile()';
+  cell.innerHTML = '<span class="price-display" style="justify-content:flex-start;gap:6px">'
     + '<input class="edit-input" value="' + currentPrice + '" id="ei-' + id + '">'
     + '<button class="icon-btn save" data-id="' + id + '" data-savetype="list" onclick="handleSaveBtn(this)">✓</button>'
-    + '<button class="icon-btn cancel" onclick="renderList()">✕</button>'
+    + '<button class="icon-btn cancel" onclick="' + cancelFn + '">✕</button>'
     + '</span>';
   var inp = document.getElementById('ei-' + id);
   if (inp) {
     inp.focus();
     inp.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') saveListPrice(id);
-      if (e.key === 'Escape') renderList();
+      if (e.key === 'Escape') {
+        renderList();
+        renderListMobile();
+      }
     });
   }
 }
@@ -2435,6 +2440,7 @@ async function saveListPrice(id) {
     if (row) { row.price_per_m = val; row.unit_price = val; }
     showToast('Hinta tallennettu');
     renderList();
+    renderListMobile();
   } else {
     showToast('Tallennus epäonnistui', true);
   }
@@ -2507,19 +2513,19 @@ function renderFixed() {
 }
 
 function startEditFixed(id, currentPrice) {
-  var cell = document.getElementById('fp-' + id);
+  var cell = document.getElementById('fp-' + id) || document.getElementById('mfp-' + id);
   if (!cell) return;
-  cell.innerHTML = '<span class="price-display">'
+  cell.innerHTML = '<span class="price-display" style="justify-content:flex-start;gap:6px">'
     + '<input class="edit-input" value="' + currentPrice + '" id="eif-' + id + '">'
     + '<button class="icon-btn save" data-id="' + id + '" data-savetype="fixed" onclick="handleSaveBtn(this)">✓</button>'
-    + '<button class="icon-btn cancel" onclick="renderFixed()">✕</button>'
+    + '<button class="icon-btn cancel" onclick="renderFixed();renderFixedMobile()">✕</button>'
     + '</span>';
   var inp = document.getElementById('eif-' + id);
   if (inp) {
     inp.focus();
     inp.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') saveFixedPrice(id);
-      if (e.key === 'Escape') renderFixed();
+      if (e.key === 'Escape') { renderFixed(); renderFixedMobile(); }
     });
   }
 }
@@ -2536,6 +2542,7 @@ async function saveFixedPrice(id) {
     if (row) row.unit_price = val;
     showToast('Hinta tallennettu');
     renderFixed();
+    renderFixedMobile();
   } else {
     showToast('Tallennus epäonnistui', true);
   }
@@ -2818,7 +2825,7 @@ function renderListMobile() {
       + '<span class="badge badge-orange" style="margin-right:6px">' + (row.material || '') + '</span>'
       + (row.width_mm != null ? row.width_mm + ' mm' : '—')
       + '</div>'
-      + '<div class="m-card-price">' + (row.price_per_m != null ? parseFloat(row.price_per_m).toFixed(2) + ' €' : '—') + '</div>'
+      + '<div class="m-card-price" id="mlp-' + row.id + '">' + (row.price_per_m != null ? parseFloat(row.price_per_m).toFixed(2) + ' €' : '—') + '</div>'
       + '</div>'
       + '<div class="m-card-meta">'
       + (row.thickness_mm ? '<span style="color:var(--text-dim);font-size:12px">' + row.thickness_mm + ' mm paksu</span>' : '')
@@ -2854,7 +2861,7 @@ function renderFixedMobile() {
       + '<div class="m-card-name">'
       + (row.product_name || '—')
       + '</div>'
-      + '<div class="m-card-price">' + (row.unit_price != null ? parseFloat(row.unit_price).toFixed(2) + ' €' : '—') + '</div>'
+      + '<div class="m-card-price" id="mfp-' + row.id + '">' + (row.unit_price != null ? parseFloat(row.unit_price).toFixed(2) + ' €' : '—') + '</div>'
       + '</div>'
       + '<div class="m-card-meta">'
       + '<span class="badge badge-gray">' + row._group + '</span>'
