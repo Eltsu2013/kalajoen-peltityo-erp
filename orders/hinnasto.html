@@ -332,10 +332,11 @@
     .mobile-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
 
     /* Filter-bar mobiilissa */
-    .filter-bar { padding: 8px 10px; gap: 6px; }
-    .filter-search { width: 100%; margin-left: 0; margin-top: 6px; }
-    .ml-auto { margin-left: 0; width: 100%; }
+    .filter-bar { padding: 8px 10px; gap: 6px; flex-direction: column; align-items: stretch; }
+    .filter-search { width: 100%; margin-left: 0; }
+    .ml-auto { margin-left: 0; width: 100%; flex-direction: column; }
     .ml-auto .btn { width: 100%; }
+    .ml-auto .filter-search { width: 100%; }
 
     /* Tabs mobiilissa */
     .tab { padding: 8px 10px; font-size: 11px; }
@@ -429,8 +430,9 @@
     <div class="filter-bar">
       <span class="filter-label">Materiaali:</span>
       <div id="listMatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-      <div class="ml-auto" style="display:flex;gap:8px">
-        <button class="btn btn-secondary" onclick="showMassModal()">⟳ Laske uudet hinnat</button>
+      <div class="ml-auto" style="display:flex;gap:8px;align-items:center">
+        <input class="filter-search" id="listSearch" placeholder="Hae leveydellä tai materiaalilla..." oninput="renderList();renderListMobile()">
+        <button class="btn btn-secondary" onclick="showMassModal()">&#x27F3; Laske uudet hinnat</button>
       </div>
     </div>
     <div class="table-wrap">
@@ -766,7 +768,15 @@ function setListFilterData(btn) {
 }
 
 function renderList() {
+  var search = (document.getElementById('listSearch') ? document.getElementById('listSearch').value : '').toLowerCase().trim();
   var rows = listMatFilter === 'all' ? listData : listData.filter(function(r) { return r.material === listMatFilter; });
+  if (search) {
+    rows = rows.filter(function(r) {
+      return String(r.width_mm || '').includes(search)
+        || (r.material || '').toLowerCase().includes(search)
+        || String(r.thickness_mm || '').includes(search);
+    });
+  }
   var tbody = document.getElementById('listBody');
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Ei rivijä</td></tr>';
@@ -1196,7 +1206,15 @@ document.getElementById('logoutBtn').addEventListener('click', function() {
 function renderListMobile() {
   var grid = document.getElementById('listMobileGrid');
   if (!grid) return;
+  var search = (document.getElementById('listSearch') ? document.getElementById('listSearch').value : '').toLowerCase().trim();
   var rows = listMatFilter === 'all' ? listData : listData.filter(function(r) { return r.material === listMatFilter; });
+  if (search) {
+    rows = rows.filter(function(r) {
+      return String(r.width_mm || '').includes(search)
+        || (r.material || '').toLowerCase().includes(search)
+        || String(r.thickness_mm || '').includes(search);
+    });
+  }
   if (!rows.length) {
     grid.innerHTML = '<div class="empty-state">Ei rivejä</div>';
     return;
