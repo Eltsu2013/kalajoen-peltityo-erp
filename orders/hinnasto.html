@@ -2434,7 +2434,6 @@ function handleEditBtn(btn) {
   var id = btn.getAttribute('data-id');
   var price = parseFloat(btn.getAttribute('data-price')) || 0;
   var etype = btn.getAttribute('data-edittype');
-  log('Muokkaa painettu: id=' + id + ' price=' + price + ' type=' + etype, '#ffff40');
   if (etype === 'list') startEditList(id, price);
   else startEditFixed(id, price);
 }
@@ -2442,7 +2441,6 @@ function handleEditBtn(btn) {
 function startEditList(id, currentPrice) {
   // Toimii seka taulukossa (lp-) etta mobiilikorteissa (mlp-)
   var cell = document.getElementById('lp-' + id) || document.getElementById('mlp-' + id);
-  log('startEditList: id=' + id + ' cell=' + (cell ? 'LOYDETTY' : 'EI LOYDY'), cell ? '#40ff80' : '#ff4040');
   if (!cell) return;
   var cancelFn = document.getElementById('lp-' + id) ? 'renderList()' : 'renderListMobile()';
   cell.innerHTML = '<span class="price-display" style="justify-content:flex-start;gap:6px">'
