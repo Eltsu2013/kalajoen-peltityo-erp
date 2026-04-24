@@ -495,7 +495,7 @@
 <div class="modal-overlay" id="massModal" style="display:none" onclick="closeIfOverlay(event,'massModal')">
   <div class="modal">
     <div class="modal-header">
-      <div class="modal-title">⟳ Laske uudet hinnat</div>
+      <div class="modal-title" id="massModalTitle">⟳ Laske uudet hinnat</div>
       <button class="modal-close" onclick="closeModal('massModal')">×</button>
     </div>
     <div class="modal-body">
@@ -526,8 +526,11 @@
           <div class="info-box" style="margin:0;font-size:11px">Pyöristetään lähimpään 5 ¢</div>
         </div>
       </div>
+      <div id="simuBanner" style="display:none;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.3);border-radius:4px;padding:8px 14px;font-size:12px;color:#0ea5e9;margin-bottom:10px;">
+        &#9432; Simulaatio — hinnat laskettu alla mutta <strong>ei tallennettu</strong>. Paina "Tallenna hinnat" jos haluat ottaa käyttöön.
+      </div>
       <div class="preview-box">
-        <div class="preview-title">Esikatselu</div>
+        <div class="preview-title" id="massPreviewTitle">Esikatselu — kaikki rivit</div>
         <div class="preview-row header-row">
           <span>Leveys</span><span>Vanha €/m</span><span>Uusi €/m</span><span>Muutos</span>
         </div>
@@ -537,7 +540,8 @@
     <div class="modal-footer">
       <span id="massRowCount" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-right:auto;align-self:center"></span>
       <button class="btn btn-secondary" onclick="closeModal('massModal')">Peruuta</button>
-      <button class="btn btn-primary" id="massConfirmBtn" onclick="executeMassUpdate()">Päivitä hinnat</button>
+      <button class="btn btn-secondary" id="massSimuBtn" onclick="runSimulation()" style="color:#0ea5e9;border-color:rgba(14,165,233,0.4)">&#9654; Simuloi</button>
+      <button class="btn btn-primary" id="massConfirmBtn" onclick="executeMassUpdate()">Tallenna hinnat</button>
     </div>
   </div>
 </div>
@@ -975,7 +979,14 @@ async function saveSurcharge() {
 }
 
 // ---- MASSAPAIVITYS ----
+var simulationDone = false;
+
 function showMassModal() {
+  simulationDone = false;
+  document.getElementById('simuBanner').style.display = 'none';
+  document.getElementById('massModalTitle').textContent = '⟳ Laske uudet hinnat';
+  document.getElementById('massConfirmBtn').disabled = true;
+  document.getElementById('massConfirmBtn').style.opacity = '0.4';
   var materials = [];
   listData.forEach(function(r) { if (r.material && materials.indexOf(r.material) === -1) materials.push(r.material); });
   materials.sort();
@@ -995,16 +1006,42 @@ function updateMassPurchaseHint() {
 }
 
 function updateMassPreview() {
+  // Kun arvoja muutetaan, nollataan simulaatio
+  simulationDone = false;
+  document.getElementById('simuBanner').style.display = 'none';
+  document.getElementById('massConfirmBtn').disabled = true;
+  document.getElementById('massConfirmBtn').style.opacity = '0.4';
   updateMassPurchaseHint();
   var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
   var purchase = parseFloat(document.getElementById('massPurchase').value) || 0;
   var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
   var work = parseFloat(document.getElementById('massWork').value) || 2.00;
   var rows = listData.filter(function(r) { return r.material === mat; });
-  document.getElementById('massRowCount').textContent = rows.length + ' riviä päivitetään';
-  var preview = rows.length <= 20 ? rows : rows.filter(function(_, i) { return i % Math.ceil(rows.length / 15) === 0; });
+  document.getElementById('massRowCount').textContent = rows.length + ' riviä';
+  // Naytetaan vain esimerkki ennen simulaatiota
+  var preview = rows.length <= 20 ? rows : rows.filter(function(_, i) { return i % Math.ceil(rows.length / 10) === 0; });
+  renderPreviewRows(preview, purchase, mult, work, false);
+}
+
+function runSimulation() {
+  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var purchase = parseFloat(document.getElementById('massPurchase').value) || 0;
+  var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
+  var work = parseFloat(document.getElementById('massWork').value) || 2.00;
+  var rows = listData.filter(function(r) { return r.material === mat; });
+  // Naytetaan KAIKKI rivit
+  renderPreviewRows(rows, purchase, mult, work, true);
+  document.getElementById('simuBanner').style.display = 'block';
+  document.getElementById('massModalTitle').textContent = '⟳ Simulaatio — ' + mat;
+  document.getElementById('massRowCount').textContent = rows.length + ' riviä laskettu';
+  document.getElementById('massConfirmBtn').disabled = false;
+  document.getElementById('massConfirmBtn').style.opacity = '1';
+  simulationDone = true;
+}
+
+function renderPreviewRows(rows, purchase, mult, work, showAll) {
   var html = '';
-  preview.forEach(function(row) {
+  rows.forEach(function(row) {
     var wm = (row.width_mm || 0) / 1000;
     var newPrice = round5(wm * purchase * mult + work);
     var old = row.price_per_m;
@@ -1015,11 +1052,14 @@ function updateMassPreview() {
                  '<span class="c-dn">▼ ' + diff.toFixed(2) + '</span>';
     html += '<div class="preview-row">'
       + '<span class="c-dim">' + (row.width_mm || '—') + ' mm</span>'
-      + '<span class="c-old">' + (old != null ? old.toFixed(2) : '—') + '</span>'
+      + '<span class="c-old">' + (old != null ? parseFloat(old).toFixed(2) : '—') + '</span>'
       + '<span class="c-new">' + newPrice.toFixed(2) + '</span>'
       + '<span>' + diffHtml + '</span>'
       + '</div>';
   });
+  if (!showAll && rows.length > 0) {
+    html += '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text-dim)">Paina ▶ Simuloi nähdäksesi kaikki rivit</div>';
+  }
   document.getElementById('massPreviewRows').innerHTML = html;
 }
 
