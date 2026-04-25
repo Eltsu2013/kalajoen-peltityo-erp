@@ -84,8 +84,10 @@
   .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
   .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
-  .main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 52px); overflow: hidden; }
-  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 74px); overflow: hidden; }
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
+  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
   .content { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 
   .section { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
@@ -97,6 +99,10 @@
   .field input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 8px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
   .field input[type=number]:focus { outline: none; border-color: var(--accent); }
   .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sidebar.wide .field-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .sidebar.xwide .field-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .sidebar.wide .field label { font-size: 10px; }
 
   .checks { display: flex; flex-direction: column; gap: 5px; }
   .check-item { display: flex; align-items: center; gap: 8px; }
@@ -1762,7 +1768,8 @@
 </header>
 
 <div class="main">
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-resizer" id="sidebar-resizer"></div>
 
   <div class="section">
     <h3>Piipun osat</h3>
@@ -1792,15 +1799,15 @@
 
   <div class="section">
     <h3>Piipun mitat</h3>
-    <div class="field">
-      <label>Piipun leveys (mm)</label>
-      <input type="number" id="leveys" value="400" min="0" oninput="laske()">
-    </div>
-    <div class="field">
-      <label>Suora mitta — pituus katolla (mm)</label>
-      <input type="number" id="suora" value="600" min="0" oninput="laske()">
-    </div>
-    <div class="field-row">
+    <div class="field-grid">
+      <div class="field">
+        <label>Piipun leveys (mm)</label>
+        <input type="number" id="leveys" value="400" min="0" oninput="laske()">
+      </div>
+      <div class="field">
+        <label>Suora mitta (mm)</label>
+        <input type="number" id="suora" value="600" min="0" oninput="laske()">
+      </div>
       <div class="field">
         <label>Etukorkeus (mm)</label>
         <input type="number" id="etukork" value="1000" min="0" oninput="laske()">
@@ -1809,40 +1816,40 @@
         <label>Takakorkeus (mm)</label>
         <input type="number" id="takakork" value="800" min="0" oninput="laske()">
       </div>
-    </div>
-    <div class="field">
-      <label>Takareunasta harjalle (mm)</label>
-      <input type="number" id="harjalle" value="1050" min="0" oninput="laske()">
+      <div class="field">
+        <label>Takareunasta harjalle (mm)</label>
+        <input type="number" id="harjalle" value="1050" min="0" oninput="laske()">
+      </div>
     </div>
   </div>
 
   <div class="section">
     <h3>Sivumitat</h3>
-    <div class="field-row">
+    <div class="field-grid">
       <div class="field">
-        <label>Vasen — poimuun (mm)</label>
+        <label>Vasen harjan ylitys (mm)</label>
         <input type="number" id="vasen" value="150" min="0" oninput="laske()">
       </div>
       <div class="field">
-        <label>Oikea — poimuun (mm)</label>
+        <label>Oikea harjan ylitys (mm)</label>
         <input type="number" id="oikea" value="100" min="0" oninput="laske()">
       </div>
-    </div>
-    <div class="field">
-      <label>Poimun ylitys vasemmalle (mm)</label>
-      <input type="number" id="poimu" value="20" min="0" oninput="laske()">
+      <div class="field">
+        <label>Harjan ylitys vasemmalle (mm)</label>
+        <input type="number" id="poimu" value="20" min="0" oninput="laske()">
+      </div>
     </div>
   </div>
 
   <div class="section">
     <h3>Juuri — etuosa</h3>
-    <div class="field-row">
+    <div class="field-grid">
       <div class="field">
-        <label>Eteen piipusta K24 (mm)</label>
+        <label>Eteen piipusta (mm)</label>
         <input type="number" id="k24" value="200" min="0" oninput="laske()">
       </div>
       <div class="field">
-        <label>Alas / saumavara J25 (mm)</label>
+        <label>Alas (mm)</label>
         <input type="number" id="j25" value="15" min="0" oninput="laske()">
       </div>
     </div>
@@ -1865,7 +1872,7 @@
   <div class="section">
     <h3 class="red">Hupun mitat ⚠</h3>
     <div class="vakio-grid">
-      <label>Sauma</label>
+      <label>Hupun saumat</label>
       <input type="number" id="v-sauma" value="20" oninput="laske()">
       <label>Lisää hupun kokoon</label>
       <input type="number" id="v-huplis" value="10" oninput="laske()">
@@ -2100,7 +2107,7 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
   // Juuri etu uloke + alas
   const jEtuUloke = Math.min(k24 * scale * 0.35, 28);
   const jEtuX = etuX - jEtuUloke;
-  const jEtuKattoY = etuY + slope * jEtuUloke;
+  const jEtuKattoY = etuY - slope * jEtuUloke;
   h += `<line x1="${etuX}" y1="${etuY}" x2="${jEtuX}" y2="${jEtuKattoY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
   h += `<line x1="${jEtuX}" y1="${jEtuKattoY}" x2="${jEtuX}" y2="${jEtuKattoY + Math.min(j25*scale*0.6, 12)}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
 
@@ -2139,6 +2146,54 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 
 function r(n) { return Math.round(n); }
 laske();
+
+// Sidebar resizer
+(function() {
+  const STORAGE_KEY = 'kpt_piippu_sidebar_width';
+  const MIN_WIDTH = 260;
+  const MAX_WIDTH = 700;
+  const WIDE_THRESHOLD = 420;
+  const XWIDE_THRESHOLD = 580;
+  const sidebar = document.getElementById('sidebar');
+  const resizer = document.getElementById('sidebar-resizer');
+  const main = document.querySelector('.main');
+
+  const saved = parseInt(localStorage.getItem(STORAGE_KEY));
+  if (saved && saved >= MIN_WIDTH) {
+    main.style.gridTemplateColumns = saved + 'px 1fr';
+    if (saved >= XWIDE_THRESHOLD) { sidebar.classList.add('wide'); sidebar.classList.add('xwide'); }
+    else if (saved >= WIDE_THRESHOLD) { sidebar.classList.add('wide'); sidebar.classList.remove('xwide'); }
+  }
+
+  let startX, startW;
+  resizer.addEventListener('mousedown', e => {
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(e) {
+      const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (e.clientX - startX)));
+      main.style.gridTemplateColumns = w + 'px 1fr';
+      if (w >= XWIDE_THRESHOLD) { sidebar.classList.add('wide'); sidebar.classList.add('xwide'); }
+      else if (w >= WIDE_THRESHOLD) { sidebar.classList.add('wide'); sidebar.classList.remove('xwide'); }
+      else { sidebar.classList.remove('wide'); sidebar.classList.remove('xwide'); }
+    }
+
+    function onUp() {
+      localStorage.setItem(STORAGE_KEY, sidebar.offsetWidth);
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
 </script>
 
 <script>
