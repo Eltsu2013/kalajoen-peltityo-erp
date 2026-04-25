@@ -1994,7 +1994,8 @@ function laske() {
     const jEtuPit = (j25 > 0 ? j25 : tupla) + k24 + j25 + q9;
     juuret.push({ osa: 'Juuri etu', lev: r(jEtuLev), pit: r(jEtuPit), kpl: 1 });
 
-    const jSivuPit = k24 + vinomitta + vinokomp + 2*j25 + 30;
+    const nousuKomp = kattokulma_rad > 0 ? nousu / Math.tan(kattokulma_rad) : 0;
+    const jSivuPit = tupla + j25 + k24 + vinomitta + nousuKomp + 20 + 30;
     const jOikLev  = oikea + poimu + nousu + tupla;
     const jVasLev  = vasen + poimu + nousu + tupla;
     juuret.push({ osa: 'Juuri oikea', lev: r(jOikLev), pit: r(jSivuPit), kpl: 1 });
