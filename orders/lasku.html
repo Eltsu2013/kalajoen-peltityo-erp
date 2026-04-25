@@ -194,18 +194,41 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
   table.rivit td { border-bottom: 1px solid #eee; }
   .main { padding: 0; border: none; }
 }
+.nav-menu-wrap { position: relative; }
+.nav-item { display: block; width: 100%; text-align: left; padding: 8px 14px; font-family: var(--mono); font-size: 12px; color: var(--text); background: none; border: none; cursor: pointer; text-decoration: none; transition: background 0.1s; }
+.nav-item:hover { background: rgba(232,160,32,0.1); color: var(--accent); }
+.nav-item.current { color: var(--accent); font-weight: 600; }
+.nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
+.nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 </style>
 </head>
 <body>
 
 <nav>
-  <a class="nav-logo" href="tilaukset.html">
-    <svg viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
-      <rect x="2" y="8" width="36" height="24" rx="2" fill="none" stroke="white" stroke-width="2.5"/>
-      <line x1="2" y1="20" x2="38" y2="20" stroke="white" stroke-width="2"/>
-      <text x="46" y="26" font-family="IBM Plex Sans" font-weight="500" font-size="16" fill="white">Peltityö</text>
-    </svg>
-  </a>
+  <a class="nav-logo" href="tilaukset.html" style="height:40px;display:flex;align-items:center;filter:brightness(0) invert(1)"><svg width="120" height="40" viewBox="0 0 264.58332 89.452189" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><g transform="translate(-3.0585938,-107.20811)"><g transform="matrix(0.26458333,0,0,0.26458333,3.0585938,107.20811)"><path d="m 0,0 h 338 l -74.42,338 H 0 Z" style="fill:#e8a020"/><path d="M 75,0 H 1000 V 338 H 0 Z" style="fill:#222"/><text x="90" y="245" font-family="IBM Plex Sans" font-weight="700" font-size="200" fill="#e8a020">Peltityö</text></g></g></svg></a>
+  <div class="nav-menu-wrap" style="margin-left:8px">
+    <button class="nav-menu-btn" onclick="toggleNavLasku(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdownLasku" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-width:200px;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.4);overflow:hidden;">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:8px 14px 4px;">Sivut</div>
+      <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
+      <a class="nav-item" href="tilaukset.html">📋 Tilaukset</a>
+      <a class="nav-item" href="tilaus.html">✏️ Uusi tilaus</a>
+      <a class="nav-item" href="tuotanto.html">⚙️ Tuotanto</a>
+      <a class="nav-item" href="peltipiirturi.html">🔨 Mallisto</a>
+      <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
+      <hr class="nav-divider">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:8px 14px 4px;">Hallinta</div>
+      <a class="nav-item" href="hinnasto.html">💰 Hinnasto</a>
+      <a class="nav-item current" href="lasku.html">🧾 Laskutus</a>
+      <hr class="nav-divider">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:8px 14px 4px;">Työkalut</div>
+      <a class="nav-item" href="laskin.html">🧮 Laskin</a>
+      <a class="nav-item" href="piippu.html">🏭 Piippu</a>
+      <hr class="nav-divider">
+      <div style="font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);padding:8px 14px 4px;">Sovellukset</div>
+      <a class="nav-item external" href="https://kalajoenpeltityo.retool.com/apps/03e2ccb8-0e5c-11f1-abca-8fb585b85c11/Varaston%C3%A4kym%C3%A4/Varasto" target="_blank">📦 Varasto</a>
+    </div>
+  </div>
   <div class="nav-sep"></div>
   <span class="nav-title" id="navTyyppi">Lasku</span>
   <span class="nav-invoice-num" id="navNum">—</span>
@@ -968,6 +991,16 @@ function muokkaaHintaa(id) {
     paivitaKaavake();
   }
 }
+
+function toggleNavLasku(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('navDropdownLasku');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', () => {
+  const dd = document.getElementById('navDropdownLasku');
+  if (dd) dd.style.display = 'none';
+});
 </script>
 </body>
 </html>
