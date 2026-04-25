@@ -2013,10 +2013,17 @@ function laske() {
     const hEtuKork = etukork + ylareunaV + alatupla + kaltkorj - vahennys;
     muut.push({ osa: 'Huppu etu', lev: r(hEtuLev), pit: r(hEtuKork), kpl: 1 });
 
-    const hSivLev  = suora + sauma*3 + huplis;
+    let hSivLev, hTakaLev;
+    if (saumatyyppi === 1) {
+      hSivLev  = suora + sauma*3 + huplis;
+      hTakaLev = leveys + sauma*4 + huplis + huptakalis;
+    } else {
+      // Sauma 2: sivut leveämpiä, taka sama kuin etu
+      hSivLev  = suora + sauma*4 + huplis + huptakalis;
+      hTakaLev = leveys + sauma*2 + huplis;
+    }
     muut.push({ osa: 'Huppu sivut', lev: r(hSivLev), pit: r(hEtuKork), kpl: 2 });
 
-    const hTakaLev  = leveys + sauma*4 + huplis + huptakalis;
     const hTakaKork = takakork + ylareunaV + alatupla - kaltkorj - vahennys;
     muut.push({ osa: 'Huppu taka', lev: r(hTakaLev), pit: r(hTakaKork), kpl: 1 });
   }
