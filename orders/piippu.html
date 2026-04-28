@@ -1869,6 +1869,35 @@
       <label>Juuren takareuna eteenpäin</label>
       <input type="number" id="v-takareuna" value="" placeholder="0" oninput="laske()">
     </div>
+    <div style="margin-top:8px;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">Takakappaleet</div>
+      <div class="sauma-options">
+        <button class="sauma-btn active" id="taka1" onclick="setTakaKpl(1)">1</button>
+        <button class="sauma-btn" id="taka2" onclick="setTakaKpl(2)">2</button>
+        <button class="sauma-btn" id="taka3" onclick="setTakaKpl(3)">3</button>
+        <button class="sauma-btn" id="taka4" onclick="setTakaKpl(4)">4</button>
+      </div>
+    </div>
+    <div id="taka-extra" style="display:none;margin-top:8px;">
+      <div class="vakio-grid">
+        <label>Juuren saumat</label>
+        <input type="number" id="v-juurisauma" value="20" oninput="laske()">
+        <label>Juuri taka 1 mitta</label>
+        <input type="number" id="v-taka1mitta" value="" placeholder="mm" oninput="laske()">
+      </div>
+      <div id="taka2-kentat" style="display:none;">
+        <div class="vakio-grid" style="margin-top:4px;">
+          <label>Juuri taka 2 mitta</label>
+          <input type="number" id="v-taka2mitta" value="" placeholder="mm" oninput="laske()">
+        </div>
+      </div>
+      <div id="taka3-kentat" style="display:none;">
+        <div class="vakio-grid" style="margin-top:4px;">
+          <label>Juuri taka 3 mitta</label>
+          <input type="number" id="v-taka3mitta" value="" placeholder="mm" oninput="laske()">
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="section">
@@ -1930,6 +1959,16 @@ function setSauma(n) {
   saumatyyppi = n;
   document.getElementById('sauma1').classList.toggle('active', n===1);
   document.getElementById('sauma2').classList.toggle('active', n===2);
+  laske();
+}
+
+let takaKpl = 1;
+function setTakaKpl(n) {
+  takaKpl = n;
+  [1,2,3,4].forEach(i => document.getElementById('taka'+i).classList.toggle('active', i===n));
+  document.getElementById('taka-extra').style.display = n >= 2 ? 'block' : 'none';
+  document.getElementById('taka2-kentat').style.display = n >= 3 ? 'block' : 'none';
+  document.getElementById('taka3-kentat').style.display = n >= 4 ? 'block' : 'none';
   laske();
 }
 function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
@@ -2006,8 +2045,46 @@ function laske() {
 
     // Taka: takalis EI vaikuta huppuun
     const jTakaLev = vasen + oikea + leveys + tupla*2 + poimu*2 + takalis;
-    const jTakaPit = harjalle + q9 + takareuna;
-    juuret.push({ osa: 'Juuri taka', lev: r(jTakaLev), pit: r(jTakaPit), kpl: 1 });
+    const juurisauma = gv('v-juurisauma');
+    const taka1mitta = gv('v-taka1mitta');
+    const taka2mitta = gv('v-taka2mitta');
+    const taka3mitta = gv('v-taka3mitta');
+
+    if (takaKpl === 1) {
+      // Yksi takakappale — nykyinen kaava
+      const jTakaPit = harjalle + q9 + takareuna;
+      juuret.push({ osa: 'Juuri taka', lev: r(jTakaLev), pit: r(jTakaPit), kpl: 1 });
+    } else if (takaKpl === 2) {
+      // Taka 1: kiinnittyy piippuun
+      const pit1 = taka1mitta + q9 + juurisauma;
+      juuret.push({ osa: 'Juuri taka 1', lev: r(jTakaLev), pit: r(pit1), kpl: 1 });
+      // Taka 2: ulottuu harjalle, kiertyy taka1 sauman ympäri 2x edestä
+      const pit2 = (harjalle - taka1mitta) + juurisauma*2 + takareuna;
+      juuret.push({ osa: 'Juuri taka 2', lev: r(jTakaLev), pit: r(pit2), kpl: 1 });
+    } else if (takaKpl === 3) {
+      // Taka 1
+      const pit1 = taka1mitta + q9 + juurisauma;
+      juuret.push({ osa: 'Juuri taka 1', lev: r(jTakaLev), pit: r(pit1), kpl: 1 });
+      // Taka 2: välikappale, kiertyy taka1 ympäri 2x edestä + nousee ylös taka3:a varten
+      const pit2 = taka2mitta + juurisauma*3;
+      juuret.push({ osa: 'Juuri taka 2', lev: r(jTakaLev), pit: r(pit2), kpl: 1 });
+      // Taka 3: viimeinen, kiertyy taka2 ympäri 2x edestä
+      const pit3 = (harjalle - taka1mitta - taka2mitta) + juurisauma*2 + takareuna;
+      juuret.push({ osa: 'Juuri taka 3', lev: r(jTakaLev), pit: r(pit3), kpl: 1 });
+    } else if (takaKpl === 4) {
+      // Taka 1
+      const pit1 = taka1mitta + q9 + juurisauma;
+      juuret.push({ osa: 'Juuri taka 1', lev: r(jTakaLev), pit: r(pit1), kpl: 1 });
+      // Taka 2: välikappale
+      const pit2 = taka2mitta + juurisauma*3;
+      juuret.push({ osa: 'Juuri taka 2', lev: r(jTakaLev), pit: r(pit2), kpl: 1 });
+      // Taka 3: välikappale
+      const pit3 = taka3mitta + juurisauma*3;
+      juuret.push({ osa: 'Juuri taka 3', lev: r(jTakaLev), pit: r(pit3), kpl: 1 });
+      // Taka 4: viimeinen
+      const pit4 = (harjalle - taka1mitta - taka2mitta - taka3mitta) + juurisauma*2 + takareuna;
+      juuret.push({ osa: 'Juuri taka 4', lev: r(jTakaLev), pit: r(pit4), kpl: 1 });
+    }
   }
 
   // HUPPU
@@ -2139,6 +2216,30 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 
   // Juuri taka harjalle
   h += `<line x1="${takaX}" y1="${takaY}" x2="${harjaX}" y2="${harjaY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+
+  // Saumaviivat — kohtisuoraan harjaviivaa vasten saumapisteiden kohdalla
+  if (takaKpl >= 2) {
+    const juurisaumaSvg = gv('v-juurisauma');
+    const taka1mittaSvg = gv('v-taka1mitta');
+    const taka2mittaSvg = gv('v-taka2mitta');
+    const taka3mittaSvg = gv('v-taka3mitta');
+    const saumaViivaPit = 10; // saumaviivan pituus kohtisuoraan
+
+    function pirraSauma(etaisyys) {
+      // Etäisyys takaX:stä harjalle (skaalattu)
+      const sx = takaX + kattoDX * etaisyys * scale;
+      const sy = takaY + kattoDY * etaisyys * scale;
+      // Viiva kohtisuoraan harjaviivaa vasten (normaalivektori)
+      h += `<line x1="${sx - normX*saumaViivaPit}" y1="${sy - normY*saumaViivaPit}" x2="${sx + normX*saumaViivaPit}" y2="${sy + normY*saumaViivaPit}" stroke="${cInfo}" stroke-width="1.5" stroke-linecap="round"/>`;
+    }
+
+    // Sauma 1: taka1mitta:n kohdalla
+    if (taka1mittaSvg > 0) pirraSauma(taka1mittaSvg);
+    // Sauma 2: taka1+taka2:n kohdalla (vain 3+ kappaleella)
+    if (takaKpl >= 3 && taka2mittaSvg > 0) pirraSauma(taka1mittaSvg + taka2mittaSvg);
+    // Sauma 3: taka1+taka2+taka3:n kohdalla (vain 4 kappaleella)
+    if (takaKpl >= 4 && taka3mittaSvg > 0) pirraSauma(taka1mittaSvg + taka2mittaSvg + taka3mittaSvg);
+  }
 
   // Takareuna eteenpäin -koukku — oikeassa mittakaavassa, kääntyy takaisin piippuun päin
   if (takareuna > 0) {
