@@ -2123,7 +2123,7 @@ function laske() {
   // Hupun merkintämitta pellille — hEtuKork/hTakaKork laskettu oikein, vähennetään vain alatuplat
   const hEtuKorkSvg  = etukork + ylareunaV + kaltkorj - vahennys;
   const hTakaKorkSvg = takakork + ylareunaV - kaltkorj - vahennys;
-  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu);
+  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu, q9);
   renderTaulu('luettelo-juuret', juuret);
   renderTaulu('luettelo-huppu', muut);
 }
@@ -2157,7 +2157,7 @@ function renderTaulu(elId, pellit) {
   </table>`;
 }
 
-function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu) {
+function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu, q9) {
   const svg = document.getElementById('svg-content');
   const W = 640, H = 260;
   const mL = 85, mR = 130, mT = 22, mB = 20;
@@ -2239,6 +2239,39 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
     if (takaKpl >= 3 && taka2mittaSvg > 0) pirraSauma(taka1mittaSvg + taka2mittaSvg);
     // Sauma 3: taka1+taka2+taka3:n kohdalla (vain 4 kappaleella)
     if (takaKpl >= 4 && taka3mittaSvg > 0) pirraSauma(taka1mittaSvg + taka2mittaSvg + taka3mittaSvg);
+
+    // Pituuslukemat kappaleiden keskikohtiin, harjaviivan yläpuolelle
+    function tekstiKeskelle(alku, loppu, teksti) {
+      const keski = (alku + loppu) / 2;
+      const tx = takaX + kattoDX * keski * scale;
+      const ty = takaY + kattoDY * keski * scale;
+      // Offset ylöspäin (normaalin vastainen suunta = katon yläpuoli)
+      h += `<text x="${tx - normX*16}" y="${ty - normY*16}" text-anchor="middle" font-size="11" fill="${c1}" font-family="system-ui">${r(teksti)}</text>`;
+    }
+
+    const pit1svg = taka1mittaSvg + q9 + juurisaumaSvg;
+    const pit2svg = takaKpl === 2
+      ? (harjalle - taka1mittaSvg) + juurisaumaSvg*2 + takareuna
+      : taka2mittaSvg + juurisaumaSvg*3;
+    const pit3svg = takaKpl === 3
+      ? (harjalle - taka1mittaSvg - taka2mittaSvg) + juurisaumaSvg*2 + takareuna
+      : taka3mittaSvg > 0 ? taka3mittaSvg + juurisaumaSvg*3 : 0;
+    const pit4svg = (harjalle - taka1mittaSvg - taka2mittaSvg - taka3mittaSvg) + juurisaumaSvg*2 + takareuna;
+
+    if (taka1mittaSvg > 0) tekstiKeskelle(0, taka1mittaSvg, pit1svg);
+    if (takaKpl >= 2 && taka1mittaSvg > 0) {
+      const loppu2 = takaKpl === 2 ? harjalle : taka1mittaSvg + taka2mittaSvg;
+      if (loppu2 > taka1mittaSvg) tekstiKeskelle(taka1mittaSvg, loppu2, pit2svg);
+    }
+    if (takaKpl >= 3 && taka2mittaSvg > 0) {
+      const alku3 = taka1mittaSvg + taka2mittaSvg;
+      const loppu3 = takaKpl === 3 ? harjalle : alku3 + taka3mittaSvg;
+      if (loppu3 > alku3) tekstiKeskelle(alku3, loppu3, pit3svg);
+    }
+    if (takaKpl === 4 && taka3mittaSvg > 0) {
+      const alku4 = taka1mittaSvg + taka2mittaSvg + taka3mittaSvg;
+      if (harjalle > alku4) tekstiKeskelle(alku4, harjalle, pit4svg);
+    }
   }
 
   // Takareuna eteenpäin -koukku — oikeassa mittakaavassa, kääntyy takaisin piippuun päin
