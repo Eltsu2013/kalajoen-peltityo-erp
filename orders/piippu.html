@@ -2085,20 +2085,23 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
   const drawH = H - mT - mB;
 
   const maxKork = Math.max(etukork, takakork) || 1;
-  const scaleX  = drawW * 0.52 / (suora || 1);
+  // Skaala lasketaan koko kuvan leveydelle: etuuloke + piipun suora + harjamatka
+  const etuUloke = (k24 || 50);
+  const kokonaisLev = etuUloke + (suora || 1) + (harjalle || 1);
+  const scaleX  = drawW * 0.92 / kokonaisLev;
   const scaleY  = drawH * 0.72 / maxKork;
   const scale   = Math.min(scaleX, scaleY);
 
-  const etuX = mL + 15;
+  const etuX = mL + etuUloke * scale;
   const piipW = suora * scale;
   const takaX = etuX + piipW;
   const etuY  = mT + drawH * 0.88;
   const takaY = etuY - (etukork - takakork) * scale;
   const slope = piipW > 0 ? (takaY - etuY) / piipW : 0;
 
-  const kattoVasenX = etuX - 28;
-  const kattoVasenY = etuY - slope * 28;
-  const harjW  = Math.min(harjalle * scale * 0.32, drawW * 0.28);
+  const kattoVasenX = etuX - etuUloke * scale;
+  const kattoVasenY = etuY - slope * (etuUloke * scale);
+  const harjW  = harjalle * scale;
   const harjaX = takaX + harjW;
   const harjaY = takaY + slope * harjW;
 
