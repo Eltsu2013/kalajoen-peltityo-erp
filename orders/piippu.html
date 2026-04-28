@@ -1866,6 +1866,8 @@
       <input type="number" id="v-takalis" value="10" oninput="laske()">
       <label>Juuri nousee piipulle</label>
       <input type="number" id="v-nousu" value="200" oninput="laske()">
+      <label>Juuren takareuna eteenpäin</label>
+      <input type="number" id="v-takareuna" value="" placeholder="0" oninput="laske()">
     </div>
   </div>
 
@@ -1951,6 +1953,7 @@ function laske() {
   const takalis = gv('v-takalis');
   const nousu   = gv('v-nousu');
 
+  const takareuna  = gv('v-takareuna');
   const sauma      = gv('v-sauma');
   const huplis     = gv('v-huplis');
   const ylareunaV  = gv('v-ylareunaV');
@@ -2003,7 +2006,7 @@ function laske() {
 
     // Taka: takalis EI vaikuta huppuun
     const jTakaLev = vasen + oikea + leveys + tupla*2 + poimu*2 + takalis;
-    const jTakaPit = harjalle + q9;
+    const jTakaPit = harjalle + q9 + takareuna;
     juuret.push({ osa: 'Juuri taka', lev: r(jTakaLev), pit: r(jTakaPit), kpl: 1 });
   }
 
@@ -2040,7 +2043,7 @@ function laske() {
     muut.push({ osa: 'Hattu', lev: r(leveys + hattulis), pit: r(suora + hattulis), kpl: 1 });
   }
 
-  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta);
+  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna);
   renderTaulu('luettelo-juuret', juuret);
   renderTaulu('luettelo-huppu', muut);
 }
@@ -2074,7 +2077,7 @@ function renderTaulu(elId, pellit) {
   </table>`;
 }
 
-function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta) {
+function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna) {
   const svg = document.getElementById('svg-content');
   const W = 640, H = 260;
   const mL = 85, mR = 130, mT = 22, mB = 20;
@@ -2121,6 +2124,22 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 
   // Juuri taka harjalle
   h += `<line x1="${takaX}" y1="${takaY}" x2="${harjaX}" y2="${harjaY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+
+  // Takareuna eteenpäin -koukku (kääntyy takaisinpäin = piippuun päin)
+  if (takareuna > 0) {
+    const koukku_pit = Math.min(takareuna * scale * 0.5, 18);
+    // Koukku kääntyy takaisin piippuun päin (vastasuuntaan kuin harjaviiva)
+    const koukku_dx = -Math.cos(Math.atan2(harjaY - takaY, harjaX - takaX)) * koukku_pit;
+    const koukku_dy = -Math.sin(Math.atan2(harjaY - takaY, harjaX - takaX)) * koukku_pit;
+    // Lisäksi kääntyy hieman ylöspäin (vesipysäytin)
+    const koukku_perpX = -Math.sin(Math.atan2(harjaY - takaY, harjaX - takaX)) * (koukku_pit * 0.4);
+    const koukku_perpY =  Math.cos(Math.atan2(harjaY - takaY, harjaX - takaX)) * (koukku_pit * 0.4);
+    const koukkuX = harjaX + koukku_dx - koukku_perpX;
+    const koukkuY = harjaY + koukku_dy - koukku_perpY;
+    h += `<line x1="${harjaX}" y1="${harjaY}" x2="${koukkuX}" y2="${koukkuY}" stroke="${c1}" stroke-width="1.5" stroke-linecap="round"/>`;
+    // Mitta-teksti koukun yläpuolelle
+    h += `<text x="${harjaX + 6}" y="${harjaY - 8}" text-anchor="start" font-size="10" fill="${cInfo}" font-family="system-ui">+${r(takareuna)}</text>`;
+  }
 
   // Vinomitta
   h += `<line x1="${etuX}" y1="${etuY}" x2="${takaX}" y2="${takaY}" stroke="${cInfo}" stroke-width="1" stroke-dasharray="3 3"/>`;
