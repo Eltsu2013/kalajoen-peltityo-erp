@@ -2043,7 +2043,10 @@ function laske() {
     muut.push({ osa: 'Hattu', lev: r(leveys + hattulis), pit: r(suora + hattulis), kpl: 1 });
   }
 
-  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna);
+  // Hupun merkintämitta pellille — hEtuKork/hTakaKork laskettu oikein, vähennetään vain alatuplat
+  const hEtuKorkSvg  = etukork + ylareunaV + kaltkorj - vahennys;
+  const hTakaKorkSvg = takakork + ylareunaV - kaltkorj - vahennys;
+  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu);
   renderTaulu('luettelo-juuret', juuret);
   renderTaulu('luettelo-huppu', muut);
 }
@@ -2077,7 +2080,7 @@ function renderTaulu(elId, pellit) {
   </table>`;
 }
 
-function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna) {
+function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu) {
   const svg = document.getElementById('svg-content');
   const W = 640, H = 260;
   const mL = 85, mR = 130, mT = 22, mB = 20;
@@ -2110,6 +2113,14 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
   const c1 = '#f1f5f9', c2 = '#64748b', cInfo = '#38bdf8';
   let h = '';
 
+  // Katon kulma-arktangensista — dx ja dy yksikkövektorina katon suunnassa
+  const kattoLen = Math.sqrt((harjaX-kattoVasenX)**2 + (harjaY-kattoVasenY)**2) || 1;
+  const kattoDX = (harjaX - kattoVasenX) / kattoLen;  // yksikkövektori katon suunnassa
+  const kattoDY = (harjaY - kattoVasenY) / kattoLen;
+  // Kohtisuora katon pintaan (alaspäin katsottuna = oikealle kääntynyt normaali)
+  const normX =  kattoDY;   //  kohtisuora vektori (katon alle = reunan mitta-offset)
+  const normY = -kattoDX;
+
   // Kattoviiva
   h += `<line x1="${kattoVasenX}" y1="${kattoVasenY}" x2="${harjaX}" y2="${harjaY}" stroke="${c2}" stroke-width="1.5" stroke-linecap="round"/>`;
 
@@ -2118,58 +2129,68 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
   h += `<line x1="${takaX}" y1="${takaY}" x2="${takaX}" y2="${ylaY}" stroke="${c1}" stroke-width="2" stroke-linecap="round"/>`;
   h += `<line x1="${etuX}" y1="${ylaY}" x2="${takaX}" y2="${ylaY}" stroke="${c1}" stroke-width="2" stroke-linecap="round"/>`;
 
-  // Juuri etu uloke + alas
-  const jEtuUloke = Math.min(k24 * scale * 0.35, 28);
-  const jEtuX = etuX - jEtuUloke;
-  const jEtuKattoY = etuY - slope * jEtuUloke;
+  // Juuri etu uloke — oikeassa mittakaavassa
+  const jEtuX = kattoVasenX;
+  const jEtuKattoY = kattoVasenY;
   h += `<line x1="${etuX}" y1="${etuY}" x2="${jEtuX}" y2="${jEtuKattoY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
-  h += `<line x1="${jEtuX}" y1="${jEtuKattoY}" x2="${jEtuX}" y2="${jEtuKattoY + Math.min(j25*scale*0.6, 12)}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+  // Alas-viiva (j25) kohtisuoraan katon pintaan — normaali osoittaa katon alle (positiivinen = alas)
+  const alasLen = j25 * scale;
+  h += `<line x1="${jEtuX}" y1="${jEtuKattoY}" x2="${jEtuX - normX*alasLen}" y2="${jEtuKattoY - normY*alasLen}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
 
   // Juuri taka harjalle
   h += `<line x1="${takaX}" y1="${takaY}" x2="${harjaX}" y2="${harjaY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
 
-  // Takareuna eteenpäin -koukku (kääntyy takaisinpäin = piippuun päin)
+  // Takareuna eteenpäin -koukku — oikeassa mittakaavassa, kääntyy takaisin piippuun päin
   if (takareuna > 0) {
-    const koukku_pit = Math.min(takareuna * scale * 0.5, 18);
-    // Koukku kääntyy takaisin piippuun päin (vastasuuntaan kuin harjaviiva)
-    const koukku_dx = -Math.cos(Math.atan2(harjaY - takaY, harjaX - takaX)) * koukku_pit;
-    const koukku_dy = -Math.sin(Math.atan2(harjaY - takaY, harjaX - takaX)) * koukku_pit;
-    // Lisäksi kääntyy hieman ylöspäin (vesipysäytin)
-    const koukku_perpX = -Math.sin(Math.atan2(harjaY - takaY, harjaX - takaX)) * (koukku_pit * 0.4);
-    const koukku_perpY =  Math.cos(Math.atan2(harjaY - takaY, harjaX - takaX)) * (koukku_pit * 0.4);
-    const koukkuX = harjaX + koukku_dx - koukku_perpX;
-    const koukkuY = harjaY + koukku_dy - koukku_perpY;
+    const koukkuLen = takareuna * scale;
+    // Koukku lähtee harjalta takaisin piippuun päin (vastasuunta kattovektoria)
+    const koukkuX = harjaX - kattoDX * koukkuLen;
+    const koukkuY = harjaY - kattoDY * koukkuLen;
     h += `<line x1="${harjaX}" y1="${harjaY}" x2="${koukkuX}" y2="${koukkuY}" stroke="${c1}" stroke-width="1.5" stroke-linecap="round"/>`;
-    // Mitta-teksti koukun yläpuolelle
-    h += `<text x="${harjaX + 6}" y="${harjaY - 8}" text-anchor="start" font-size="10" fill="${cInfo}" font-family="system-ui">+${r(takareuna)}</text>`;
+    // Mitta kohtisuoraan katon yläpuolelle (normaalin vastaiseen suuntaan = ylöspäin katosta)
+    const mOff = 10;
+    const mMidX = (harjaX + koukkuX) / 2 - normX * mOff;
+    const mMidY = (harjaY + koukkuY) / 2 - normY * mOff;
+    h += `<text x="${mMidX}" y="${mMidY}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">+${r(takareuna)}</text>`;
   }
 
-  // Vinomitta
+  // Vinomitta — piipun lävistäjänä (etuX,etuY) → (takaX,takaY)
   h += `<line x1="${etuX}" y1="${etuY}" x2="${takaX}" y2="${takaY}" stroke="${cInfo}" stroke-width="1" stroke-dasharray="3 3"/>`;
+  h += `<text x="${(etuX+takaX)/2}" y="${(etuY+takaY)/2+14}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">↗ vino ${r(vinomitta)}</text>`;
 
-  // Suora mitta
+  // Suora mitta — vaakasuora piipun yläpuolella
   const smY = ylaY - 14;
   h += `<line x1="${etuX}" y1="${smY}" x2="${takaX}" y2="${smY}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
   h += `<text x="${(etuX+takaX)/2}" y="${smY-5}" text-anchor="middle" font-size="11" fill="${c2}" font-family="system-ui">Suora ${suora}</text>`;
 
-  // Etukorkeus
+  // Etukorkeus — mitta 1/4 yläreunasta alaspäin, ei apuviivoja
   const eMX = etuX - 26;
+  const etuMittaY = ylaY + (etuY - ylaY) * 0.25;
   h += `<line x1="${eMX}" y1="${ylaY}" x2="${eMX}" y2="${etuY}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
-  h += `<text x="${eMX-4}" y="${(ylaY+etuY)/2+4}" text-anchor="end" font-size="11" fill="${c2}" font-family="system-ui">Etu ${etukork}</text>`;
+  h += `<text x="${eMX-4}" y="${etuMittaY}" text-anchor="end" font-size="11" fill="${c2}" font-family="system-ui">Etu ${etukork}</text>`;
+  if (hasHuppu) {
+    h += `<text x="${eMX-4}" y="${etuMittaY+14}" text-anchor="end" font-size="10" fill="${cInfo}" font-family="system-ui">↳ ${r(hEtuKork)}</text>`;
+  }
 
-  // Takakorkeus
+  // Takakorkeus — mitta 1/4 yläreunasta alaspäin, ei apuviivoja
   const tMX = takaX + 24;
+  const takaMittaY = ylaY + (takaY - ylaY) * 0.25;
   h += `<line x1="${tMX}" y1="${ylaY}" x2="${tMX}" y2="${takaY}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
-  h += `<text x="${tMX+4}" y="${(ylaY+takaY)/2+4}" text-anchor="start" font-size="11" fill="${c2}" font-family="system-ui">Taka ${takakork}</text>`;
+  h += `<text x="${tMX+4}" y="${takaMittaY}" text-anchor="start" font-size="11" fill="${c2}" font-family="system-ui">Taka ${takakork}</text>`;
+  if (hasHuppu) {
+    h += `<text x="${tMX+4}" y="${takaMittaY+14}" text-anchor="start" font-size="10" fill="${cInfo}" font-family="system-ui">↳ ${r(hTakaKork)}</text>`;
+  }
 
-  // Vinomitta teksti
-  h += `<text x="${(etuX+takaX)/2}" y="${(etuY+takaY)/2+16}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">↗ vino ${r(vinomitta)}</text>`;
-
-  // Harjalle mitta — oikealla
-  const hjMidX = (takaX + harjaX) / 2;
-  const hjMidY = (takaY + harjaY) / 2;
-  h += `<line x1="${takaX}" y1="${hjMidY+10}" x2="${harjaX}" y2="${hjMidY+10}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
-  h += `<text x="${hjMidX}" y="${hjMidY+24}" text-anchor="middle" font-size="10" fill="${c2}" font-family="system-ui">harjalle ${harjalle}</text>`;
+  // Harjalle mitta — katon kaltevuuden suuntaisesti, harjaviivan ALAPUOLELLA (normaali käännetty)
+  const hjOff = 14;
+  const hj1X = takaX - normX * hjOff;
+  const hj1Y = takaY - normY * hjOff;
+  const hj2X = harjaX - normX * hjOff;
+  const hj2Y = harjaY - normY * hjOff;
+  const hjMidX = (hj1X + hj2X) / 2;
+  const hjMidY = (hj1Y + hj2Y) / 2;
+  h += `<line x1="${hj1X}" y1="${hj1Y}" x2="${hj2X}" y2="${hj2Y}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
+  h += `<text x="${hjMidX}" y="${hjMidY + 14}" text-anchor="middle" font-size="10" fill="${c2}" font-family="system-ui">harjalle ${harjalle}</text>`;
 
   svg.innerHTML = h;
 }
