@@ -2286,16 +2286,16 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
     h += `<text x="${mMidX}" y="${mMidY}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">+${r(takareuna)}</text>`;
   }
 
-  // Harjaylitys — harjapisteestä oikealle viistosti alaspäin (katon kaltevuudessa toiselle lappeelle)
+  // Harjaylitys — harjapisteestä toiselle lappeelle (peilikuva katon kaltevuudesta)
   if (harjaylitys > 0) {
     const ylitysLen = harjaylitys * scale;
-    // Sama kattovektori mutta jatkuu harjan yli — kattoDX/kattoDY osoittaa jo oikeaan suuntaan
+    // Toinen lape on peilikuva — kattoDX sama mutta kattoDY käännetty (nousee ylöspäin)
     const ylitysX = harjaX + kattoDX * ylitysLen;
-    const ylitysY = harjaY + kattoDY * ylitysLen;
+    const ylitysY = harjaY - kattoDY * ylitysLen;
     h += `<line x1="${harjaX}" y1="${harjaY}" x2="${ylitysX}" y2="${ylitysY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
-    // Mitta harjaylityksen keskelle
+    // Mitta viivan yläpuolelle
     const ymx = (harjaX + ylitysX) / 2 - normX * 14;
-    const ymy = (harjaY + ylitysY) / 2 - normY * 14;
+    const ymy = (harjaY + ylitysY) / 2 - 8;
     h += `<text x="${ymx}" y="${ymy}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">${r(harjaylitys)}</text>`;
   }
 
