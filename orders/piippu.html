@@ -1929,6 +1929,14 @@
       </div>
     </div>
     <div style="margin-top:8px;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">Huppu sivut osat</div>
+      <div class="sauma-options">
+        <button class="sauma-btn active" id="hsivut1" onclick="setHuppuSivutKpl(1)">1</button>
+        <button class="sauma-btn" id="hsivut2" onclick="setHuppuSivutKpl(2)">2</button>
+        <button class="sauma-btn" id="hsivut3" onclick="setHuppuSivutKpl(3)">3</button>
+      </div>
+    </div>
+    <div style="margin-top:8px;">
       <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">Huppu taka osat</div>
       <div class="sauma-options">
         <button class="sauma-btn active" id="htaka1" onclick="setHuppuTakaKpl(1)">1</button>
@@ -1983,6 +1991,7 @@ function setSauma(n) {
 let takaKpl = 1;
 let huppuEtuKpl = 1;
 let huppuTakaKpl = 1;
+let huppuSivutKpl = 1;
 
 function setHuppuEtuKpl(n) {
   huppuEtuKpl = n;
@@ -1993,6 +2002,12 @@ function setHuppuEtuKpl(n) {
 function setHuppuTakaKpl(n) {
   huppuTakaKpl = n;
   [1,2,3].forEach(i => document.getElementById('htaka'+i).classList.toggle('active', i===n));
+  laske();
+}
+
+function setHuppuSivutKpl(n) {
+  huppuSivutKpl = n;
+  [1,2,3].forEach(i => document.getElementById('hsivut'+i).classList.toggle('active', i===n));
   laske();
 }
 
@@ -2139,13 +2154,32 @@ function laske() {
     }
 
     // Sivut
-    let hSivLev;
-    if (saumatyyppi === 1) {
-      hSivLev = suora + sauma*3 + huplis;
+    if (huppuSivutKpl === 1) {
+      let hSivLev;
+      if (saumatyyppi === 1) {
+        hSivLev = suora + sauma*3 + huplis;
+      } else {
+        hSivLev = suora + sauma*4 + huplis + huptakalis;
+      }
+      muut.push({ osa: 'Huppu sivut', lev: r(hSivLev), pit: r(hEtuKork), kpl: 2 });
+    } else if (huppuSivutKpl === 2) {
+      const lev = saumatyyppi === 1
+        ? suora/2 + huplis/2 + sauma*3
+        : suora/2 + huplis/2 + sauma*3 + huptakalis/2;
+      const pit2 = (hEtuKork + hTakaKork) / 2;
+      muut.push({ osa: 'Huppu sivut 1', lev: r(lev), pit: r(hEtuKork), kpl: 2 });
+      muut.push({ osa: 'Huppu sivut 2', lev: r(lev), pit: r(pit2),     kpl: 2 });
     } else {
-      hSivLev = suora + sauma*4 + huplis + huptakalis;
+      const lev = saumatyyppi === 1
+        ? suora/3 + huplis/3 + sauma*3
+        : suora/3 + huplis/3 + sauma*3 + huptakalis/3;
+      const diff = hEtuKork - hTakaKork;
+      const pit2 = hEtuKork - diff / 3;
+      const pit3 = hEtuKork - diff * 2/3;
+      muut.push({ osa: 'Huppu sivut 1', lev: r(lev), pit: r(hEtuKork), kpl: 2 });
+      muut.push({ osa: 'Huppu sivut 2', lev: r(lev), pit: r(pit2),     kpl: 2 });
+      muut.push({ osa: 'Huppu sivut 3', lev: r(lev), pit: r(pit3),     kpl: 2 });
     }
-    muut.push({ osa: 'Huppu sivut', lev: r(hSivLev), pit: r(hEtuKork), kpl: 2 });
 
     // Huppu taka — 1/2/3 osaa
     // Saumatyyppi 2: taka = sama kuin etu, huptakalis ei vaikuta
