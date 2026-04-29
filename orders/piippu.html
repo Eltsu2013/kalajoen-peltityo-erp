@@ -1868,6 +1868,8 @@
       <input type="number" id="v-nousu" value="200" oninput="laske()">
       <label>Juuren takareuna eteenpäin</label>
       <input type="number" id="v-takareuna" value="" placeholder="0" oninput="laske()">
+      <label>Juuren harjaylitys</label>
+      <input type="number" id="v-harjaylitys" value="" placeholder="0" oninput="laske()">
     </div>
     <div style="margin-top:8px;">
       <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">Takakappaleet</div>
@@ -1992,7 +1994,8 @@ function laske() {
   const takalis = gv('v-takalis');
   const nousu   = gv('v-nousu');
 
-  const takareuna  = gv('v-takareuna');
+  const takareuna    = gv('v-takareuna');
+  const harjaylitys  = gv('v-harjaylitys');
   const sauma      = gv('v-sauma');
   const huplis     = gv('v-huplis');
   const ylareunaV  = gv('v-ylareunaV');
@@ -2052,14 +2055,14 @@ function laske() {
 
     if (takaKpl === 1) {
       // Yksi takakappale — nykyinen kaava
-      const jTakaPit = harjalle + q9 + takareuna;
+      const jTakaPit = harjalle + q9 + takareuna + (harjaylitys > 0 ? harjaylitys + j25 + tupla : 0);
       juuret.push({ osa: 'Juuri taka', lev: r(jTakaLev), pit: r(jTakaPit), kpl: 1 });
     } else if (takaKpl === 2) {
       // Taka 1: kiinnittyy piippuun
       const pit1 = taka1mitta + q9 + juurisauma;
       juuret.push({ osa: 'Juuri taka 1', lev: r(jTakaLev), pit: r(pit1), kpl: 1 });
       // Taka 2: ulottuu harjalle, kiertyy taka1 sauman ympäri 2x edestä
-      const pit2 = (harjalle - taka1mitta) + juurisauma*2 + takareuna;
+      const pit2 = (harjalle - taka1mitta) + juurisauma*2 + takareuna + (harjaylitys > 0 ? harjaylitys + j25 + tupla : 0);
       juuret.push({ osa: 'Juuri taka 2', lev: r(jTakaLev), pit: r(pit2), kpl: 1 });
     } else if (takaKpl === 3) {
       // Taka 1
@@ -2069,7 +2072,7 @@ function laske() {
       const pit2 = taka2mitta + juurisauma*3;
       juuret.push({ osa: 'Juuri taka 2', lev: r(jTakaLev), pit: r(pit2), kpl: 1 });
       // Taka 3: viimeinen, kiertyy taka2 ympäri 2x edestä
-      const pit3 = (harjalle - taka1mitta - taka2mitta) + juurisauma*2 + takareuna;
+      const pit3 = (harjalle - taka1mitta - taka2mitta) + juurisauma*2 + takareuna + (harjaylitys > 0 ? harjaylitys + j25 + tupla : 0);
       juuret.push({ osa: 'Juuri taka 3', lev: r(jTakaLev), pit: r(pit3), kpl: 1 });
     } else if (takaKpl === 4) {
       // Taka 1
@@ -2082,7 +2085,7 @@ function laske() {
       const pit3 = taka3mitta + juurisauma*3;
       juuret.push({ osa: 'Juuri taka 3', lev: r(jTakaLev), pit: r(pit3), kpl: 1 });
       // Taka 4: viimeinen
-      const pit4 = (harjalle - taka1mitta - taka2mitta - taka3mitta) + juurisauma*2 + takareuna;
+      const pit4 = (harjalle - taka1mitta - taka2mitta - taka3mitta) + juurisauma*2 + takareuna + (harjaylitys > 0 ? harjaylitys + j25 + tupla : 0);
       juuret.push({ osa: 'Juuri taka 4', lev: r(jTakaLev), pit: r(pit4), kpl: 1 });
     }
   }
@@ -2123,7 +2126,7 @@ function laske() {
   // Hupun merkintämitta pellille — hEtuKork/hTakaKork laskettu oikein, vähennetään vain alatuplat
   const hEtuKorkSvg  = etukork + ylareunaV + kaltkorj - vahennys;
   const hTakaKorkSvg = takakork + ylareunaV - kaltkorj - vahennys;
-  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu, q9);
+  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu, q9, harjaylitys);
   renderTaulu('luettelo-juuret', juuret);
   renderTaulu('luettelo-huppu', muut);
 }
@@ -2157,7 +2160,7 @@ function renderTaulu(elId, pellit) {
   </table>`;
 }
 
-function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu, q9) {
+function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu, q9, harjaylitys) {
   const svg = document.getElementById('svg-content');
   const W = 640, H = 260;
   const mL = 85, mR = 130, mT = 22, mB = 20;
@@ -2281,6 +2284,19 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
     const mMidX = (harjaX + koukkuX) / 2 - normX * mOff;
     const mMidY = (harjaY + koukkuY) / 2 - normY * mOff;
     h += `<text x="${mMidX}" y="${mMidY}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">+${r(takareuna)}</text>`;
+  }
+
+  // Harjaylitys — harjapisteestä oikealle viistosti alaspäin (katon kaltevuudessa toiselle lappeelle)
+  if (harjaylitys > 0) {
+    const ylitysLen = harjaylitys * scale;
+    // Sama kattovektori mutta jatkuu harjan yli — kattoDX/kattoDY osoittaa jo oikeaan suuntaan
+    const ylitysX = harjaX + kattoDX * ylitysLen;
+    const ylitysY = harjaY + kattoDY * ylitysLen;
+    h += `<line x1="${harjaX}" y1="${harjaY}" x2="${ylitysX}" y2="${ylitysY}" stroke="${c1}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>`;
+    // Mitta harjaylityksen keskelle
+    const ymx = (harjaX + ylitysX) / 2 - normX * 14;
+    const ymy = (harjaY + ylitysY) / 2 - normY * 14;
+    h += `<text x="${ymx}" y="${ymy}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">${r(harjaylitys)}</text>`;
   }
 
   // Vinomitta — piipun lävistäjänä (etuX,etuY) → (takaX,takaY)
