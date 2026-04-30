@@ -1772,7 +1772,7 @@
     <select id="sel-vari" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Väri</option>
     </select>
-    <select id="sel-paksuus" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+    <select id="sel-paksuus" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Paksuus</option>
     </select>
   </div>
@@ -2111,11 +2111,20 @@ async function haeMateriaalit() {
       o.value = m; o.textContent = m;
       mSel.appendChild(o);
     });
+    // Palauta tallennettu valinta
+    const muistettu = JSON.parse(localStorage.getItem('kpt_piippu_mat') || '{}');
+    if (muistettu.mat && materiaalit.includes(muistettu.mat)) {
+      mSel.value = muistettu.mat;
+      paivitaVarit(muistettu.vari, muistettu.pak);
+    }
   } catch(e) { console.error('Tuotteiden haku epäonnistui', e); }
 }
 
-function paivitaVarit() {
+function paivitaVarit(muistettuVari, muistettuPak) {
   const mat = document.getElementById('sel-materiaali').value;
+  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
+    mat, vari: document.getElementById('sel-vari').value, pak: document.getElementById('sel-paksuus').value
+  }));
   const varit = [...new Set(kaikki_tuotteet.filter(p => p.material === mat).map(p => p.color))].sort();
   const vSel = document.getElementById('sel-vari');
   vSel.innerHTML = '<option value="">Väri</option>';
@@ -2125,9 +2134,13 @@ function paivitaVarit() {
     vSel.appendChild(o);
   });
   document.getElementById('sel-paksuus').innerHTML = '<option value="">Paksuus</option>';
+  if (muistettuVari && varit.includes(muistettuVari)) {
+    vSel.value = muistettuVari;
+    paivitaPaksuudet(muistettuPak);
+  }
 }
 
-function paivitaPaksuudet() {
+function paivitaPaksuudet(muistettuPak) {
   const mat = document.getElementById('sel-materiaali').value;
   const vari = document.getElementById('sel-vari').value;
   const paksuudet = [...new Set(kaikki_tuotteet
@@ -2141,6 +2154,13 @@ function paivitaPaksuudet() {
     o.value = p; o.textContent = p + ' mm';
     pSel.appendChild(o);
   });
+  if (muistettuPak && paksuudet.includes(Number(muistettuPak))) {
+    pSel.value = muistettuPak;
+  }
+  // Tallenna valinta
+  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
+    mat, vari, pak: pSel.value
+  }));
 }
 
 haeMateriaalit();
