@@ -2224,6 +2224,9 @@ async function lisaaTilaukseen() {
     huomio,
   };
 
+  // Ryhmän id — käytetään sekä CLEAR_PIIPPU:ssa että lähetyksessä
+  const groupId = targetGroupId || ('g_piippu_' + Date.now());
+
   // Jos päivitetään olemassa olevaa ryhmää, poistetaan vanhat piippu-rivit ensin
   if (targetGroupId) {
     localStorage.setItem('kpt_add_to_order', JSON.stringify({
@@ -2235,7 +2238,6 @@ async function lisaaTilaukseen() {
   }
 
   // Lähetä jokainen peltirivi erikseen samaan ryhmään
-  const groupId = targetGroupId || ('g_piippu_' + Date.now());
 
   pellit.forEach((p, i) => {
     const levNum = parseFloat(p.lev) || 0;
