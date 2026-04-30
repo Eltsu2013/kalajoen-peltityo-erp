@@ -1773,7 +1773,7 @@
 
   <div class="section">
     <h3>Piipun osat</h3>
-    <div class="checks">
+    <div class="checks" style="flex-wrap:wrap;">
       <div class="check-item">
         <input type="checkbox" id="chk-juuret" checked onchange="laske()">
         <label for="chk-juuret">Juuret</label>
@@ -1794,6 +1794,15 @@
         <input type="checkbox" id="chk-hattu" checked onchange="laske()">
         <label for="chk-hattu">Hattu</label>
       </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+      <label style="margin:0;white-space:nowrap;">Piippuja</label>
+      <input type="number" id="v-piippukpl" value="1" min="1" style="width:60px;" oninput="laske()">
+      <span style="font-size:11px;color:var(--text2);">kpl</span>
+    </div>
+    <div style="margin-top:8px;">
+      <label style="display:block;margin-bottom:4px;">Huomio</label>
+      <textarea id="v-huomio" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;resize:vertical;" placeholder="Esim. piipussa lunssi, kootaan paikan päällä..."></textarea>
     </div>
   </div>
 
@@ -1837,6 +1846,10 @@
       <div class="field">
         <label>Harjan ylitys vasemmalle (mm)</label>
         <input type="number" id="poimu" value="20" min="0" oninput="laske()">
+      </div>
+      <div class="field">
+        <label>Harjan ylitys kulma (°)</label>
+        <input type="number" id="v-harjakulma" value="90" min="0" max="180" oninput="laske()">
       </div>
     </div>
   </div>
@@ -2089,6 +2102,7 @@ function laske() {
   const vahennys   = gv('v-vahennys');
   const huptakalis = gv('v-huptakalis');
   const hattulis   = gv('v-hattulis');
+  const piippukpl  = Math.max(1, gv('v-piippukpl') || 1);
 
   const hasJuuret = chk('chk-juuret');
   const hasHuppu  = chk('chk-huppu');
@@ -2295,17 +2309,18 @@ function laske() {
   }
 
   piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu, q9, harjaylitys, hSivEtenemä);
-  renderTaulu('luettelo-juuret', juuret);
-  renderTaulu('luettelo-huppu', muut);
+  renderTaulu('luettelo-juuret', juuret, piippukpl);
+  renderTaulu('luettelo-huppu', muut, piippukpl);
 }
 
-function renderTaulu(elId, pellit) {
+function renderTaulu(elId, pellit, piippukpl) {
   const el = document.getElementById(elId);
   if (!pellit.length) { el.innerHTML = '<p class="empty-msg">—</p>'; return; }
   let tot = 0;
   const rows = pellit.map(p => {
+    const kplYht = p.kpl * (piippukpl || 1);
     const m2 = (typeof p.lev === 'number' && typeof p.pit === 'number')
-      ? p.lev * p.pit * p.kpl / 1000000
+      ? p.lev * p.pit * kplYht / 1000000
       : null;
     if (m2 !== null) tot += m2;
     return `<tr>
@@ -2313,7 +2328,7 @@ function renderTaulu(elId, pellit) {
       <td class="td-num">${p.lev}</td>
       <td class="td-sym">${typeof p.lev === 'number' ? '×' : ''}</td>
       <td class="td-num">${typeof p.pit === 'number' ? p.pit : ''}</td>
-      <td class="td-num">${p.kpl}</td>
+      <td class="td-num">${kplYht}</td>
       <td class="td-num">${m2 !== null ? m2.toFixed(3) : ''}</td>
     </tr>`;
   }).join('');
