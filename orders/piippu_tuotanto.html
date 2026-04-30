@@ -52,7 +52,7 @@
   .td-num { text-align: right; font-variant-numeric: tabular-nums; }
   .td-osa { font-weight: 600; }
 
-  /* Statusnapit */
+  /* Statusnapit — leveä näyttö */
   .step-btns { display: flex; gap: 3px; flex-wrap: wrap; }
   .step-btn { padding: 3px 7px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--panel2); color: var(--text-dim); transition: all 0.15s; white-space: nowrap; }
   .step-btn.active { font-weight: 700; }
@@ -63,6 +63,21 @@
   .step-btn[data-key="EXTRA"].active { background: #2a1a3a; color: #a855f7; border-color: #a855f7; }
   .step-btn[data-key="DONE"].active { background: #162018; color: var(--accent); border-color: var(--accent); }
   tr.row-done td { opacity: 0.5; }
+
+  /* Mobiili kompakti vaihenappi */
+  .step-btn-mobile { display: none; padding: 4px 10px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--panel2); color: var(--text-dim); white-space: nowrap; }
+  .step-btn-mobile.status-WAITING { border-color: var(--text-dim); color: var(--text); }
+  .step-btn-mobile.status-CUT  { border-color: var(--blue);   color: var(--blue); }
+  .step-btn-mobile.status-BENT { border-color: var(--warn);   color: var(--warn); }
+  .step-btn-mobile.status-EXTRA{ border-color: #a855f7;       color: #a855f7; }
+  .step-btn-mobile.status-DONE { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .step-btns { display: none; }
+    .step-btn-mobile { display: inline-block; }
+    /* Taulukon vaihe-sarake leveämmäksi mobiilissa */
+    table { font-size: 11px; }
+  }
 
   /* SVG-kuva */
   .svg-wrap { padding: 12px; background: var(--panel2); }
@@ -91,17 +106,30 @@
   /* TULOSTUS */
   @media print {
     body { background: #fff; color: #000; }
-    header, .back-btn, .step-btns, .btn-print { display: none !important; }
+    header, .back-btn, .step-btns, .step-btn-mobile, .btn-print { display: none !important; }
     .page { padding: 0; max-width: 100%; }
     .piippu-header { background: #f5f5f5; border: 1px solid #ccc; }
+    .piippu-header h2 { color: #000; }
+    .piippu-meta { color: #444; }
     .section-card { border: 1px solid #ccc; break-inside: avoid; }
     .section-card h3 { background: #eee; color: #333; }
     thead th { background: #eee; color: #333; }
+    tbody td { color: #000; }
     .svg-wrap { background: #fff; }
+    /* Piipun pääviivat mustiksi tulostuksessa */
+    svg line[stroke="#f1f5f9"] { stroke: #000 !important; }
+    svg polyline { stroke: #000 !important; }
+    /* Apuviivat (mitat, vinomitta) harmaaksi */
+    svg line[stroke="#64748b"] { stroke: #666 !important; }
     svg text { fill: #000 !important; }
     .mitat-grid { columns: 2; }
     .summary-bar { background: #f5f5f5; border: 1px solid #ccc; }
+    .summary-item { color: #000; }
+    .summary-item strong { color: #000; }
     .huomio-box { background: #fff8e1; border: 1px solid #f0a020; color: #a06000; }
+    .mitta-label { color: #666; }
+    .mitta-val { color: #000; }
+    .two-col { grid-template-columns: 1fr 1fr; }
   }
 </style>
 </head>
@@ -464,13 +492,21 @@ function renderTauluStatus(pellit, items, label) {
         ${!rowId?'disabled title="ei dataa"':''}>${STEPS[si]}</button>`;
     }).join('');
 
+    // Mobiili: yksi nappi joka siirtää seuraavaan vaiheeseen
+    const nextIdx = Math.min(rsIdx+1, STEP_KEYS.length-1);
+    const nextKey = STEP_KEYS[nextIdx];
+    const mobileLabel = isDone ? '✓ Valmis' : `${STEPS[rsIdx]} → ${STEPS[nextIdx]}`;
+    const mobileBtnHtml = `<button class="step-btn-mobile status-${status}"
+      onclick="setStatusMobile('${rowId}','${nextKey}','${itemId}',${rsIdx},this)"
+      ${!rowId?'disabled':''}>${mobileLabel}</button>`;
+
     return `<tr class="${isDone?'row-done':''}">
       <td class="td-osa">${p.osa}</td>
       <td class="td-num">${p.lev}</td>
       <td style="color:var(--text-dim)">×</td>
       <td class="td-num">${typeof p.pit==='number'?p.pit:''}</td>
       <td class="td-num">${p.kpl}</td>
-      <td><div class="step-btns">${stepBtns}</div></td>
+      <td><div class="step-btns">${stepBtns}</div>${mobileBtnHtml}</td>
     </tr>`;
   }).join('');
 
@@ -558,7 +594,42 @@ function mittalista(v) {
     </div>`;
 }
 
-// ── Päärender ─────────────────────────────────────────────
+// ── Mobiili: siirry seuraavaan vaiheeseen ─────────────────
+async function setStatusMobile(rowId, nextKey, itemId, currentIdx, btn) {
+  if (!rowId) return;
+  // Jos jo DONE, kierrä takaisin WAITING:iin
+  const key = currentIdx >= STEP_KEYS.length-1 ? 'WAITING' : nextKey;
+  const newIdx = STEP_KEYS.indexOf(key);
+
+  // Päivitä mobiilinappi
+  btn.className = `step-btn-mobile status-${key}`;
+  const nextNextIdx = Math.min(newIdx+1, STEP_KEYS.length-1);
+  btn.textContent = key==='DONE' ? '✓ Valmis' : `${STEPS[newIdx]} → ${STEPS[nextNextIdx]}`;
+  btn.setAttribute('onclick', `setStatusMobile('${rowId}','${STEP_KEYS[nextNextIdx]}','${itemId}',${newIdx},this)`);
+
+  // Päivitä myös desktop-napit samassa rivissä
+  const tr = btn.closest('tr');
+  tr.classList.toggle('row-done', key==='DONE');
+  tr.querySelectorAll('.step-btn').forEach((b,si) => {
+    b.classList.remove('active','passed');
+    if (si===newIdx) b.classList.add('active');
+    else if (si<newIdx) b.classList.add('passed');
+  });
+
+  // Tallenna
+  await fetch(`${SUPA_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ production_status: key })
+  });
+  if (itemId) {
+    await fetch(`${SUPA_URL}/rest/v1/order_items?id=eq.${itemId}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ production_status: key })
+    });
+  }
+}
 function render(items, order) {
   document.getElementById('loading').style.display='none';
   const el = document.getElementById('content');
