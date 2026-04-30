@@ -2390,6 +2390,22 @@ function receiveFromMallisto(data) {
   const group = groups.find(g => g.id === data.groupId);
   if (!group) return;
 
+  // Piipun päivitys — poistetaan ensin vanhat piippu-rivit
+  if (data.type === 'CLEAR_PIIPPU') {
+    const vanhat = group.items.filter(i => i.profileType === 'piippu');
+    vanhat.forEach(i => {
+      if (i.supabaseId) {
+        fetch(`${SUPABASE_URL}/rest/v1/order_items?id=eq.${i.supabaseId}`, {
+          method: 'DELETE', headers
+        });
+      }
+    });
+    group.items = group.items.filter(i => i.profileType !== 'piippu');
+    renderGroups();
+    updateSummary();
+    return;
+  }
+
   if (data.editItemId) {
     // Muokkaus — korvataan olemassa oleva rivi
     const idx = group.items.findIndex(i => i.id === data.editItemId);
