@@ -681,7 +681,19 @@ function render(items, order) {
 
     ${svgHtml?`
     <div class="section-card" style="margin-bottom:16px">
-      <h3>Piippu — sivukuva</h3>
+      <h3 style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+        <span>Piippu — sivukuva</span>
+        ${v?.etukork&&v?.takakork&&v?.suora?`
+          <span style="font-weight:400;color:var(--text);">
+            Etukulma: <strong style="font-family:'IBM Plex Mono',monospace">${Math.round(Math.atan((v.suora||0)/(v.etukork-v.takakork||1))*180/Math.PI)}°</strong>
+          </span>
+          <span style="font-weight:400;color:var(--text);">
+            Takakulma: <strong style="font-family:'IBM Plex Mono',monospace">${180-Math.round(Math.atan((v.suora||0)/(v.etukork-v.takakork||1))*180/Math.PI)}°</strong>
+          </span>
+          <span style="font-weight:400;color:var(--text);">
+            Kaltevuus: <strong style="font-family:'IBM Plex Mono',monospace">1:${((v.suora||0)/(v.etukork-v.takakork||1)).toFixed(1)}</strong>
+          </span>`:''}
+      </h3>
       <div class="svg-wrap" style="padding:16px">${svgHtml}</div>
     </div>`:''}
 
