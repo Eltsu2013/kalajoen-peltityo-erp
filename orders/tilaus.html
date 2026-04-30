@@ -2377,8 +2377,7 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'kpt_add_to_order' && e.newValue) {
     try {
       const data = JSON.parse(e.newValue);
-      if (data.type === 'ADD_TO_ORDER') {
-        // Poistetaan heti jotta ei käsitellä kahteen kertaan
+      if (data.type === 'ADD_TO_ORDER' || data.type === 'REPLACE_PIIPPU') {
         localStorage.removeItem('kpt_add_to_order');
         receiveFromMallisto(data);
       }
