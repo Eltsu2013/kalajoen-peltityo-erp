@@ -2891,11 +2891,22 @@ function renderGroups() {
     container.innerHTML = '<div class="empty-state">Ei vielä ryhmiä. Lisää ensimmäinen ryhmä vasemmalta.</div>';
     return;
   }
-  container.innerHTML = groups.map(g => `
+  container.innerHTML = groups.map(g => {
+    const onPiippu = g.items.some(i => i.profileType === 'piippu');
+    const piippuNappi = onPiippu
+      ? `<a href="piippu.html?groupId=${g.id}" target="_blank"
+           style="display:inline-flex;align-items:center;padding:3px 8px;font-size:11px;
+                  background:none;border:1px solid var(--accent);color:var(--accent);
+                  border-radius:4px;text-decoration:none;white-space:nowrap;">
+           🏭 Muokkaa piippua →
+         </a>`
+      : '';
+    return `
     <div class="order-group">
       <div class="group-header">
         <input type="text" value="${g.name}" onchange="renameGroup('${g.id}', this.value)" title="Klikkaa nimetäksesi uudelleen">
         <span class="tag">${g.items.reduce((s,i) => s + (i.rows ? i.rows.reduce((a,r) => a+(r.kpl||0),0) : 0), 0)} kpl</span>
+        ${piippuNappi}
         <div style="margin-left:auto;display:flex;gap:6px">
           <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="copyGroup('${g.id}')">Kopioi</button>
           <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteGroup('${g.id}')">Poista</button>
@@ -2909,7 +2920,7 @@ function renderGroups() {
         <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="addItemToGroup('${g.id}')">+ Lisää pelti</button>
       </div>
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function renderItemsGrouped(items, groupId) {
