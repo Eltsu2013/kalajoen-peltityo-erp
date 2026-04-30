@@ -1889,6 +1889,9 @@
       <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="toggleKappaleForm()">
         + Kappaletavara
       </button>
+      <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="avaapiippu()">
+        🏭 Avaa Piippu →
+      </button>
 
       <!-- Kappaletavara-lomake -->
       <div id="kappale-form" style="display:none;border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:4px;display:none">
@@ -2659,6 +2662,24 @@ async function saveKappaleToSupabase(item, groupId) {
       body: JSON.stringify(body)
     });
   } catch(e) { console.log('Kappale save error', e); }
+}
+
+function avaapiippu() {
+  let groupId = document.getElementById('group-select').value;
+
+  if (!groupId || groupId === '__new__') {
+    const nimi = document.getElementById('new-group-name').value;
+    if (!nimi) {
+      if (!confirm('Ryhmälle ei ole annettu nimeä. Tehdäänkö tilaus ilman ryhmän nimeä?')) return;
+    }
+    addGroup();
+    const newGroup = groups[groups.length-1];
+    if (newGroup) {
+      setTimeout(() => window.open(`piippu.html?groupId=${newGroup.id}`, '_blank'), 100);
+    }
+    return;
+  }
+  window.open(`piippu.html?groupId=${groupId}`, '_blank');
 }
 
 function openMallisto() {
