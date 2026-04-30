@@ -2555,7 +2555,6 @@ async function saveItemToSupabase(item, groupId) {
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
     product_group: item.productGroup || null,
     quantity: item.rows ? item.rows.reduce((s, r) => s + (r.kpl || 0), 0) : 0,
-    source: item.source || null,
   };
   const r = await fetch(SUPABASE_URL + '/rest/v1/order_items', {
     method: 'POST',
