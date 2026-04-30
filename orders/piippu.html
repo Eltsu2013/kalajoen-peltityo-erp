@@ -2189,6 +2189,41 @@ function lisaaTilaukseen() {
     return;
   }
 
+  // Kerää mittadata profile_data:aan
+  const piippuData = {
+    tyyppi: 'lapepiippu',
+    leveys:      parseFloat(document.getElementById('leveys').value) || 0,
+    suora:       parseFloat(document.getElementById('suora').value) || 0,
+    etukork:     parseFloat(document.getElementById('etukork').value) || 0,
+    takakork:    parseFloat(document.getElementById('takakork').value) || 0,
+    harjalle:    parseFloat(document.getElementById('harjalle').value) || 0,
+    vasen:       parseFloat(document.getElementById('vasen').value) || 0,
+    oikea:       parseFloat(document.getElementById('oikea').value) || 0,
+    poimu:       parseFloat(document.getElementById('poimu').value) || 0,
+    harjakulma:  parseFloat(document.getElementById('v-harjakulma').value) || 0,
+    k24:         parseFloat(document.getElementById('k24').value) || 0,
+    j25:         parseFloat(document.getElementById('j25').value) || 0,
+    tupla:       parseFloat(document.getElementById('v-tupla').value) || 0,
+    etulis:      parseFloat(document.getElementById('v-etulis').value) || 0,
+    takalis:     parseFloat(document.getElementById('v-takalis').value) || 0,
+    nousu:       parseFloat(document.getElementById('v-nousu').value) || 0,
+    takareuna:   parseFloat(document.getElementById('v-takareuna').value) || 0,
+    harjaylitys: parseFloat(document.getElementById('v-harjaylitys').value) || 0,
+    juurisauma:  parseFloat(document.getElementById('v-juurisauma').value) || 0,
+    taka1mitta:  parseFloat(document.getElementById('v-taka1mitta').value) || 0,
+    taka2mitta:  parseFloat(document.getElementById('v-taka2mitta').value) || 0,
+    taka3mitta:  parseFloat(document.getElementById('v-taka3mitta').value) || 0,
+    sauma:       parseFloat(document.getElementById('v-sauma').value) || 0,
+    huplis:      parseFloat(document.getElementById('v-huplis').value) || 0,
+    ylareunaV:   parseFloat(document.getElementById('v-ylareunaV').value) || 0,
+    alatupla:    parseFloat(document.getElementById('v-alatupla').value) || 0,
+    vahennys:    parseFloat(document.getElementById('v-vahennys').value) || 0,
+    huptakalis:  parseFloat(document.getElementById('v-huptakalis').value) || 0,
+    hattulis:    parseFloat(document.getElementById('v-hattulis').value) || 0,
+    saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl,
+    huomio,
+  };
+
   // Lähetä jokainen peltirivi erikseen samaan ryhmään
   const groupId = targetGroupId || ('g_piippu_' + Date.now());
 
@@ -2205,6 +2240,7 @@ function lisaaTilaukseen() {
       nimike: p.osa,
       profileType: 'piippu',
       aihio_width_mm: levNum,
+      profile_data: i === 0 ? { vals: piippuData } : undefined,
       rows: pitNum ? [{ mitta: pitNum, paat: 0, kok: pitNum, kpl: kplNum, huomio: i === 0 ? huomio : '' }] : [],
       angles: [],
       totalM2,
