@@ -342,7 +342,7 @@ function piirraKuvaSVG(v) {
     hSivEtenemä=r(sivLev-sauma*3);
   }
 
-  const W=640,H=260,mL=85,mR=130,mT=22,mB=20;
+  const W=900,H=380,mL=110,mR=160,mT=30,mB=30;
   const drawW=W-mL-mR, drawH=H-mT-mB;
   const maxKork=Math.max(etukork,takakork)||1;
   const etuUloke=k24||50;
@@ -415,7 +415,23 @@ function piirraKuvaSVG(v) {
   const hj2X=harjaX-normX*hjOff, hj2Y=harjaY-normY*hjOff;
   const hjMidX=(hj1X+hj2X)/2, hjMidY=(hj1Y+hj2Y)/2;
   h+=`<line x1="${hj1X}" y1="${hj1Y}" x2="${hj2X}" y2="${hj2Y}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr2)" marker-start="url(#arr2)"/>`;
-  h+=`<text x="${hjMidX}" y="${hjMidY+14}" text-anchor="middle" font-size="10" fill="${c2}" font-family="system-ui">harjalle ${harjalle}</text>`;
+  h+=`<text x="${hjMidX}" y="${hjMidY+14}" text-anchor="middle" font-size="11" fill="${c2}" font-family="system-ui">harjalle ${harjalle}</text>`;
+
+  // Eteen piipusta (k24) — vaakamitta kattoviivan alla
+  if (k24>0) {
+    const k24Y = etuY + 22;
+    h+=`<line x1="${kattoVasenX}" y1="${k24Y}" x2="${etuX}" y2="${k24Y}" stroke="${cInfo}" stroke-width="0.8" marker-end="url(#arr2)" marker-start="url(#arr2)"/>`;
+    h+=`<text x="${(kattoVasenX+etuX)/2}" y="${k24Y+13}" text-anchor="middle" font-size="11" fill="${cInfo}" font-family="system-ui">eteen ${k24}</text>`;
+  }
+
+  // Alas (j25) — pystymitta kattoviivan vieressä
+  if (j25>0) {
+    const j25X = kattoVasenX - 20;
+    const j25bot = jEtuKattoY - normY*alasLen;
+    const j25botX = jEtuX - normX*alasLen;
+    h+=`<line x1="${j25X}" y1="${jEtuKattoY}" x2="${j25X}" y2="${j25bot+(j25bot-jEtuKattoY<0?-2:2)}" stroke="${cInfo}" stroke-width="0.8" marker-end="url(#arr2)" marker-start="url(#arr2)"/>`;
+    h+=`<text x="${j25X-4}" y="${(jEtuKattoY+j25bot)/2+4}" text-anchor="end" font-size="11" fill="${cInfo}" font-family="system-ui">alas ${j25}</text>`;
+  }
 
   // Suhde
   const kattokulma_deg=kattokulma_rad*180/Math.PI;
@@ -506,37 +522,40 @@ async function setStatus(rowId, key, itemId, btn) {
   }
 }
 
-// ── Rakenna mitat-lista ────────────────────────────────────
+// ── Rakenna mitat-lista kahdessa kategoriassa ─────────────
 function mittalista(v) {
   if (!v) return '';
-  const rivit = [
-    ['Leveys', v.leveys+' mm'],
-    ['Suora mitta', v.suora+' mm'],
-    ['Etukorkeus', v.etukork+' mm'],
-    ['Takakorkeus', v.takakork+' mm'],
-    ['Takareunasta harjalle', v.harjalle+' mm'],
-    ['Vasen ylitys', v.vasen+' mm'],
-    ['Oikea ylitys', v.oikea+' mm'],
-    ['Harjan ylitys vas.', v.poimu+' mm'],
-    ['Eteen piipusta', v.k24+' mm'],
-    ['Alas', v.j25+' mm'],
-    ['Tupla', v.tupla+' mm'],
-    ['Etulis', v.etulis+' mm'],
-    ['Takalis', v.takalis+' mm'],
-    ['Nousu', v.nousu+' mm'],
-    ['Juuri sauma', v.juurisauma+' mm'],
-    ['Hupun sauma', v.sauma+' mm'],
-    ['Lisää hupun kokoon', v.huplis+' mm'],
-    ['Yläreunan vahvistus', v.ylareunaV+' mm'],
-    ['Alatupla', v.alatupla+' mm'],
-    ['Vähennys etu', v.vahennys+' mm'],
-    ['Huppu takaa leveämpi', v.huptakalis+' mm'],
-    ['Hattu lisä', v.hattulis+' mm'],
-    ['Saumatyyppi', 'Sauma '+(v.saumatyyppi||1)],
-  ];
-  return rivit.filter(([,val])=>val&&val!=='0 mm'&&val!=='undefined mm')
-    .map(([lbl,val])=>`<div class="mitta-row"><span class="mitta-label">${lbl}</span><span class="mitta-val">${val}</span></div>`)
-    .join('');
+
+  const rivi = (lbl, val, yksikko='mm') =>
+    val ? `<div class="mitta-row"><span class="mitta-label">${lbl}</span><span class="mitta-val">${val} ${yksikko}</span></div>` : '';
+
+  const juuret = [
+    rivi('Vasen ylitys', v.vasen),
+    rivi('Oikea ylitys', v.oikea),
+    rivi('Uraan', v.poimu),
+    rivi('Uraan kulma', v.harjakulma, '°'),
+    rivi('Juuri sauma', v.juurisauma),
+  ].filter(Boolean).join('');
+
+  const huppu = [
+    rivi('Hupun yläreuna', v.ylareunaV),
+    rivi('Hupun alatupla', v.alatupla),
+    rivi('Vähennys korkeudesta', v.vahennys),
+    rivi('Lisää hupun kokoon', v.huplis),
+    rivi('Huppu takaa leveämpi', v.huptakalis),
+  ].filter(Boolean).join('');
+
+  return `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>
+        ${juuret||'—'}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>
+        ${huppu||'—'}
+      </div>
+    </div>`;
 }
 
 // ── Päärender ─────────────────────────────────────────────
@@ -589,17 +608,20 @@ function render(items, order) {
       ${v?.suora?`<div class="summary-item">Suora: <strong>${v.suora} mm</strong></div>`:''}
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-      ${svgHtml?`<div class="section-card"><h3>Piippu — sivukuva</h3><div class="svg-wrap">${svgHtml}</div></div>`:''}
-      <div class="section-card">
-        <h3>Mitat</h3>
-        <div class="mitat-grid">${mittalista(v)}</div>
-      </div>
-    </div>
+    ${svgHtml?`
+    <div class="section-card" style="margin-bottom:16px">
+      <h3>Piippu — sivukuva</h3>
+      <div class="svg-wrap" style="padding:16px">${svgHtml}</div>
+    </div>`:''}
 
-    <div class="two-col">
+    <div class="two-col" style="margin-bottom:16px">
       ${renderTauluStatus(juuret, items, 'Juuret')}
       ${renderTauluStatus(muut, items, 'Huppu / Kansi / Hattu')}
+    </div>
+
+    <div class="section-card">
+      <h3>Mitat</h3>
+      <div style="padding:14px 18px">${mittalista(v)}</div>
     </div>
   `;
 }
