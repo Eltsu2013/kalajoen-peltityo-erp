@@ -1769,8 +1769,11 @@
     <select id="sel-materiaali" onchange="paivitaVarit()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Materiaali</option>
     </select>
-    <select id="sel-vari" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+    <select id="sel-vari" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Väri</option>
+    </select>
+    <select id="sel-paksuus" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+      <option value="">Paksuus</option>
     </select>
   </div>
 </header>
@@ -2091,7 +2094,7 @@ let kaikki_tuotteet = [];
 
 async function haeMateriaalit() {
   try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/products?is_active=eq.true&select=material,color&order=material,color`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/products?is_active=eq.true&select=material,color,thickness_mm&order=material,color`, {
       headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
     });
     kaikki_tuotteet = await res.json();
@@ -2114,6 +2117,23 @@ function paivitaVarit() {
     const o = document.createElement('option');
     o.value = v; o.textContent = v;
     vSel.appendChild(o);
+  });
+  document.getElementById('sel-paksuus').innerHTML = '<option value="">Paksuus</option>';
+}
+
+function paivitaPaksuudet() {
+  const mat = document.getElementById('sel-materiaali').value;
+  const vari = document.getElementById('sel-vari').value;
+  const paksuudet = [...new Set(kaikki_tuotteet
+    .filter(p => p.material === mat && p.color === vari)
+    .map(p => p.thickness_mm))]
+    .sort((a,b) => a-b);
+  const pSel = document.getElementById('sel-paksuus');
+  pSel.innerHTML = '<option value="">Paksuus</option>';
+  paksuudet.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p; o.textContent = p + ' mm';
+    pSel.appendChild(o);
   });
 }
 
