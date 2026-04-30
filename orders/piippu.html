@@ -2149,7 +2149,7 @@ haeMateriaalit();
 const urlParams = new URLSearchParams(window.location.search);
 const targetGroupId = urlParams.get('groupId') || null;
 
-function lisaaTilaukseen() {
+async function lisaaTilaukseen() {
   const materiaali = document.getElementById('sel-materiaali').value;
   const vari = document.getElementById('sel-vari').value;
   const paksuus = document.getElementById('sel-paksuus').value;
@@ -2223,6 +2223,16 @@ function lisaaTilaukseen() {
     saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl,
     huomio,
   };
+
+  // Jos päivitetään olemassa olevaa ryhmää, poistetaan vanhat piippu-rivit ensin
+  if (targetGroupId) {
+    localStorage.setItem('kpt_add_to_order', JSON.stringify({
+      type: 'CLEAR_PIIPPU',
+      groupId: groupId,
+    }));
+    // Odotetaan hetki että tilaus.html ehtii käsitellä
+    await new Promise(res => setTimeout(res, 150));
+  }
 
   // Lähetä jokainen peltirivi erikseen samaan ryhmään
   const groupId = targetGroupId || ('g_piippu_' + Date.now());
