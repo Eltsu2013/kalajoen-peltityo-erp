@@ -2703,6 +2703,17 @@ function renderItemCards(order) {
     // Kanttaus-lohko
     let kanttausBlock = '';
     if (item.profile_type && item.profile_type !== 'KAPPALE') {
+      // Piippu — näytetään linkki erilliselle sivulle
+      if (item.profile_type === 'piippu') {
+        kanttausBlock = `<div style="margin-top:4px">
+          <a href="piippu_tuotanto.html?orderId=${item.order_id}&groupName=${encodeURIComponent(item.group_name||'')}"
+             target="_blank"
+             style="display:inline-block;padding:6px 14px;background:var(--panel2);border:1px solid var(--accent);
+                    color:var(--accent);border-radius:4px;font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace;">
+            🏭 Avaa piippu →
+          </a>
+        </div>`;
+      } else {
       const vals = item.profile_data?.vals || {};
       const opts = item.profile_data?.opts || {};
       const svgHtml = drawKanttausSVG(item.profile_type, vals, opts);
@@ -2717,6 +2728,7 @@ function renderItemCards(order) {
             }
           </div>
         </div>`;
+      } // else
     }
 
     // Kappaletavara-lohko
