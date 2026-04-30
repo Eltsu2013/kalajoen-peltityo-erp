@@ -1962,6 +1962,7 @@
     <div class="kulmat">
       <div class="kulma-item">Etukulma (kanttikoneeseen):<span id="etukulma-txt">—</span>°</div>
       <div class="kulma-item">Takakulma (kanttikoneeseen):<span id="takakulma-txt">—</span>°</div>
+      <div class="kulma-item">Katon kaltevuus:<span id="kaltevuus-txt">—</span></div>
     </div>
   </div>
 
@@ -2065,6 +2066,15 @@ function laske() {
 
   document.getElementById('etukulma-txt').textContent = etukulma;
   document.getElementById('takakulma-txt').textContent = takakulma;
+
+  // Kaltevuussuhde 1:X
+  const kaltEl = document.getElementById('kaltevuus-txt');
+  if (korkeuserot > 0 && suora > 0) {
+    const suhde = (suora / korkeuserot).toFixed(1);
+    kaltEl.textContent = ` 1:${suhde}`;
+  } else {
+    kaltEl.textContent = '—';
+  }
 
   // P10: vaakakomponentti kun nousu on pystysuorassa
   const p10 = Math.sin(kattokulma_rad) > 0 ? nousu / Math.sin(kattokulma_rad) : nousu;
@@ -2224,7 +2234,17 @@ function laske() {
   // Hupun merkintämitta pellille — hEtuKork/hTakaKork laskettu oikein, vähennetään vain alatuplat
   const hEtuKorkSvg  = etukork + ylareunaV + kaltkorj - vahennys;
   const hTakaKorkSvg = takakork + ylareunaV - kaltkorj - vahennys;
-  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu, q9, harjaylitys);
+
+  // Etenemä = sivupalan hyötyleveys (lev - sauma×3), lasketaan vain jos sivuja on useampi
+  let hSivEtenemä = 0;
+  if (hasHuppu && huppuSivutKpl >= 2) {
+    const sivLev = huppuSivutKpl === 2
+      ? (saumatyyppi === 1 ? suora/2 + huplis/2 + sauma*3 : suora/2 + huplis/2 + sauma*3 + huptakalis/2)
+      : (saumatyyppi === 1 ? suora/3 + huplis/3 + sauma*3 : suora/3 + huplis/3 + sauma*3 + huptakalis/3);
+    hSivEtenemä = r(sivLev - sauma*3);
+  }
+
+  piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKorkSvg, hTakaKorkSvg, hasHuppu, q9, harjaylitys, hSivEtenemä);
   renderTaulu('luettelo-juuret', juuret);
   renderTaulu('luettelo-huppu', muut);
 }
@@ -2258,7 +2278,7 @@ function renderTaulu(elId, pellit) {
   </table>`;
 }
 
-function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu, q9, harjaylitys) {
+function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomitta, takareuna, hEtuKork, hTakaKork, hasHuppu, q9, harjaylitys, hSivEtenemä) {
   const svg = document.getElementById('svg-content');
   const W = 640, H = 260;
   const mL = 85, mR = 130, mT = 22, mB = 20;
@@ -2405,6 +2425,9 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
   const smY = ylaY - 14;
   h += `<line x1="${etuX}" y1="${smY}" x2="${takaX}" y2="${smY}" stroke="${c2}" stroke-width="0.8" marker-end="url(#arr)" marker-start="url(#arr)"/>`;
   h += `<text x="${(etuX+takaX)/2}" y="${smY-5}" text-anchor="middle" font-size="11" fill="${c2}" font-family="system-ui">Suora ${suora}</text>`;
+  if (hSivEtenemä > 0) {
+    h += `<text x="${(etuX+takaX)/2}" y="${smY+12}" text-anchor="middle" font-size="10" fill="${cInfo}" font-family="system-ui">↳ etenemä ${hSivEtenemä}</text>`;
+  }
 
   // Etukorkeus — mitta 1/4 yläreunasta alaspäin, ei apuviivoja
   const eMX = etuX - 26;
@@ -2414,6 +2437,30 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
   if (hasHuppu) {
     h += `<text x="${eMX-4}" y="${etuMittaY+14}" text-anchor="end" font-size="10" fill="${cInfo}" font-family="system-ui">↳ ${r(hEtuKork)}</text>`;
   }
+
+  // Hupun sivujen saumaviivat
+  if (hasHuppu && huppuSivutKpl >= 2) {
+    const diff = hEtuKork - hTakaKork;
+
+    function pirraSivuSauma(frac, korkeus) {
+      const vX = etuX + (takaX - etuX) * frac;
+      const vYbot = etuY + (takaY - etuY) * frac;
+      const vYtop = vYbot - korkeus * scale;
+      h += `<line x1="${vX}" y1="${vYtop}" x2="${vX}" y2="${vYbot}" stroke="${cInfo}" stroke-width="1.5" stroke-linecap="round"/>`;
+      // Pelkkä luku, ei mittajanaa
+      const mMidY = (vYtop + vYbot) / 2 + 4;
+      h += `<text x="${vX-6}" y="${mMidY}" text-anchor="end" font-size="10" fill="${cInfo}" font-family="system-ui">${r(korkeus)}</text>`;
+    }
+
+    if (huppuSivutKpl === 2) {
+      pirraSivuSauma(0.5, hEtuKork - diff / 2);
+    } else {
+      pirraSivuSauma(1/3, hEtuKork - diff / 3);
+      pirraSivuSauma(2/3, hEtuKork - diff * 2/3);
+    }
+  }
+
+  // Suora mitta — vaakasuora piipun yläpuolella
 
   // Takakorkeus — mitta 1/4 yläreunasta alaspäin, ei apuviivoja
   const tMX = takaX + 24;
