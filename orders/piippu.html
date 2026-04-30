@@ -2224,31 +2224,18 @@ async function lisaaTilaukseen() {
     huomio,
   };
 
-  // Ryhmän id — käytetään sekä CLEAR_PIIPPU:ssa että lähetyksessä
+  // Ryhmän id — käytetään lähetyksessä
   const groupId = targetGroupId || ('g_piippu_' + Date.now());
 
-  // Jos päivitetään olemassa olevaa ryhmää, poistetaan vanhat piippu-rivit ensin
-  if (targetGroupId) {
-    localStorage.setItem('kpt_add_to_order', JSON.stringify({
-      type: 'CLEAR_PIIPPU',
-      groupId: groupId,
-    }));
-    // Odotetaan hetki että tilaus.html ehtii käsitellä
-    await new Promise(res => setTimeout(res, 150));
-  }
+  // Lähetä kaikki kerralla
 
-  // Lähetä jokainen peltirivi erikseen samaan ryhmään
-
-  pellit.forEach((p, i) => {
+  // Lähetä kaikki kerralla yhdessä viestissä
+  const kaikki = pellit.map((p, i) => {
     const levNum = parseFloat(p.lev) || 0;
     const pitNum = parseFloat(p.pit) || 0;
     const kplNum = parseFloat(p.kpl) || 1;
     const totalM2 = levNum && pitNum ? levNum * pitNum * kplNum / 1000000 : 0;
-
-    const data = {
-      type: 'ADD_TO_ORDER',
-      groupId: groupId,
-      groupName: i === 0 ? ryhmaNimi : undefined,
+    return {
       nimike: p.osa,
       profileType: 'piippu',
       aihio_width_mm: levNum,
@@ -2262,12 +2249,14 @@ async function lisaaTilaukseen() {
       productGroup: 'Piippu',
       source: 'piippu',
     };
-
-    // Pieni viive jotta tilaus.html ehtii käsitellä jokaisen viestin
-    setTimeout(() => {
-      localStorage.setItem('kpt_add_to_order', JSON.stringify(data));
-    }, i * 80);
   });
+
+  localStorage.setItem('kpt_add_to_order', JSON.stringify({
+    type: 'REPLACE_PIIPPU',
+    groupId,
+    groupName: ryhmaNimi,
+    items: kaikki,
+  }));
 
   status.style.color = '#4ade80';
   status.textContent = `${pellit.length} riviä lähetetty tilaukseen!`;
