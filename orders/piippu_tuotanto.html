@@ -207,8 +207,8 @@ async function load() {
   }
 
   const res = await fetch(
-    `${SUPA_URL}/rest/v1/order_items?order_id=eq.${orderId}&group_name=eq.${encodeURIComponent(groupName)}`+
-    `&select=id,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,profile_data,`+
+    `${SUPA_URL}/rest/v1/order_items?order_id=eq.${orderId}&group_name=eq.${encodeURIComponent(groupName)}&profile_type=eq.piippu`+
+    `&select=id,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,profile_data,source,`+
     `order_item_rows(id,mitta_mm,paat_mm,kok_mm,kpl,huomio,row_order,production_status,done_qty)`+
     `&order=item_order`,
     { headers }
