@@ -2154,13 +2154,13 @@ function paivitaPaksuudet(muistettuPak) {
     o.value = p; o.textContent = p + ' mm';
     pSel.appendChild(o);
   });
-  if (muistettuPak && paksuudet.includes(Number(muistettuPak))) {
+  if (muistettuPak && paksuudet.map(String).includes(String(muistettuPak))) {
     pSel.value = muistettuPak;
   }
-  // Tallenna valinta
-  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
-    mat, vari, pak: pSel.value
-  }));
+  // Tallenna vasta kun optiot on lisätty ja arvo asetettu
+  const matNyt = document.getElementById('sel-materiaali').value;
+  const variNyt = document.getElementById('sel-vari').value;
+  localStorage.setItem('kpt_piippu_mat', JSON.stringify({ mat: matNyt, vari: variNyt, pak: pSel.value }));
 }
 
 haeMateriaalit();
@@ -2174,12 +2174,6 @@ async function lisaaTilaukseen() {
   const vari = document.getElementById('sel-vari').value;
   const paksuus = document.getElementById('sel-paksuus').value;
   const status = document.getElementById('lisays-status');
-
-  if (!materiaali || !vari || !paksuus) {
-    status.style.color = '#f87171';
-    status.textContent = 'Valitse materiaali, väri ja paksuus ensin';
-    return;
-  }
 
   const piippukpl = Math.max(1, parseFloat(document.getElementById('v-piippukpl').value) || 1);
   const leveys = parseFloat(document.getElementById('leveys').value) || 0;
@@ -2205,7 +2199,13 @@ async function lisaaTilaukseen() {
 
   if (pellit.length === 0) {
     status.style.color = '#f87171';
-    status.textContent = 'Ei peltejä laskettuna';
+    status.textContent = 'Ei peltejä laskettuna — laske ensin piippu';
+    return;
+  }
+
+  if (!materiaali || !vari || !paksuus) {
+    status.style.color = '#f87171';
+    status.textContent = `Valitse ${!materiaali?'materiaali':!vari?'väri':'paksuus'} ensin`;
     return;
   }
 
