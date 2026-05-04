@@ -2122,9 +2122,6 @@ async function haeMateriaalit() {
 
 function paivitaVarit(muistettuVari, muistettuPak) {
   const mat = document.getElementById('sel-materiaali').value;
-  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
-    mat, vari: document.getElementById('sel-vari').value, pak: document.getElementById('sel-paksuus').value
-  }));
   const varit = [...new Set(kaikki_tuotteet.filter(p => p.material === mat).map(p => p.color))].sort();
   const vSel = document.getElementById('sel-vari');
   vSel.innerHTML = '<option value="">Väri</option>';
@@ -2136,8 +2133,13 @@ function paivitaVarit(muistettuVari, muistettuPak) {
   document.getElementById('sel-paksuus').innerHTML = '<option value="">Paksuus</option>';
   if (muistettuVari && varit.includes(muistettuVari)) {
     vSel.value = muistettuVari;
-    paivitaPaksuudet(muistettuPak);
   }
+  // Päivitä paksuudet aina kun väri on valittu
+  paivitaPaksuudet(muistettuPak);
+  // Tallenna
+  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
+    mat, vari: vSel.value, pak: document.getElementById('sel-paksuus').value
+  }));
 }
 
 function paivitaPaksuudet(muistettuPak) {
