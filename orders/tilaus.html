@@ -2393,6 +2393,12 @@ async function receiveFromMallisto(data) {
       group = { id: data.groupId, name: data.groupName || 'Piippu', items: [] };
       groups.push(group);
     }
+    // Varmista että tilaus on olemassa ennen tallennusta
+    if (!currentOrderId) await createOrder();
+    if (!currentOrderId) {
+      setSaveStatus('err', 'Tilauksen luonti epäonnistui');
+      return;
+    }
     // Poista vanhat piippu-rivit Supabasesta
     const vanhat = group.items.filter(i => i.profileType === 'piippu');
     for (const v of vanhat) {
@@ -2403,12 +2409,11 @@ async function receiveFromMallisto(data) {
       }
     }
     group.items = group.items.filter(i => i.profileType !== 'piippu');
-    // Lisää uudet
+    // Lisää uudet peräkkäin (ei rinnakkain) jotta ei tule race conditionia
     for (const p of (data.items || [])) {
       const item = {
         id: 'i_' + Date.now() + Math.random(),
         profileType: 'piippu',
-        source: 'piippu',
         nimike: p.nimike,
         aihio_width_mm: p.aihio_width_mm,
         profile_data: p.profile_data,
