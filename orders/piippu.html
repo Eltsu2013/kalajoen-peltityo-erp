@@ -1772,7 +1772,7 @@
     <select id="sel-vari" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Väri</option>
     </select>
-    <select id="sel-paksuus" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+    <select id="sel-paksuus" onchange="tallennaMateriaali()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Paksuus</option>
     </select>
   </div>
@@ -2120,6 +2120,14 @@ async function haeMateriaalit() {
   } catch(e) { console.error('Tuotteiden haku epäonnistui', e); }
 }
 
+function tallennaMateriaali() {
+  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
+    mat: document.getElementById('sel-materiaali').value,
+    vari: document.getElementById('sel-vari').value,
+    pak: document.getElementById('sel-paksuus').value
+  }));
+}
+
 function paivitaVarit(muistettuVari, muistettuPak) {
   const mat = document.getElementById('sel-materiaali').value;
   const varit = [...new Set(kaikki_tuotteet.filter(p => p.material === mat).map(p => p.color))].sort();
@@ -2159,10 +2167,7 @@ function paivitaPaksuudet(muistettuPak) {
   if (muistettuPak && paksuudet.map(String).includes(String(muistettuPak))) {
     pSel.value = muistettuPak;
   }
-  // Tallenna vasta kun optiot on lisätty ja arvo asetettu
-  const matNyt = document.getElementById('sel-materiaali').value;
-  const variNyt = document.getElementById('sel-vari').value;
-  localStorage.setItem('kpt_piippu_mat', JSON.stringify({ mat: matNyt, vari: variNyt, pak: pSel.value }));
+  tallennaMateriaali();
 }
 
 haeMateriaalit();
