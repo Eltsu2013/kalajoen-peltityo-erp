@@ -353,6 +353,8 @@
       console.log('access_token:', session?.data?.session?.access_token ? 'OK' : 'PUUTTUU');
 
       const token = session?.data?.session?.access_token || SUPABASE_KEY;
+      console.log('token alkaa:', token.substring(0, 20));
+      console.log('token on anon?', token === SUPABASE_KEY);
       // Suora PostgREST-kysely — toimii CORS:in kanssa toisin kuin Edge Functions
       const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,note,products(material,color,thickness_mm),locations(code,name)&status=eq.ACTIVE&limit=10000`;
 
