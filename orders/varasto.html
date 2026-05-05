@@ -348,28 +348,35 @@
   });
 
   async function loadStock() {
-    const { data, error } = await sb
-      .from('stock_items')
-      .select(`
-        id, type, remaining_width_mm, remaining_length_mm, width_mm, length_mm,
-        quantity, note,
-        products ( material, color, thickness_mm ),
-        locations ( code, name )
-      `)
-      .eq('warehouse_id', WAREHOUSE_ID)
-      .eq('status', 'ACTIVE')
-      .order('type')
-      .limit(10000);
+    try {
+      const { data, error } = await sb.functions.invoke('get_stock_items');
 
-    if (error) {
+      if (error) throw error;
+
+      // Edge function palauttaa datan suoraan tai data.items -kentässä
+      const raw = Array.isArray(data) ? data : (data?.items || data?.data || []);
+
+      // Normalisoidaan rakenne — Edge function palauttaa flat-rakenteen
+      allItems = raw.map(item => ({
+        ...item,
+        products: {
+          material:     item.material     || item.products?.material,
+          color:        item.color        || item.products?.color,
+          thickness_mm: item.thickness_mm ?? item.products?.thickness_mm,
+        },
+        locations: {
+          code: item.location_code || item.location || item.locations?.code,
+          name: item.location_name || item.locations?.name,
+        }
+      }));
+
+      buildFilterOptions();
+      renderTable();
+    } catch (err) {
       document.getElementById('stockBody').innerHTML =
-        `<tr><td colspan="7" class="state-msg">Virhe ladattaessa varastoa: ${error.message}</td></tr>`;
-      return;
+        `<tr><td colspan="7" class="state-msg">Virhe: ${err.message}<br><small style="color:var(--muted)">Tarkista konsoli (F12)</small></td></tr>`;
+      console.error('loadStock error:', err);
     }
-
-    allItems = data || [];
-    buildFilterOptions();
-    renderTable();
   }
 
   function buildFilterOptions() {
