@@ -350,7 +350,7 @@
   async function loadStock() {
     try {
       // Suora PostgREST-kysely — toimii CORS:in kanssa toisin kuin Edge Functions
-      const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,remaining_width_mm,remaining_length_mm,width_mm,length_mm,quantity,note,products(material,color,thickness_mm),locations(code,name)&warehouse_id=eq.${WAREHOUSE_ID}&status=eq.ACTIVE&limit=10000`;
+      const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,quantity,note,products(material,color,thickness_mm),locations(code,name)&warehouse_id=eq.${WAREHOUSE_ID}&status=eq.ACTIVE&limit=10000`;
 
       const res = await fetch(url, {
         headers: {
@@ -462,8 +462,8 @@
       return `<span>${rem}</span>`;
     }
     // ROLL, SHEET, OFFCUT
-    const w = item.remaining_width_mm != null ? item.remaining_width_mm : item.width_mm;
-    const l = item.remaining_length_mm != null ? item.remaining_length_mm : item.length_mm;
+    const w = item.remaining_width_mm ?? item.original_width_mm;
+    const l = item.remaining_length_mm ?? item.original_length_mm;
     const wStr = w != null ? w + ' mm' : '—';
     const lStr = l != null ? (l >= 1000 ? (l/1000).toFixed(2).replace('.',',') + ' m' : l + ' mm') : '—';
     return `${lStr} <span class="dim">× ${wStr}</span>`;
