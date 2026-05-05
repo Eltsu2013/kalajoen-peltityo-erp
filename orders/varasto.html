@@ -362,7 +362,10 @@
 
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
 
-      allItems = await res.json();
+      const json = await res.json();
+      console.log('stock_items vastaus:', json);
+      console.log('määrä:', json.length);
+      allItems = json;
       buildFilterOptions();
       renderTable();
     } catch (err) {
