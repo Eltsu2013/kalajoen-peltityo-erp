@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Varasto — Kalajoen Peltityö</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth-guard.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --border:   #2a2d3a;
+      --text:     #e8eaf0;
+      --muted:    #7a7f96;
+      --accent:   #eab308;
+      --accent2:  #ca9a06;
+      --roll:     #3b82f6;
+      --sheet:    #22c55e;
+      --offcut:   #f97316;
+      --item:     #a855f7;
+      --bulk:     #06b6d4;
+    }
+
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+      padding: 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .nav-logo svg { width: 28px; height: 28px; filter: brightness(0) invert(1); }
+    .nav-menu-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+    }
+    .nav-menu-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* DROPDOWN */
+    .nav-dropdown {
+      display: none;
+      position: absolute;
+      top: 52px;
+      right: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      min-width: 200px;
+      z-index: 200;
+    }
+    .nav-dropdown.open { display: block; }
+    .nav-dropdown a {
+      display: block;
+      padding: 0.6rem 1rem;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .nav-dropdown a:hover { background: var(--border); color: var(--accent); }
+
+    /* PAGE */
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 2rem;
+    }
+
+    .page-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .page-header h1 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .badge-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.45rem;
+      color: var(--muted);
+    }
+
+    /* FILTERS */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .filters select, .filters input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.65rem;
+      border-radius: 4px;
+      min-width: 130px;
+    }
+    .filters select:focus, .filters input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn-clear {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* TABLE WRAPPER */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    thead th {
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #1f2335; }
+    tbody td {
+      padding: 0.55rem 0.75rem;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; }
+
+    /* TYPE BADGE */
+    .type-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .type-ROLL   { background: #1e3a5f; color: var(--roll); }
+    .type-SHEET  { background: #14371f; color: var(--sheet); }
+    .type-OFFCUT { background: #3d2010; color: var(--offcut); }
+    .type-ITEM   { background: #2d1845; color: var(--item); }
+    .type-BULK   { background: #0c2e35; color: var(--bulk); }
+
+    /* MITAT */
+    .mitat { color: var(--text); }
+    .mitat .dim { color: var(--muted); font-size: 0.78rem; }
+
+    /* LOCATION */
+    .location-chip {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+
+    /* EMPTY / LOADING */
+    .state-msg {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* MOBILE */
+    @media (max-width: 640px) {
+      .hide-mobile { display: none; }
+      .page-header h1 { font-size: 1.1rem; }
+    }
+
+    /* PRINT */
+    @media print {
+      nav { display: none; }
+      body { background: #fff; color: #000; }
+      .table-wrap { border: 1px solid #ccc; }
+      thead th { background: #f0f0f0; color: #333; }
+      tbody tr:hover { background: none; }
+      .type-badge { border: 1px solid #ccc; background: none !important; color: #333 !important; }
+      .location-chip { border: 1px solid #ccc; background: none; color: #333; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="../index.html">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="18" width="32" height="5" rx="1"/>
+      <rect x="4" y="10" width="32" height="4" rx="1"/>
+      <rect x="4" y="27" width="32" height="4" rx="1"/>
+      <polygon points="4,10 20,4 36,10" opacity="0.7"/>
+    </svg>
+    Kalajoen Peltityö
+  </a>
+  <span style="color:var(--accent);font-size:0.8rem;font-weight:500;margin-left:0.25rem;">/ Varasto</span>
+  <button class="nav-menu-btn" id="menuBtn">☰ Valikko</button>
+  <div class="nav-dropdown" id="navDropdown">
+    <a href="tilaukset.html">Tilaukset</a>
+    <a href="tilaus.html">Uusi tilaus</a>
+    <a href="tuotanto.html">Tuotanto</a>
+    <a href="asiakkaat.html">Asiakkaat</a>
+    <a href="peltipiirturi.html">Peltipiirturi</a>
+    <a href="vakiomallit.html">Vakiomallit</a>
+    <a href="../maps/verstaspohja_mitoitettu.html">Varastokartta</a>
+  </div>
+</nav>
+
+<div class="page">
+  <div class="page-header">
+    <h1>Varasto</h1>
+    <span class="badge-count" id="countBadge">ladataan...</span>
+  </div>
+
+  <div class="filters">
+    <select id="filterMaterial">
+      <option value="">Kaikki materiaalit</option>
+    </select>
+    <select id="filterColor">
+      <option value="">Kaikki värit</option>
+    </select>
+    <select id="filterType">
+      <option value="">Kaikki tyypit</option>
+      <option value="ROLL">Rulla</option>
+      <option value="SHEET">Levy</option>
+      <option value="OFFCUT">Siivu</option>
+      <option value="ITEM">Kpl</option>
+      <option value="BULK">Metri</option>
+    </select>
+    <select id="filterThickness">
+      <option value="">Kaikki paksuudet</option>
+    </select>
+    <button class="btn-clear" id="clearFilters">✕ Tyhjennä</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="stockTable">
+      <thead>
+        <tr>
+          <th>Tyyppi</th>
+          <th>Materiaali</th>
+          <th>Väri</th>
+          <th class="hide-mobile">Paksuus</th>
+          <th>Mitat (jäljellä)</th>
+          <th class="hide-mobile">Varastopaikka</th>
+          <th class="hide-mobile">Huomio</th>
+        </tr>
+      </thead>
+      <tbody id="stockBody">
+        <tr><td colspan="7" class="state-msg"><span class="spinner"></span>Ladataan varastoa...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+  const WAREHOUSE_ID = 'e56f3534-50f9-4081-8840-f81f03905113';
+
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const TYPE_FI = { ROLL: 'Rulla', SHEET: 'Levy', OFFCUT: 'Siivu', ITEM: 'Kpl', BULK: 'Metri' };
+
+  let allItems = [];
+
+  // Nav dropdown
+  document.getElementById('menuBtn').addEventListener('click', () => {
+    document.getElementById('navDropdown').classList.toggle('open');
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('nav')) document.getElementById('navDropdown').classList.remove('open');
+  });
+
+  async function loadStock() {
+    const { data, error } = await sb
+      .from('stock_items')
+      .select(`
+        id, type, remaining_width_mm, remaining_length_mm, width_mm, length_mm,
+        quantity, note,
+        products ( material, color, thickness_mm ),
+        locations ( code, name )
+      `)
+      .eq('warehouse_id', WAREHOUSE_ID)
+      .eq('status', 'ACTIVE')
+      .order('type')
+      .limit(10000);
+
+    if (error) {
+      document.getElementById('stockBody').innerHTML =
+        `<tr><td colspan="7" class="state-msg">Virhe ladattaessa varastoa: ${error.message}</td></tr>`;
+      return;
+    }
+
+    allItems = data || [];
+    buildFilterOptions();
+    renderTable();
+  }
+
+  function buildFilterOptions() {
+    const materials = [...new Set(allItems.map(i => i.products?.material).filter(Boolean))].sort();
+    const colors    = [...new Set(allItems.map(i => i.products?.color).filter(Boolean))].sort();
+    const thicknesses = [...new Set(allItems.map(i => i.products?.thickness_mm).filter(Boolean))].sort((a,b) => a-b);
+
+    fillSelect('filterMaterial', materials, 'Kaikki materiaalit');
+    fillSelect('filterColor',    colors,    'Kaikki värit');
+    fillSelect('filterThickness', thicknesses.map(t => ({ val: t, label: t + ' mm' })), 'Kaikki paksuudet', true);
+  }
+
+  function fillSelect(id, items, placeholder, isObj = false) {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = `<option value="">${placeholder}</option>`;
+    items.forEach(item => {
+      const val   = isObj ? item.val : item;
+      const label = isObj ? item.label : item;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = label;
+      if (String(val) === String(current)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function getFilters() {
+    return {
+      material:  document.getElementById('filterMaterial').value,
+      color:     document.getElementById('filterColor').value,
+      type:      document.getElementById('filterType').value,
+      thickness: document.getElementById('filterThickness').value,
+    };
+  }
+
+  function renderTable() {
+    const f = getFilters();
+    const filtered = allItems.filter(item => {
+      if (f.material  && item.products?.material      !== f.material)          return false;
+      if (f.color     && item.products?.color         !== f.color)             return false;
+      if (f.type      && item.type                    !== f.type)              return false;
+      if (f.thickness && String(item.products?.thickness_mm) !== f.thickness) return false;
+      return true;
+    });
+
+    document.getElementById('countBadge').textContent =
+      filtered.length === allItems.length
+        ? `${allItems.length} erää`
+        : `${filtered.length} / ${allItems.length} erää`;
+
+    if (filtered.length === 0) {
+      document.getElementById('stockBody').innerHTML =
+        '<tr><td colspan="7" class="state-msg">Ei tuloksia valituilla suodattimilla.</td></tr>';
+      return;
+    }
+
+    const rows = filtered.map(item => {
+      const mat   = item.products?.material  || '—';
+      const col   = item.products?.color     || '—';
+      const thick = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '—';
+      const loc   = item.locations?.code || '';
+      const note  = item.note || '';
+      const type  = item.type || 'SHEET';
+      const typeFi = TYPE_FI[type] || type;
+
+      const mitat = formatMitat(item);
+
+      return `<tr>
+        <td><span class="type-badge type-${type}">${typeFi}</span></td>
+        <td>${mat}</td>
+        <td>${col}</td>
+        <td class="hide-mobile mono">${thick}</td>
+        <td class="mono mitat">${mitat}</td>
+        <td class="hide-mobile">${loc ? `<span class="location-chip">${loc}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+        <td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">${note}</td>
+      </tr>`;
+    });
+
+    document.getElementById('stockBody').innerHTML = rows.join('');
+  }
+
+  function formatMitat(item) {
+    const type = item.type;
+    if (type === 'ITEM') {
+      return `<span>${item.quantity ?? '—'} kpl</span>`;
+    }
+    if (type === 'BULK') {
+      const rem = item.remaining_length_mm != null ? (item.remaining_length_mm / 1000).toFixed(1) + ' m' : '—';
+      return `<span>${rem}</span>`;
+    }
+    // ROLL, SHEET, OFFCUT
+    const w = item.remaining_width_mm != null ? item.remaining_width_mm : item.width_mm;
+    const l = item.remaining_length_mm != null ? item.remaining_length_mm : item.length_mm;
+    const wStr = w != null ? w + ' mm' : '—';
+    const lStr = l != null ? (l >= 1000 ? (l/1000).toFixed(2).replace('.',',') + ' m' : l + ' mm') : '—';
+    return `${lStr} <span class="dim">× ${wStr}</span>`;
+  }
+
+  // Filter events
+  ['filterMaterial','filterColor','filterType','filterThickness'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderTable);
+  });
+
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    ['filterMaterial','filterColor','filterType','filterThickness'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    renderTable();
+  });
+
+  loadStock();
+</script>
+</body>
+</html>
