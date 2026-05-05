@@ -333,8 +333,6 @@
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
   const WAREHOUSE_ID = 'e56f3534-50f9-4081-8840-f81f03905113';
 
-  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
   const TYPE_FI = { ROLL: 'Rulla', SHEET: 'Levy', OFFCUT: 'Siivu', ITEM: 'Kpl', BULK: 'Metri' };
 
   let allItems = [];
@@ -485,7 +483,11 @@
     renderTable();
   });
 
-  loadStock();
+  // Odotetaan auth-guardin valmistuminen ennen hakua
+  // Auth-guard korjaa fetch-kutsut automaattisesti oikealla tokenilla
+  window._authReady.then(() => {
+    loadStock();
+  });
 </script>
 </body>
 </html>
