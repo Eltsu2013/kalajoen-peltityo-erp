@@ -350,7 +350,7 @@
   async function loadStock() {
     try {
       // Suora PostgREST-kysely — toimii CORS:in kanssa toisin kuin Edge Functions
-      const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,note,products(material,color,thickness_mm),locations(code,name)&warehouse_id=eq.${WAREHOUSE_ID}&status=eq.ACTIVE&limit=10000`;
+      const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,note,products(material,color,thickness_mm),locations(code,name)&status=eq.ACTIVE&limit=10000`;
 
       const res = await fetch(url, {
         headers: {
