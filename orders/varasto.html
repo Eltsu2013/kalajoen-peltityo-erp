@@ -349,27 +349,20 @@
 
   async function loadStock() {
     try {
-      const { data, error } = await sb.functions.invoke('get_stock_items');
+      // Suora PostgREST-kysely — toimii CORS:in kanssa toisin kuin Edge Functions
+      const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,remaining_width_mm,remaining_length_mm,width_mm,length_mm,quantity,note,products(material,color,thickness_mm),locations(code,name)&warehouse_id=eq.${WAREHOUSE_ID}&status=eq.ACTIVE&limit=10000`;
 
-      if (error) throw error;
-
-      // Edge function palauttaa datan suoraan tai data.items -kentässä
-      const raw = Array.isArray(data) ? data : (data?.items || data?.data || []);
-
-      // Normalisoidaan rakenne — Edge function palauttaa flat-rakenteen
-      allItems = raw.map(item => ({
-        ...item,
-        products: {
-          material:     item.material     || item.products?.material,
-          color:        item.color        || item.products?.color,
-          thickness_mm: item.thickness_mm ?? item.products?.thickness_mm,
-        },
-        locations: {
-          code: item.location_code || item.location || item.locations?.code,
-          name: item.location_name || item.locations?.name,
+      const res = await fetch(url, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Accept': 'application/json'
         }
-      }));
+      });
 
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+
+      allItems = await res.json();
       buildFilterOptions();
       renderTable();
     } catch (err) {
