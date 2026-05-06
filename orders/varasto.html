@@ -594,12 +594,14 @@
     }
     .map-panel-body svg { width: 100%; height: auto; display: block; }
     /* Kartan korostustyylit — vaalea = suodatusosuma, kirkas = täppävalinta */
-    .map-panel-body .loc-filter > rect,
-    .map-panel-body .loc-filter > circle,
-    .map-panel-body .loc-filter > path  { filter: brightness(1.6); stroke-width: 2 !important; opacity: 0.7; }
-    .map-panel-body .loc-select > rect,
-    .map-panel-body .loc-select > circle,
-    .map-panel-body .loc-select > path  { filter: brightness(2.4); stroke-width: 3 !important; }
+    .map-panel-body .loc-filter,
+    .map-panel-body g.loc-filter > rect,
+    .map-panel-body g.loc-filter > circle,
+    .map-panel-body g.loc-filter > path  { filter: brightness(1.8); opacity: 0.85; }
+    .map-panel-body .loc-select,
+    .map-panel-body g.loc-select > rect,
+    .map-panel-body g.loc-select > circle,
+    .map-panel-body g.loc-select > path  { filter: brightness(2.8); stroke-width: 2.5 !important; }
     /* Ei-kartalla -lista */
     .offmap-list {
       padding: 0.5rem 1rem 0.75rem;
@@ -2994,11 +2996,10 @@
       // Lisätään suodatuskorostus
       filterCodes.forEach(code => {
         const key = codeToLoc(code);
-        // Yksi koodi voi osua useampaan SVG-elementtiin (esim. inl05a + inl05b)
         container.querySelectorAll('[data-loc]').forEach(el => {
           const elKey = el.getAttribute('data-loc');
           if (elKey === key || elKey.startsWith(key)) {
-            // Haetaan lähin <g class="loc"> ylöspäin, tai elementti itse
+            // Käytetään g.loc jos löytyy, muuten elementtiä itseään
             const target = el.closest('g.loc') || el;
             target.classList.add('loc-filter');
           }
