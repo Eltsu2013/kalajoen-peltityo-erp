@@ -741,7 +741,7 @@
         </div>
         <div class="modal-info-item">
           <div class="modal-info-label">Leveys jäljellä</div>
-          <div class="modal-info-value big" id="modalRemWidth">—</div>
+          <div class="modal-info-value big mono" id="modalRemWidth">—</div>
         </div>
       </div>
 
@@ -948,13 +948,13 @@
       return l != null ? l + ' mm' : '—';
     }
     if (type === 'BULK') {
-      const rem = item.remaining_length_mm != null ? (item.remaining_length_mm / 1000).toFixed(1) + ' m' : '—';
+      const rem = item.remaining_length_mm != null ? (item.remaining_length_mm / 1000).toFixed(3).replace('.',',') + ' m' : '—';
       return rem;
     }
     const w = item.remaining_width_mm ?? item.original_width_mm;
     const l = item.remaining_length_mm ?? item.original_length_mm;
     const wStr = w != null ? w + ' mm' : '—';
-    const lStr = l != null ? (l >= 1000 ? (l/1000).toFixed(2).replace('.',',') + ' m' : l + ' mm') : '—';
+    const lStr = l != null ? (l >= 1000 ? (l/1000).toFixed(3).replace('.',',') + ' m' : l + ' mm') : '—';
     return lStr + ' <span class="dim">× ' + wStr + '</span>';
   }
 
@@ -1054,13 +1054,13 @@
 
     // Näytetään jäljellä olevat mitat isolla
     if (type === 'BULK') {
-      document.getElementById('modalRemLength').textContent = remLen != null ? (remLen/1000).toFixed(1) + ' m' : '—';
+      document.getElementById('modalRemLength').textContent = remLen != null ? (remLen/1000).toFixed(3).replace('.',',') + ' m' : '—';
       document.getElementById('modalRemWidth').textContent  = '—';
     } else if (type === 'ITEM') {
       document.getElementById('modalRemLength').textContent = remLen != null ? remLen + ' mm' : '—';
       document.getElementById('modalRemWidth').textContent  = '—';
     } else {
-      document.getElementById('modalRemLength').textContent = remLen != null ? (remLen >= 1000 ? (remLen/1000).toFixed(2).replace('.',',') + ' m' : remLen + ' mm') : '—';
+      document.getElementById('modalRemLength').textContent = remLen != null ? (remLen >= 1000 ? (remLen/1000).toFixed(3).replace('.',',') + ' m' : remLen + ' mm') : '—';
       document.getElementById('modalRemWidth').textContent  = remWid != null ? remWid + ' mm' : '—';
     }
 
