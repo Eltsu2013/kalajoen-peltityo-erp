@@ -546,14 +546,94 @@
     .toast.success { border-color: var(--sheet); color: var(--sheet); }
     .toast.error   { border-color: var(--danger); color: var(--danger); }
 
-    /* ── MOBILE ── */
+    /* ── KORTIT (mobiili) ── */
+    .card-list { display: none; }
+
     @media (max-width: 640px) {
       .hide-mobile { display: none; }
       .panel-header h2 { font-size: 1rem; }
       .form-row { grid-template-columns: 1fr; }
       .modal { max-height: 100vh; border-radius: 0; }
       .modal-backdrop { padding: 0; align-items: flex-end; }
+
+      /* Piilotetaan taulukko, näytetään kortit */
+      .table-wrap { display: none; }
+      .card-list   { display: flex; flex-direction: column; gap: 0.5rem; }
+
+      /* Varastopaikkalista ylöspäin mobiilissa */
+      .loc-list {
+        max-height: 160px;
+        position: absolute;
+        bottom: 100%;
+        top: auto;
+        left: 0; right: 0;
+        border-radius: 4px 4px 0 0;
+        border-bottom: 1px solid var(--border);
+        z-index: 10;
+      }
+      .loc-search-wrap { position: relative; }
+      .loc-search-input { border-radius: 0 0 4px 4px; border-bottom: 1px solid var(--border); border-top: none; }
     }
+
+    /* Kortin tyyli */
+    .stock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .stock-card:hover { border-color: var(--accent); }
+    .stock-card-top {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.35rem;
+    }
+    .stock-card-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      flex: 1;
+    }
+    .stock-card-mitat {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+    .stock-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .stock-card-note-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      margin-top: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .stock-card-note-btn:hover { color: var(--text); }
+    .stock-card-note-text {
+      display: none;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      padding: 0.4rem 0.6rem;
+      background: var(--bg);
+      border-radius: 4px;
+      border-left: 2px solid var(--border);
+    }
+    .stock-card-note-text.open { display: block; }
 
     /* ── PRINT ── */
     @media print {
@@ -640,6 +720,7 @@
         </tbody>
       </table>
     </div>
+    <div class="card-list" id="cardList"></div>
   </div>
 </div>
 
@@ -1074,6 +1155,9 @@
       });
     }
 
+    // Päivitetään myös korttinäkymä
+    renderCards(filtered);
+
     document.getElementById('stockBody').innerHTML = filtered.map(item => {
       const mat    = item.products?.material || '—';
       const col    = item.products?.color    || '—';
@@ -1123,6 +1207,52 @@
     renderTable();
   });
 
+
+
+  // ─── Korttinäkymä (mobiili) ──────────────────────────
+  function renderCards(filtered) {
+    const list = document.getElementById('cardList');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="state-msg">Ei tuloksia.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map((item, idx) => {
+      const type   = item.type || 'SHEET';
+      const typeFi = TYPE_FI[type] || type;
+      const mat    = item.products?.material || '—';
+      const col    = item.products?.color    || '—';
+      const thick  = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '';
+      const loc    = item.locations?.code || '';
+      const note   = item.note || '';
+      const mitat  = formatMitat(item);
+
+      const noteHtml = note
+        ? '<button class="stock-card-note-btn" onclick="toggleNote(event,' + idx + ')">▶ Huomio</button>' +
+          '<div class="stock-card-note-text" id="note-' + idx + '">' + note + '</div>'
+        : '';
+
+      return '<div class="stock-card" onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+        '<div class="stock-card-top">' +
+          '<span class="type-badge type-' + type + '">' + typeFi + '</span>' +
+          '<span class="stock-card-name">' + mat + ' ' + col + '</span>' +
+          (thick ? '<span class="mono" style="color:var(--muted);font-size:0.78rem">' + thick + '</span>' : '') +
+        '</div>' +
+        '<div class="stock-card-mitat">' + mitat + '</div>' +
+        '<div class="stock-card-meta">' +
+          (loc ? '<span class="location-chip">' + loc + '</span>' : '') +
+        '</div>' +
+        noteHtml +
+        '</div>';
+    }).join('');
+  }
+
+  function toggleNote(e, idx) {
+    e.stopPropagation(); // ei avaa modaalia
+    const noteEl = document.getElementById('note-' + idx);
+    const btn    = e.currentTarget;
+    const open   = noteEl.classList.toggle('open');
+    btn.textContent = (open ? '▼' : '▶') + ' Huomio';
+  }
 
   // ─── Lajittelu ───────────────────────────────────────
   function sortTable(col) {
