@@ -69,7 +69,7 @@ SVG-koko: 620 x 700
 Pohja siirretty: A=50,650, B=50,75...
 -->
 
-<svg viewBox="0 0 620 720" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:620px">
+<svg viewBox="0 0 620 870" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:620px">
 
 <!--
 Skaala: 1px = 25mm
@@ -156,13 +156,18 @@ IN-R-02 (vaihtuva rulla):
 
 <!-- ═══ KELATELINE + IN-R-02 ═══ -->
 <!-- IN-R-01 Kelateline: x=440..490, y=568..608 -->
-<rect data-loc="inr01" x="440" y="568" width="50" height="40" fill="#061422" stroke="#3a8fe8" stroke-width="2" rx="2"/>
-<text x="465" y="583" style="font-family:'IBM Plex Mono',monospace;font-size:6.5px;fill:#3a8fe8;text-anchor:middle">IN-R-01</text>
-<text x="465" y="594" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3a8fe8;text-anchor:middle">Kelateline</text>
+<g class="loc" data-loc="inr01" style="cursor:pointer">
+  <rect data-loc="inr01" x="440" y="568" width="50" height="40" fill="#061422" stroke="#3a8fe8" stroke-width="2" rx="2"/>
+  <text x="465" y="583" style="font-family:'IBM Plex Mono',monospace;font-size:6.5px;fill:#3a8fe8;text-anchor:middle">IN-R-01</text>
+  <text x="465" y="594" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3a8fe8;text-anchor:middle">Kelateline</text>
+</g>
 
 <!-- IN-R-02 Vaihtuva rulla: x=440..490, y=609..648 -->
-<text x="465" y="624" style="font-family:'IBM Plex Mono',monospace;font-size:6.5px;fill:#3a8fe8;text-anchor:middle">IN-R-02</text>
-<text x="465" y="635" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3a8fe8;text-anchor:middle">Vaihtuva rulla</text>
+<g class="loc" data-loc="inrvr" style="cursor:pointer">
+  <rect data-loc="inrvr" x="440" y="609" width="50" height="39" fill="#061422" stroke="#3a8fe8" stroke-width="1.5" rx="2"/>
+  <text x="465" y="624" style="font-family:'IBM Plex Mono',monospace;font-size:6.5px;fill:#3a8fe8;text-anchor:middle">IN-R-VR</text>
+  <text x="465" y="635" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3a8fe8;text-anchor:middle">Vaihtuva rulla</text>
+</g>
 
 <!-- ═══ YLÄSEINÄ IN-L ═══ -->
 <!-- IN-L-06-11/214 koko yläseinä -->
@@ -332,6 +337,45 @@ IN-R-02 (vaihtuva rulla):
     <rect data-loc="inr06" x="535" y="312" width="12" height="48" fill="#0e1e2e" stroke="#3a8fe8" stroke-width="1.5"/>
     <text x="541" y="336" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3a8fe8;text-anchor:middle;writing-mode:tb">IN-R-06</text>
   </g>
+
+  <!-- ═══ ULKOVARASTOT ═══ -->
+  <line x1="30" y1="740" x2="590" y2="740" stroke="#2a3038" stroke-width="1"/>
+  <text x="310" y="756" style="font-family:'IBM Plex Sans',sans-serif;font-size:9px;fill:#5a6a7a;text-anchor:middle;letter-spacing:2px">ULKOVARASTOT</text>
+
+  <!-- AUTO: x=30, y=770 -->
+  <g class="loc" data-loc="auto" style="cursor:pointer">
+    <rect data-loc="auto" x="30" y="770" width="90" height="50" fill="#1a1408" stroke="#d4921a" stroke-width="1.5" rx="3"/>
+    <text x="75" y="791" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#d4921a;text-anchor:middle">AUTO</text>
+    <text x="75" y="803" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#8a6a2a;text-anchor:middle">Pakettiauto</text>
+  </g>
+
+  <!-- KONTTI: x=140, y=770 -->
+  <g class="loc" data-loc="kontti" style="cursor:pointer">
+    <rect data-loc="kontti" x="140" y="770" width="90" height="50" fill="#1a1408" stroke="#d4921a" stroke-width="1.5" rx="3"/>
+    <text x="185" y="791" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#d4921a;text-anchor:middle">KONTTI</text>
+    <text x="185" y="803" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#8a6a2a;text-anchor:middle">Kourutarvikkeet</text>
+  </g>
+
+  <!-- ULK-V: x=250, y=770 -->
+  <g class="loc" data-loc="ulkv" style="cursor:pointer">
+    <rect data-loc="ulkv" x="250" y="770" width="90" height="50" fill="#1a1408" stroke="#d4921a" stroke-width="1.5" rx="3"/>
+    <text x="295" y="791" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#d4921a;text-anchor:middle">ULK-V</text>
+    <text x="295" y="803" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#8a6a2a;text-anchor:middle">Ulkovarasto vasen</text>
+  </g>
+
+  <!-- ULK-O: x=360, y=770 -->
+  <g class="loc" data-loc="ulko" style="cursor:pointer">
+    <rect data-loc="ulko" x="360" y="770" width="90" height="50" fill="#1a1408" stroke="#d4921a" stroke-width="1.5" rx="3"/>
+    <text x="405" y="791" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#d4921a;text-anchor:middle">ULK-O</text>
+    <text x="405" y="803" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#8a6a2a;text-anchor:middle">Ulkovarasto oikea</text>
+  </g>
+
+  <!-- ULKOHYLLY: x=470, y=770 -->
+  <g class="loc" data-loc="ulkohylly" style="cursor:pointer">
+    <rect data-loc="ulkohylly" x="470" y="770" width="120" height="50" fill="#1a1408" stroke="#d4921a" stroke-width="1.5" rx="3"/>
+    <text x="530" y="791" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#d4921a;text-anchor:middle">ULKOHYLLY</text>
+    <text x="530" y="803" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#8a6a2a;text-anchor:middle">Ulkona oleva hylly</text>
+  </g>
 </svg>
 </div>
 
@@ -410,8 +454,14 @@ const locs = {
   'inr07':  {code:'IN-R-07', name:'Hyllykkö 1', type:'shelf · 7 tasoa', zone:'IN-R', levels:['Lattia — IN-R-07-0','Hylly 1 — IN-R-07-1','Hylly 2 — IN-R-07-2','Hylly 3 — IN-R-07-3','Hylly 4 — IN-R-07-4','Hylly 5 — IN-R-07-5','Hylly 6 — IN-R-07-6']},
   'inr01':  {code:'IN-R-01', name:'Kelateline (RR20 ylhäällä · RR23 alhaalla)', type:'linear · 2× iso rulla', zone:'IN-R'},
   'inr02':  {code:'IN-R-02', name:'Hyllykkö 2', type:'shelf · 7 tasoa', zone:'IN-R', levels:['Lattia — IN-R-02-0','Hylly 1 — IN-R-02-1','Hylly 2 — IN-R-02-2','Hylly 3 — IN-R-02-3','Hylly 4 — IN-R-02-4','Hylly 5 — IN-R-02-5','Hylly 6 — IN-R-02-6']},
+  'inrvr':     {code:'IN-R-VR',  name:'Vaihtuva rulla', type:'linear · 1× iso rulla', zone:'IN-R'},
+  'auto':      {code:'AUTO',     name:'Pakettiauto',          type:'auto',   zone:'ULK'},
+  'kontti':    {code:'KONTTI',   name:'Kontti (kourutarvikkeet)', type:'kontti', zone:'ULK'},
+  'ulkv':      {code:'ULK-V',   name:'Ulkovarasto vasen',    type:'shelf',  zone:'ULK'},
+  'ulko':      {code:'ULK-O',   name:'Ulkovarasto oikea',    type:'shelf',  zone:'ULK'},
+  'ulkohylly': {code:'ULKOHYLLY', name:'Ulkona oleva hylly', type:'shelf',  zone:'ULK'},
 };
-const zc = {'IN-R':'#3a8fe8','IN-L':'#3dba6e','IN-C':'#d4921a'};
+const zc = {'IN-R':'#3a8fe8','IN-L':'#3dba6e','IN-C':'#d4921a','ULK':'#d4921a'};
 let sel = null;
 
 // Muunnetaan Supabase-koodi kartan avaimeksi
