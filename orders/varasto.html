@@ -1503,12 +1503,13 @@
   }
 
   function renderProducts() {
-    const matF       = document.getElementById('prodFilterMaterial').value;
-    const showInact  = document.getElementById('showInactive').checked;
-    const filtered   = allProducts.filter(p => {
+    const matF      = document.getElementById('prodFilterMaterial').value;
+    const showInact = document.getElementById('showInactive').checked;
+    const filtered  = allProducts.filter(p => {
       if (matF && p.material !== matF) return false;
-      if (!showInact && !p.is_active)  return false;
-      return true;
+      // showInactive: näytä vain poistetut — muuten vain aktiiviset
+      if (showInact) return !p.is_active;
+      return p.is_active;
     });
 
     if (!filtered.length) {
@@ -1523,7 +1524,7 @@
         : '<span style="color:var(--muted);font-size:0.78rem">○ Poistettu</span>';
       const editBtn = p.is_active
         ? '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem" onclick="openProductModal(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">Muokkaa</button>'
-        : '';
+        : '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem;color:var(--sheet);border-color:var(--sheet)" onclick="doRestoreProduct(\"' + p.id + '\")">↩ Palauta</button>';
       return '<tr>' +
         '<td>' + (p.material || '—') + '</td>' +
         '<td>' + (p.color || '—') + '</td>' +
@@ -1576,6 +1577,7 @@
       renderProducts();
       populateProdFilter();
       populateAddMaterials();
+      buildFilterOptions();
     } catch (err) {
       showToast('Virhe: ' + err.message, 'error');
     }
@@ -1616,6 +1618,34 @@
       await loadProducts();
       renderProducts();
       populateAddMaterials();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+
+  async function doRestoreProduct(id) {
+    if (!confirm('Palautetaanko tuote aktiiviseksi?')) return;
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_active: true })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('Tuote palautettu ✓', 'success');
+      await loadProducts();
+      renderProducts();
+      populateProdFilter();
+      populateAddMaterials();
+      buildFilterOptions();
     } catch (err) {
       showToast('Virhe: ' + err.message, 'error');
     }
