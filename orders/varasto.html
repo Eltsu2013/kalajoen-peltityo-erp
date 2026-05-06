@@ -481,7 +481,11 @@
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
     }
+    .summary-row:hover { border-color: var(--accent); }
+    .summary-row:hover .summary-name { color: var(--accent); }
     .summary-name {
       font-weight: 500;
       font-size: 0.9rem;
@@ -556,9 +560,9 @@
       .modal { max-height: 100vh; border-radius: 0; }
       .modal-backdrop { padding: 0; align-items: flex-end; }
 
-      /* Piilotetaan taulukko, näytetään kortit */
-      .table-wrap { display: none; }
-      .card-list   { display: flex; flex-direction: column; gap: 0.5rem; }
+      /* Piilotetaan taulukko Selaa-välilehdellä, näytetään kortit */
+      #panel-selaa .table-wrap { display: none; }
+      .card-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
       /* Varastopaikkalista ylöspäin mobiilissa */
       .loc-list {
@@ -1651,14 +1655,32 @@
         '<span class="summary-chip" style="background:' + typeBg[t] + ';color:' + typeColors[t] + '">' +
         n + ' × ' + (TYPE_FI[t] || t) + '</span>'
       ).join('');
-      return '<div class="summary-row">' +
+      return '<div class="summary-row" onclick="filterToSelaa(' +
+        JSON.stringify(g.mat).replace(/"/g, '&quot;') + ',' +
+        JSON.stringify(g.col).replace(/"/g, '&quot;') + ',' +
+        JSON.stringify(String(g.thick)).replace(/"/g, '&quot;') + ')" title="Näytä nämä pellit Selaa-välilehdellä">' +
         '<div>' +
           '<div class="summary-name">' + g.mat + ' ' + g.col + '</div>' +
           '<div class="summary-sub">' + g.thick + ' mm</div>' +
         '</div>' +
-        '<div class="summary-counts">' + chips + '</div>' +
+        '<div style="display:flex;align-items:center;gap:0.5rem">' +
+          '<div class="summary-counts">' + chips + '</div>' +
+          '<span style="color:var(--muted);font-size:0.8rem">→</span>' +
+        '</div>' +
         '</div>';
     }).join('');
+  }
+
+  function filterToSelaa(mat, col, thick) {
+    // Asetetaan suodattimet
+    document.getElementById('filterMaterial').value  = mat;
+    document.getElementById('filterColor').value     = col;
+    document.getElementById('filterThickness').value = thick;
+    document.getElementById('filterType').value      = '';
+    // Vaihdetaan Selaa-välilehdelle
+    switchTab('selaa');
+    // Scrollataan ylös
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ─── Toast ───────────────────────────────────────────
