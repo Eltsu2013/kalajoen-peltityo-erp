@@ -38,30 +38,27 @@
     nav {
       background: var(--surface);
       border-bottom: 2px solid var(--accent);
-      padding: 0 1rem;
+      padding: 0 1.5rem;
       display: flex;
       align-items: center;
       gap: 1rem;
-      height: 52px;
+      height: 68px;
       position: sticky;
       top: 0;
       z-index: 300;
     }
-    .nav-logo {
+    .nav-logo-wrap {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
       text-decoration: none;
-      color: var(--text);
-      font-weight: 600;
-      font-size: 0.95rem;
     }
-    .nav-logo svg { width: 28px; height: 28px; filter: brightness(0) invert(1); }
-    .nav-title {
+    .nav-page-title {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
       color: var(--accent);
-      font-size: 0.8rem;
-      font-weight: 500;
-      margin-left: 0.1rem;
+      white-space: nowrap;
     }
     .nav-menu-wrap { position: relative; }
     .nav-btn {
@@ -574,19 +571,8 @@
       #panel-selaa .table-wrap { display: none; }
       .card-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
-      /* Varastopaikkalista ylöspäin mobiilissa */
-      .loc-list {
-        max-height: 160px;
-        position: absolute;
-        bottom: 100%;
-        top: auto;
-        left: 0; right: 0;
-        border-radius: 4px 4px 0 0;
-        border-bottom: 1px solid var(--border);
-        z-index: 10;
-      }
-      .loc-search-wrap { position: relative; }
-      .loc-search-input { border-radius: 0 0 4px 4px; border-bottom: 1px solid var(--border); border-top: none; }
+      /* Varastopaikkalista — avautuu alaspäin, max-height pienempi mobiilissa */
+      .loc-list { max-height: 150px; }
     }
 
     /* Kortin tyyli */
@@ -663,7 +649,7 @@
 
 <!-- NAV -->
 <nav>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center;filter:brightness(0) invert(1)"><!-- Created with Inkscape (http://www.inkscape.org/) -->
+  <a class="nav-logo-wrap" href="../index.html"><div class="logo-img" style="height:56px;display:flex;align-items:center;filter:brightness(0) invert(1)"><!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
    width="160"
@@ -2253,7 +2239,8 @@
        cy="25.8444"
        r="0.002904671" />
   </g>
-</svg></div>
+</svg></div></a>
+  <span class="nav-page-title">Varasto</span>
   <div class="nav-menu-wrap" style="margin-left:auto">
     <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
@@ -2447,6 +2434,16 @@
         </div>
       </div>
 
+      <!-- Varastopaikka — ylimpänä jotta lista avautuu alaspäin eikä peitä mittoja -->
+      <div class="form-group">
+        <label class="form-label">Varastopaikka</label>
+        <div class="loc-search-wrap">
+          <input class="loc-search-input" id="modalLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('modal', this.value)" autocomplete="off">
+          <div class="loc-list" id="modalLocList"></div>
+        </div>
+        <input type="hidden" id="modalLocId">
+      </div>
+
       <!-- Muokkaa mitat -->
       <div class="form-group">
         <label class="form-label" id="modalLengthLabel">Uusi pituus (mm) — tyhjä = ei muuteta</label>
@@ -2455,16 +2452,6 @@
       <div class="form-group" id="modalWidthGroup">
         <label class="form-label">Uusi leveys (mm) — tyhjä = ei muuteta</label>
         <input class="form-input mono" id="modalWidth" type="number" min="1" placeholder="esim. 1100">
-      </div>
-
-      <!-- Varastopaikka -->
-      <div class="form-group">
-        <label class="form-label">Varastopaikka</label>
-        <div class="loc-search-wrap">
-          <input class="loc-search-input" id="modalLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('modal', this.value)" autocomplete="off">
-          <div class="loc-list" id="modalLocList"></div>
-        </div>
-        <input type="hidden" id="modalLocId">
       </div>
 
       <!-- Huomio -->
