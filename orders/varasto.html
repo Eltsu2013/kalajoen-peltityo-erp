@@ -870,6 +870,58 @@
   </div>
 </div>
 
+<!-- MODAL: MUOKKAA TUOTETTA -->
+<div class="modal-backdrop" id="productModalBackdrop" onclick="onProductBackdropClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="productModalTitle">Muokkaa tuotetta</h3>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="productModalId">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Materiaali</label>
+          <input class="form-input" id="productModalMaterial" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Väri</label>
+          <input class="form-input" id="productModalColor" type="text">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Paksuus (mm)</label>
+          <input class="form-input mono" id="productModalThickness" type="number" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tuoteryhmä</label>
+          <input class="form-input" id="productModalGroup" type="text">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Yksikkö</label>
+          <select class="form-select" id="productModalUnit">
+            <option value="m²">m² (peltitavara)</option>
+            <option value="m">m (metritavara)</option>
+            <option value="kpl">kpl (kappaletavara)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ALV %</label>
+          <input class="form-input mono" id="productModalVat" type="number" step="0.1">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeProductModal()">Peruuta</button>
+        <button class="btn btn-primary" onclick="doSaveProductModal()">💾 Tallenna</button>
+        <button class="btn btn-danger" onclick="doDeactivateProduct()">🗑 Poista käytöstä</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -1583,18 +1635,68 @@
     }
   }
 
-  // Tuotteen muokkausmodaali — käytetään samaa modaalia eri tilassa
+  // Tuotteen muokkausmodaali
   function openProductModal(p) {
-    // Yksinkertaistettu: prompt-pohjainen muokkaus
-    const newMat = prompt('Materiaali:', p.material);
-    if (newMat === null) return;
-    const newCol = prompt('Väri:', p.color);
-    if (newCol === null) return;
-    const newThick = prompt('Paksuus (mm):', p.thickness_mm);
-    if (newThick === null) return;
-    const newGrp = prompt('Tuoteryhmä:', p.product_group || '');
-    if (newGrp === null) return;
-    doUpdateProduct(p.id, newMat.trim(), newCol.trim(), parseFloat(newThick) || 0, newGrp.trim() || null, p.unit, p.default_vat_percent);
+    document.getElementById('productModalId').value           = p.id;
+    document.getElementById('productModalTitle').textContent  = p.material + ' ' + p.color;
+    document.getElementById('productModalMaterial').value     = p.material || '';
+    document.getElementById('productModalColor').value        = p.color || '';
+    document.getElementById('productModalThickness').value    = p.thickness_mm ?? '';
+    document.getElementById('productModalGroup').value        = p.product_group || '';
+    document.getElementById('productModalUnit').value         = p.unit || 'm²';
+    document.getElementById('productModalVat').value          = p.default_vat_percent ?? 25.5;
+    document.getElementById('productModalBackdrop').classList.add('open');
+  }
+
+  function closeProductModal() {
+    document.getElementById('productModalBackdrop').classList.remove('open');
+  }
+
+  function onProductBackdropClick(e) {
+    if (e.target === document.getElementById('productModalBackdrop')) closeProductModal();
+  }
+
+  async function doSaveProductModal() {
+    const id    = document.getElementById('productModalId').value;
+    const mat   = document.getElementById('productModalMaterial').value.trim();
+    const col   = document.getElementById('productModalColor').value.trim();
+    const thick = parseFloat(document.getElementById('productModalThickness').value) || 0;
+    const grp   = document.getElementById('productModalGroup').value.trim() || null;
+    const unit  = document.getElementById('productModalUnit').value;
+    const vat   = parseFloat(document.getElementById('productModalVat').value) || 25.5;
+    if (!mat) { showToast('Syötä materiaali', 'error'); return; }
+    if (!col) { showToast('Syötä väri', 'error'); return; }
+    await doUpdateProduct(id, mat, col, thick, grp, unit, vat);
+    closeProductModal();
+  }
+
+  async function doDeactivateProduct() {
+    if (!confirm('Poistetaanko tuote käytöstä?')) return;
+    const id = document.getElementById('productModalId').value;
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_active: false })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('Tuote poistettu käytöstä ✓', 'success');
+      closeProductModal();
+      await loadProducts();
+      renderProducts();
+      populateProdFilter();
+      populateAddMaterials();
+      buildFilterOptions();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
   }
 
   async function doUpdateProduct(id, material, color, thickness_mm, product_group, unit, default_vat_percent) {
