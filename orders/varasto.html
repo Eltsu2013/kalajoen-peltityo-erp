@@ -557,6 +557,82 @@
     .toast.success { border-color: var(--sheet); color: var(--sheet); }
     .toast.error   { border-color: var(--danger); color: var(--danger); }
 
+    /* ── KARTTAPANEELI ── */
+    .selaa-layout {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .selaa-list {
+      flex: 1;
+      min-width: 0;
+    }
+    .map-panel {
+      width: 360px;
+      min-width: 360px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      position: sticky;
+      top: 80px;
+    }
+    .map-panel-header {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .map-panel-header span { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; }
+    .map-panel-body {
+      padding: 0.5rem;
+      max-height: calc(100vh - 160px);
+      overflow-y: auto;
+    }
+    .map-panel-body svg { width: 100%; height: auto; display: block; }
+    /* Kartan korostustyylit — vaalea = suodatusosuma, kirkas = täppävalinta */
+    .map-panel-body .loc-filter > rect,
+    .map-panel-body .loc-filter > circle,
+    .map-panel-body .loc-filter > path  { filter: brightness(1.6); stroke-width: 2 !important; opacity: 0.7; }
+    .map-panel-body .loc-select > rect,
+    .map-panel-body .loc-select > circle,
+    .map-panel-body .loc-select > path  { filter: brightness(2.4); stroke-width: 3 !important; }
+    /* Ei-kartalla -lista */
+    .offmap-list {
+      padding: 0.5rem 1rem 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .offmap-list strong { color: var(--text); display: block; margin-bottom: 0.3rem; }
+    .offmap-badge {
+      display: inline-block;
+      background: var(--border);
+      border-radius: 3px;
+      padding: 1px 6px;
+      margin: 2px 2px 2px 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text);
+    }
+    /* Checkbox sarake */
+    .cb-col { width: 32px; text-align: center; }
+    input[type=checkbox] { accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px; }
+    .btn-map-mobile {
+      display: none;
+      margin: 0.5rem 0 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
     /* ── KORTIT (mobiili) ── */
     .card-list { display: none; }
 
@@ -573,6 +649,10 @@
 
       /* Varastopaikkalista — avautuu alaspäin, max-height pienempi mobiilissa */
       .loc-list { max-height: 150px; }
+
+      /* Karttapaneeli piiloon mobiilissa — käytetään Kartta-välilehteä */
+      .map-panel { display: none; }
+      .btn-map-mobile { display: inline-block; }
     }
 
     /* Kortin tyyli */
@@ -2273,6 +2353,7 @@
   <button class="tab-btn" data-tab="lisaa" onclick="switchTab('lisaa')">➕ Lisää</button>
   <button class="tab-btn" data-tab="yhteenveto" onclick="switchTab('yhteenveto')">📊 Yhteenveto</button>
   <button class="tab-btn" data-tab="tuotteet" onclick="switchTab('tuotteet')">🏷 Tuotteet</button>
+  <button class="tab-btn" data-tab="kartta" onclick="switchTab('kartta')">🗺 Kartta</button>
 </div>
 
 <!-- PANEL: SELAA -->
@@ -2298,25 +2379,44 @@
       <button class="btn-clear" id="clearFilters">✕ Tyhjennä</button>
     </div>
 
-    <div class="table-wrap">
-      <table id="stockTable">
-        <thead>
-          <tr>
-            <th class="sortable" onclick="sortTable('type')">Tyyppi</th>
-            <th class="sortable" onclick="sortTable('material')">Materiaali</th>
-            <th class="sortable" onclick="sortTable('color')">Väri</th>
-            <th class="sortable hide-mobile" onclick="sortTable('thickness')">Paksuus</th>
-            <th class="sortable" onclick="sortTable('length')">Mitat (jäljellä)</th>
-            <th class="hide-mobile">Varastopaikka</th>
-            <th class="hide-mobile">Huomio</th>
-          </tr>
-        </thead>
-        <tbody id="stockBody">
-          <tr><td colspan="7" class="state-msg"><span class="spinner"></span>Ladataan varastoa...</td></tr>
-        </tbody>
-      </table>
+    <button class="btn-map-mobile" onclick="switchTab('kartta')">🗺 Näytä kartalla</button>
+
+    <div class="selaa-layout">
+      <div class="selaa-list">
+        <div class="table-wrap">
+          <table id="stockTable">
+            <thead>
+              <tr>
+                <th class="cb-col"><input type="checkbox" id="checkAll" title="Valitse kaikki" onchange="toggleCheckAll(this)"></th>
+                <th class="sortable" onclick="sortTable('type')">Tyyppi</th>
+                <th class="sortable" onclick="sortTable('material')">Materiaali</th>
+                <th class="sortable" onclick="sortTable('color')">Väri</th>
+                <th class="sortable hide-mobile" onclick="sortTable('thickness')">Paksuus</th>
+                <th class="sortable" onclick="sortTable('length')">Mitat (jäljellä)</th>
+                <th class="hide-mobile">Varastopaikka</th>
+                <th class="hide-mobile">Huomio</th>
+              </tr>
+            </thead>
+            <tbody id="stockBody">
+              <tr><td colspan="8" class="state-msg"><span class="spinner"></span>Ladataan varastoa...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-list" id="cardList"></div>
+      </div>
+
+      <!-- Karttapaneeli desktop -->
+      <div class="map-panel" id="mapPanel">
+        <div class="map-panel-header">
+          🗺 Varastokartta
+          <span id="mapHighlightCount"></span>
+        </div>
+        <div class="map-panel-body" id="mapPanelBody">
+          <div style="padding:1rem;color:var(--muted);font-size:0.8rem">Ladataan karttaa...</div>
+        </div>
+        <div class="offmap-list" id="offmapList" style="display:none"></div>
+      </div>
     </div>
-    <div class="card-list" id="cardList"></div>
   </div>
 </div>
 
@@ -2402,6 +2502,20 @@
     <div class="summary-grid" id="summaryGrid">
       <div class="state-msg"><span class="spinner"></span>Lasketaan...</div>
     </div>
+  </div>
+</div>
+
+<!-- PANEL: KARTTA (mobiili) -->
+<div class="tab-panel" id="panel-kartta">
+  <div class="page">
+    <div class="panel-header">
+      <h2>🗺 Varastokartta</h2>
+      <span class="badge-count" id="mapTabHighlightCount"></span>
+    </div>
+    <div id="mapTabBody" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+      <div style="padding:1rem;color:var(--muted);font-size:0.8rem">Ladataan karttaa...</div>
+    </div>
+    <div class="offmap-list" id="offmapListMobile" style="display:none;margin-top:0.5rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;"></div>
   </div>
 </div>
 
@@ -2645,6 +2759,10 @@
     if (tab === 'yhteenveto') renderSummary();
     if (tab === 'lisaa') populateAddMaterials();
     if (tab === 'tuotteet') { renderProducts(); populateProdFilter(); }
+    // Kartta ladataan tarvittaessa ja korostus päivitetään
+    if (tab === 'kartta' || tab === 'selaa') {
+      loadMapSvg().then(() => updateMapFromCurrentView());
+    }
   }
 
   // ─── Load stock ──────────────────────────────────────
@@ -2663,6 +2781,8 @@
       allItems = await res.json();
       buildFilterOptions();
       renderTable();
+      // Ladataan kartta taustalla heti kun varasto on ladattu
+      loadMapSvg();
     } catch (err) {
       document.getElementById('stockBody').innerHTML =
         '<tr><td colspan="7" class="state-msg">Virhe: ' + err.message + '</td></tr>';
@@ -2738,7 +2858,8 @@
 
     if (!filtered.length) {
       document.getElementById('stockBody').innerHTML =
-        '<tr><td colspan="7" class="state-msg">Ei tuloksia.</td></tr>';
+        '<tr><td colspan="8" class="state-msg">Ei tuloksia.</td></tr>';
+      updateMapHighlights([]);
       return;
     }
 
@@ -2764,7 +2885,9 @@
       const typeFi = TYPE_FI[type] || type;
       const mitat  = formatMitat(item);
       const note   = item.note || '';
+      const isChkd = checkedIds.has(item.id) ? ' checked' : '';
       return '<tr onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+        '<td class="cb-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-cb" data-id="' + item.id + '"' + isChkd + ' onchange="onRowCheck(this)"></td>' +
         '<td><span class="type-badge type-' + type + '">' + typeFi + '</span></td>' +
         '<td>' + mat + '</td>' +
         '<td>' + col + '</td>' +
@@ -2774,6 +2897,9 @@
         '<td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
         '</tr>';
     }).join('');
+
+    // Päivitetään karttakorostus
+    updateMapHighlights(filtered);
   }
 
   function formatMitat(item) {
@@ -2806,7 +2932,170 @@
 
 
 
-  // ─── Korttinäkymä (mobiili) ──────────────────────────
+  // ─── KARTTAINTEGRAATIO ───────────────────────────────
+
+  let mapSvgLoaded = false;
+  let checkedIds   = new Set(); // täpättyjen peltien id:t
+
+  // Muuntaa locations.code → data-loc-avaimeksi
+  function codeToLoc(code) {
+    return (code || '').toLowerCase().replace(/-/g,'').replace(/\//g,'').replace(/ /g,'');
+  }
+
+  // Lataa kartan SVG fetch:llä — haetaan verstaspohja_mitoitettu.html:stä pelkkä SVG-osio
+  async function loadMapSvg() {
+    if (mapSvgLoaded) return;
+    try {
+      const res  = await fetch('../maps/verstaspohja_mitoitettu.html');
+      const html = await res.text();
+      // Parsitaan SVG-elementti
+      const tmp  = document.createElement('div');
+      tmp.innerHTML = html;
+      const svg  = tmp.querySelector('svg');
+      if (!svg) return;
+      // Asetetaan kartta molempiin paikkoihin
+      document.getElementById('mapPanelBody').innerHTML  = '';
+      document.getElementById('mapPanelBody').appendChild(svg.cloneNode(true));
+      document.getElementById('mapTabBody').innerHTML    = '';
+      document.getElementById('mapTabBody').appendChild(svg.cloneNode(true));
+      mapSvgLoaded = true;
+    } catch(e) {
+      console.error('Kartan lataus epäonnistui:', e);
+    }
+  }
+
+  // Korostaa kartan varastopaikat kahdella kerroksella:
+  // loc-filter = suodatusosuma (vaalea), loc-select = täppävalinta (kirkas)
+  function updateMapHighlights(filteredItems) {
+    if (!mapSvgLoaded) return;
+
+    // Kerätään location-koodit molemmista ryhmistä
+    const filterCodes = new Set();
+    const selectCodes = new Set();
+    const offmapCodes = new Set();
+
+    filteredItems.forEach(item => {
+      const code = item.locations?.code;
+      if (!code) return;
+      filterCodes.add(code);
+      if (checkedIds.has(item.id)) selectCodes.add(code);
+    });
+
+    // Päivitetään molemmat SVG:t (desktop + mobiili)
+    ['mapPanelBody','mapTabBody'].forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      // Poistetaan vanhat korostukset
+      container.querySelectorAll('.loc-filter, .loc-select').forEach(el => {
+        el.classList.remove('loc-filter','loc-select');
+      });
+
+      // Lisätään suodatuskorostus
+      filterCodes.forEach(code => {
+        const key = codeToLoc(code);
+        // Yksi koodi voi osua useampaan SVG-elementtiin (esim. inl05a + inl05b)
+        container.querySelectorAll('[data-loc]').forEach(el => {
+          const elKey = el.getAttribute('data-loc');
+          if (elKey === key || elKey.startsWith(key)) {
+            // Haetaan lähin <g class="loc"> ylöspäin, tai elementti itse
+            const target = el.closest('g.loc') || el;
+            target.classList.add('loc-filter');
+          }
+        });
+        // Tarkistetaan löytyikö kartalta — jos ei, merkitään offmap
+        const found = container.querySelector('[data-loc="' + key + '"]') ||
+                      container.querySelector('[data-loc^="' + key + '"]');
+        if (!found) offmapCodes.add(code);
+      });
+
+      // Lisätään täppäkorostus päälle (ylikirjoittaa vaalean)
+      selectCodes.forEach(code => {
+        const key = codeToLoc(code);
+        container.querySelectorAll('[data-loc]').forEach(el => {
+          const elKey = el.getAttribute('data-loc');
+          if (elKey === key || elKey.startsWith(key)) {
+            const target = el.closest('g.loc') || el;
+            target.classList.remove('loc-filter');
+            target.classList.add('loc-select');
+          }
+        });
+      });
+    });
+
+    // Laskuri
+    const total = filterCodes.size;
+    const sel   = selectCodes.size;
+    const countEl     = document.getElementById('mapHighlightCount');
+    const countElMob  = document.getElementById('mapTabHighlightCount');
+    const txt = total > 0
+      ? (sel > 0 ? sel + ' valittu / ' + total + ' paikkaa' : total + ' paikkaa')
+      : '';
+    if (countEl)    countEl.textContent    = txt;
+    if (countElMob) countElMob.textContent = txt;
+
+    // Ei-kartalla -lista
+    renderOffmapList(offmapCodes, filteredItems);
+  }
+
+  function renderOffmapList(offmapCodes, filteredItems) {
+    ['offmapList','offmapListMobile'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (offmapCodes.size === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+      const badges = [...offmapCodes].map(code => '<span class="offmap-badge">' + code + '</span>').join('');
+      el.innerHTML = '<strong>Ei näy kartalla:</strong>' + badges;
+      el.style.display = 'block';
+    });
+  }
+
+  // ─── CHECKBOX-KÄSITTELY ──────────────────────────────
+
+  function toggleCheckAll(masterCb) {
+    const checkboxes = document.querySelectorAll('.row-cb');
+    checkboxes.forEach(cb => {
+      cb.checked = masterCb.checked;
+      const id = cb.dataset.id;
+      if (masterCb.checked) checkedIds.add(id);
+      else checkedIds.delete(id);
+    });
+    updateMapFromCurrentView();
+  }
+
+  function onRowCheck(cb) {
+    const id = cb.dataset.id;
+    if (cb.checked) checkedIds.add(id);
+    else checkedIds.delete(id);
+    // Päivitä "valitse kaikki" -täpän tila
+    const all  = document.querySelectorAll('.row-cb');
+    const chkd = document.querySelectorAll('.row-cb:checked');
+    const master = document.getElementById('checkAll');
+    if (master) {
+      master.indeterminate = chkd.length > 0 && chkd.length < all.length;
+      master.checked = chkd.length === all.length && all.length > 0;
+    }
+    updateMapFromCurrentView();
+  }
+
+  // Hakee nykyisen suodatetun listan ja päivittää kartan
+  function updateMapFromCurrentView() {
+    const f = {
+      material:  document.getElementById('filterMaterial').value,
+      color:     document.getElementById('filterColor').value,
+      type:      document.getElementById('filterType').value,
+      thickness: document.getElementById('filterThickness').value,
+    };
+    const filtered = allItems.filter(item => {
+      if (f.material  && item.products?.material      !== f.material)          return false;
+      if (f.color     && item.products?.color         !== f.color)             return false;
+      if (f.type      && item.type                    !== f.type)              return false;
+      if (f.thickness && String(item.products?.thickness_mm) !== f.thickness) return false;
+      return true;
+    });
+    updateMapHighlights(filtered);
+  }
+
+
   function renderCards(filtered) {
     const list = document.getElementById('cardList');
     if (!filtered.length) {
@@ -2828,7 +3117,12 @@
           '<div class="stock-card-note-text" id="note-' + idx + '">' + note + '</div>'
         : '';
 
-      return '<div class="stock-card" onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+      const isChkd = checkedIds.has(item.id) ? ' checked' : '';
+      const cbHtml = '<div style="position:absolute;top:0.75rem;right:0.75rem" onclick="event.stopPropagation()">' +
+        '<input type="checkbox" class="row-cb" data-id="' + item.id + '"' + isChkd + ' onchange="onRowCheck(this)"></div>';
+
+      return '<div class="stock-card" style="position:relative" onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+        cbHtml +
         '<div class="stock-card-top">' +
           '<span class="type-badge type-' + type + '">' + typeFi + '</span>' +
           '<span class="stock-card-name">' + mat + ' ' + col + '</span>' +
