@@ -2970,7 +2970,23 @@
   };
 
   function codeToLoc(code) {
-    return (code || '').toLowerCase().replace(/-/g,'').replace(/\//g,'').replace(/ /g,'');
+    if (!code) return '';
+    // Kokeillaan progressiivisesti lyhyempiä versioita kunnes löytyy kartalta
+    // Esim. IN-R-04-11-40 → IN-R-04-11-40 → IN-R-04-11 → IN-R-04 → löytyy
+    const parts = code.split('-');
+    const container = document.getElementById('mapPanelBody');
+    for (let i = parts.length; i > 0; i--) {
+      const candidate = parts.slice(0, i).join('').toLowerCase();
+      if (container) {
+        const found = container.querySelector('[data-loc="' + candidate + '"]') ||
+                      container.querySelector('[data-loc^="' + candidate + '"]');
+        if (found) return candidate;
+      } else {
+        // Fallback ilman DOM-hakua (esim. offmap-tarkistuksessa)
+        return parts.slice(0, 3).join('').toLowerCase();
+      }
+    }
+    return code.replace(/-/g,'').toLowerCase();
   }
 
   // Ajetaan fetch():n jälkeen — lisää klikkaukset upotettuun SVG:hen
