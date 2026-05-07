@@ -2938,29 +2938,91 @@
   // ─── KARTTAINTEGRAATIO ───────────────────────────────
 
   let mapSvgLoaded = false;
-  let checkedIds   = new Set(); // täpättyjen peltien id:t
+  let checkedIds   = new Set();
 
-  // Muuntaa locations.code → data-loc-avaimeksi
+  // Kartan locs-tietosanakirja — koodi → nimi (varasto.html:n omaa käyttöä varten)
+  const mapLocs = {
+    'inr01':{code:'IN-R-01',name:'Kelateline'},'inr02':{code:'IN-R-02',name:'Hyllykkö 2'},
+    'inr03':{code:'IN-R-03',name:'Lattiarullat'},'inr04':{code:'IN-R-04',name:'Hyllykkö 3'},
+    'inr05':{code:'IN-R-05',name:'Hyllykkö 4'},'inr06':{code:'IN-R-06',name:'Hyllykkö 5'},
+    'inr07':{code:'IN-R-07',name:'Hyllykkö 1'},'inr08':{code:'IN-R-08',name:'Giljotiinin välihylly'},
+    'inr09':{code:'IN-R-09',name:'Päätyhylly'},'inr10':{code:'IN-R-10',name:'Päätyseinän levyalue A'},
+    'inr11':{code:'IN-R-11',name:'Päätyseinän levyalue B'},'inrvr':{code:'IN-R-VR',name:'Vaihtuva rulla'},
+    'inl01':{code:'IN-L-01',name:'Tekninen tila'},'inl03':{code:'IN-L-03',name:'Työkalukoppi'},
+    'inl04':{code:'IN-L-04',name:'Porras hyllykkö'},'inl05a':{code:'IN-L-05',name:'Piikit (rivi A)'},
+    'inl05b':{code:'IN-L-05',name:'Piikit (rivi B)'},'inl06':{code:'IN-L-06',name:'Päätyseinän piikit'},
+    'inl07_1':{code:'IN-L-07',name:'Päätyseinän hylly 1'},'inl07_2':{code:'IN-L-07',name:'Päätyseinän hylly 2'},
+    'inl07_3':{code:'IN-L-07',name:'Päätyseinän hylly 3'},'inl08a':{code:'IN-L-08-A',name:'Stucco alu alue'},
+    'inl08b':{code:'IN-L-08-B',name:'Kyva 0,7–1,0 alue'},'inl08c':{code:'IN-L-08-C',name:'ZN sekalaiset palat'},
+    'inl09':{code:'IN-L-09',name:'Päätyseinän ZN pikkupalat'},'inl10':{code:'IN-L-10',name:'RST levyt'},
+    'inl11':{code:'IN-L-11',name:'Jyvä alu 1,5mm pienet'},'inl12':{code:'IN-L-12',name:'Jyvä alu 1,5mm isot'},
+    'inl13':{code:'IN-L-13',name:'Lattia-alue isoille rullille'},'inl14':{code:'IN-L-14',name:'Kotelot / Tsek kone'},
+    'inl15':{code:'IN-L-15',name:'ZN ja Kyva hyllyt'},
+    'inc01':{code:'IN-C-01',name:'Kanttikoneen pääty'},'inc02':{code:'IN-C-02',name:'Kanttikonetta vasten'},
+    'inc03':{code:'IN-C-03',name:'Kattokonetta vasten Oikea'},'inc04a':{code:'IN-C-04',name:'Kapea tila'},
+    'inc05':{code:'IN-C-05',name:'Kattokoneen nosto-oven puoli'},'inc06a':{code:'IN-C-06',name:'Kattokoneen vasen puoli'},
+    'inc07':{code:'IN-C-07',name:'Vakki (liikkuva kontti)'},'inc08':{code:'IN-C-08',name:'Kattokonetta vasten Vasen'},
+    'inc09a':{code:'IN-C-09-A',name:'Kattokoneen vapaa taso'},'inc09b':{code:'IN-C-09-B',name:'Kattokoneen kiinteä hyllykkö'},
+    'inc09c':{code:'IN-C-09-C',name:'Hylly kattokoneen päällä'},
+    'auto':{code:'AUTO',name:'Pakettiauto'},'kontti':{code:'KONTTI',name:'Kontti'},
+    'ulkv':{code:'ULK-V',name:'Ulkovarasto vasen'},'ulko':{code:'ULK-O',name:'Ulkovarasto oikea'},
+    'ulkohylly':{code:'ULKOHYLLY',name:'Ulkona oleva hylly'},
+  };
+
   function codeToLoc(code) {
     return (code || '').toLowerCase().replace(/-/g,'').replace(/\//g,'').replace(/ /g,'');
   }
 
-  // Lataa kartan SVG fetch:llä — haetaan verstaspohja_mitoitettu.html:stä pelkkä SVG-osio
+  // Ajetaan fetch():n jälkeen — lisää klikkaukset upotettuun SVG:hen
+  function initMapInteractions(container) {
+    container.querySelectorAll('[data-loc]').forEach(el => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const loc = el.getAttribute('data-loc');
+        const info = mapLocs[loc];
+        // Näytetään tooltip kartan yläpuolella
+        const tooltip = container.closest('.map-panel-body, #mapTabBody');
+        if (tooltip) {
+          let tip = tooltip.querySelector('.map-tooltip');
+          if (!tip) {
+            tip = document.createElement('div');
+            tip.className = 'map-tooltip';
+            tip.style.cssText = 'padding:0.4rem 0.7rem;background:var(--surface);border:1px solid var(--accent);border-radius:4px;font-size:0.8rem;margin-bottom:0.4rem;';
+            tooltip.insertBefore(tip, tooltip.firstChild);
+          }
+          if (info) {
+            tip.innerHTML = '<strong style="font-family:\'IBM Plex Mono\',monospace;color:var(--accent)">' +
+              info.code + '</strong> &ensp;' + info.name;
+          }
+        }
+      });
+    });
+  }
+
   async function loadMapSvg() {
     if (mapSvgLoaded) return;
     try {
       const res  = await fetch('../maps/verstaspohja_mitoitettu.html');
       const html = await res.text();
-      // Parsitaan SVG-elementti
       const tmp  = document.createElement('div');
       tmp.innerHTML = html;
       const svg  = tmp.querySelector('svg');
       if (!svg) return;
-      // Asetetaan kartta molempiin paikkoihin
-      document.getElementById('mapPanelBody').innerHTML  = '';
-      document.getElementById('mapPanelBody').appendChild(svg.cloneNode(true));
-      document.getElementById('mapTabBody').innerHTML    = '';
-      document.getElementById('mapTabBody').appendChild(svg.cloneNode(true));
+
+      const panel = document.getElementById('mapPanelBody');
+      const tab   = document.getElementById('mapTabBody');
+
+      panel.innerHTML = '';
+      const svg1 = svg.cloneNode(true);
+      panel.appendChild(svg1);
+      initMapInteractions(panel);
+
+      tab.innerHTML = '';
+      const svg2 = svg.cloneNode(true);
+      tab.appendChild(svg2);
+      initMapInteractions(tab);
+
       mapSvgLoaded = true;
     } catch(e) {
       console.error('Kartan lataus epäonnistui:', e);
