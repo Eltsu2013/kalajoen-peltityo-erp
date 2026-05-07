@@ -2553,6 +2553,7 @@
       <!-- Varastopaikka — ylimpänä jotta lista avautuu alaspäin eikä peitä mittoja -->
       <div class="form-group">
         <label class="form-label">Varastopaikka</label>
+        <div id="modalLocCurrent" style="display:none;padding:0.4rem 0.6rem;margin-bottom:0.4rem;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:0.82rem;color:var(--text)"></div>
         <div class="loc-search-wrap">
           <input class="loc-search-input" id="modalLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('modal', this.value)" autocomplete="off">
           <div class="loc-list" id="modalLocList"></div>
@@ -3290,8 +3291,19 @@
     // Varastopaikka
     buildLocList('modalLocList', 'modalLocId', item.location_id || null);
     const locCode = item.locations?.code || '';
+    const locName = item.locations?.name || '';
     document.getElementById('modalLocSearch').value = locCode;
     document.getElementById('modalLocId').value     = item.location_id || '';
+
+    // Näytetään nykyinen varastopaikka selkeästi koodin + nimen kera
+    const locCurrentEl = document.getElementById('modalLocCurrent');
+    if (locCode) {
+      locCurrentEl.innerHTML = '📍 <strong style="font-family:\'IBM Plex Mono\',monospace">' + locCode + '</strong>' +
+        (locName ? '&ensp;<span style="color:var(--muted)">' + locName + '</span>' : '');
+      locCurrentEl.style.display = 'block';
+    } else {
+      locCurrentEl.style.display = 'none';
+    }
 
     document.getElementById('modalBackdrop').classList.add('open');
   }
