@@ -557,7 +557,18 @@
     .toast.success { border-color: var(--sheet); color: var(--sheet); }
     .toast.error   { border-color: var(--danger); color: var(--danger); }
 
-    /* ── KARTTAPANEELI ── */
+    /* ── RESIZE ── */
+    .resize-handle {
+      width: 6px;
+      min-width: 6px;
+      cursor: col-resize;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 0 2px;
+      transition: background 0.15s;
+      align-self: stretch;
+    }
+    .resize-handle:hover { background: var(--accent); }
     .selaa-layout {
       display: flex;
       gap: 1rem;
@@ -2384,7 +2395,7 @@
     <button class="btn-map-mobile" onclick="switchTab('kartta')">🗺 Näytä kartalla</button>
 
     <div class="selaa-layout">
-      <div class="selaa-list">
+      <div class="selaa-list" id="selaaList">
         <div class="table-wrap">
           <table id="stockTable">
             <thead>
@@ -2406,6 +2417,9 @@
         </div>
         <div class="card-list" id="cardList"></div>
       </div>
+
+      <!-- Resize-vetopalki -->
+      <div class="resize-handle" id="mapResizeHandle"></div>
 
       <!-- Karttapaneeli desktop -->
       <div class="map-panel" id="mapPanel">
@@ -2884,6 +2898,7 @@
       const col    = item.products?.color    || '—';
       const thick  = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '—';
       const loc    = item.locations?.code || '';
+      const locName = item.locations?.name || loc;
       const type   = item.type || 'SHEET';
       const typeFi = TYPE_FI[type] || type;
       const mitat  = formatMitat(item);
@@ -2896,7 +2911,7 @@
         '<td>' + col + '</td>' +
         '<td class="hide-mobile mono">' + thick + '</td>' +
         '<td class="mono">' + mitat + '</td>' +
-        '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' : '<span style="color:var(--muted)">—</span>') + '</td>' +
+        '<td class="hide-mobile">' + (locName ? '<span class="location-chip">' + locName + '</span>' : '<span style="color:var(--muted)">—</span>') + '</td>' +
         '<td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
         '</tr>';
     }).join('');
@@ -2935,7 +2950,36 @@
 
 
 
-  // ─── KARTTAINTEGRAATIO ───────────────────────────────
+  // ─── KARTTAPANEELIN RESIZE ───────────────────────────
+  (function() {
+    const handle = document.getElementById('mapResizeHandle');
+    const panel  = document.getElementById('mapPanel');
+    if (!handle || !panel) return;
+    let dragging = false, startX, startW;
+
+    handle.addEventListener('mousedown', e => {
+      dragging = true;
+      startX = e.clientX;
+      startW = panel.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const delta = startX - e.clientX; // kartta kasvaa vasemmalle
+      const newW  = Math.max(200, Math.min(700, startW + delta));
+      panel.style.width    = newW + 'px';
+      panel.style.minWidth = newW + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
+
+
 
   let mapSvgLoaded = false;
   let checkedIds   = new Set();
@@ -3189,6 +3233,7 @@
       const col    = item.products?.color    || '—';
       const thick  = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '';
       const loc    = item.locations?.code || '';
+      const locName = item.locations?.name || loc;
       const note   = item.note || '';
       const mitat  = formatMitat(item);
 
@@ -3210,7 +3255,7 @@
         '</div>' +
         '<div class="stock-card-mitat">' + mitat + '</div>' +
         '<div class="stock-card-meta">' +
-          (loc ? '<span class="location-chip">' + loc + '</span>' : '') +
+          (locName ? '<span class="location-chip">' + locName + '</span>' : '') +
         '</div>' +
         noteHtml +
         '</div>';
