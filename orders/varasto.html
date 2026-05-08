@@ -2402,8 +2402,7 @@
               <tr>
                 <th class="cb-col"><input type="checkbox" id="checkAll" title="Valitse kaikki" onchange="toggleCheckAll(this)"></th>
                 <th class="sortable" onclick="sortTable('type')">Tyyppi</th>
-                <th class="sortable" onclick="sortTable('material')">Materiaali</th>
-                <th class="sortable" onclick="sortTable('color')">Väri</th>
+                <th class="sortable" colspan="2" onclick="sortTable('material')">Tuote</th>
                 <th class="sortable hide-mobile" onclick="sortTable('thickness')">Paksuus</th>
                 <th class="sortable" onclick="sortTable('length')">Mitat (jäljellä)</th>
                 <th class="hide-mobile">Varastopaikka</th>
@@ -2903,12 +2902,12 @@
       const typeFi = TYPE_FI[type] || type;
       const mitat  = formatMitat(item);
       const note   = item.note || '';
+      const pname  = productName(item.products);
       const isChkd = checkedIds.has(item.id) ? ' checked' : '';
       return '<tr onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
         '<td class="cb-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-cb" data-id="' + item.id + '"' + isChkd + ' onchange="onRowCheck(this)"></td>' +
         '<td><span class="type-badge type-' + type + '">' + typeFi + '</span></td>' +
-        '<td>' + mat + '</td>' +
-        '<td>' + col + '</td>' +
+        '<td colspan="2">' + pname + '</td>' +
         '<td class="hide-mobile mono">' + thick + '</td>' +
         '<td class="mono">' + mitat + '</td>' +
         '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '<span style="color:var(--muted)">—</span>') + '</td>' +
@@ -2949,6 +2948,16 @@
   });
 
 
+
+  function productName(p) {
+    if (!p) return '—';
+    const parts = [];
+    if (p.product_group) parts.push(p.product_group);
+    if (p.material)      parts.push(p.material);
+    if (p.color)         parts.push(p.color);
+    if (p.thickness_mm)  parts.push(p.thickness_mm + 'mm');
+    return parts.join(' · ') || '—';
+  }
 
   // ─── KARTTAPANEELIN RESIZE ───────────────────────────
   (function() {
@@ -3236,6 +3245,7 @@
       const locName = item.locations?.name || loc;
       const note   = item.note || '';
       const mitat  = formatMitat(item);
+      const pname  = productName(item.products);
 
       const noteHtml = note
         ? '<button class="stock-card-note-btn" onclick="toggleNote(event,' + idx + ')">▶ Huomio</button>' +
@@ -3250,8 +3260,7 @@
         cbHtml +
         '<div class="stock-card-top">' +
           '<span class="type-badge type-' + type + '">' + typeFi + '</span>' +
-          '<span class="stock-card-name">' + mat + ' ' + col + '</span>' +
-          (thick ? '<span class="mono" style="color:var(--muted);font-size:0.78rem">' + thick + '</span>' : '') +
+          '<span class="stock-card-name">' + pname + '</span>' +
         '</div>' +
         '<div class="stock-card-mitat">' + mitat + '</div>' +
         '<div class="stock-card-meta">' +
@@ -3377,7 +3386,7 @@
     const col  = item.products?.color     || '—';
     const thick = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '—';
 
-    document.getElementById('modalTitle').textContent = mat + ' ' + col;
+    document.getElementById('modalTitle').textContent = productName(item.products);
     document.getElementById('modalType').textContent  = TYPE_FI[type] || type;
     document.getElementById('modalThick').textContent = thick;
 
