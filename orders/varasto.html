@@ -2911,7 +2911,7 @@
         '<td>' + col + '</td>' +
         '<td class="hide-mobile mono">' + thick + '</td>' +
         '<td class="mono">' + mitat + '</td>' +
-        '<td class="hide-mobile">' + (locName ? '<span class="location-chip">' + locName + '</span>' : '<span style="color:var(--muted)">—</span>') + '</td>' +
+        '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '<span style="color:var(--muted)">—</span>') + '</td>' +
         '<td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
         '</tr>';
     }).join('');
@@ -3255,7 +3255,7 @@
         '</div>' +
         '<div class="stock-card-mitat">' + mitat + '</div>' +
         '<div class="stock-card-meta">' +
-          (locName ? '<span class="location-chip">' + locName + '</span>' : '') +
+          (locName ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '') +
         '</div>' +
         noteHtml +
         '</div>';
