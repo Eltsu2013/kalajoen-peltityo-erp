@@ -3566,9 +3566,11 @@
       type === 'BULK' ? 'Metrimäärä (m)'
       : type === 'ITEM' ? 'Kpl-määrä'
       : 'Pituus (mm)';
-    // ITEM & BULK: ei tarvita leveyttä
+    // ITEM & BULK: ei tarvita leveyttä. ITEM: ei tarvita pituuttakaan
     document.getElementById('addWidthWrap').style.display =
       (type === 'ROLL' || type === 'SHEET' || type === 'OFFCUT') ? '' : 'none';
+    document.getElementById('addLengthWrap').style.display =
+      type === 'ITEM' ? 'none' : '';
   }
 
   async function doAddStock() {
@@ -3581,7 +3583,7 @@
     const note      = document.getElementById('addNote').value.trim();
 
     if (!productId) { showToast('Valitse tuote', 'error'); return; }
-    if (!lengthRaw) { showToast('Syötä pituus/metrimäärä', 'error'); return; }
+    if (type !== 'ITEM' && !lengthRaw) { showToast('Syötä pituus/metrimäärä', 'error'); return; }
 
     const btn = document.getElementById('addBtn');
     btn.disabled = true;
@@ -3591,13 +3593,17 @@
       const session = await window.getAuthSession();
       const token = session?.data?.session?.access_token || SUPABASE_KEY;
 
-      // BULK: muunnetaan metrit millimetreiksi
-      const lengthMm = type === 'BULK' ? Math.round(parseFloat(lengthRaw) * 1000) : parseInt(lengthRaw);
+      // BULK: muunnetaan metrit millimetreiksi. ITEM: pituus ei merkitse mitään
+      const lengthMm = type === 'ITEM' ? null
+                     : type === 'BULK' ? Math.round(parseFloat(lengthRaw) * 1000)
+                     : parseInt(lengthRaw);
       const widthMm  = widthRaw ? parseInt(widthRaw) : null;
 
-      // Rakennetaan qty kpl rivejä — remaining = original inventointierillä
+      // ITEM: lisätään qty kpl yksittäisinä riveinä TAI yksi rivi quantity-kentällä
       const rows = [];
-      for (let i = 0; i < qty; i++) {
+      const itemQty = type === 'ITEM' ? qty : 1;
+      const loopCount = type === 'ITEM' ? 1 : qty;
+      for (let i = 0; i < loopCount; i++) {
         rows.push({
           product_id:          productId,
           warehouse_id:        WAREHOUSE_ID,
@@ -3607,6 +3613,7 @@
           remaining_length_mm: lengthMm,
           original_width_mm:   widthMm,
           remaining_width_mm:  widthMm,
+          quantity:            itemQty,
           location_id:         locId,
           note:                note || null,
         });
