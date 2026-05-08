@@ -3564,13 +3564,14 @@
     // BULK: pituus on metreinä
     document.getElementById('addLengthLabel').textContent =
       type === 'BULK' ? 'Metrimäärä (m)'
-      : type === 'ITEM' ? 'Kpl-määrä'
       : 'Pituus (mm)';
-    // ITEM & BULK: ei tarvita leveyttä. ITEM: ei tarvita pituuttakaan
+    // ITEM: ei leveyttä eikä pituutta, muutetaan qty-label
     document.getElementById('addWidthWrap').style.display =
       (type === 'ROLL' || type === 'SHEET' || type === 'OFFCUT') ? '' : 'none';
     document.getElementById('addLengthWrap').style.display =
       type === 'ITEM' ? 'none' : '';
+    document.querySelector('label[for="addQty"], #addQty').closest('.form-group').querySelector('.form-label').textContent =
+      type === 'ITEM' ? 'Kappalemäärä' : 'Erien määrä (kpl)';
   }
 
   async function doAddStock() {
@@ -3593,30 +3594,27 @@
       const session = await window.getAuthSession();
       const token = session?.data?.session?.access_token || SUPABASE_KEY;
 
-      // BULK: muunnetaan metrit millimetreiksi. ITEM: pituus ei merkitse mitään
-      const lengthMm = type === 'ITEM' ? null
+      // BULK: muunnetaan metrit millimetreiksi. ITEM: kpl-määrä menee length-kenttiin
+      const lengthMm = type === 'ITEM' ? qty
                      : type === 'BULK' ? Math.round(parseFloat(lengthRaw) * 1000)
                      : parseInt(lengthRaw);
       const widthMm  = widthRaw ? parseInt(widthRaw) : null;
 
-      // ITEM: lisätään qty kpl yksittäisinä riveinä TAI yksi rivi quantity-kentällä
       const rows = [];
-      const itemQty = type === 'ITEM' ? qty : 1;
-      const loopCount = type === 'ITEM' ? 1 : qty;
-      for (let i = 0; i < loopCount; i++) {
+      for (let i = 0; i < qty; i++) {
         rows.push({
           product_id:          productId,
           warehouse_id:        WAREHOUSE_ID,
           type:                type,
           status:              'ACTIVE',
-          original_length_mm:  lengthMm,
-          remaining_length_mm: lengthMm,
+          original_length_mm:  type === 'ITEM' ? qty : lengthMm,
+          remaining_length_mm: type === 'ITEM' ? qty : lengthMm,
           original_width_mm:   widthMm,
           remaining_width_mm:  widthMm,
-          quantity:            itemQty,
           location_id:         locId,
           note:                note || null,
         });
+        if (type === 'ITEM') break; // ITEM: yksi rivi riittää
       }
 
       // Suora REST INSERT — ei Edge Functionia, ei CORS-ongelmaa
