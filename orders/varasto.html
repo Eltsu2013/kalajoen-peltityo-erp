@@ -36,17 +36,17 @@
 
     /* ── NAV ── */
     nav {
-      background: var(--surface);
+      background: #241e30;
       border-bottom: 2px solid var(--accent);
-      padding: 0 1.5rem;
+      padding: 10px 24px;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      height: 68px;
+      gap: 16px;
       position: sticky;
       top: 0;
       z-index: 300;
     }
+    nav h1 { font-size: 16px; font-weight: 500; color: var(--text); }
     .nav-logo-wrap {
       display: flex;
       align-items: center;
@@ -742,7 +742,7 @@
 
 <!-- NAV -->
 <nav>
-  <a class="nav-logo-wrap" href="../index.html"><div class="logo-img" style="height:56px;display:flex;align-items:center;filter:brightness(0) invert(1)"><!-- Created with Inkscape (http://www.inkscape.org/) -->
+  <div class="logo-img" style="height:56px;display:flex;align-items:center;filter:brightness(0) invert(1)"><!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
    width="160"
@@ -2332,19 +2332,18 @@
        cy="25.8444"
        r="0.002904671" />
   </g>
-</svg></div></a>
-  <span class="nav-page-title">Varasto</span>
-  <div class="nav-menu-wrap" style="margin-left:auto">
+</svg></div>
+  <div class="nav-menu-wrap">
     <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <div class="nav-section-label">Sivut</div>
-      <a class="nav-item current" href="varasto.html">📦 Varasto</a>
+      <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
       <a class="nav-item" href="tilaukset.html">📋 Tilaukset</a>
       <a class="nav-item" href="tilaus.html">✏️ Uusi tilaus</a>
       <a class="nav-item" href="tuotanto.html">⚙️ Tuotanto</a>
-      <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
       <a class="nav-item" href="peltipiirturi.html">🔨 Mallisto</a>
       <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
+      <a class="nav-item current" href="varasto.html">📦 Varasto</a>
       <hr class="nav-divider">
       <div class="nav-section-label">Hallinta</div>
       <a class="nav-item" href="hinnasto.html">💰 Hinnasto</a>
@@ -2358,6 +2357,7 @@
       <a class="nav-item" href="../maps/verstaspohja_mitoitettu.html">🗺 Varastokartta</a>
     </div>
   </div>
+  <h1>Varasto</h1>
 </nav>
 
 <!-- TABS -->
