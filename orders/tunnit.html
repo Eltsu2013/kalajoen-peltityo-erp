@@ -328,9 +328,18 @@
     .btn-danger:hover { background: var(--danger); color: #fff; }
 
     /* ── PRINT ── */
+    .print-header { display: none; }
     @media print {
       nav, .toolbar, .modal-backdrop { display: none !important; }
       body { background: #fff; color: #000; }
+      .print-header {
+        display: block;
+        margin-bottom: 1rem;
+        border-bottom: 2px solid #000;
+        padding-bottom: 0.5rem;
+      }
+      .print-header h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.2rem; }
+      .print-header p  { font-size: 0.9rem; color: #444; }
       .summary-bar { border: 1px solid #ccc; padding: 0.5rem; border-radius: 4px; }
       .summary-card { border: 1px solid #ccc; }
       .summary-card .value { color: #000; }
@@ -338,6 +347,8 @@
       .time-table tr.weekend td { background: #f5f5f5; color: #666; }
       .time-table tr.is-vacation td { background: #e6fce6; }
       .time-table tr.is-sick td { background: #fce6e6; }
+      .time-table tr.no-entry { display: none !important; }
+      .badge-hours { background: #eee !important; color: #000 !important; }
     }
 
     @media (max-width: 600px) {
@@ -1972,6 +1983,12 @@
 
 <div class="page">
 
+  <!-- PRINT-OTSIKKO (näkyy vain tulostuksessa) -->
+  <div class="print-header" id="printHeader">
+    <h2 id="printName">—</h2>
+    <p id="printPeriod">—</p>
+  </div>
+
   <!-- TOOLBAR -->
   <div class="toolbar">
     <div class="month-nav">
@@ -1982,7 +1999,13 @@
     <select class="employee-select" id="employeeSelect" onchange="loadMonth()">
       <option value="">Ladataan...</option>
     </select>
-    <button class="btn ml-auto" onclick="window.print()">🖨 Tulosta</button>
+    <div style="display:flex;align-items:center;gap:0.4rem;margin-left:0.5rem">
+      <input type="date" id="dateFrom" class="employee-select" style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px" onchange="onDateRangeChange()">
+      <span style="color:var(--muted);font-size:12px">–</span>
+      <input type="date" id="dateTo" class="employee-select" style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px" onchange="onDateRangeChange()">
+      <button class="btn" onclick="clearDateRange()" title="Tyhjennä aikaväli">✕</button>
+    </div>
+    <button class="btn ml-auto" onclick="doPrint()">🖨 Tulosta</button>
   </div>
 
   <!-- YHTEENVETO -->
@@ -2108,82 +2131,118 @@ function changeMonth(dir) {
   currentMonth += dir;
   if (currentMonth > 11) { currentMonth = 0; currentYear++; }
   if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+  // Tyhjennetään päivämääräkentät kun vaihdetaan kuukautta nuolilla
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value   = '';
   loadMonth();
+}
+
+function onDateRangeChange() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  if (from && to) loadMonth();
+}
+
+function clearDateRange() {
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value   = '';
+  loadMonth();
+}
+
+function getDateRange() {
+  const from = document.getElementById('dateFrom').value;
+  const to   = document.getElementById('dateTo').value;
+  if (from && to) {
+    return { from, to, label: `${formatDateFi(from)} – ${formatDateFi(to)}`, isRange: true };
+  }
+  const firstDay = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
+  const lastDay  = new Date(currentYear, currentMonth+1, 0).getDate();
+  const lastDate = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+  return { from: firstDay, to: lastDate, label: `${MONTHS_FI[currentMonth]} ${currentYear}`, isRange: false };
+}
+
+function formatDateFi(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  return `${parseInt(d)}.${parseInt(m)}.${y}`;
 }
 
 async function loadMonth() {
   const empId = document.getElementById('employeeSelect').value;
   if (!empId) return;
 
-  document.getElementById('monthLabel').textContent =
-    `${MONTHS_FI[currentMonth]} ${currentYear}`;
+  const range = getDateRange();
+  document.getElementById('monthLabel').textContent = range.isRange ? 'Aikaväli' : range.label;
 
-  // Haetaan kuukauden merkinnät
-  const from = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-01`;
-  const lastDay = new Date(currentYear, currentMonth+1, 0).getDate();
-  const to   = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${lastDay}`;
+  // Päivitetään print-otsikko
+  const emp = employees.find(e => e.id === empId);
+  document.getElementById('printName').textContent   = emp ? emp.name : '';
+  document.getElementById('printPeriod').textContent = `Tunti-ilmoitus: ${range.label}`;
 
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/time_entries?employee_id=eq.${empId}&entry_date=gte.${from}&entry_date=lte.${to}&order=entry_date`,
+    `${SUPABASE_URL}/rest/v1/time_entries?employee_id=eq.${empId}&entry_date=gte.${range.from}&entry_date=lte.${range.to}&order=entry_date`,
     { headers: getHeaders() }
   );
   const data = await res.json();
 
-  // Indeksoidaan päivämäärän mukaan
   entries = {};
   data.forEach(e => { entries[e.entry_date] = e; });
 
-  renderTable();
+  renderTable(range);
   renderSummary();
 }
 
-// ── TAULUKKO ──
-function renderTable() {
-  const tbody = document.getElementById('timeBody');
-  const lastDay = new Date(currentYear, currentMonth+1, 0).getDate();
-  let rows = '';
+function doPrint() {
+  window.print();
+}
 
-  for (let d = 1; d <= lastDay; d++) {
-    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dow = new Date(currentYear, currentMonth, d).getDay(); // 0=Su, 6=La
+// ── TAULUKKO ──
+function renderTable(range) {
+  if (!range) range = getDateRange();
+  const tbody = document.getElementById('timeBody');
+
+  // Rakennetaan lista kaikista päivistä välillä from..to
+  const days = [];
+  const cur = new Date(range.from + 'T00:00:00');
+  const end = new Date(range.to   + 'T00:00:00');
+  while (cur <= end) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  let rows = '';
+  days.forEach(date => {
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    const d = date.getDate();
+    const dateStr  = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow      = date.getDay();
     const isWeekend = dow === 0 || dow === 6;
-    const entry = entries[dateStr];
-    const dayName = DAYS_FI[dow];
+    const entry    = entries[dateStr];
+    const dayName  = DAYS_FI[dow];
+    const hasEntry = entry && (entry.hours > 0 || entry.overtime_hours > 0 || entry.is_vacation || entry.is_sick);
 
     let classes = 'clickable';
-    if (isWeekend) classes += ' weekend';
+    if (isWeekend)          classes += ' weekend';
+    if (!hasEntry)          classes += ' no-entry';
     if (entry?.is_vacation) classes += ' is-vacation';
     if (entry?.is_sick)     classes += ' is-sick';
     if (entry && !entry.is_vacation && !entry.is_sick) classes += ' has-entry';
 
-    // Tunnit
-    let hoursCell = '';
-    if (entry?.hours > 0) {
-      hoursCell = `<span class="badge badge-hours">${entry.hours}h</span>`;
-    }
-
-    // Ylityöt
-    let otCell = '';
-    if (entry?.overtime_hours > 0) {
-      otCell = `<span class="badge badge-hours">${entry.overtime_hours}h</span>`;
-    }
-
-    // Tila
+    let hoursCell  = entry?.hours > 0          ? `<span class="badge badge-hours">${entry.hours}h</span>`          : '';
+    let otCell     = entry?.overtime_hours > 0  ? `<span class="badge badge-hours">${entry.overtime_hours}h</span>` : '';
     let statusCell = '';
     if (entry?.is_vacation) statusCell = '<span class="badge badge-vacation">Loma</span>';
     if (entry?.is_sick)     statusCell = '<span class="badge badge-sick">Sairas</span>';
-
-    // Selite
     const noteCell = entry?.note ? `<span style="color:var(--muted);font-size:12px">${entry.note}</span>` : '';
 
     rows += `<tr class="${classes}" onclick="openModal('${dateStr}')">
-      <td><strong>${d}.${currentMonth+1}.${currentYear}</strong><span class="day-name">${dayName}</span></td>
+      <td><strong>${d}.${m+1}.${y}</strong><span class="day-name">${dayName}</span></td>
       <td>${hoursCell}</td>
       <td>${otCell}</td>
       <td>${statusCell}</td>
       <td>${noteCell}</td>
     </tr>`;
-  }
+  });
 
   tbody.innerHTML = rows;
 }
