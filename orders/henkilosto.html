@@ -1786,8 +1786,10 @@ let editingId  = null;
 let authToken  = null;
 
 window._authReady.then(async session => {
-  authToken     = session?.data?.session?.access_token;
-  currentUserId = session?.data?.session?.user?.id;
+  // auth-guard.js palauttaa session suoraan tai datan sisällä — kokeillaan molemmat
+  const s = session?.data?.session ?? session?.session ?? session;
+  authToken     = s?.access_token ?? session?.data?.session?.access_token;
+  currentUserId = s?.user?.id     ?? session?.data?.session?.user?.id;
   await loadEmployees();
 });
 
@@ -1802,8 +1804,24 @@ async function loadEmployees() {
   employees  = await res.json();
 
   // Tarkistetaan onko kirjautunut käyttäjä omistaja
+  // Ensin auth_user_id:llä, varmuudeksi myös is_owner-kentällä suoraan
   const me = employees.find(e => e.auth_user_id === currentUserId);
   isOwner  = me?.is_owner ?? false;
+
+  // Jos auth_user_id-linkitys puuttuu mutta käyttäjä on kirjautunut,
+  // tarkistetaan onko kukaan is_owner=true ilman auth_user_id:tä ja yritetään linkittää
+  if (!isOwner && currentUserId) {
+    const unlinkedOwner = employees.find(e => e.is_owner && !e.auth_user_id);
+    if (unlinkedOwner) {
+      // Linkitetään automaattisesti
+      await fetch(`${SUPABASE_URL}/rest/v1/employees?id=eq.${unlinkedOwner.id}`, {
+        method: 'PATCH',
+        headers: { ...getHeaders(), 'Prefer': 'return=representation' },
+        body: JSON.stringify({ auth_user_id: currentUserId })
+      });
+      isOwner = true;
+    }
+  }
 
   // Omistaja näkee lisäysnapin
   if (isOwner) document.getElementById('addBtn').style.display = 'inline-block';
@@ -1828,17 +1846,14 @@ function renderList() {
 }
 
 function cardHTML(emp) {
-  // Näytetään vain oma kortti tai kaikki jos omistaja
-  const canEdit = isOwner || emp.auth_user_id === currentUserId;
-  if (!canEdit) return '';
-
   const badges = [];
   if (emp.is_owner)  badges.push('<span class="badge-owner">Omistaja</span>');
   if (!emp.is_active) badges.push('<span class="badge-archived">Arkistoitu</span>');
 
   const meta = [emp.email, emp.phone].filter(Boolean).join(' · ');
+  const canEdit = isOwner || emp.auth_user_id === currentUserId;
 
-  return `<div class="employee-card${emp.is_active ? '' : ' archived'}" onclick="openEdit('${emp.id}')">
+  return `<div class="employee-card${emp.is_active ? '' : ' archived'}${canEdit ? '' : ' no-click'}" ${canEdit ? `onclick="openEdit('${emp.id}')"` : ''}>
     <div class="employee-info">
       <div class="employee-name">${emp.name} ${badges.join(' ')}</div>
       ${meta ? `<div class="employee-meta">${meta}</div>` : ''}
