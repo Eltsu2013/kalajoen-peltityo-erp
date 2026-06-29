@@ -2219,7 +2219,7 @@ function renderTable(range) {
     const isWeekend = dow === 0 || dow === 6;
     const entry    = entries[dateStr];
     const dayName  = DAYS_FI[dow];
-    const hasEntry = entry && (entry.hours > 0 || entry.overtime_hours > 0 || entry.is_vacation || entry.is_sick);
+    const hasEntry = entry && (entry.hours > 0 || entry.overtime_hours > 0 || entry.is_vacation || entry.is_sick || entry.note);
 
     let classes = 'clickable';
     if (isWeekend)          classes += ' weekend';
