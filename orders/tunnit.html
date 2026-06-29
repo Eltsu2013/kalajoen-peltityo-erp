@@ -2237,7 +2237,7 @@ function renderTable(range) {
     const noteCell = entry?.note ? `<span style="color:var(--muted);font-size:12px">${entry.note}</span>` : '';
 
     rows += `<tr class="${classes}" onclick="openModal('${dateStr}')">
-      <td><strong>${d}.${m+1}.${y}</strong><span class="day-name">${dayName}</span></td>
+      <td><strong>${dayName} ${d}.${m+1}.${y}</strong></td>
       <td>${hoursCell}</td>
       <td>${otCell}</td>
       <td>${statusCell}</td>
