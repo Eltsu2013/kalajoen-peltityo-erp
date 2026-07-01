@@ -142,6 +142,12 @@
     font-family:'IBM Plex Mono',monospace;
     display:flex;gap:10px;flex-wrap:wrap;
   }
+  .card-phone{margin-top:6px;}
+  .card-phone a{
+    color:var(--accent);text-decoration:none;font-weight:600;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+  }
+  .card-phone a:hover{text-decoration:underline;}
   .card-notes{
     margin-top:6px;font-size:13px;color:var(--text-dim);
     white-space:pre-wrap;word-break:break-word;
@@ -1851,6 +1857,10 @@
       <label for="todoNotes">Lisätiedot</label>
       <textarea id="todoNotes"></textarea>
     </div>
+    <div class="field">
+      <label for="todoPhone">Puhelinnumero</label>
+      <input type="tel" id="todoPhone" placeholder="esim. 040 123 4567">
+    </div>
     <div class="row2">
       <div class="field">
         <label for="todoDate">Eräpäivä</label>
@@ -1962,6 +1972,10 @@
     return timeStr.substring(0,5);
   }
 
+  function telHref(phone){
+    return "tel:" + phone.replace(/[^\d+]/g, "");
+  }
+
   function cardHtml(todo){
     const prio = todo.priority || "normal";
     const doneClass = todo.is_done ? " done" : "";
@@ -1969,6 +1983,7 @@
     if(todo.due_date) dateBits.push(fmtDate(todo.due_date));
     if(todo.due_time) dateBits.push(fmtTime(todo.due_time));
     const metaLine = dateBits.length ? '<div class="card-meta"><span>📅 ' + dateBits.join(" klo ") + '</span></div>' : "";
+    const phoneLine = todo.phone ? '<div class="card-phone"><a href="' + telHref(todo.phone) + '" onclick="event.stopPropagation()">📞 ' + escapeHtml(todo.phone) + '</a></div>' : "";
     const notesLine = todo.notes ? '<div class="card-notes">' + escapeHtml(todo.notes) + '</div>' : "";
     return (
       '<div class="card priority-' + prio + doneClass + '" data-id="' + todo.id + '">' +
@@ -1976,6 +1991,7 @@
         '<div class="card-body">' +
           '<div class="card-title">' + escapeHtml(todo.title) + '</div>' +
           metaLine +
+          phoneLine +
           notesLine +
         '</div>' +
       '</div>'
@@ -2068,6 +2084,7 @@
     document.getElementById("todoId").value = todo ? todo.id : "";
     document.getElementById("todoTitle").value = todo ? todo.title : "";
     document.getElementById("todoNotes").value = todo ? (todo.notes || "") : "";
+    document.getElementById("todoPhone").value = todo ? (todo.phone || "") : "";
     document.getElementById("todoDate").value = todo ? (todo.due_date || "") : "";
     document.getElementById("todoTime").value = todo ? (todo.due_time ? todo.due_time.substring(0,5) : "") : "";
     document.getElementById("todoPriority").value = todo ? todo.priority : "normal";
@@ -2099,6 +2116,7 @@
     const payload = {
       title: title,
       notes: document.getElementById("todoNotes").value.trim() || null,
+      phone: document.getElementById("todoPhone").value.trim() || null,
       due_date: document.getElementById("todoDate").value || null,
       due_time: document.getElementById("todoTime").value || null,
       priority: document.getElementById("todoPriority").value,
