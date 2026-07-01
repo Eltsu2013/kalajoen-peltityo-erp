@@ -170,6 +170,7 @@
     display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px;
   }
   .field input[type=text],
+  .field input[type=tel],
   .field input[type=date],
   .field input[type=time],
   .field select,
@@ -182,6 +183,10 @@
   .field input:focus, .field select:focus, .field textarea:focus{
     outline:none;border-color:var(--accent);
   }
+  #todoPriority{font-weight:600;transition:border-color .15s,color .15s;}
+  #todoPriority.prio-high{border-color:var(--high);color:var(--high);}
+  #todoPriority.prio-normal{border-color:var(--normal);color:var(--normal);}
+  #todoPriority.prio-low{border-color:var(--low);color:var(--low);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .checkbox-field{display:flex;align-items:center;gap:8px;}
   .checkbox-field input{width:18px;height:18px;accent-color:var(--accent);}
@@ -1874,9 +1879,9 @@
     <div class="field">
       <label for="todoPriority">Prioriteetti</label>
       <select id="todoPriority">
-        <option value="high">Kiireellinen</option>
-        <option value="normal" selected>Normaali</option>
-        <option value="low">Ei kiireellinen</option>
+        <option value="high" style="color:#ef4444;">🔴 Kiireellinen</option>
+        <option value="normal" selected style="color:#eab308;">🟡 Normaali</option>
+        <option value="low" style="color:#22c55e;">🟢 Ei kiireellinen</option>
       </select>
     </div>
     <div class="field checkbox-field">
@@ -2080,6 +2085,13 @@
   const modalTitle = document.getElementById("modalTitle");
   const deleteBtn = document.getElementById("deleteBtn");
 
+  function updatePriorityColor(){
+    const sel = document.getElementById("todoPriority");
+    sel.classList.remove("prio-high", "prio-normal", "prio-low");
+    sel.classList.add("prio-" + sel.value);
+  }
+  document.getElementById("todoPriority").addEventListener("change", updatePriorityColor);
+
   function openModal(todo){
     document.getElementById("todoId").value = todo ? todo.id : "";
     document.getElementById("todoTitle").value = todo ? todo.title : "";
@@ -2088,6 +2100,7 @@
     document.getElementById("todoDate").value = todo ? (todo.due_date || "") : "";
     document.getElementById("todoTime").value = todo ? (todo.due_time ? todo.due_time.substring(0,5) : "") : "";
     document.getElementById("todoPriority").value = todo ? todo.priority : "normal";
+    updatePriorityColor();
     document.getElementById("todoShared").checked = todo ? !!todo.is_shared : false;
     modalTitle.textContent = todo ? "Muokkaa tehtävää" : "Uusi tehtävä";
     deleteBtn.style.display = todo ? "inline-block" : "none";
