@@ -2192,10 +2192,25 @@
     render();
   });
 
+  // ---------- Suora linkitys yhteen tehtävään (esim. kalenterista) ----------
+  // Käyttö: tehtavat.html?edit=<tehtävän id>
+  function openTodoFromUrl(){
+    const params = new URLSearchParams(window.location.search);
+    const targetId = params.get("edit");
+    if(!targetId) return;
+    const todo = allTodos.find(function(t){ return String(t.id) === String(targetId); });
+    if(todo){
+      openModal(todo);
+    }else{
+      showToast("Tehtävää ei löytynyt (tai se ei ole näkyvissäsi)");
+    }
+  }
+
   // ---------- Init ----------
   window._authReady.then(async function(){
     currentUserId = await getCurrentUserId();
-    loadTodos();
+    await loadTodos();
+    openTodoFromUrl();
   });
 
 })();
