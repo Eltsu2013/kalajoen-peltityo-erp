@@ -13,12 +13,14 @@
     --bg: #1e2a30;
     --bg-panel: #253540;
     --bg-card: #2b3d48;
+    --bg-dim: #1a2429;
     --border: #374b56;
     --text: #e8edf0;
     --text-dim: #9fb0b8;
     --accent: #6366f1;
     --accent-dim: #4f46e5;
     --accent-glow: rgba(99,102,241,0.15);
+    --today-bg: rgba(99,102,241,0.10);
     --high: #ef4444;
     --normal: #eab308;
     --low: #22c55e;
@@ -80,14 +82,14 @@
     font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;
   }
   .btn:hover{border-color:var(--accent);color:var(--accent);}
-  .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .btn-primary:hover{background:var(--accent-dim);border-color:var(--accent-dim);color:#fff;}
+  .btn-accent{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn-accent:hover{background:var(--accent-dim);border-color:var(--accent-dim);color:#fff;}
 
-  main{max-width:900px;margin:0 auto;padding:20px;}
+  main{max-width:1100px;margin:0 auto;padding:20px;}
 
   .toolbar{
     display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;
-    margin-bottom:16px;
+    margin-bottom:14px;
   }
   .month-nav{display:flex;align-items:center;gap:10px;}
   .month-nav button{
@@ -97,29 +99,91 @@
   }
   .month-nav button:hover{border-color:var(--accent);color:var(--accent);}
   .month-label{
-    font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;
+    font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
     color:var(--accent);min-width:150px;text-align:center;
   }
 
   .legend{
     display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-dim);
-    margin-bottom:16px;font-family:'IBM Plex Mono',monospace;
+    margin-bottom:14px;font-family:'IBM Plex Mono',monospace;
   }
   .legend span{display:inline-flex;align-items:center;gap:5px;}
   .legend .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
 
-  .calendar-body{display:flex;flex-direction:column;gap:4px;}
+  /* ---------- KUUKAUSIRUUDUKKO (desktop) ---------- */
+  .cal-wrap{
+    background:var(--bg-panel);border:1px solid var(--border);
+    border-radius:6px;overflow:hidden;
+  }
+  .cal-weekdays{
+    display:grid;grid-template-columns:repeat(7,1fr);
+    background:var(--bg-dim);border-bottom:1px solid var(--border);
+  }
+  .cal-weekday{
+    padding:9px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;
+    font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--text-dim);
+  }
+  .cal-weekday.weekend{color:#6b7c85;}
 
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+  .cal-day{
+    min-height:96px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+    padding:5px;transition:background .1s;
+  }
+  .cal-day:nth-child(7n){border-right:none;}
+  .cal-day.other-month{background:var(--bg-dim);opacity:.5;}
+  .cal-day.today{background:var(--today-bg);}
+  .cal-day.weekend{background:#233039;}
+  .cal-day.weekend.other-month{background:var(--bg-dim);}
+
+  .day-number{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    color:var(--text-dim);margin-bottom:4px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .day-number.today-num{color:var(--accent);}
+  .week-num{font-size:9px;color:var(--text-dim);font-weight:400;}
+
+  .event{
+    display:block;padding:3px 6px;border-radius:3px;font-size:11px;font-weight:500;
+    margin-bottom:3px;cursor:pointer;white-space:nowrap;overflow:hidden;
+    text-overflow:ellipsis;text-decoration:none;border-left:3px solid transparent;
+  }
+  .event:hover{filter:brightness(1.2);}
+  .event-more{
+    color:var(--text-dim);font-size:11px;cursor:pointer;padding:2px 6px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .event-more:hover{color:var(--accent);}
+
+  /* Tilausväreillä samat kuin tilaukset.html */
+  .event-draft{background:#333340;color:var(--text-dim);}
+  .event-active{background:#0e2535;color:#0ea5e9;}
+  .event-quoted{background:#1e1535;color:#a855f7;}
+  .event-production{background:#2a2010;color:#e8a020;}
+  .event-done{background:#1a3028;color:#3dba6e;}
+  .event-invoiced{background:#1a3028;color:#3dba6e;}
+  .event-archived{background:#2a2a2a;color:#666;}
+
+  /* Tehtäväväreillä prioriteetti */
+  .event-todo{background:var(--bg-card);color:var(--text);}
+  .event-todo.prio-high{border-left-color:var(--high);}
+  .event-todo.prio-normal{border-left-color:var(--normal);}
+  .event-todo.prio-low{border-left-color:var(--low);}
+  .event-todo.is-done{opacity:.5;text-decoration:line-through;}
+
+  /* ---------- MOBIILILISTA ---------- */
+  .mobile-list{display:none;}
   .day-row{
     display:flex;gap:14px;align-items:flex-start;
     background:var(--bg-card);border-radius:var(--radius);
     border-left:3px solid transparent;
-    padding:10px 14px;
+    padding:10px 14px;margin-bottom:4px;
   }
   .day-row.weekend{background:#263540;}
   .day-row.empty-day{opacity:.55;}
   .day-row.today{border-left-color:var(--accent);background:var(--accent-glow);}
-
   .day-label{
     flex-shrink:0;width:78px;font-family:'IBM Plex Mono',monospace;
     display:flex;flex-direction:column;line-height:1.3;padding-top:2px;
@@ -127,41 +191,65 @@
   .day-name{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
   .day-num{font-size:15px;font-weight:600;}
   .day-row.today .day-num{color:var(--accent);}
-
   .day-tags{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
   .day-empty{color:var(--text-dim);font-size:13px;flex:1;padding-top:3px;}
-
   .tag{
     display:inline-flex;align-items:center;gap:6px;
     padding:5px 10px;border-radius:12px;font-size:12px;
-    text-decoration:none;font-family:'IBM Plex Sans',sans-serif;
-    border:1px solid transparent;line-height:1.2;
+    text-decoration:none;border:1px solid transparent;line-height:1.2;
   }
-
-  /* Tilaustägit — värit kuten tilaukset.html:ssä */
   .tag-order{cursor:pointer;font-weight:600;}
   .tag-order .tag-status{font-size:10px;font-weight:400;opacity:.8;font-family:'IBM Plex Mono',monospace;}
-  .tag-draft{background:#333340;color:var(--text-dim);}
-  .tag-active{background:#0e2535;color:#0ea5e9;}
-  .tag-quoted{background:#1e1535;color:#a855f7;}
-  .tag-production{background:#2a2010;color:#e8a020;}
-  .tag-done{background:#1a3028;color:#3dba6e;}
-  .tag-invoiced{background:#1a3028;color:#3dba6e;}
-  .tag-archived{background:#2a2a2a;color:#666;}
-  .tag-order:hover{filter:brightness(1.25);}
-
-  /* Tehtävätägit */
-  .tag-todo{
-    background:var(--bg-panel);color:var(--text);cursor:pointer;
-    border-left:3px solid var(--normal);
-  }
+  .tag-todo{background:var(--bg-panel);color:var(--text);cursor:pointer;border-left:3px solid var(--normal);}
   .tag-todo.prio-high{border-left-color:var(--high);}
   .tag-todo.prio-normal{border-left-color:var(--normal);}
   .tag-todo.prio-low{border-left-color:var(--low);}
   .tag-todo.is-done{opacity:.5;text-decoration:line-through;}
-  .tag-todo input[type=checkbox]{
-    width:14px;height:14px;accent-color:var(--accent);cursor:pointer;margin:0;
+  .tag-todo input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;margin:0;}
+
+  @media (max-width:640px){
+    .cal-wrap{display:none;}
+    .mobile-list{display:block;}
+    .legend{display:none;}
+    main{padding:14px;}
   }
+
+  /* ---------- MODAALIT ---------- */
+  .overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+    z-index:100;align-items:center;justify-content:center;padding:16px;
+  }
+  .overlay.open{display:flex;}
+  #todoOverlay{ z-index:150; } /* aina ylivuotomodaalin päällä, ettei jää piiloon */
+  .modal{
+    background:var(--bg-panel);border:1px solid var(--border);
+    border-radius:var(--radius);width:100%;max-width:420px;
+    max-height:90vh;overflow-y:auto;padding:20px;
+  }
+  .modal h3{margin:0 0 14px 0;font-size:17px;color:var(--accent);}
+  .modal-field{margin-bottom:12px;}
+  .modal-field label{
+    display:block;font-size:11px;color:var(--text-dim);text-transform:uppercase;
+    letter-spacing:.05em;margin-bottom:3px;font-family:'IBM Plex Mono',monospace;
+  }
+  .modal-field .value{font-size:14px;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+  .modal-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .badge-pill{
+    padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .badge-pill.prio-high{background:#3a1a1a;color:var(--high);}
+  .badge-pill.prio-normal{background:#3a3110;color:var(--normal);}
+  .badge-pill.prio-low{background:#153a1e;color:var(--low);}
+  .badge-pill.shared{background:#1e1535;color:#a855f7;}
+  .badge-pill.own{background:#2b3d48;color:var(--text-dim);}
+  .badge-pill.done{background:#1a3028;color:#3dba6e;}
+  .badge-pill.notdone{background:#333340;color:var(--text-dim);}
+  .modal-actions{
+    display:flex;justify-content:flex-end;gap:10px;margin-top:16px;
+  }
+
+  .overflow-list{display:flex;flex-direction:column;gap:6px;}
 
   .toast{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
@@ -170,12 +258,6 @@
     display:none;
   }
   .toast.show{display:block;}
-
-  @media (max-width:640px){
-    .day-row{flex-direction:column;gap:6px;}
-    .day-label{flex-direction:row;gap:8px;width:auto;align-items:baseline;}
-    main{padding:14px;}
-  }
 </style>
 </head>
 <body>
@@ -1818,10 +1900,62 @@
     <span>💡 Väritetyt laatikot = tilauksen tila</span>
   </div>
 
-  <div class="calendar-body" id="calendarBody">
-    <!-- Päivät renderöidään tähän JS:llä -->
+  <!-- DESKTOP: kuukausiruudukko -->
+  <div class="cal-wrap">
+    <div class="cal-weekdays">
+      <div class="cal-weekday">Ma</div>
+      <div class="cal-weekday">Ti</div>
+      <div class="cal-weekday">Ke</div>
+      <div class="cal-weekday">To</div>
+      <div class="cal-weekday">Pe</div>
+      <div class="cal-weekday weekend">La</div>
+      <div class="cal-weekday weekend">Su</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
   </div>
+
+  <!-- MOBIILI: lista päivistä -->
+  <div class="mobile-list" id="mobileList"></div>
 </main>
+
+<!-- Tehtävän pikakatselu -->
+<div class="overlay" id="todoOverlay">
+  <div class="modal">
+    <h3 id="todoModalTitle">Tehtävä</h3>
+    <div class="modal-field">
+      <label>Muistiinpanot</label>
+      <div class="value" id="todoModalNotes">—</div>
+    </div>
+    <div class="modal-field" id="todoModalPhoneWrap" style="display:none;">
+      <label>Puhelin</label>
+      <div class="value"><a id="todoModalPhone" href="#" style="color:var(--accent);text-decoration:none;font-weight:600;"></a></div>
+    </div>
+    <div class="modal-field">
+      <label>Eräpäivä</label>
+      <div class="value" id="todoModalDue">—</div>
+    </div>
+    <div class="modal-badges">
+      <span class="badge-pill" id="todoModalPriority"></span>
+      <span class="badge-pill" id="todoModalShared"></span>
+      <span class="badge-pill" id="todoModalDone"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="todoModalClose">Sulje</button>
+      <a class="btn btn-accent" href="#" id="todoModalEditLink">✏️ Muokkaa →</a>
+    </div>
+  </div>
+</div>
+
+<!-- Päivän ylivuoto ("+N lisää") -->
+<div class="overlay" id="overflowOverlay">
+  <div class="modal">
+    <h3 id="overflowTitle">Päivän tapahtumat</h3>
+    <div class="overflow-list" id="overflowList"></div>
+    <div class="modal-actions">
+      <button class="btn" id="overflowClose">Sulje</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -1834,7 +1968,7 @@
 
   const MONTHS_FI = ['Tammikuu','Helmikuu','Maaliskuu','Huhtikuu','Toukokuu','Kesäkuu',
                       'Heinäkuu','Elokuu','Syyskuu','Lokakuu','Marraskuu','Joulukuu'];
-  const DAYS_FI = ['Su','Ma','Ti','Ke','To','Pe','La'];
+  const DAYS_SHORT_FI = ['Su','Ma','Ti','Ke','To','Pe','La']; // getDay()-indeksoitu (0=su)
 
   const STATUS_FI = {
     DRAFT: 'Luonnos', IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu',
@@ -1846,9 +1980,12 @@
     ORDERED: 'active', IN_PRODUCTION: 'production',
     COMPLETED: 'done', INVOICED: 'invoiced', ARCHIVED: 'archived'
   };
+  const PRIORITY_FI = { high: 'Kiireellinen', normal: 'Normaali', low: 'Ei kiireellinen' };
 
-  let currentYear = new Date().getFullYear();
-  let currentMonth = new Date().getMonth(); // 0-indexed
+  const MAX_TAGS_PER_DAY = 3;
+
+  let viewYear = new Date().getFullYear();
+  let viewMonth = new Date().getMonth(); // 0-indeksoitu
   let ordersByDate = {};
   let todosByDate = {};
 
@@ -1874,49 +2011,60 @@
     };
   }
 
-  // ---------- Toast ----------
+  // ---------- Apurit ----------
   function showToast(msg){
     const t = document.getElementById("toast");
     t.textContent = msg;
     t.classList.add("show");
     setTimeout(function(){ t.classList.remove("show"); }, 2500);
   }
-
   function escapeHtml(str){
     const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
   }
-
   function pad2(n){ return String(n).padStart(2, "0"); }
-
-  function todayISO(){
+  function dateKey(y, m, d){ return y + "-" + pad2(m+1) + "-" + pad2(d); }
+  function todayKey(){
     const d = new Date();
-    return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
+    return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  function fmtDateFi(dateStr){
+    if(!dateStr) return "—";
+    const p = dateStr.split("-");
+    return parseInt(p[2],10) + "." + parseInt(p[1],10) + "." + p[0];
+  }
+
+  // ISO-viikkonumero
+  function getWeekNum(date){
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   }
 
   function getMonthRange(){
-    const lastDayNum = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const lastDayNum = new Date(viewYear, viewMonth + 1, 0).getDate();
     return {
-      from: currentYear + "-" + pad2(currentMonth+1) + "-01",
-      to: currentYear + "-" + pad2(currentMonth+1) + "-" + pad2(lastDayNum),
-      label: MONTHS_FI[currentMonth] + " " + currentYear,
+      from: dateKey(viewYear, viewMonth, 1),
+      to: dateKey(viewYear, viewMonth, lastDayNum),
+      label: MONTHS_FI[viewMonth] + " " + viewYear,
       lastDayNum: lastDayNum
     };
   }
 
   // ---------- Kuukauden vaihto ----------
   window.changeMonth = function(dir){
-    currentMonth += dir;
-    if(currentMonth > 11){ currentMonth = 0; currentYear++; }
-    if(currentMonth < 0){ currentMonth = 11; currentYear--; }
+    viewMonth += dir;
+    if(viewMonth > 11){ viewMonth = 0; viewYear++; }
+    if(viewMonth < 0){ viewMonth = 11; viewYear--; }
     loadMonth();
   };
-
   document.getElementById("todayBtn").addEventListener("click", function(){
     const now = new Date();
-    currentYear = now.getFullYear();
-    currentMonth = now.getMonth();
+    viewYear = now.getFullYear();
+    viewMonth = now.getMonth();
     loadMonth();
   });
 
@@ -1927,6 +2075,9 @@
 
     try{
       const headers = await getAuthHeaders();
+      // Haetaan vähän marginaalia (edellisen/seuraavan kk täytepäivät saattavat
+      // tarvita dataa, mutta koska ne kuuluvat eri kuukauteen ei niitä täydennetä
+      // tässä versiossa — täytepäivät näytetään aina tyhjinä ellei erikseen ladata).
       const ordersUrl = SUPABASE_URL + "/rest/v1/orders?select=id,delivery_date,status,kohde,customers(name)"
         + "&delivery_date=gte." + range.from + "&delivery_date=lte." + range.to
         + "&order=delivery_date.asc";
@@ -1938,10 +2089,7 @@
         fetch(ordersUrl, { headers: headers }),
         fetch(todosUrl, { headers: headers })
       ]);
-
-      if(!ordersRes.ok || !todosRes.ok){
-        throw new Error("Haku epäonnistui");
-      }
+      if(!ordersRes.ok || !todosRes.ok) throw new Error("Haku epäonnistui");
 
       const orders = await ordersRes.json();
       const todos = await todosRes.json();
@@ -1962,119 +2110,229 @@
         todosByDate[key].push(t);
       });
 
-      renderCalendar(range);
+      renderDesktopGrid(range);
+      renderMobileList(range);
     }catch(err){
       console.error(err);
       showToast("Kalenterin lataus epäonnistui");
     }
   }
 
-  // ---------- Rendering ----------
-  function orderTagHtml(o){
+  function itemsForDate(key){
+    const orders = ordersByDate[key] || [];
+    const todos = todosByDate[key] || [];
+    return { orders: orders, todos: todos, total: orders.length + todos.length };
+  }
+
+  // ---------- Tägien HTML ----------
+  function orderEventHtml(o, forGrid){
     const cls = STATUS_CLASS[o.status] || "draft";
     const fi = STATUS_FI[o.status] || o.status;
     const name = (o.customers && o.customers.name) ? o.customers.name : (o.kohde || "Tilaus");
-    return '<a class="tag tag-order tag-' + cls + '" href="tilaukset.html?id=' + o.id + '">'
+    if(forGrid){
+      return '<a class="event event-' + cls + '" href="tilaukset.html?id=' + o.id + '" title="' + escapeHtml(name) + ' — ' + fi + '">'
+        + '📋 ' + escapeHtml(name)
+        + '</a>';
+    }
+    return '<a class="tag tag-order event-' + cls + '" href="tilaukset.html?id=' + o.id + '">'
       + '📋 ' + escapeHtml(name)
       + ' <span class="tag-status">' + fi + '</span>'
       + '</a>';
   }
 
-  function todoTagHtml(t){
+  function todoEventHtml(t, forGrid){
     const prio = t.priority || "normal";
     const doneClass = t.is_done ? " is-done" : "";
+    if(forGrid){
+      return '<div class="event event-todo prio-' + prio + doneClass + '" data-todo-id="' + t.id + '" title="' + escapeHtml(t.title) + '">'
+        + (t.is_done ? "✓ " : "") + escapeHtml(t.title)
+        + '</div>';
+    }
     return '<label class="tag tag-todo prio-' + prio + doneClass + '" data-id="' + t.id + '">'
       + '<input type="checkbox" class="todo-check" ' + (t.is_done ? "checked" : "") + '>'
       + escapeHtml(t.title)
       + '</label>';
   }
 
-  function renderCalendar(range){
-    const todayStr = todayISO();
+  // ---------- DESKTOP: kuukausiruudukko ----------
+  function renderDesktopGrid(range){
+    const grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+
+    const firstDay = new Date(viewYear, viewMonth, 1);
+    let startDow = firstDay.getDay() - 1; // Ma=0 ... Su=6
+    if(startDow < 0) startDow = 6;
+
+    const todayStr = todayKey();
+    const cells = [];
+
+    // Edellisen kuun täytepäivät
+    for(let i = 0; i < startDow; i++){
+      const d = new Date(viewYear, viewMonth, -(startDow - 1 - i));
+      cells.push({ date: d, otherMonth: true });
+    }
+    // Tämän kuukauden päivät
+    for(let d = 1; d <= range.lastDayNum; d++){
+      cells.push({ date: new Date(viewYear, viewMonth, d), otherMonth: false });
+    }
+    // Seuraavan kuun täytepäivät (täydennetään 7:n monikertaan)
+    const remainder = cells.length % 7;
+    if(remainder > 0){
+      for(let i = 1; i <= 7 - remainder; i++){
+        cells.push({ date: new Date(viewYear, viewMonth + 1, i), otherMonth: true });
+      }
+    }
+
+    cells.forEach(function(c){
+      grid.appendChild(buildDayCell(c.date, c.otherMonth, todayStr));
+    });
+  }
+
+  function buildDayCell(date, otherMonth, todayStr){
+    const y = date.getFullYear(), m = date.getMonth(), d = date.getDate();
+    const key = dateKey(y, m, d);
+    const dow = date.getDay();
+    const isWeekend = (dow === 0 || dow === 6);
+    const isToday = (key === todayStr);
+    const isMonday = (dow === 1);
+
+    const cell = document.createElement("div");
+    cell.className = "cal-day"
+      + (otherMonth ? " other-month" : "")
+      + (isWeekend ? " weekend" : "")
+      + (isToday ? " today" : "");
+
+    const numDiv = document.createElement("div");
+    numDiv.className = "day-number" + (isToday ? " today-num" : "");
+    numDiv.innerHTML = d + (isMonday ? '<span class="week-num">vko ' + getWeekNum(date) + '</span>' : "");
+    cell.appendChild(numDiv);
+
+    const items = itemsForDate(key);
+    const allEntries = items.orders.map(function(o){ return { type: "order", o: o }; })
+      .concat(items.todos.map(function(t){ return { type: "todo", t: t }; }));
+
+    const visible = allEntries.slice(0, MAX_TAGS_PER_DAY);
+    const overflowCount = allEntries.length - visible.length;
+
+    visible.forEach(function(entry){
+      const wrap = document.createElement("div");
+      wrap.innerHTML = entry.type === "order" ? orderEventHtml(entry.o, true) : todoEventHtml(entry.t, true);
+      cell.appendChild(wrap.firstChild);
+    });
+
+    if(overflowCount > 0){
+      const more = document.createElement("div");
+      more.className = "event-more";
+      more.textContent = "+" + overflowCount + " lisää";
+      more.addEventListener("click", function(){
+        openOverflowModal(key, items);
+      });
+      cell.appendChild(more);
+    }
+
+    return cell;
+  }
+
+  // ---------- MOBIILI: lista päivistä ----------
+  function renderMobileList(range){
+    const list = document.getElementById("mobileList");
+    const todayStr = todayKey();
     let html = "";
 
     for(let d = 1; d <= range.lastDayNum; d++){
-      const dateStr = currentYear + "-" + pad2(currentMonth+1) + "-" + pad2(d);
-      const dateObj = new Date(currentYear, currentMonth, d);
+      const key = dateKey(viewYear, viewMonth, d);
+      const dateObj = new Date(viewYear, viewMonth, d);
       const dow = dateObj.getDay();
       const isWeekend = (dow === 0 || dow === 6);
-      const isToday = (dateStr === todayStr);
-      const dayOrders = ordersByDate[dateStr] || [];
-      const dayTodos = todosByDate[dateStr] || [];
-      const hasItems = dayOrders.length || dayTodos.length;
+      const isToday = (key === todayStr);
+      const items = itemsForDate(key);
 
       let classes = "day-row";
       if(isWeekend) classes += " weekend";
       if(isToday) classes += " today";
-      if(!hasItems) classes += " empty-day";
+      if(!items.total) classes += " empty-day";
 
-      const tagsHtml = hasItems
-        ? '<div class="day-tags">' + dayOrders.map(orderTagHtml).join("") + dayTodos.map(todoTagHtml).join("") + '</div>'
+      const tagsHtml = items.total
+        ? '<div class="day-tags">'
+          + items.orders.map(function(o){ return orderEventHtml(o, false); }).join("")
+          + items.todos.map(function(t){ return todoEventHtml(t, false); }).join("")
+          + '</div>'
         : '<div class="day-empty">—</div>';
 
-      html += '<div class="' + classes + '" id="day-' + dateStr + '">'
-        + '<div class="day-label"><span class="day-name">' + DAYS_FI[dow] + '</span><span class="day-num">' + d + '.' + (currentMonth+1) + '.</span></div>'
+      html += '<div class="' + classes + '" id="mday-' + key + '">'
+        + '<div class="day-label"><span class="day-name">' + DAYS_SHORT_FI[dow] + '</span><span class="day-num">' + d + '.' + (viewMonth+1) + '.</span></div>'
         + tagsHtml
         + '</div>';
     }
 
-    document.getElementById("calendarBody").innerHTML = html;
-    attachTodoEvents();
+    list.innerHTML = html;
+    attachTodoCheckEvents(list);
+    attachOrderNoop();
 
-    // Vieritä tämän päivän kohdalle jos ollaan kuluvassa kuukaudessa
     const now = new Date();
-    if(currentYear === now.getFullYear() && currentMonth === now.getMonth()){
+    if(viewYear === now.getFullYear() && viewMonth === now.getMonth()){
       setTimeout(function(){
-        const el = document.getElementById("day-" + todayStr);
+        const el = document.getElementById("mday-" + todayStr);
         if(el) el.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 150);
     }
   }
 
-  function attachTodoEvents(){
-    document.querySelectorAll(".todo-check").forEach(function(cb){
+  function attachOrderNoop(){ /* tilaus-tägit ovat tavallisia <a>-linkkejä, ei lisäkäsittelyä */ }
+
+  // ---------- Tehtävien klikkaustapahtumat ----------
+  function attachTodoCheckEvents(root){
+    root.querySelectorAll(".todo-check").forEach(function(cb){
       cb.addEventListener("click", function(e){
         e.stopPropagation();
         const tag = cb.closest(".tag-todo");
-        const id = tag.getAttribute("data-id");
-        toggleTodoDone(id, cb.checked, tag);
+        toggleTodoDone(tag.getAttribute("data-id"), cb.checked, tag);
       });
     });
-    // Estetään label-klikkauksen oletustoiminto (jos klikataan tekstiä eikä checkboxia,
-    // ei haluta että label "klikkaa" checkboxia toiste ja aiheuttaa kaksoistoggauksen)
-    document.querySelectorAll(".tag-todo").forEach(function(label){
+    root.querySelectorAll(".tag-todo").forEach(function(label){
       label.addEventListener("click", function(e){
         if(e.target.tagName !== "INPUT"){
           e.preventDefault();
-          const cb = label.querySelector(".todo-check");
-          cb.checked = !cb.checked;
-          cb.dispatchEvent(new Event("click", { bubbles: false }));
-          toggleTodoDone(label.getAttribute("data-id"), cb.checked, label);
+          const id = label.getAttribute("data-id");
+          const todo = findTodoById(id);
+          if(todo) openTodoModal(todo);
         }
       });
     });
   }
 
+  // Ruudukossa tehtävätägit eivät ole checkbox-labeleita, joten klikkaus avaa
+  // suoraan katselumodaalin (raksitus tehdään mobiililistalta tai tehtavat.html:stä).
+  document.getElementById("calGrid").addEventListener("click", function(e){
+    const el = e.target.closest(".event-todo");
+    if(!el) return;
+    const id = el.getAttribute("data-todo-id");
+    const todo = findTodoById(id);
+    if(todo) openTodoModal(todo);
+  });
+
+  function findTodoById(id){
+    let found = null;
+    Object.keys(todosByDate).forEach(function(key){
+      todosByDate[key].forEach(function(t){
+        if(String(t.id) === String(id)) found = t;
+      });
+    });
+    return found;
+  }
+
   async function toggleTodoDone(id, isDone, tagEl){
     try{
       const headers = await getAuthHeaders();
-      const body = {
-        is_done: isDone,
-        done_at: isDone ? new Date().toISOString() : null
-      };
+      const body = { is_done: isDone, done_at: isDone ? new Date().toISOString() : null };
       const res = await fetch(SUPABASE_URL + "/rest/v1/todos?id=eq." + id, {
-        method: "PATCH",
-        headers: headers,
-        body: JSON.stringify(body)
+        method: "PATCH", headers: headers, body: JSON.stringify(body)
       });
       if(!res.ok) throw new Error("Päivitys epäonnistui");
-      if(tagEl){
-        tagEl.classList.toggle("is-done", isDone);
-      }
-      // Päivitetään myös paikallinen tila ettei seuraava render palauta vanhaa
+      if(tagEl) tagEl.classList.toggle("is-done", isDone);
       Object.keys(todosByDate).forEach(function(key){
         todosByDate[key].forEach(function(t){
-          if(String(t.id) === String(id)) t.is_done = isDone;
+          if(String(t.id) === String(id)){ t.is_done = isDone; t.done_at = body.done_at; }
         });
       });
     }catch(err){
@@ -2082,6 +2340,61 @@
       showToast("Tehtävän päivitys epäonnistui");
     }
   }
+
+  // ---------- Tehtävän pikakatselu-modaali ----------
+  function openTodoModal(t){
+    document.getElementById("todoModalTitle").textContent = t.title;
+    document.getElementById("todoModalNotes").textContent = t.notes || "—";
+    document.getElementById("todoModalDue").textContent = fmtDateFi(t.due_date) + (t.due_time ? " klo " + t.due_time.substring(0,5) : "");
+
+    const phoneWrap = document.getElementById("todoModalPhoneWrap");
+    if(t.phone){
+      phoneWrap.style.display = "";
+      const phoneLink = document.getElementById("todoModalPhone");
+      phoneLink.textContent = t.phone;
+      phoneLink.href = "tel:" + t.phone.replace(/[^\d+]/g, "");
+    }else{
+      phoneWrap.style.display = "none";
+    }
+
+    const prioEl = document.getElementById("todoModalPriority");
+    prioEl.textContent = PRIORITY_FI[t.priority] || "Normaali";
+    prioEl.className = "badge-pill prio-" + (t.priority || "normal");
+
+    const sharedEl = document.getElementById("todoModalShared");
+    sharedEl.textContent = t.is_shared ? "Yhteinen" : "Oma";
+    sharedEl.className = "badge-pill " + (t.is_shared ? "shared" : "own");
+
+    const doneEl = document.getElementById("todoModalDone");
+    doneEl.textContent = t.is_done ? "Tehty" : "Tekemättä";
+    doneEl.className = "badge-pill " + (t.is_done ? "done" : "notdone");
+
+    document.getElementById("todoModalEditLink").href = "tehtavat.html?edit=" + t.id;
+
+    document.getElementById("todoOverlay").classList.add("open");
+  }
+  document.getElementById("todoModalClose").addEventListener("click", function(){
+    document.getElementById("todoOverlay").classList.remove("open");
+  });
+  document.getElementById("todoOverlay").addEventListener("click", function(e){
+    if(e.target === this) this.classList.remove("open");
+  });
+
+  // ---------- Päivän ylivuotomodaali ("+N lisää") ----------
+  function openOverflowModal(key, items){
+    document.getElementById("overflowTitle").textContent = fmtDateFi(key);
+    const list = document.getElementById("overflowList");
+    list.innerHTML = items.orders.map(function(o){ return orderEventHtml(o, false); }).join("")
+      + items.todos.map(function(t){ return todoEventHtml(t, false); }).join("");
+    document.getElementById("overflowOverlay").classList.add("open");
+    attachTodoCheckEvents(list);
+  }
+  document.getElementById("overflowClose").addEventListener("click", function(){
+    document.getElementById("overflowOverlay").classList.remove("open");
+  });
+  document.getElementById("overflowOverlay").addEventListener("click", function(e){
+    if(e.target === this) this.classList.remove("open");
+  });
 
   // ---------- Init ----------
   window._authReady.then(function(){
