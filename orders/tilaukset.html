@@ -175,6 +175,15 @@
     padding-left: 11px;
   }
 
+  /* Korostus kun tilaus avataan suoralinkillä (esim. kalenterista) */
+  .orders-table tbody tr.highlight-target {
+    animation: highlightPulse 1.5s ease-in-out 2;
+  }
+  @keyframes highlightPulse {
+    0%, 100% { background: transparent; }
+    50% { background: var(--accent-glow); }
+  }
+
   /* Reunaviivan väri statuksen mukaan */
   tr.s-draft td:first-child   { border-left-color: var(--border); }
   tr.s-active td:first-child   { border-left-color: var(--accent); }
@@ -2090,7 +2099,7 @@ function renderTable(rows) {
     const deliv = o.delivery_date ? o.delivery_date.slice(0,10).split('-').reverse().join('.') : '—';
     const name  = o.customers?.name || '<span style="color:var(--text-dim)">— ei asiakasta —</span>';
     const kohde = o.kohde || '<span style="color:var(--border)">—</span>';
-    return `<tr class="s-${cls}" onclick="openOrder('${o.id}')">
+    return `<tr id="order-row-${o.id}" class="s-${cls}" onclick="openOrder('${o.id}')">
       <td class="order-date">${date}</td>
       <td class="customer-name">${name}</td>
       <td class="col-kohde order-kohde">${kohde}</td>
@@ -2127,7 +2136,32 @@ document.addEventListener('click', () => {
   document.getElementById('navDropdown').classList.remove('open');
 });
 
-loadOrders();
+// ── Suora linkitys yhteen tilaukseen (esim. kalenterista) ──
+// Käyttö: tilaukset.html?id=<tilauksen id>
+// Näyttää kyseisen tilauksen statuksesta riippumatta (vaihtaa suodattimen "Kaikki"-tilaan),
+// vierittää sen näkyviin ja korostaa rivin hetkeksi.
+function focusOrderFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const targetId = params.get('id');
+  if (!targetId) return;
+
+  // Varmistetaan että rivi näkyy suodattimesta riippumatta
+  setFilter('all');
+  document.getElementById('searchInput').value = '';
+  applyFilters();
+
+  setTimeout(function () {
+    const row = document.getElementById('order-row-' + targetId);
+    if (!row) return;
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.classList.add('highlight-target');
+    setTimeout(function () {
+      row.classList.remove('highlight-target');
+    }, 3000);
+  }, 150);
+}
+
+loadOrders().then(focusOrderFromUrl);
 </script>
 </body>
 </html>
