@@ -211,6 +211,23 @@
   .badge-invoiced  { background: #1a3028; color: var(--success); }
   .badge-archived  { background: #2a2a2a; color: #666; }
 
+  /* Statuksen muutospudotusvalikko listassa */
+  .status-wrap { position: relative; display: inline-block; cursor: pointer; }
+  .status-menu {
+    display: none; position: fixed;
+    background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 5px; z-index: 500;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.5); min-width: 130px; overflow: hidden;
+  }
+  .status-menu.open { display: block; }
+  .status-item {
+    padding: 8px 12px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    cursor: pointer; color: var(--text);
+    transition: background 0.1s;
+  }
+  .status-item:hover { background: var(--accent-glow); color: var(--accent); }
+
   .customer-name { font-weight: 500; color: var(--text); }
   .order-date { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
   .order-kohde { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); }
@@ -2103,7 +2120,21 @@ function renderTable(rows) {
       <td class="order-date">${date}</td>
       <td class="customer-name">${name}</td>
       <td class="col-kohde order-kohde">${kohde}</td>
-      <td><span class="badge badge-${cls}">${fi}</span></td>
+      <td onclick="event.stopPropagation()">
+        <div class="status-wrap">
+          <span class="badge badge-${cls}" onclick="toggleStatusMenu('${o.id}', event)">${fi}</span>
+          <div class="status-menu" id="status-menu-${o.id}">
+            <div class="status-item" onclick="setOrderStatus('${o.id}','DRAFT')">Luonnos</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','IN_PROGRESS')">Kesken</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','QUOTED')">Tarjottu</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','ORDERED')">Tilattu</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','IN_PRODUCTION')">Työn alla</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','COMPLETED')">Valmis</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','INVOICED')">Laskutettu</div>
+            <div class="status-item" onclick="setOrderStatus('${o.id}','ARCHIVED')">Arkisto</div>
+          </div>
+        </div>
+      </td>
       <td class="col-delivery order-date">${deliv}</td>
       <td style="white-space:nowrap;display:flex;gap:6px;align-items:center;">
         <button class="copy-btn" onclick="event.stopPropagation(); kopioi('${o.id}')" title="Kopioi uudeksi tilaukseksi">⧉ Kopioi</button>
@@ -2132,8 +2163,64 @@ function toggleNav(e) {
   e.stopPropagation();
   document.getElementById('navDropdown').classList.toggle('open');
 }
+
+// ── Statuksen muutospudotusvalikko listassa ──
+function toggleStatusMenu(id, e) {
+  e.stopPropagation();
+  const menu = document.getElementById('status-menu-' + id);
+  const wasOpen = menu.classList.contains('open');
+
+  // Suljetaan kaikki muut mahdollisesti auki olevat valikot ensin
+  document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
+
+  if (!wasOpen) {
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const menuH = 8 * 37; // arvio valikon korkeudesta (8 vaihtoehtoa × ~37px/rivi)
+    const goUp = rect.bottom + menuH > window.innerHeight - 8;
+
+    menu.style.left = rect.left + 'px';
+    if (goUp) {
+      // Ei tarpeeksi tilaa alapuolella → avataan ylöspäin ettei valikko jää ruudun ulkopuolelle
+      menu.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+      menu.style.top = 'auto';
+    } else {
+      menu.style.top = (rect.bottom + 4) + 'px';
+      menu.style.bottom = 'auto';
+    }
+    menu.classList.add('open');
+  }
+}
+
+async function setOrderStatus(id, newStatus) {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json', Prefer: 'return=representation'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (!res.ok) throw new Error('Tallennus epäonnistui: ' + res.status);
+
+    // Päivitetään paikallinen tieto ja piirretään taulukko uudelleen ilman
+    // koko listan hakemista uudelleen palvelimelta — nopeampaa ja sulavampaa.
+    const o = allOrders.find(x => x.id === id);
+    if (o) o.status = newStatus;
+    updateCounts();
+    applyFilters();
+  } catch (err) {
+    console.error(err);
+    alert('Statuksen päivitys epäonnistui. Yritä uudelleen.');
+  } finally {
+    document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
+  }
+}
+
 document.addEventListener('click', () => {
   document.getElementById('navDropdown').classList.remove('open');
+  document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
 });
 
 // ── Suora linkitys yhteen tilaukseen tai valmiiksi suodatettuna (esim. etusivulta/kalenterista) ──
