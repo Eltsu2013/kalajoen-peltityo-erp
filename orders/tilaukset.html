@@ -2136,29 +2136,37 @@ document.addEventListener('click', () => {
   document.getElementById('navDropdown').classList.remove('open');
 });
 
-// ── Suora linkitys yhteen tilaukseen (esim. kalenterista) ──
-// Käyttö: tilaukset.html?id=<tilauksen id>
-// Näyttää kyseisen tilauksen statuksesta riippumatta (vaihtaa suodattimen "Kaikki"-tilaan),
-// vierittää sen näkyviin ja korostaa rivin hetkeksi.
+// ── Suora linkitys yhteen tilaukseen tai valmiiksi suodatettuna (esim. etusivulta/kalenterista) ──
+// Käyttö A: tilaukset.html?id=<tilauksen id>        → näyttää yhden tilauksen, korostaa sen
+// Käyttö B: tilaukset.html?filter=DRAFT              → avaa listan valmiiksi suodatettuna
+//           (kelpaavat arvot: samat kuin fbtn-nappien data-filter, esim. DRAFT, QUOTED,
+//           ORDERED, IN_PRODUCTION, COMPLETED, INVOICED, ARCHIVED, active, all)
 function focusOrderFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const targetId = params.get('id');
-  if (!targetId) return;
+  const filterParam = params.get('filter');
 
-  // Varmistetaan että rivi näkyy suodattimesta riippumatta
-  setFilter('all');
-  document.getElementById('searchInput').value = '';
-  applyFilters();
+  if (targetId) {
+    // Varmistetaan että rivi näkyy suodattimesta riippumatta
+    setFilter('all');
+    document.getElementById('searchInput').value = '';
+    applyFilters();
 
-  setTimeout(function () {
-    const row = document.getElementById('order-row-' + targetId);
-    if (!row) return;
-    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    row.classList.add('highlight-target');
     setTimeout(function () {
-      row.classList.remove('highlight-target');
-    }, 3000);
-  }, 150);
+      const row = document.getElementById('order-row-' + targetId);
+      if (!row) return;
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.classList.add('highlight-target');
+      setTimeout(function () {
+        row.classList.remove('highlight-target');
+      }, 3000);
+    }, 150);
+    return;
+  }
+
+  if (filterParam) {
+    setFilter(filterParam);
+  }
 }
 
 loadOrders().then(focusOrderFromUrl);
