@@ -81,7 +81,7 @@
   .nav-item.current { color: var(--accent); font-weight: 600; }
   .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
-  main{max-width:1100px;margin:0 auto;padding:20px;}
+  main{max-width:1280px;margin:0 auto;padding:20px;}
 
   section{margin-bottom:28px;}
   .section-title{
@@ -121,7 +121,19 @@
   .status-name{font-size:11px;color:var(--text-dim);margin-top:2px;}
 
   /* ---------- Vaatii toimenpiteitä ---------- */
-  .action-list{display:flex;flex-direction:column;gap:6px;}
+  .action-list{
+    display:grid;grid-template-columns:1fr;gap:8px;
+    align-items:start;
+  }
+  @media (min-width:640px){
+    .action-list{grid-template-columns:1fr 1fr;}
+  }
+  @media (min-width:1000px){
+    .action-list{grid-template-columns:1fr 1fr 1fr;}
+  }
+  /* Alaotsikot ("🔴 Myöhässä" jne.) vievät aina koko leveyden, jotta ne toimivat
+     selkeinä väliotsikkoina eivätkä vain yhtenä ruudukon soluna muiden joukossa. */
+  .action-subgroup-label{grid-column:1 / -1;}
   .action-item{
     display:flex;align-items:center;gap:12px;
     background:var(--bg-card);border-left:3px solid var(--border);border-radius:var(--radius);
@@ -142,16 +154,26 @@
   }
   .action-subgroup-label:first-child{margin-top:0;}
   .all-clear{
+    grid-column:1 / -1;
     background:var(--bg-card);border:1px dashed var(--border);border-radius:var(--radius);
     padding:20px;text-align:center;color:var(--text-dim);font-size:14px;
   }
 
   /* ---------- Agenda ---------- */
+  #agendaList{
+    display:grid;grid-template-columns:1fr;gap:8px;align-items:start;
+  }
+  @media (min-width:640px){
+    #agendaList{grid-template-columns:1fr 1fr;}
+  }
+  @media (min-width:1000px){
+    #agendaList{grid-template-columns:1fr 1fr 1fr;}
+  }
   .day-row{
     display:flex;gap:14px;align-items:flex-start;
     background:var(--bg-card);border-radius:var(--radius);
     border-left:3px solid transparent;
-    padding:10px 14px;margin-bottom:4px;
+    padding:10px 14px;margin-bottom:0;
   }
   .day-row.today{border-left-color:var(--accent);background:var(--accent-glow);}
   .day-row.empty-day{opacity:.5;}
@@ -184,7 +206,7 @@
   .tag-todo.prio-low{border-left-color:var(--low);}
   .tag-todo.is-done{opacity:.5;text-decoration:line-through;}
 
-  .loading{color:var(--text-dim);font-size:13px;padding:10px 0;}
+  .loading{grid-column:1 / -1;color:var(--text-dim);font-size:13px;padding:10px 0;}
 
   @media (max-width:640px){
     main{padding:14px;}
