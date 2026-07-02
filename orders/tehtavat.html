@@ -2092,12 +2092,12 @@
   }
   document.getElementById("todoPriority").addEventListener("change", updatePriorityColor);
 
-  function openModal(todo){
+  function openModal(todo, presetDate){
     document.getElementById("todoId").value = todo ? todo.id : "";
     document.getElementById("todoTitle").value = todo ? todo.title : "";
     document.getElementById("todoNotes").value = todo ? (todo.notes || "") : "";
     document.getElementById("todoPhone").value = todo ? (todo.phone || "") : "";
-    document.getElementById("todoDate").value = todo ? (todo.due_date || "") : "";
+    document.getElementById("todoDate").value = todo ? (todo.due_date || "") : (presetDate || "");
     document.getElementById("todoTime").value = todo ? (todo.due_time ? todo.due_time.substring(0,5) : "") : "";
     document.getElementById("todoPriority").value = todo ? todo.priority : "normal";
     updatePriorityColor();
@@ -2192,17 +2192,26 @@
     render();
   });
 
-  // ---------- Suora linkitys yhteen tehtävään (esim. kalenterista) ----------
-  // Käyttö: tehtavat.html?edit=<tehtävän id>
+  // ---------- Suora linkitys yhteen tehtävään tai uuden lisäys valmiiksi täytetyllä päivällä ----------
+  // Käyttö A: tehtavat.html?edit=<tehtävän id>       → avaa olemassa olevan tehtävän muokkaukseen
+  // Käyttö B: tehtavat.html?newDate=<YYYY-MM-DD>      → avaa "Uusi tehtävä" -lomakkeen valmiilla eräpäivällä
   function openTodoFromUrl(){
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get("edit");
-    if(!targetId) return;
-    const todo = allTodos.find(function(t){ return String(t.id) === String(targetId); });
-    if(todo){
-      openModal(todo);
-    }else{
-      showToast("Tehtävää ei löytynyt (tai se ei ole näkyvissäsi)");
+    const newDate = params.get("newDate");
+
+    if(targetId){
+      const todo = allTodos.find(function(t){ return String(t.id) === String(targetId); });
+      if(todo){
+        openModal(todo);
+      }else{
+        showToast("Tehtävää ei löytynyt (tai se ei ole näkyvissäsi)");
+      }
+      return;
+    }
+
+    if(newDate){
+      openModal(null, newDate);
     }
   }
 
