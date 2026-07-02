@@ -76,6 +76,12 @@
   .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
   .status-draft { background: #44444f; color: var(--text-dim); }
   .status-active { background: #1e3d2e; color: var(--success); }
+  .status-quoted { background: #2a1f3a; color: #a855f7; }
+  .status-ordered { background: #132a45; color: var(--accent2); }
+  .status-production { background: #3a2a10; color: var(--accent); }
+  .status-done { background: #1a3028; color: var(--success); }
+  .status-invoiced { background: #16261e; color: var(--success); }
+  .status-archived { background: #2a2a2a; color: #777; }
   /* Tilauslista */
   .order-group { background: #34343f; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; }
   .group-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); background: #44444f; border-radius: 6px 6px 0 0; }
@@ -1827,7 +1833,7 @@
       </div>
       <div class="field">
         <label>Status</label>
-        <select id="order-status" onchange="saveOrderMeta()" style="font-weight:600">
+        <select id="order-status" onchange="updateStatusBadge(this.value); saveOrderMeta()" style="font-weight:600">
           <option value="DRAFT">Luonnos</option>
           <option value="IN_PROGRESS">Kesken</option>
           <option value="QUOTED">Tarjottu</option>
@@ -1969,6 +1975,25 @@ const headers = {
   'Authorization': 'Bearer ' + SUPABASE_KEY
 };
 
+// Statusbadgen teksti ja väriluokka — sama nimistö kuin tilaukset.html:ssä,
+// jotta sama status näyttää aina samalta värillä läpi koko sivuston.
+const ORDER_STATUS_LABEL = {
+  DRAFT: 'LUONNOS', IN_PROGRESS: 'KESKEN', QUOTED: 'TARJOTTU',
+  ORDERED: 'TILATTU', IN_PRODUCTION: 'TYÖN ALLA',
+  COMPLETED: 'VALMIS', INVOICED: 'LASKUTETTU', ARCHIVED: 'ARKISTO'
+};
+const ORDER_STATUS_CLASS = {
+  DRAFT: 'status-draft', IN_PROGRESS: 'status-active', QUOTED: 'status-quoted',
+  ORDERED: 'status-ordered', IN_PRODUCTION: 'status-production',
+  COMPLETED: 'status-done', INVOICED: 'status-invoiced', ARCHIVED: 'status-archived'
+};
+function updateStatusBadge(status){
+  const badge = document.getElementById('order-status-badge');
+  if(!badge) return;
+  badge.textContent = ORDER_STATUS_LABEL[status] || status || 'LUONNOS';
+  badge.className = 'status-badge ' + (ORDER_STATUS_CLASS[status] || 'status-draft');
+}
+
 // ── Tila ──────────────────────────────────────────────────────────
 let currentOrderId = null;
 let products = [];
@@ -1995,6 +2020,7 @@ async function loadOrderById(orderId) {
   if (order.kohde) document.getElementById('order-kohde').value = order.kohde;
   if (order.notes) document.getElementById('order-notes').value = order.notes;
   if (order.status) document.getElementById('order-status').value = order.status;
+  updateStatusBadge(order.status);
 
   // Asetetaan asiakas
   if (order.customer_id) {
@@ -2101,6 +2127,7 @@ async function copyOrderById(sourceId, keepCustomer) {
   document.getElementById('order-number-display').textContent = newOrders[0].order_number || newOrderId.slice(0,8);
   document.getElementById('order-date').value = today;
   document.getElementById('order-status').value = 'DRAFT';
+  updateStatusBadge('DRAFT');
 
   await fetchCustomers();
   if (keepCustomer && src.customer_id) {
