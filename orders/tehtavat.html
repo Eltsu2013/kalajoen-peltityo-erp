@@ -143,6 +143,12 @@
     display:flex;gap:10px;flex-wrap:wrap;
   }
   .card-phone{margin-top:6px;}
+  .card-customer{margin-top:6px;}
+  .card-customer a{
+    color:var(--accent);text-decoration:none;font-weight:600;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+  }
+  .card-customer a:hover{text-decoration:underline;}
   .card-phone a{
     color:var(--accent);text-decoration:none;font-weight:600;
     font-family:'IBM Plex Mono',monospace;font-size:13px;
@@ -189,6 +195,36 @@
   #todoPriority.prio-low{border-color:var(--low);color:var(--low);}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
   .checkbox-field{display:flex;align-items:center;gap:8px;}
+
+  /* Asiakashaku */
+  .customer-dropdown{
+    display:none;position:absolute;top:100%;left:0;right:0;
+    background:var(--bg-card);border:1px solid var(--border);border-top:none;
+    max-height:180px;overflow-y:auto;z-index:50;border-radius:0 0 4px 4px;
+  }
+  .customer-dropdown.open{display:block;}
+  .customer-dropdown-item{
+    padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);
+  }
+  .customer-dropdown-item:last-child{border-bottom:none;}
+  .customer-dropdown-item:hover{background:var(--accent-glow);color:var(--accent);}
+  .customer-chip{
+    margin-top:8px;display:flex;align-items:center;gap:8px;
+    background:var(--accent-glow);border:1px solid var(--accent);border-radius:12px;
+    padding:5px 10px;font-size:13px;color:var(--accent);width:fit-content;
+  }
+  .customer-chip button{
+    background:none;border:none;color:var(--accent);cursor:pointer;
+    font-size:12px;padding:0;line-height:1;
+  }
+
+  /* Piilotettava yhteystieto-osio */
+  .contact-toggle{
+    background:none;border:none;color:var(--accent);cursor:pointer;
+    font-size:13px;padding:0;margin-bottom:12px;text-decoration:underline;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+
   .checkbox-field input{width:18px;height:18px;accent-color:var(--accent);}
   .checkbox-field label{margin:0;color:var(--text);font-size:14px;}
   .modal-actions{
@@ -1858,14 +1894,37 @@
       <label for="todoTitle">Otsikko *</label>
       <input type="text" id="todoTitle" maxlength="200">
     </div>
+
+    <div class="field">
+      <label for="customerSearch">Asiakas (valinnainen)</label>
+      <div style="position:relative;">
+        <input type="text" id="customerSearch" placeholder="Hae nimellä..." autocomplete="off">
+        <div id="customerDropdown" class="customer-dropdown"></div>
+      </div>
+      <input type="hidden" id="todoCustomerId">
+      <div id="customerChip" class="customer-chip" style="display:none;">
+        <span id="customerChipName"></span>
+        <button type="button" id="customerChipClear" title="Poista yhteys">✕</button>
+      </div>
+    </div>
+
     <div class="field">
       <label for="todoNotes">Lisätiedot</label>
       <textarea id="todoNotes"></textarea>
     </div>
-    <div class="field">
-      <label for="todoPhone">Puhelinnumero</label>
-      <input type="tel" id="todoPhone" placeholder="esim. 040 123 4567">
+
+    <button type="button" id="contactToggle" class="contact-toggle">+ Lisää yhteystiedot (puhelin / sähköposti)</button>
+    <div id="contactFields" style="display:none;">
+      <div class="field">
+        <label for="todoPhone">Puhelinnumero</label>
+        <input type="tel" id="todoPhone" placeholder="esim. 040 123 4567">
+      </div>
+      <div class="field">
+        <label for="todoEmail">Sähköposti</label>
+        <input type="email" id="todoEmail" placeholder="esim. matti@yritys.fi">
+      </div>
     </div>
+
     <div class="row2">
       <div class="field">
         <label for="todoDate">Eräpäivä</label>
@@ -1912,6 +1971,7 @@
   let allTodos = [];
   let currentUserId = null;
   let showDone = false;
+  let allCustomers = [];
 
   // ---------- Nav-valikko (sama toteutus kuin muilla sivuilla) ----------
   window.toggleNav = function(e){
@@ -1954,7 +2014,7 @@
   async function loadTodos(){
     try{
       const headers = await getAuthHeaders();
-      const res = await fetch(REST_URL + "?select=*&order=due_date.asc.nullslast,priority.asc", { headers: headers });
+      const res = await fetch(REST_URL + "?select=*,customers(name)&order=due_date.asc.nullslast,priority.asc", { headers: headers });
       if(!res.ok){
         throw new Error("Haku epäonnistui: " + res.status);
       }
@@ -1963,6 +2023,21 @@
     }catch(err){
       console.error(err);
       showToast("Tehtävien haku epäonnistui");
+    }
+  }
+
+  // Asiakaslista haetaan kerran, käytetään lomakkeen hakukentässä (nimi + puhelin + sähköposti
+  // automaattitäyttöä varten). Sama periaate kuin tilaus.html:ssä.
+  async function loadCustomersForSearch(){
+    try{
+      const headers = await getAuthHeaders();
+      const res = await fetch(SUPABASE_URL + "/rest/v1/customers?select=id,name,phone,email&is_active=eq.true&order=name.asc", { headers: headers });
+      if(!res.ok) throw new Error("Asiakashaku epäonnistui: " + res.status);
+      allCustomers = await res.json();
+    }catch(err){
+      console.error(err);
+      // Ei näytetä toast-virhettä tästä — asiakashaku ei ole pakollinen tehtävän
+      // luonnille, joten annetaan käyttäjän jatkaa ilman sitä.
     }
   }
 
@@ -1988,7 +2063,12 @@
     if(todo.due_date) dateBits.push(fmtDate(todo.due_date));
     if(todo.due_time) dateBits.push(fmtTime(todo.due_time));
     const metaLine = dateBits.length ? '<div class="card-meta"><span>📅 ' + dateBits.join(" klo ") + '</span></div>' : "";
+    const customerName = todo.customers && todo.customers.name ? todo.customers.name : null;
+    const customerLine = customerName
+      ? '<div class="card-customer"><a href="asiakkaat.html?id=' + todo.customer_id + '" onclick="event.stopPropagation()">🏢 ' + escapeHtml(customerName) + '</a></div>'
+      : "";
     const phoneLine = todo.phone ? '<div class="card-phone"><a href="' + telHref(todo.phone) + '" onclick="event.stopPropagation()">📞 ' + escapeHtml(todo.phone) + '</a></div>' : "";
+    const emailLine = todo.email ? '<div class="card-phone"><a href="mailto:' + escapeHtml(todo.email) + '" onclick="event.stopPropagation()">✉️ ' + escapeHtml(todo.email) + '</a></div>' : "";
     const notesLine = todo.notes ? '<div class="card-notes">' + escapeHtml(todo.notes) + '</div>' : "";
     return (
       '<div class="card priority-' + prio + doneClass + '" data-id="' + todo.id + '">' +
@@ -1996,7 +2076,9 @@
         '<div class="card-body">' +
           '<div class="card-title">' + escapeHtml(todo.title) + '</div>' +
           metaLine +
+          customerLine +
           phoneLine +
+          emailLine +
           notesLine +
         '</div>' +
       '</div>'
@@ -2008,6 +2090,74 @@
     div.textContent = str;
     return div.innerHTML;
   }
+
+  // ---------- Asiakashaku (lomakkeessa) ----------
+  function filterCustomersForTodo(q){
+    const dd = document.getElementById("customerDropdown");
+    const ql = (q || "").toLowerCase().trim();
+    if(!ql){ dd.classList.remove("open"); dd.innerHTML = ""; return; }
+    const matches = allCustomers.filter(function(c){
+      return (c.name || "").toLowerCase().includes(ql);
+    }).slice(0, 20);
+    if(!matches.length){ dd.classList.remove("open"); dd.innerHTML = ""; return; }
+    dd.innerHTML = matches.map(function(c){
+      return '<div class="customer-dropdown-item" data-customer-id="' + c.id + '">' + escapeHtml(c.name) + '</div>';
+    }).join("");
+    dd.classList.add("open");
+  }
+
+  function selectCustomerForTodo(customerId){
+    const c = allCustomers.find(function(x){ return String(x.id) === String(customerId); });
+    if(!c) return;
+    document.getElementById("todoCustomerId").value = c.id;
+    document.getElementById("customerSearch").value = "";
+    document.getElementById("customerDropdown").classList.remove("open");
+    showCustomerChip(c.name);
+
+    // Automaattitäyttö — vain jos kentät ovat vielä tyhjiä, ettei ylikirjoiteta
+    // jo käsin syötettyä tietoa.
+    const phoneField = document.getElementById("todoPhone");
+    const emailField = document.getElementById("todoEmail");
+    let filledSomething = false;
+    if(!phoneField.value && c.phone){ phoneField.value = c.phone; filledSomething = true; }
+    if(!emailField.value && c.email){ emailField.value = c.email; filledSomething = true; }
+    if(filledSomething){
+      document.getElementById("contactFields").style.display = "";
+      document.getElementById("contactToggle").style.display = "none";
+    }
+  }
+
+  function showCustomerChip(name){
+    document.getElementById("customerChipName").textContent = "🏢 " + name;
+    document.getElementById("customerChip").style.display = "flex";
+  }
+
+  function clearCustomerSelection(){
+    document.getElementById("todoCustomerId").value = "";
+    document.getElementById("customerChip").style.display = "none";
+    document.getElementById("customerSearch").value = "";
+  }
+
+  document.getElementById("customerSearch").addEventListener("input", function(e){
+    filterCustomersForTodo(e.target.value);
+  });
+  document.getElementById("customerDropdown").addEventListener("click", function(e){
+    const item = e.target.closest(".customer-dropdown-item");
+    if(!item) return;
+    selectCustomerForTodo(item.getAttribute("data-customer-id"));
+  });
+  document.getElementById("customerChipClear").addEventListener("click", clearCustomerSelection);
+  document.addEventListener("click", function(e){
+    if(!e.target.closest("#customerSearch") && !e.target.closest("#customerDropdown")){
+      document.getElementById("customerDropdown").classList.remove("open");
+    }
+  });
+
+  // ---------- Piilotettava yhteystieto-osio ----------
+  document.getElementById("contactToggle").addEventListener("click", function(){
+    document.getElementById("contactFields").style.display = "";
+    document.getElementById("contactToggle").style.display = "none";
+  });
 
   function render(){
     const own = [];
@@ -2097,11 +2247,30 @@
     document.getElementById("todoTitle").value = todo ? todo.title : "";
     document.getElementById("todoNotes").value = todo ? (todo.notes || "") : "";
     document.getElementById("todoPhone").value = todo ? (todo.phone || "") : "";
+    document.getElementById("todoEmail").value = todo ? (todo.email || "") : "";
     document.getElementById("todoDate").value = todo ? (todo.due_date || "") : (presetDate || "");
     document.getElementById("todoTime").value = todo ? (todo.due_time ? todo.due_time.substring(0,5) : "") : "";
     document.getElementById("todoPriority").value = todo ? todo.priority : "normal";
     updatePriorityColor();
     document.getElementById("todoShared").checked = todo ? !!todo.is_shared : false;
+
+    // Asiakas
+    document.getElementById("customerSearch").value = "";
+    document.getElementById("customerDropdown").classList.remove("open");
+    if(todo && todo.customer_id && todo.customers && todo.customers.name){
+      document.getElementById("todoCustomerId").value = todo.customer_id;
+      showCustomerChip(todo.customers.name);
+    }else{
+      document.getElementById("todoCustomerId").value = "";
+      document.getElementById("customerChip").style.display = "none";
+    }
+
+    // Puhelin/sähköposti-osio: näytetään suoraan jos jompikumpi jo täytetty
+    // (tai asiakas liitetty), muuten piilotetaan "+ Lisää yhteystiedot" -linkin taakse.
+    const hasContactInfo = todo && (todo.phone || todo.email || todo.customer_id);
+    document.getElementById("contactFields").style.display = hasContactInfo ? "" : "none";
+    document.getElementById("contactToggle").style.display = hasContactInfo ? "none" : "";
+
     modalTitle.textContent = todo ? "Muokkaa tehtävää" : "Uusi tehtävä";
     deleteBtn.style.display = todo ? "inline-block" : "none";
     overlay.classList.add("open");
@@ -2130,6 +2299,8 @@
       title: title,
       notes: document.getElementById("todoNotes").value.trim() || null,
       phone: document.getElementById("todoPhone").value.trim() || null,
+      email: document.getElementById("todoEmail").value.trim() || null,
+      customer_id: document.getElementById("todoCustomerId").value || null,
       due_date: document.getElementById("todoDate").value || null,
       due_time: document.getElementById("todoTime").value || null,
       priority: document.getElementById("todoPriority").value,
@@ -2219,6 +2390,7 @@
   window._authReady.then(async function(){
     currentUserId = await getCurrentUserId();
     await loadTodos();
+    loadCustomersForSearch(); // ei odoteta - täydentyy taustalla, ei estä sivun avautumista
     openTodoFromUrl();
   });
 
