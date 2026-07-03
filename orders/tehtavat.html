@@ -1972,6 +1972,7 @@
   let currentUserId = null;
   let showDone = false;
   let allCustomers = [];
+  let linkedCustomerName = null;
 
   // ---------- Nav-valikko (sama toteutus kuin muilla sivuilla) ----------
   window.toggleNav = function(e){
@@ -2110,9 +2111,17 @@
     const c = allCustomers.find(function(x){ return String(x.id) === String(customerId); });
     if(!c) return;
     document.getElementById("todoCustomerId").value = c.id;
+    linkedCustomerName = c.name;
     document.getElementById("customerSearch").value = "";
     document.getElementById("customerDropdown").classList.remove("open");
-    showCustomerChip(c.name);
+
+    // Jos otsikko on vielä tyhjä, ehdotetaan asiakkaan nimeä otsikoksi —
+    // silloin tägiä ei tarvitse näyttää erikseen (syncCustomerChipVisibility hoitaa piilotuksen).
+    const titleField = document.getElementById("todoTitle");
+    if(!titleField.value.trim()){
+      titleField.value = c.name;
+    }
+    syncCustomerChipVisibility();
 
     // Automaattitäyttö — vain jos kentät ovat vielä tyhjiä, ettei ylikirjoiteta
     // jo käsin syötettyä tietoa.
@@ -2127,13 +2136,28 @@
     }
   }
 
-  function showCustomerChip(name){
-    document.getElementById("customerChipName").textContent = "🏢 " + name;
-    document.getElementById("customerChip").style.display = "flex";
+  // Tägi näkyy AINA paitsi silloin kun otsikko on täsmälleen sama kuin liitetyn
+  // asiakkaan nimi — silloin nimi näkyy jo otsikossa eikä tägiä tarvita erikseen.
+  // Kutsutaan aina kun asiakas valitaan/poistetaan TAI otsikkoa muokataan.
+  function syncCustomerChipVisibility(){
+    const customerId = document.getElementById("todoCustomerId").value;
+    const chip = document.getElementById("customerChip");
+    if(!customerId || !linkedCustomerName){
+      chip.style.display = "none";
+      return;
+    }
+    const titleVal = document.getElementById("todoTitle").value.trim();
+    if(titleVal === linkedCustomerName){
+      chip.style.display = "none";
+    }else{
+      document.getElementById("customerChipName").textContent = "🏢 " + linkedCustomerName;
+      chip.style.display = "flex";
+    }
   }
 
   function clearCustomerSelection(){
     document.getElementById("todoCustomerId").value = "";
+    linkedCustomerName = null;
     document.getElementById("customerChip").style.display = "none";
     document.getElementById("customerSearch").value = "";
   }
@@ -2147,6 +2171,7 @@
     selectCustomerForTodo(item.getAttribute("data-customer-id"));
   });
   document.getElementById("customerChipClear").addEventListener("click", clearCustomerSelection);
+  document.getElementById("todoTitle").addEventListener("input", syncCustomerChipVisibility);
   document.addEventListener("click", function(e){
     if(!e.target.closest("#customerSearch") && !e.target.closest("#customerDropdown")){
       document.getElementById("customerDropdown").classList.remove("open");
@@ -2259,11 +2284,12 @@
     document.getElementById("customerDropdown").classList.remove("open");
     if(todo && todo.customer_id && todo.customers && todo.customers.name){
       document.getElementById("todoCustomerId").value = todo.customer_id;
-      showCustomerChip(todo.customers.name);
+      linkedCustomerName = todo.customers.name;
     }else{
       document.getElementById("todoCustomerId").value = "";
-      document.getElementById("customerChip").style.display = "none";
+      linkedCustomerName = null;
     }
+    syncCustomerChipVisibility();
 
     // Puhelin/sähköposti-osio: näytetään suoraan jos jompikumpi jo täytetty
     // (tai asiakas liitetty), muuten piilotetaan "+ Lisää yhteystiedot" -linkin taakse.
