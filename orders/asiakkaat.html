@@ -2578,7 +2578,29 @@ document.addEventListener('click', function() {
 // =============================================
 // INIT
 // =============================================
-loadCustomers();
+// ── Suora linkitys yhteen asiakkaaseen (esim. tehtävälistasta) ──
+// Käyttö: asiakkaat.html?id=<asiakkaan id>
+// Avaa asiakkaan tiedot suoraan, riippumatta onko hän aktiivinen vai arkistoitu.
+function focusCustomerFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const targetId = params.get('id');
+  if (!targetId) return;
+
+  const exists = customers.find(c => c.id === targetId);
+  if (!exists) return;
+
+  setFilter('all'); // varmistetaan että asiakas näkyy listassa vaikka olisi arkistoitu
+  document.getElementById('searchInput').value = '';
+  filterCustomers('');
+  selectCustomer(targetId);
+
+  setTimeout(() => {
+    const row = document.querySelector('.customer-item.active');
+    if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 150);
+}
+
+loadCustomers().then(focusCustomerFromUrl);
 </script>
 </body>
 </html>
