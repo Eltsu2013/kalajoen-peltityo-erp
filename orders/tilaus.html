@@ -74,6 +74,12 @@
   .btn-success { background: var(--success); color: #1a1a1a; }
   .row { display: flex; gap: 8px; }
   .status-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  /* order-status on nyt <select>, muotoillaan näyttämään edelleen pilleriltä eikä
+     selaimen oletuslomake-elementiltä. Väri/tausta tulee edelleen status-*-luokista. */
+  select.status-badge {
+    border: none; outline: none; cursor: pointer;
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+  }
   .status-draft { background: #44444f; color: var(--text-dim); }
   .status-active { background: #1e3d2e; color: var(--success); }
   .status-quoted { background: #2a1f3a; color: #a855f7; }
@@ -1831,19 +1837,8 @@
         <label>Huomio</label>
         <textarea id="order-notes" rows="2" placeholder="Vapaa huomio..." oninput="saveOrderMeta()" style="resize:vertical"></textarea>
       </div>
-      <div class="field">
-        <label>Status</label>
-        <select id="order-status" onchange="updateStatusBadge(this.value); saveOrderMeta()" style="font-weight:600">
-          <option value="DRAFT">Luonnos</option>
-          <option value="IN_PROGRESS">Kesken</option>
-          <option value="QUOTED">Tarjottu</option>
-          <option value="ORDERED">Tilattu</option>
-          <option value="IN_PRODUCTION">Työn alla</option>
-          <option value="COMPLETED">Valmis</option>
-          <option value="INVOICED">Laskutettu</option>
-          <option value="ARCHIVED">Arkisto</option>
-        </select>
-      </div>
+      <!-- Status siirretty 20.8.2026 oikean paneelin yläreunaan (order-status-badge),
+           jotta se ei jää unohtumaan sivupalkin syvyyksiin. Ei enää omaa kenttää tässä. -->
     </div>
 
 
@@ -1947,7 +1942,16 @@
       <div style="font-family:IBM Plex Mono,monospace;font-size:13px;font-weight:600;color:var(--text)">
         Tilausnro: <span id="order-number-display" style="color:var(--accent)">—</span>
       </div>
-      <span class="status-badge status-draft" id="order-status-badge">LUONNOS</span>
+      <select id="order-status" class="status-badge status-draft" onchange="updateStatusBadge(this.value); saveOrderMeta()">
+        <option value="DRAFT">LUONNOS</option>
+        <option value="IN_PROGRESS">KESKEN</option>
+        <option value="QUOTED">TARJOTTU</option>
+        <option value="ORDERED">TILATTU</option>
+        <option value="IN_PRODUCTION">TYÖN ALLA</option>
+        <option value="COMPLETED">VALMIS</option>
+        <option value="INVOICED">LASKUTETTU</option>
+        <option value="ARCHIVED">ARKISTO</option>
+      </select>
       <div style="margin-left:auto;display:flex;gap:8px">
         <button class="btn btn-secondary" onclick="addGroup()">+ Luo ryhmä vasemmalta</button>
         <button class="btn btn-primary" onclick="printOrder()">🖨 Tulosta</button>
@@ -1988,9 +1992,11 @@ const ORDER_STATUS_CLASS = {
   COMPLETED: 'status-done', INVOICED: 'status-invoiced', ARCHIVED: 'status-archived'
 };
 function updateStatusBadge(status){
-  const badge = document.getElementById('order-status-badge');
+  // order-status-badge oli aiemmin pelkkä <span>, nyt sama elementti on
+  // klikattava <select id="order-status"> — tekstin sijaan asetetaan valittu arvo.
+  const badge = document.getElementById('order-status');
   if(!badge) return;
-  badge.textContent = ORDER_STATUS_LABEL[status] || status || 'LUONNOS';
+  badge.value = status || 'DRAFT';
   badge.className = 'status-badge ' + (ORDER_STATUS_CLASS[status] || 'status-draft');
 }
 
@@ -2019,7 +2025,6 @@ async function loadOrderById(orderId) {
   if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
   if (order.kohde) document.getElementById('order-kohde').value = order.kohde;
   if (order.notes) document.getElementById('order-notes').value = order.notes;
-  if (order.status) document.getElementById('order-status').value = order.status;
   updateStatusBadge(order.status);
 
   // Asetetaan asiakas
@@ -2126,7 +2131,6 @@ async function copyOrderById(sourceId, keepCustomer) {
   currentOrderId = newOrderId;
   document.getElementById('order-number-display').textContent = newOrders[0].order_number || newOrderId.slice(0,8);
   document.getElementById('order-date').value = today;
-  document.getElementById('order-status').value = 'DRAFT';
   updateStatusBadge('DRAFT');
 
   await fetchCustomers();
