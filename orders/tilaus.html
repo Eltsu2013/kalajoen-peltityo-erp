@@ -105,6 +105,47 @@
   .saving { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
   .saving.ok { color: var(--success); }
   .saving.err { color: var(--danger); }
+
+  /* ── Mobiiliyhteenvetorivi — piilossa desktopilla, näkyviin @media hoitaa ── */
+  .mobile-summary-bar { display: none; }
+
+  @media (max-width: 860px) {
+    /* Pääasettelu: vasen ja oikea paneeli pinotaan allekkain rinnakkain-asettelun sijaan */
+    .main { display: block; height: auto; overflow: visible; }
+    .left-panel, .right-panel { width: 100% !important; overflow: visible; }
+    .left-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar-resizer { display: none; } /* vetokahvasta ei ole hyötyä kosketusnäytöllä */
+
+    /* Yhteenvetorivi: aina näkyvissä, kertoo asiakkaan/kohteen/toimituspäivän ilman
+       että sivupalkkia tarvitsee avata */
+    .mobile-summary-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 14px; background: #34343f; border-bottom: 1px solid var(--border);
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+    }
+    #mobile-summary-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #mobile-details-toggle {
+      background: none; border: 1px solid var(--border); color: var(--accent);
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 5px 10px;
+      border-radius: 3px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+
+    /* Harmonikka: sivupalkki (asiakas/kohde/päivät/uuden rivin lisäys) piilossa
+       kunnes käyttäjä avaa sen yllä olevasta napista */
+    .left-panel.mobile-collapsed { display: none; }
+
+    /* Header: jos napit (Mallisto/Vakiomallit/Kopioi) eivät mahdu riville, rivittyvät */
+    header { flex-wrap: wrap; row-gap: 8px; }
+    .header-actions { margin-left: 0 !important; width: 100%; flex-wrap: wrap; }
+
+    /* Tilausrivien toimintonapit rivittyvät omalle rivilleen jos eivät mahdu vierekkäin */
+    .order-item { flex-wrap: wrap; }
+    .item-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
+
+    /* Ryhmän nimikenttä ei tarvitse kiinteää 180px-leveyttä kapealla näytöllä */
+    .group-header input { width: auto; flex: 1; min-width: 0; }
+    .group-header { flex-wrap: wrap; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
@@ -1728,7 +1769,7 @@
     </div>
   </div>
   <h1>Tilaus</h1>
-  <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+  <div class="header-actions" style="margin-left:auto;display:flex;align-items:center;gap:12px">
     <span class="saving" id="save-status"></span>
     <a href="peltipiirturi.html" style="color:var(--text-dim);font-size:12px;font-family:IBM Plex Mono,monospace;text-decoration:none">← Mallisto</a>
     <button onclick="openVakiomallit()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 12px;border-radius:3px;cursor:pointer;" onmouseover="this.style.borderColor='#e8a020';this.style.color='#e8a020'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">Vakiomallit →</button>
@@ -1736,10 +1777,16 @@
   </div>
 </header>
 
+<!-- MOBIILI: kevyt yhteenvetorivi + harmonikkanappi. Piilossa desktopilla (@media hoitaa). -->
+<div class="mobile-summary-bar" id="mobile-summary-bar">
+  <div id="mobile-summary-text">Uusi tilaus — ei vielä asiakasta</div>
+  <button type="button" id="mobile-details-toggle" onclick="toggleMobileDetails()">▸ Muokkaa tietoja / lisää rivi</button>
+</div>
+
 <div class="main">
 
   <!-- VASEN PANEELI: Tilauksen tiedot + uusi profiili -->
-  <div class="left-panel" id="left-panel">
+  <div class="left-panel mobile-collapsed" id="left-panel">
     <div class="sidebar-resizer" id="sidebar-resizer"></div>
 
     <!-- Tilauksen perustiedot -->
@@ -2000,6 +2047,39 @@ function updateStatusBadge(status){
   badge.className = 'status-badge ' + (ORDER_STATUS_CLASS[status] || 'status-draft');
 }
 
+// ── Mobiili: harmonikka + yhteenvetorivi ────────────────────────────
+// Sivupalkki (asiakas/kohde/päivät/uuden rivin lisäys) on mobiilissa oletuksena
+// kiinni. Yhteenvetorivi näyttää oleelliset tiedot ilman että sitä tarvitsee avata.
+function toggleMobileDetails() {
+  const panel = document.getElementById('left-panel');
+  const btn = document.getElementById('mobile-details-toggle');
+  const isOpen = !panel.classList.contains('mobile-collapsed');
+  if (isOpen) {
+    panel.classList.add('mobile-collapsed');
+    btn.textContent = '▸ Muokkaa tietoja / lisää rivi';
+  } else {
+    panel.classList.remove('mobile-collapsed');
+    btn.textContent = '▾ Piilota tiedot';
+  }
+}
+
+function updateMobileSummary() {
+  const el = document.getElementById('mobile-summary-text');
+  if (!el) return;
+  const asiakas = document.getElementById('customer-search')?.value || '';
+  const kohde = document.getElementById('order-kohde')?.value || '';
+  const toimitus = document.getElementById('order-delivery')?.value || '';
+  const osat = [];
+  osat.push(asiakas ? asiakas : 'Ei vielä asiakasta');
+  if (kohde) osat.push(kohde);
+  if (toimitus) {
+    // yyyy-mm-dd -> pp.kk.vvvv
+    const [y, m, d] = toimitus.split('-');
+    if (y && m && d) osat.push('Toimitus ' + d + '.' + m + '.' + y);
+  }
+  el.textContent = osat.join(' · ');
+}
+
 // ── Tila ──────────────────────────────────────────────────────────
 let currentOrderId = null;
 let products = [];
@@ -2037,6 +2117,7 @@ async function loadOrderById(orderId) {
       document.getElementById('customer-edit-btn').style.display = 'block';
     }
   }
+  updateMobileSummary();
 
   // Haetaan tilausrivit + alarivit samalla haulla
   const r2 = await fetch(SUPABASE_URL + '/rest/v1/order_items?order_id=eq.' + orderId + '&order=group_order,item_order&select=*,order_item_rows(*),order_item_angles(*)', { headers });
@@ -2142,6 +2223,7 @@ async function copyOrderById(sourceId, keepCustomer) {
       document.getElementById('customer-edit-btn').style.display = 'block';
     }
   }
+  updateMobileSummary();
 
   if (!srcItems || !srcItems.length) {
     setSaveStatus('ok', 'Kopioitu — ei rivejä');
@@ -2307,6 +2389,7 @@ async function createOrder() {
 }
 
 async function saveOrderMeta() {
+  updateMobileSummary(); // päivitetään heti, ei odoteta 800ms tallennusviivettä
   if (!currentOrderId) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
