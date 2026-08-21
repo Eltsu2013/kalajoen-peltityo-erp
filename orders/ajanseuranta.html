@@ -223,6 +223,11 @@
     border-radius:var(--radius);font-weight:700;font-size:13px;cursor:pointer;
   }
   .stop-btn:hover{filter:brightness(1.1);}
+  .resume-btn{
+    background:var(--low);color:#0e2a12;border:none;padding:7px 16px;
+    border-radius:var(--radius);font-weight:700;font-size:13px;cursor:pointer;
+  }
+  .resume-btn:hover{filter:brightness(1.1);}
   .duration-edit-btn{
     background:none;border:1px solid var(--border);color:var(--text-dim);
     border-radius:var(--radius);padding:6px 10px;font-size:12px;cursor:pointer;
@@ -249,6 +254,30 @@
     padding:6px 8px;border-radius:var(--radius);font-family:'IBM Plex Mono',monospace;
   }
   .duration-edit-box label{font-size:12px;color:var(--text-dim);}
+
+  /* ---------- Segmenttichipit (yksittäiset aloita/lopeta-pätkät ajanoton sisällä) ---------- */
+  .row-segments{
+    display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;
+    border-top:1px dashed var(--border);
+  }
+  .seg-chip{
+    position:relative;
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;
+    padding:4px 8px;font-size:11px;color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .seg-chip.running{border-color:var(--run);color:var(--run);}
+  .seg-live{font-weight:700;}
+  .seg-edit-btn, .seg-del-btn{
+    background:none;border:none;color:var(--text-dim);cursor:pointer;
+    font-size:11px;padding:0;line-height:1;
+  }
+  .seg-edit-btn:hover{color:var(--accent);}
+  .seg-del-btn:hover{color:var(--high);}
+  .seg-chip .duration-edit-box{
+    position:absolute;top:calc(100% + 4px);left:0;z-index:20;white-space:nowrap;
+  }
 
   /* ---------- Yhteenveto ---------- */
   .summary-box{
@@ -2075,6 +2104,7 @@
   const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4";
   const REST_PROJECTS = SUPABASE_URL + "/rest/v1/time_projects";
   const REST_ROWS = SUPABASE_URL + "/rest/v1/time_project_rows";
+  const REST_SEGMENTS = SUPABASE_URL + "/rest/v1/time_row_segments";
   const REST_ORDERS = SUPABASE_URL + "/rest/v1/orders";
   const REST_CUSTOMERS = SUPABASE_URL + "/rest/v1/customers";
   const REST_PRODUCTS = SUPABASE_URL + "/rest/v1/products";
@@ -2155,14 +2185,39 @@
     return pad(m) + ":" + pad(s);
   }
 
+  const WEEKDAYS_FI = ["su","ma","ti","ke","to","pe","la"];
+  function formatSegClock(d){
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    return WEEKDAYS_FI[d.getDay()] + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  // Segmentti = yksi yhtäjaksoinen "aloita...lopeta"-pätkä. Yksi ajanotto (rivi)
+  // voi koostua useasta segmentistä, jos työtä on tauotettu ja jatkettu.
+  function rowSegments(row){
+    return (row.time_row_segments || []).slice().sort(function(a, b){
+      return new Date(a.started_at) - new Date(b.started_at);
+    });
+  }
+  function rowRunningSegment(row){
+    return rowSegments(row).find(function(seg){ return !seg.stopped_at; }) || null;
+  }
+  function rowCompletedSeconds(row){
+    let total = 0;
+    rowSegments(row).forEach(function(seg){
+      if(seg.stopped_at) total += seg.duration_seconds != null ? seg.duration_seconds : 0;
+    });
+    return total;
+  }
   function rowElapsedSeconds(row){
-    if(row.stopped_at){
-      return row.duration_seconds != null ? row.duration_seconds : 0;
+    const runningSeg = rowRunningSegment(row);
+    let total = rowCompletedSeconds(row);
+    if(runningSeg){
+      total += (Date.now() - new Date(runningSeg.started_at).getTime()) / 1000;
     }
-    if(row.started_at){
-      return (Date.now() - new Date(row.started_at).getTime()) / 1000;
-    }
-    return 0;
+    return total;
+  }
+  function rowIsRunning(row){
+    return !!rowRunningSegment(row);
   }
 
   function projectTotalSeconds(project){
@@ -2174,7 +2229,7 @@
   }
 
   function projectIsRunning(project){
-    return (project.time_project_rows || []).some(function(r){ return !r.stopped_at; });
+    return (project.time_project_rows || []).some(rowIsRunning);
   }
 
   // ---------- Data ----------
@@ -2182,7 +2237,7 @@
     try{
       const headers = await getAuthHeaders();
       const res = await fetch(
-        REST_PROJECTS + "?select=*,orders(id,kohde,customers(name)),time_project_rows(*)&order=created_at.desc",
+        REST_PROJECTS + "?select=*,orders(id,kohde,customers(name)),time_project_rows(*,time_row_segments(*))&order=created_at.desc",
         { headers: headers }
       );
       if(!res.ok) throw new Error("Haku epäonnistui: " + res.status);
@@ -2322,14 +2377,37 @@
     });
   }
 
+  function segmentChipHtml(seg){
+    const running = !seg.stopped_at;
+    const startD = new Date(seg.started_at);
+    if(running){
+      return '<span class="seg-chip running" data-id="' + seg.id + '">' +
+        formatSegClock(startD) + '– <span class="seg-live">käynnissä</span>' +
+        '</span>';
+    }
+    const stopD = new Date(seg.stopped_at);
+    function pad(n){ return n < 10 ? "0" + n : "" + n; }
+    const stopTxt = pad(stopD.getHours()) + ":" + pad(stopD.getMinutes());
+    return '<span class="seg-chip" data-id="' + seg.id + '" data-started="' + seg.started_at + '">' +
+      formatSegClock(startD) + '–' + stopTxt + ' (' + formatDuration(seg.duration_seconds || 0) + ')' +
+      '<button type="button" class="seg-edit-btn" data-id="' + seg.id + '" title="Muokkaa kestoa">✎</button>' +
+      '<button type="button" class="seg-del-btn" data-id="' + seg.id + '" title="Poista pätkä">✕</button>' +
+      '</span>';
+  }
+
   function rowCardHtml(row){
-    const running = !row.stopped_at;
+    const running = rowIsRunning(row);
+    const runningSeg = rowRunningSegment(row);
     const elapsed = rowElapsedSeconds(row);
+    const segs = rowSegments(row);
+    const segsHtml = segs.length
+      ? '<div class="row-segments">' + segs.map(segmentChipHtml).join("") + '</div>'
+      : "";
     return (
       '<div class="row-card' + (running ? " running" : "") + '" data-id="' + row.id + '">' +
         '<div class="row-line1">' +
           '<input type="text" class="row-label-input" placeholder="Nimeämätön ajanotto — kirjoita otsikko" value="' + escapeHtml(row.label || "") + '">' +
-          '<span class="row-timer' + (running ? " running" : "") + '" data-started="' + (row.started_at || "") + '">' + formatClock(elapsed) + '</span>' +
+          '<span class="row-timer' + (running ? " running" : "") + '" data-base="' + rowCompletedSeconds(row) + '" data-started="' + (runningSeg ? runningSeg.started_at : "") + '">' + formatClock(elapsed) + '</span>' +
         '</div>' +
         '<div class="row-line2">' +
           '<input type="text" class="row-category-input" list="categoryOptions" placeholder="Kategoria (valinnainen — valitse tai kirjoita oma)" value="' + escapeHtml(row.category || "") + '">' +
@@ -2337,11 +2415,12 @@
           '<span class="row-saved-tick">✓ tallennettu</span>' +
           '<div class="row-actions">' +
             (running
-              ? '<button class="stop-btn">⏸ Lopeta</button>'
-              : '<button class="duration-edit-btn">✎ Kesto</button>') +
+              ? '<button class="stop-btn">⏸ Tauko</button>'
+              : '<button class="resume-btn">▶ Jatka</button>') +
             '<button class="row-delete-btn">🗑</button>' +
           '</div>' +
         '</div>' +
+        segsHtml +
       '</div>'
     );
   }
@@ -2399,20 +2478,27 @@
       const stopBtn = card.querySelector(".stop-btn");
       if(stopBtn){
         stopBtn.addEventListener("click", async function(){
-          const nowIso = new Date().toISOString();
           const row = (project.time_project_rows || []).find(function(r){ return r.id === rowId; });
-          const startedMs = row && row.started_at ? new Date(row.started_at).getTime() : Date.now();
-          const durationSeconds = Math.max(0, Math.round((Date.now() - startedMs) / 1000));
-          await updateRow(rowId, { stopped_at: nowIso, duration_seconds: durationSeconds }, project.id);
+          const runningSeg = rowRunningSegment(row);
+          if(runningSeg) await pauseSegment(runningSeg.id, runningSeg.started_at);
         });
       }
 
-      const editBtn = card.querySelector(".duration-edit-btn");
-      if(editBtn){
-        editBtn.addEventListener("click", function(){
-          if(card.querySelector(".duration-edit-box")) return; // jo auki
+      const resumeBtn = card.querySelector(".resume-btn");
+      if(resumeBtn){
+        resumeBtn.addEventListener("click", async function(){
+          await resumeRow(rowId);
+        });
+      }
+
+      Array.prototype.forEach.call(card.querySelectorAll(".seg-edit-btn"), function(btn){
+        btn.addEventListener("click", function(){
+          const segId = btn.getAttribute("data-id");
+          const chip = card.querySelector('.seg-chip[data-id="' + segId + '"]');
+          if(chip.querySelector(".duration-edit-box")) return; // jo auki
           const row = (project.time_project_rows || []).find(function(r){ return r.id === rowId; });
-          const currentMinutes = Math.round((row.duration_seconds || 0) / 60 * 10) / 10;
+          const seg = rowSegments(row).find(function(s){ return s.id === segId; });
+          const currentMinutes = Math.round((seg.duration_seconds || 0) / 60 * 10) / 10;
           const box = document.createElement("div");
           box.className = "duration-edit-box";
           box.innerHTML =
@@ -2420,7 +2506,7 @@
             '<input type="number" min="0" step="0.5" value="' + currentMinutes + '">' +
             '<button class="btn btn-sm">Tallenna</button>' +
             '<button class="btn secondary btn-sm">Peruuta</button>';
-          card.appendChild(box);
+          chip.appendChild(box);
           const input = box.querySelector("input");
           const saveBtn = box.querySelectorAll("button")[0];
           const cancelBtn = box.querySelectorAll("button")[1];
@@ -2431,19 +2517,24 @@
               return;
             }
             const durationSeconds = Math.round(minutes * 60);
-            const newStopped = row.started_at
-              ? new Date(new Date(row.started_at).getTime() + durationSeconds * 1000).toISOString()
-              : new Date().toISOString();
-            await updateRow(rowId, { duration_seconds: durationSeconds, stopped_at: newStopped }, project.id);
+            const newStopped = new Date(new Date(seg.started_at).getTime() + durationSeconds * 1000).toISOString();
+            await updateSegment(segId, { duration_seconds: durationSeconds, stopped_at: newStopped }, project.id);
             box.remove();
           });
           cancelBtn.addEventListener("click", function(){ box.remove(); });
         });
-      }
+      });
+
+      Array.prototype.forEach.call(card.querySelectorAll(".seg-del-btn"), function(btn){
+        btn.addEventListener("click", async function(){
+          if(!confirm("Poistetaanko tämä ajanotto-pätkä?")) return;
+          await deleteSegment(btn.getAttribute("data-id"), project.id);
+        });
+      });
 
       const delBtn = card.querySelector(".row-delete-btn");
       delBtn.addEventListener("click", async function(){
-        if(!confirm("Poistetaanko tämä ajanotto?")) return;
+        if(!confirm("Poistetaanko koko ajanotto kaikkine pätkineen?")) return;
         await deleteRow(rowId, project.id);
       });
     });
@@ -2479,7 +2570,8 @@
     Array.prototype.forEach.call(document.querySelectorAll(".row-timer.running"), function(el){
       const started = el.getAttribute("data-started");
       if(!started) return;
-      const elapsed = (Date.now() - new Date(started).getTime()) / 1000;
+      const base = parseFloat(el.getAttribute("data-base") || "0");
+      const elapsed = base + (Date.now() - new Date(started).getTime()) / 1000;
       el.textContent = formatClock(elapsed);
     });
     // Päivitä myös listan projektikorttien kokonaisajat jos joku on käynnissä
@@ -2539,25 +2631,99 @@
     }
   }
 
+  // Uusi ajanotto = uusi rivi + sen ensimmäinen segmentti samalla kertaa
   async function startNewRow(projectId){
     try{
       const headers = await getAuthHeaders();
-      const nowIso = new Date().toISOString();
-      const res = await fetch(REST_ROWS, {
+      const rowRes = await fetch(REST_ROWS, {
         method: "POST",
         headers: Object.assign({}, headers, { "Prefer": "return=representation" }),
         body: JSON.stringify({
           project_id: projectId,
-          started_at: nowIso,
           row_order: (currentProject().time_project_rows || []).length
         })
       });
-      if(!res.ok) throw new Error("Aloitus epäonnistui: " + res.status);
+      if(!rowRes.ok) throw new Error("Aloitus epäonnistui: " + rowRes.status);
+      const createdRows = await rowRes.json();
+      const newRowId = createdRows[0].id;
+      const segRes = await fetch(REST_SEGMENTS, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ row_id: newRowId, started_at: new Date().toISOString() })
+      });
+      if(!segRes.ok) throw new Error("Aloitus epäonnistui: " + segRes.status);
       await loadProjects();
       showToast("Ajanotto käynnissä");
     }catch(err){
       console.error(err);
       showToast("Ajanoton aloitus epäonnistui");
+    }
+  }
+
+  // Jatka aiemmin tauolle jäänyttä ajanottoa — luo uuden segmentin samalle riville
+  async function resumeRow(rowId){
+    try{
+      const headers = await getAuthHeaders();
+      const res = await fetch(REST_SEGMENTS, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ row_id: rowId, started_at: new Date().toISOString() })
+      });
+      if(!res.ok) throw new Error("Jatkaminen epäonnistui: " + res.status);
+      await loadProjects();
+      showToast("Jatketaan ajanottoa");
+    }catch(err){
+      console.error(err);
+      showToast("Ajanoton jatkaminen epäonnistui");
+    }
+  }
+
+  async function pauseSegment(segId, startedAtIso){
+    try{
+      const headers = await getAuthHeaders();
+      const nowIso = new Date().toISOString();
+      const durationSeconds = Math.max(0, Math.round((Date.now() - new Date(startedAtIso).getTime()) / 1000));
+      const res = await fetch(REST_SEGMENTS + "?id=eq." + segId, {
+        method: "PATCH",
+        headers: headers,
+        body: JSON.stringify({ stopped_at: nowIso, duration_seconds: durationSeconds })
+      });
+      if(!res.ok) throw new Error("Tauko epäonnistui: " + res.status);
+      await loadProjects();
+    }catch(err){
+      console.error(err);
+      showToast("Tauon tallennus epäonnistui");
+    }
+  }
+
+  async function updateSegment(segId, patch, projectId){
+    try{
+      const headers = await getAuthHeaders();
+      const res = await fetch(REST_SEGMENTS + "?id=eq." + segId, {
+        method: "PATCH",
+        headers: headers,
+        body: JSON.stringify(patch)
+      });
+      if(!res.ok) throw new Error("Tallennus epäonnistui: " + res.status);
+      await loadProjects();
+    }catch(err){
+      console.error(err);
+      showToast("Pätkän tallennus epäonnistui");
+    }
+  }
+
+  async function deleteSegment(segId, projectId){
+    try{
+      const headers = await getAuthHeaders();
+      const res = await fetch(REST_SEGMENTS + "?id=eq." + segId, {
+        method: "DELETE",
+        headers: headers
+      });
+      if(!res.ok) throw new Error("Poisto epäonnistui: " + res.status);
+      await loadProjects();
+    }catch(err){
+      console.error(err);
+      showToast("Pätkän poisto epäonnistui");
     }
   }
 
