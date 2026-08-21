@@ -211,7 +211,7 @@
   }
   .row-timer.running{color:var(--run);}
   .row-line2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;}
-  .row-select, .row-detail-input{
+  .row-category-input, .row-detail-input{
     background:var(--bg-panel);border:1px solid var(--border);color:var(--text);
     padding:6px 8px;border-radius:var(--radius);font-size:12px;
     font-family:'IBM Plex Sans',sans-serif;
@@ -1998,6 +1998,7 @@
     </div>
 
     <div class="row-list" id="rowList"></div>
+    <datalist id="categoryOptions"></datalist>
 
     <div class="summary-box" id="summaryBox"></div>
   </div>
@@ -2078,15 +2079,10 @@
   const REST_CUSTOMERS = SUPABASE_URL + "/rest/v1/customers";
   const REST_PRODUCTS = SUPABASE_URL + "/rest/v1/products";
 
-  const CATEGORY_LABELS = {
-    "MEASURE": "Mittaus",
-    "DESIGN": "Suunnittelu",
-    "CUTTING": "Leikkaus",
-    "MARKING": "Merkkaus",
-    "BENDING": "Taivutus",
-    "INSTALLATION": "Asennus",
-    "OTHER": "Muu"
-  };
+  // Kategoria on vapaa tekstikenttä — nämä ovat vain autocomplete-ehdotuksia
+  // datalistiin. Käyttäjä voi aina kirjoittaa myös täysin oman nimen
+  // (esim. nimetylle lisätyölle), joka tallentuu sellaisenaan.
+  const PRESET_CATEGORIES = ["Mittaus", "Suunnittelu", "Leikkaus", "Merkkaus", "Taivutus", "Asennus"];
 
   let allProjects = [];
   let currentUserId = null;
@@ -2230,11 +2226,13 @@
     const total = projectTotalSeconds(p);
     const rowCount = (p.time_project_rows || []).length;
     const metaBits = [];
-    if(p.orders && p.orders.kohde){
-      const custName = p.orders.customers && p.orders.customers.name ? p.orders.customers.name : "";
-      metaBits.push("🔗 " + escapeHtml(p.orders.kohde) + (custName ? " — " + escapeHtml(custName) : ""));
-    } else if(p.order_id){
-      metaBits.push("🔗 Liitetty tilaukseen");
+    if(p.order_id){
+      const custName = p.orders && p.orders.customers && p.orders.customers.name ? p.orders.customers.name : "";
+      const kohde = p.orders && p.orders.kohde ? p.orders.kohde : "";
+      const parts = [];
+      if(custName) parts.push(escapeHtml(custName));
+      if(kohde) parts.push(escapeHtml(kohde));
+      metaBits.push("🔗 " + (parts.length ? parts.join(" — ") : "Liitetty tilaukseen"));
     }
     if(p.product_group){
       metaBits.push("🏷 " + escapeHtml(p.product_group));
@@ -2298,10 +2296,14 @@
     const wrap = document.getElementById("detailLinks");
     let html = "";
     if(p.order_id){
-      const kohde = p.orders && p.orders.kohde ? p.orders.kohde : "Tilaus";
+      const kohde = p.orders && p.orders.kohde ? p.orders.kohde : "";
       const cust = p.orders && p.orders.customers && p.orders.customers.name ? p.orders.customers.name : "";
+      const parts = [];
+      if(cust) parts.push(escapeHtml(cust));
+      if(kohde) parts.push(escapeHtml(kohde));
+      const label = parts.length ? parts.join(" — ") : "Tilaus";
       html += '<div class="link-chip">🔗 <a href="tilaukset.html?id=' + p.order_id + '">' +
-        escapeHtml(kohde) + (cust ? " — " + escapeHtml(cust) : "") + '</a>' +
+        label + '</a>' +
         '<button type="button" id="removeOrderLinkBtn" title="Poista tilausliitos">✕</button></div>';
     } else {
       html += '<button class="add-link-btn" id="addOrderLinkBtn">+ Liitä tilaukseen</button>';
@@ -2323,10 +2325,6 @@
   function rowCardHtml(row){
     const running = !row.stopped_at;
     const elapsed = rowElapsedSeconds(row);
-    const catOptions = ['<option value="">— Ei kategoriaa —</option>'];
-    Object.keys(CATEGORY_LABELS).forEach(function(key){
-      catOptions.push('<option value="' + key + '"' + (row.category === key ? " selected" : "") + '>' + CATEGORY_LABELS[key] + '</option>');
-    });
     return (
       '<div class="row-card' + (running ? " running" : "") + '" data-id="' + row.id + '">' +
         '<div class="row-line1">' +
@@ -2334,7 +2332,7 @@
           '<span class="row-timer' + (running ? " running" : "") + '" data-started="' + (row.started_at || "") + '">' + formatClock(elapsed) + '</span>' +
         '</div>' +
         '<div class="row-line2">' +
-          '<select class="row-select">' + catOptions.join("") + '</select>' +
+          '<input type="text" class="row-category-input" list="categoryOptions" placeholder="Kategoria (valinnainen — valitse tai kirjoita oma)" value="' + escapeHtml(row.category || "") + '">' +
           '<input type="text" class="row-detail-input" placeholder="Tarkennus (valinnainen)" value="' + escapeHtml(row.category_detail || "") + '">' +
           '<span class="row-saved-tick">✓ tallennettu</span>' +
           '<div class="row-actions">' +
@@ -2376,7 +2374,7 @@
     Array.prototype.forEach.call(cards, function(card){
       const rowId = card.getAttribute("data-id");
       const labelInput = card.querySelector(".row-label-input");
-      const selectEl = card.querySelector(".row-select");
+      const categoryInput = card.querySelector(".row-category-input");
       const detailInput = card.querySelector(".row-detail-input");
       const savedTick = card.querySelector(".row-saved-tick");
 
@@ -2389,8 +2387,8 @@
         await updateRow(rowId, { label: labelInput.value.trim() || null }, project.id);
         flashSaved();
       });
-      selectEl.addEventListener("change", async function(){
-        await updateRow(rowId, { category: selectEl.value || null }, project.id);
+      categoryInput.addEventListener("change", async function(){
+        await updateRow(rowId, { category: categoryInput.value.trim() || null }, project.id);
         flashSaved();
       });
       detailInput.addEventListener("change", async function(){
@@ -2467,7 +2465,7 @@
       return;
     }
     const catRows = Object.keys(byCategory).map(function(key){
-      const label = key === "NONE" ? "Ei kategoriaa" : (CATEGORY_LABELS[key] || key);
+      const label = key === "NONE" ? "Ei kategoriaa" : key;
       return '<div class="summary-row"><span class="cat">' + escapeHtml(label) + '</span><span class="val">' + formatDuration(byCategory[key]) + '</span></div>';
     }).join("");
     wrap.innerHTML =
@@ -2775,8 +2773,14 @@
     });
   });
 
+  function fillCategoryDatalist(){
+    const dl = document.getElementById("categoryOptions");
+    dl.innerHTML = PRESET_CATEGORIES.map(function(c){ return '<option value="' + c + '">'; }).join("");
+  }
+
   window._authReady.then(async function(){
     currentUserId = await getCurrentUserId();
+    fillCategoryDatalist();
     await loadProjects();
     await loadProductGroupSuggestions();
     openProjectFromUrl();
