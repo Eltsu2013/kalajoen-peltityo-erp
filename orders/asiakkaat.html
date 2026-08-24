@@ -2259,7 +2259,10 @@ function renderList() {
         ${c.customer_number ? `<span class="customer-num">#${c.customer_number}</span>` : ''}
         ${c.contact_person ? `<span class="customer-meta">${c.contact_person}</span>` : ''}
       </div>
-      ${c.phone || c.email ? `<div class="customer-meta">${[c.phone, c.email].filter(Boolean).join(' · ')}</div>` : ''}
+      ${c.phone || c.email ? `<div class="customer-meta">${[
+        c.phone ? `<a href="tel:${c.phone.replace(/\s+/g,'')}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline dotted;">${c.phone}</a>` : null,
+        c.email
+      ].filter(Boolean).join(' · ')}</div>` : ''}
     </div>
   `).join('');
 }
