@@ -243,6 +243,17 @@
     border: none; border-top: 1px solid var(--border); margin: 4px 0;
   }
 
+  /* Kattomalli-valitsin (Harjakatto / Pulpettikatto) */
+  .seg-group { display: flex; gap: 6px; }
+  .seg-btn {
+    flex: 1;
+    background: var(--input-bg); border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; padding: 10px 8px; border-radius: 6px;
+    cursor: pointer; text-align: center; transition: all 0.15s;
+  }
+  .seg-btn.active { background: var(--accent); border-color: var(--accent); color: #1e1810; font-weight: 600; }
+
   /* Huomioteksti */
   .hint {
     font-family: 'IBM Plex Mono', monospace;
@@ -1876,6 +1887,7 @@
 <div class="tab-bar">
   <button class="tab-btn active" onclick="showTab('leikkaus', this)">Leikkaus</button>
   <button class="tab-btn" onclick="showTab('kattopelti', this)">Kattopelti</button>
+  <button class="tab-btn" onclick="showTab('kattokaltevuus', this)">Kattokaltevuus</button>
   <button class="tab-btn" onclick="showTab('listat', this)">Listat</button>
   <button class="tab-btn" onclick="showTab('pituusmitat', this)">Pituusmitat</button>
   <button class="tab-btn" onclick="showTab('kouru', this)">Kouru</button>
@@ -2054,6 +2066,71 @@
   <div class="result-box" id="result-kattopelti">
     <div class="result-title">Tulos</div>
     <div class="result-empty">— syötä arvot ja paina Laske —</div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- VÄLILEHTI: KATTOKALTEVUUS              -->
+<!-- ══════════════════════════════════════ -->
+<div id="tab-kattokaltevuus" class="tab-content">
+
+  <div class="calc-section">
+    <div class="section-title">Kattokaltevuus ja kattopellin mitta</div>
+    <p class="hint" style="margin-bottom:12px;">Laskee kattopellin mitan lappeen suunnassa kaltevuuden ja koolauksen perusteella. Toimii sekä harja- että pulpettikatolla.</p>
+
+    <div class="field">
+      <label>Kattomalli</label>
+      <div class="seg-group" id="kk-malli-group">
+        <button type="button" class="seg-btn active" onclick="kkValitseMalli('harja', this)">Harjakatto</button>
+        <button type="button" class="seg-btn" onclick="kkValitseMalli('pulpetti', this)">Pulpettikatto</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Kaltevuuden syöttötapa</label>
+      <select id="kk-tapa" onchange="kkPaivitaTapa()">
+        <option value="suhde">Suhdeluku (1 : x)</option>
+        <option value="lape">Lappeenkulma (°)</option>
+        <option value="harja">Harjankulma (°)</option>
+      </select>
+    </div>
+
+    <div class="field" id="kk-tapa-suhde">
+      <label>Kaltevuus — 1 : x</label>
+      <input type="number" id="kk-suhde" inputmode="decimal" placeholder="esim. 3" step="0.01" oninput="kkLaske()">
+    </div>
+    <div class="field" id="kk-tapa-lape" style="display:none;">
+      <label>Lappeenkulma astetta</label>
+      <input type="number" id="kk-lapekulma" inputmode="decimal" placeholder="esim. 18.4" step="0.1" oninput="kkLaske()">
+    </div>
+    <div class="field" id="kk-tapa-harja" style="display:none;">
+      <label>Harjankulma astetta</label>
+      <input type="number" id="kk-harjakulma" inputmode="decimal" placeholder="esim. 126.9" step="0.1" oninput="kkLaske()">
+    </div>
+
+    <div class="field">
+      <label>Lappeen pituus mm (kattopellin mitta ennen koolausta)</label>
+      <input type="number" id="kk-lape-pit" inputmode="numeric" placeholder="esim. 2236" oninput="kkLaske()">
+    </div>
+
+    <div class="field">
+      <label>Koolaus mm (valinnainen — jos kattoa korotetaan)</label>
+      <input type="number" id="kk-koolaus" inputmode="numeric" placeholder="esim. 50" oninput="kkLaske()">
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="kkLaske()">Laske</button>
+
+  <div class="result-box" id="result-kattokaltevuus">
+    <div class="result-title">Tulos</div>
+    <div class="result-empty">— syötä kaltevuus ja lappeen pituus —</div>
+  </div>
+
+  <div class="calc-section">
+    <div class="section-title">Havainnekuva</div>
+    <p class="hint" style="margin-bottom:10px;">Harmaa viiva = kattotuoli / alkuperäinen mitta. Sininen = koolauksen kanssa, kattopellin oikea mitta.</p>
+    <svg id="kk-svg" viewBox="0 0 320 210" style="width:100%;height:auto;display:block;"></svg>
   </div>
 
 </div>
@@ -2397,6 +2474,191 @@ function setError(boxId, msg) {
   box.innerHTML = `<div class="result-title">Tulos</div>
     <div class="result-empty" style="color:var(--danger)">${msg}</div>`;
 }
+
+function roundN(v, d) {
+  const f = Math.pow(10, d);
+  return Math.round(v * f) / f;
+}
+
+// ── KATTOKALTEVUUS ────────────────────────────────────────────────
+// Lappeenkulma θ määrää kaiken muun. Suhdeluku 1:n ↔ tan(θ) = 1/n.
+// Koolauslisä per lape = koolaus × tan(θ) — vahvistettu CAD-kuvasta
+// (lape 2236mm, kaltevuus 1:2, koolaus 50mm → 2261mm, eli lisäys 25mm = 50 × tan(26,57°)).
+
+let kkMalli = 'harja';
+
+function kkValitseMalli(malli, btn) {
+  kkMalli = malli;
+  document.querySelectorAll('#kk-malli-group .seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  kkLaske();
+}
+
+function kkPaivitaTapa() {
+  const tapa = document.getElementById('kk-tapa').value;
+  document.getElementById('kk-tapa-suhde').style.display = tapa === 'suhde' ? '' : 'none';
+  document.getElementById('kk-tapa-lape').style.display = tapa === 'lape' ? '' : 'none';
+  document.getElementById('kk-tapa-harja').style.display = tapa === 'harja' ? '' : 'none';
+  kkLaske();
+}
+
+// Palauttaa lappeenkulman asteina syöttötavasta riippumatta, tai null jos ei kelvollista arvoa
+function kkLaskeLapeKulma() {
+  const tapa = document.getElementById('kk-tapa').value;
+  if (tapa === 'suhde') {
+    const n = gn('kk-suhde');
+    if (!n || n <= 0) return null;
+    return Math.atan(1 / n) * 180 / Math.PI;
+  } else if (tapa === 'lape') {
+    const a = gn('kk-lapekulma');
+    if (!a || a <= 0 || a >= 90) return null;
+    return a;
+  } else if (tapa === 'harja') {
+    const h = gn('kk-harjakulma');
+    if (!h || h <= 0 || h >= 180) return null;
+    return (180 - h) / 2;
+  }
+  return null;
+}
+
+function kkLaske() {
+  const lapeKulmaDeg = kkLaskeLapeKulma();
+  kkPiirra(lapeKulmaDeg);
+
+  if (lapeKulmaDeg === null) {
+    setError('result-kattokaltevuus', 'Syötä kaltevuus (suhdeluku tai kulma)');
+    return;
+  }
+
+  const rad = lapeKulmaDeg * Math.PI / 180;
+  const n = 1 / Math.tan(rad);
+  const prosentti = Math.tan(rad) * 100;
+  const harjaKulma = 180 - 2 * lapeKulmaDeg;
+
+  const lapePit = gn('kk-lape-pit');
+  const koolaus = gn('kk-koolaus');
+
+  const rows = [];
+  rows.push({ label: 'Kaltevuussuhde', value: '1 : ' + roundN(n, 2), unit: '' });
+  rows.push({ label: 'Lappeenkulma', value: roundN(lapeKulmaDeg, 1), unit: '°' });
+  if (kkMalli === 'harja') {
+    rows.push({ label: 'Harjankulma (kanttikoneelle)', value: roundN(harjaKulma, 1), unit: '°' });
+  }
+  rows.push({ label: 'Kaltevuus prosentteina', value: roundN(prosentti, 1), unit: '%' });
+
+  if (lapePit > 0) {
+    const vaaka = lapePit * Math.cos(rad);
+    const pysty = lapePit * Math.sin(rad);
+    rows.push({ divider: true });
+    rows.push({ label: 'Vaakamatka (räystäältä harjalle)', value: Math.round(vaaka), unit: 'mm', small: true });
+    rows.push({ label: 'Nousu (korkeus)', value: Math.round(pysty), unit: 'mm', small: true });
+
+    rows.push({ divider: true });
+    if (koolaus > 0) {
+      const lisays = koolaus * Math.tan(rad);
+      const uusiPit = lapePit + lisays;
+      rows.push({ label: 'Koolauslisä per lape', value: roundN(lisays, 1), unit: 'mm' });
+      rows.push({ label: 'Kattopellin mitta koolauksen kanssa', value: roundN(uusiPit, 1), unit: 'mm', big: true });
+    } else {
+      rows.push({ label: 'Kattopellin mitta', value: lapePit, unit: 'mm', big: true });
+    }
+  }
+
+  setResult('result-kattokaltevuus', rows);
+}
+
+function kkKulmaKaari(x, y, angleDeg) {
+  const r = 22;
+  const rad = angleDeg * Math.PI / 180;
+  const x2 = x + r * Math.cos(rad);
+  const y2 = y - r * Math.sin(rad);
+  return `<path d="M ${x + r} ${y} A ${r} ${r} 0 0 0 ${x2} ${y2}" fill="none" stroke="#9595a0" stroke-width="1"/>`;
+}
+
+// Piirtää mittaviivan linjan (x1,y1)-(x2,y2) suuntaisesti, siirrettynä kohtisuoraan
+// offset-pikseliä. Suunta ratkaistaan niin että positiivinen offset osoittaa "ulospäin/ylös".
+function kkMittaviiva(x1, y1, x2, y2, offset, color, teksti) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  let nx = -dy / len, ny = dx / len;
+  if (ny > 0) { nx = -nx; ny = -ny; } // varmistetaan että normaali osoittaa ylöspäin (pienempi y)
+  const useNx = nx * offset, useNy = ny * offset;
+
+  const ox1 = x1 + useNx, oy1 = y1 + useNy;
+  const ox2 = x2 + useNx, oy2 = y2 + useNy;
+  const tickX = nx * 4, tickY = ny * 4; // pieni poikkiviiva kohtisuoraan mittaviivan suuntaan
+
+  let s = '';
+  s += `<line x1="${x1}" y1="${y1}" x2="${ox1}" y2="${oy1}" stroke="${color}" stroke-width="0.6" opacity="0.5"/>`;
+  s += `<line x1="${x2}" y1="${y2}" x2="${ox2}" y2="${oy2}" stroke="${color}" stroke-width="0.6" opacity="0.5"/>`;
+  s += `<line x1="${ox1}" y1="${oy1}" x2="${ox2}" y2="${oy2}" stroke="${color}" stroke-width="1"/>`;
+  s += `<line x1="${ox1 - tickX}" y1="${oy1 - tickY}" x2="${ox1 + tickX}" y2="${oy1 + tickY}" stroke="${color}" stroke-width="1"/>`;
+  s += `<line x1="${ox2 - tickX}" y1="${oy2 - tickY}" x2="${ox2 + tickX}" y2="${oy2 + tickY}" stroke="${color}" stroke-width="1"/>`;
+
+  const mx = (ox1 + ox2) / 2, my = (oy1 + oy2) / 2;
+  const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+  const textDy = offset >= 0 ? -4 : 11;
+  s += `<text x="${mx}" y="${my}" font-size="10" font-family="IBM Plex Mono, monospace" fill="${color}" text-anchor="middle" transform="rotate(${angleDeg} ${mx} ${my})" dy="${textDy}">${teksti} mm</text>`;
+  return s;
+}
+
+function kkPiirra(lapeKulmaDegInput) {
+  const svg = document.getElementById('kk-svg');
+  if (!svg) return;
+  const w = 320, h = 210;
+  const angle = (lapeKulmaDegInput === null || lapeKulmaDegInput <= 0) ? 18.4 : lapeKulmaDegInput;
+  const rad = angle * Math.PI / 180;
+
+  const baseY = 175;
+  const visLen = 110; // havainnekuvan viivan pituus pikseleinä — EI mittakaavassa
+  const dx = visLen * Math.cos(rad);
+  const dy = visLen * Math.sin(rad);
+
+  const lapePit = gn('kk-lape-pit');
+  const koolaus = gn('kk-koolaus');
+  const naytaMitat = lapePit > 0;
+  const naytaKorotus = naytaMitat && koolaus > 0;
+  const uusiPit = naytaKorotus ? roundN(lapePit + koolaus * Math.tan(rad), 1) : null;
+  const BLUE = '#3a8fe8';
+
+  let c = `<line x1="10" y1="${baseY}" x2="${w - 10}" y2="${baseY}" stroke="#56442e" stroke-width="1" stroke-dasharray="4,3"/>`;
+
+  let mittaX1, mittaY1, mittaX2, mittaY2; // se lape jolle mittaviivat piirretään
+
+  if (kkMalli === 'harja') {
+    const peakX = w / 2;
+    const peakY = baseY - dy;
+    const leftX = peakX - dx;
+    const rightX = peakX + dx;
+    c += `<polyline points="${leftX},${baseY} ${peakX},${peakY} ${rightX},${baseY}" fill="none" stroke="#e8a020" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    c += kkKulmaKaari(leftX, baseY, angle);
+    const harjaKulma = 180 - 2 * angle;
+    c += `<text x="${peakX}" y="${peakY - 10}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#e8a020" text-anchor="middle">${roundN(harjaKulma, 1)}°</text>`;
+    c += `<text x="${leftX + 26}" y="${baseY - 6}" font-size="10" font-family="IBM Plex Mono, monospace" fill="#9595a0">${roundN(angle, 1)}°</text>`;
+    mittaX1 = leftX; mittaY1 = baseY; mittaX2 = peakX; mittaY2 = peakY;
+  } else {
+    const lowX = 40, lowY = baseY;
+    const highX = lowX + dx, highY = baseY - dy;
+    c += `<line x1="${lowX}" y1="${lowY}" x2="${highX}" y2="${highY}" stroke="#e8a020" stroke-width="1.5" stroke-linecap="round"/>`;
+    c += `<line x1="${highX}" y1="${highY}" x2="${highX}" y2="${baseY}" stroke="#56442e" stroke-width="1" stroke-dasharray="3,2"/>`;
+    c += kkKulmaKaari(lowX, lowY, angle);
+    c += `<text x="${lowX + 26}" y="${baseY - 6}" font-size="10" font-family="IBM Plex Mono, monospace" fill="#9595a0">${roundN(angle, 1)}°</text>`;
+    mittaX1 = lowX; mittaY1 = lowY; mittaX2 = highX; mittaY2 = highY;
+  }
+
+  if (naytaMitat) {
+    // Alkuperäinen mitta (harmaa) katonviivan alapuolella
+    c += kkMittaviiva(mittaX1, mittaY1, mittaX2, mittaY2, -16, '#9595a0', lapePit);
+    if (naytaKorotus) {
+      // Korotettu / koolattu mitta (sininen) katonviivan yläpuolella
+      c += kkMittaviiva(mittaX1, mittaY1, mittaX2, mittaY2, 16, BLUE, uusiPit);
+    }
+  }
+
+  svg.innerHTML = c;
+}
+
+kkPiirra(null);
 
 // ── LEIKKAUSLASKIN ───────────────────────────────────────────────
 // Laskee merkkausmiitat ja rissaleikkurimitat levylle.
