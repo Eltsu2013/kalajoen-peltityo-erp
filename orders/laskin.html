@@ -2133,6 +2133,28 @@
     <svg id="kk-svg" viewBox="0 0 320 210" style="width:100%;height:auto;display:block;"></svg>
   </div>
 
+  <div class="calc-section">
+    <div class="section-title">Harjapellin toinen kulma</div>
+    <p class="hint" style="margin-bottom:12px;">Kulma 1 on kanttikoneen lukema sille taitteelle, jossa harjapelti nousee lappeesta (ylemmät kulmat). Laskuri antaa kanttikoneen lukeman sille toiselle taitteelle, joka tasoittaa harjapellin yläosan vaakasuoraksi.</p>
+    <div class="field">
+      <label>Kulma 1 — kanttikoneen arvo °</label>
+      <input type="number" id="kk-harja-kulma1" inputmode="decimal" value="60" step="1" oninput="kkLaske()">
+    </div>
+    <div class="result-box" id="result-harjapelti">
+      <div class="result-title">Tulos</div>
+      <div class="result-empty">— syötä kaltevuus yllä —</div>
+    </div>
+  </div>
+
+  <div class="calc-section">
+    <div class="section-title">Piipun juurikulmat</div>
+    <p class="hint" style="margin-bottom:12px;">Piipun etu- ja takareunan kulmat lappeen kaltevuuden mukaan, kattotuolien pystyttämisen avuksi.</p>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:2;">
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Etukulma (90° − lapekulma)</span> <strong id="kk-piippu-etu">—</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Takakulma (90° + lapekulma)</span> <strong id="kk-piippu-taka">—</strong></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- ══════════════════════════════════════ -->
@@ -2524,6 +2546,8 @@ function kkLaskeLapeKulma() {
 function kkLaske() {
   const lapeKulmaDeg = kkLaskeLapeKulma();
   kkPiirra(lapeKulmaDeg);
+  kkPaivitaPiippu(lapeKulmaDeg);
+  kkPaivitaHarjapelti(lapeKulmaDeg);
 
   if (lapeKulmaDeg === null) {
     setError('result-kattokaltevuus', 'Syötä kaltevuus (suhdeluku tai kulma)');
@@ -2565,6 +2589,55 @@ function kkLaske() {
   }
 
   setResult('result-kattokaltevuus', rows);
+}
+
+// ── PIIPUN JUURIKULMAT ────────────────────────────────────────────
+// Kattotuolin/piipun juuren viistekulmat lapekulman mukaan.
+function kkPaivitaPiippu(lapeKulmaDeg) {
+  const etuEl = document.getElementById('kk-piippu-etu');
+  const takaEl = document.getElementById('kk-piippu-taka');
+  if (!etuEl || !takaEl) return;
+  if (lapeKulmaDeg === null) {
+    etuEl.textContent = '—';
+    takaEl.textContent = '—';
+    return;
+  }
+  const etu = 90 - lapeKulmaDeg;
+  const taka = 90 + lapeKulmaDeg;
+  etuEl.textContent = roundN(etu, 1) + '°';
+  takaEl.textContent = roundN(taka, 1) + '°';
+}
+
+// ── HARJAPELLIN TOINEN KULMA ──────────────────────────────────────
+// Kulma 1 = kanttikoneen lukema ylemmälle taitteelle (nostaa harjapellin
+// lappeesta). Toinen taite tasoittaa yläosan vaakasuoraksi.
+// Kaava vahvistettu kahdella käyttäjän esimerkillä (1:1 & kulma1=60 → 15°,
+// 1:3 & kulma1=60 → 41,57°):
+//   kulma2 = kulma1 − lapekulma
+// Jos kulma1 ≤ lapekulma, tulos ei ole kelvollinen — silloin kulma1:tä
+// pitää suurentaa (kanttikoneen arvo on käyttäjän valittavissa).
+function kkPaivitaHarjapelti(lapeKulmaDeg) {
+  if (lapeKulmaDeg === null) {
+    setError('result-harjapelti', 'Syötä kaltevuus yllä');
+    return;
+  }
+  const kulma1 = gn('kk-harja-kulma1');
+  if (!kulma1 || kulma1 <= 0) {
+    setError('result-harjapelti', 'Syötä kulma 1 (kanttikoneen arvo)');
+    return;
+  }
+  const kulma2 = kulma1 - lapeKulmaDeg;
+  if (kulma2 <= 0) {
+    setError('result-harjapelti', 'Kulma 1 on liian pieni tälle kaltevuudelle — suurenna kulma 1:tä (nyt vähintään ' + Math.ceil(lapeKulmaDeg) + '°)');
+    return;
+  }
+
+  const rows = [
+    { label: 'Kulma 1 (syötetty)', value: roundN(kulma1, 0), unit: '°', small: true },
+    { divider: true },
+    { label: 'Harjapellin toinen kulma', value: Math.round(kulma2), unit: '°', big: true },
+  ];
+  setResult('result-harjapelti', rows);
 }
 
 function kkKulmaKaari(x, y, angleDeg) {
