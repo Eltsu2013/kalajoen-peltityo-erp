@@ -2120,8 +2120,6 @@
     </div>
   </div>
 
-  <button class="calc-btn" onclick="kkLaske()">Laske</button>
-
   <div class="result-box" id="result-kattokaltevuus">
     <div class="result-title">Tulos</div>
     <div class="result-empty">— syötä kaltevuus ja lappeen pituus —</div>
@@ -2152,6 +2150,14 @@
     <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:2;">
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Etukulma (90° − lapekulma)</span> <strong id="kk-piippu-etu">—</strong></div>
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Takakulma (90° + lapekulma)</span> <strong id="kk-piippu-taka">—</strong></div>
+    </div>
+  </div>
+
+  <div class="calc-section">
+    <div class="section-title">Jiiripelti (L-talo)</div>
+    <p class="hint" style="margin-bottom:12px;">Sisäjiirin taitekulma, kun L-talon kaksi siipeä kohtaavat 90° kulmassa ja molemmilla on sama kattokaltevuus (yllä syötetty).</p>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:2;">
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Jiirin kulma (kanttikoneelle)</span> <strong id="kk-jiiri-kulma">—</strong></div>
     </div>
   </div>
 
@@ -2548,6 +2554,7 @@ function kkLaske() {
   kkPiirra(lapeKulmaDeg);
   kkPaivitaPiippu(lapeKulmaDeg);
   kkPaivitaHarjapelti(lapeKulmaDeg);
+  kkPaivitaJiiri(lapeKulmaDeg);
 
   if (lapeKulmaDeg === null) {
     setError('result-kattokaltevuus', 'Syötä kaltevuus (suhdeluku tai kulma)');
@@ -2638,6 +2645,26 @@ function kkPaivitaHarjapelti(lapeKulmaDeg) {
     { label: 'Harjapellin toinen kulma', value: Math.round(kulma2), unit: '°', big: true },
   ];
   setResult('result-harjapelti', rows);
+}
+
+// ── JIIRIPELTI (L-TALO) ───────────────────────────────────────────
+// Sisäjiirin taitekulma kun kaksi samankaltevuista lapetta kohtaavat
+// 90° kulmassa (tavallinen L-talo). Johdettu 3D-tasogeometriasta
+// (tasojen normaalivektorien välinen kulma) ja tarkistettu kahdella
+// riippumattomalla menetelmällä sekä ääripäillä (0°→180°, 90°→90°):
+//   Jiirin todellinen kulma = 180° − arccos(cos²(lapekulma))
+//   Kanttikoneen lukema     = arccos(cos²(lapekulma))
+function kkPaivitaJiiri(lapeKulmaDeg) {
+  const el = document.getElementById('kk-jiiri-kulma');
+  if (!el) return;
+  if (lapeKulmaDeg === null) {
+    el.textContent = '—';
+    return;
+  }
+  const rad = lapeKulmaDeg * Math.PI / 180;
+  const cos2 = Math.cos(rad) * Math.cos(rad);
+  const kanttikone = Math.acos(cos2) * 180 / Math.PI;
+  el.textContent = roundN(kanttikone, 1) + '°';
 }
 
 function kkKulmaKaari(x, y, angleDeg) {
