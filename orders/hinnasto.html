@@ -2288,7 +2288,7 @@ async function loadList() {
 async function loadFixed() {
   try {
     const r = await fetch(
-      SUPABASE_URL + '/rest/v1/pricing_fixed?select=id,legacy_code,product_name,material,thickness_mm,unit_price,unit&order=legacy_code',
+      SUPABASE_URL + '/rest/v1/pricing_fixed?select=id,legacy_code,product_name,material,thickness_mm,unit_price,unit,gutter_type&order=legacy_code',
       { headers: HDR }
     );
     if (!r.ok) { fixedData = []; renderFixedFilters(); renderFixed(); return; }
@@ -2449,10 +2449,15 @@ async function saveListPrice(id) {
 }
 
 // ---- KIINTEAT HINNAT ----
-function getFixedGroup(code) {
+function getFixedGroup(row) {
+  var code = row.legacy_code;
   if (code >= 1 && code <= 99) return 'Työt / Tarvikkeet';
   if (code >= 600 && code <= 699) return 'Profiilit';
-  if (code >= 800 && code <= 899) return 'Kourut';
+  if (code >= 800 && code <= 899) {
+    if (row.gutter_type === 'SQUARE') return 'Kourut (Kanttinen)';
+    if (row.gutter_type === 'HALF_ROUND') return 'Kourut (Puolipyöreä)';
+    return 'Kourut (määrittelemätön)';
+  }
   if (code >= 900 && code <= 999) return 'Levyt';
   if (code >= 7000 && code <= 7999) return 'Kattoturva';
   return 'Muut';
@@ -2461,7 +2466,7 @@ function getFixedGroup(code) {
 function renderFixedFilters() {
   var groups = [];
   fixedData.forEach(function(r) {
-    var g = getFixedGroup(r.legacy_code);
+    var g = getFixedGroup(r);
     if (groups.indexOf(g) === -1) groups.push(g);
   });
   groups.sort();
@@ -2482,7 +2487,7 @@ function setFixedFilterData(btn) {
 function renderFixed() {
   var search = (document.getElementById('fixedSearch') ? document.getElementById('fixedSearch').value : '').toLowerCase();
   var rows = fixedData.map(function(r) {
-    return Object.assign({}, r, { _group: getFixedGroup(r.legacy_code) });
+    return Object.assign({}, r, { _group: getFixedGroup(r) });
   });
   if (fixedGroupFilter !== 'all') rows = rows.filter(function(r) { return r._group === fixedGroupFilter; });
   if (search) rows = rows.filter(function(r) {
@@ -2843,7 +2848,7 @@ function renderFixedMobile() {
   var grid = document.getElementById('fixedMobileGrid');
   if (!grid) return;
   var search = (document.getElementById('fixedSearch') ? document.getElementById('fixedSearch').value : '').toLowerCase();
-  var rows = fixedData.map(function(r) { return Object.assign({}, r, { _group: getFixedGroup(r.legacy_code) }); });
+  var rows = fixedData.map(function(r) { return Object.assign({}, r, { _group: getFixedGroup(r) }); });
   if (fixedGroupFilter !== 'all') rows = rows.filter(function(r) { return r._group === fixedGroupFilter; });
   if (search) rows = rows.filter(function(r) {
     return (r.product_name || '').toLowerCase().includes(search)
