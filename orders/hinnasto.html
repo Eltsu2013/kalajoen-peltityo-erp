@@ -2208,7 +2208,7 @@
 <div class="modal-overlay" id="addMatModal" style="display:none" onclick="closeIfOverlay(event,'addMatModal')">
   <div class="modal" style="max-width:420px">
     <div class="modal-header">
-      <div class="modal-title">+ Lisää materiaali</div>
+      <div class="modal-title" id="addMatModalTitle">+ Lisää materiaali</div>
       <button class="modal-close" onclick="closeModal('addMatModal')">×</button>
     </div>
     <div class="modal-body">
@@ -2259,6 +2259,7 @@ const HDR = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
 let listData = [];
 let fixedData = [];
 let matData = [];
+let editingMaterialId = null;
 let surchargeData = [];
 let listMatFilter = 'all';
 let fixedGroupFilter = 'all';
@@ -2571,10 +2572,24 @@ function renderMaterials() {
     html += '<td class="right mono">' + (row.multiplier != null ? parseFloat(row.multiplier).toFixed(2) : '—') + '</td>';
     html += '<td class="right mono">' + (row.work_price != null ? parseFloat(row.work_price).toFixed(2) : '—') + ' €</td>';
     html += '<td class="right" style="font-size:11px;color:var(--text-dim)">' + (row.updated_at ? row.updated_at.slice(0,10) : '—') + '</td>';
-    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm">Muokkaa</button></td>';
+    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" onclick="editMaterial(this)">Muokkaa</button></td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
+}
+
+function editMaterial(btnOrId) {
+  var id = (btnOrId && btnOrId.getAttribute) ? btnOrId.getAttribute('data-id') : btnOrId;
+  var row = matData.find(function(m) { return String(m.id) === String(id); });
+  if (!row) return;
+  editingMaterialId = row.id;
+  document.getElementById('addMatModalTitle').textContent = 'Muokkaa materiaalia';
+  document.getElementById('newMatName').value = row.material || '';
+  document.getElementById('newMatThickness').value = row.thickness_mm != null ? row.thickness_mm : '';
+  document.getElementById('newMatPurchase').value = row.purchase_price != null ? row.purchase_price : '';
+  document.getElementById('newMatMultiplier').value = row.multiplier != null ? row.multiplier : 1.85;
+  document.getElementById('newMatWork').value = row.work_price != null ? row.work_price : 2.00;
+  document.getElementById('addMatModal').style.display = 'flex';
 }
 
 async function saveMaterial() {
@@ -2584,12 +2599,20 @@ async function saveMaterial() {
   var mul = parseFloat(document.getElementById('newMatMultiplier').value);
   var wrk = parseFloat(document.getElementById('newMatWork').value);
   if (!mat || isNaN(pur)) { showToast('Täytä vaaditut kentät', true); return; }
-  var r = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials',
-    { method: 'POST', headers: HDR,
-      body: JSON.stringify({ material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price: wrk || 2.00 }) });
+  var payload = { material: mat, thickness_mm: thk || null, purchase_price: pur, multiplier: mul || 1.85, work_price: wrk || 2.00 };
+  var r;
+  if (editingMaterialId != null) {
+    payload.updated_at = new Date().toISOString();
+    r = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials?id=eq.' + editingMaterialId,
+      { method: 'PATCH', headers: HDR, body: JSON.stringify(payload) });
+  } else {
+    r = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials',
+      { method: 'POST', headers: HDR, body: JSON.stringify(payload) });
+  }
   if (r.ok) {
     closeModal('addMatModal');
-    showToast('Materiaali lisätty');
+    showToast(editingMaterialId != null ? 'Materiaali päivitetty' : 'Materiaali lisätty');
+    editingMaterialId = null;
     await loadMaterials();
   } else {
     showToast('Tallennus epäonnistui', true);
@@ -2745,10 +2768,17 @@ async function executeMassUpdate() {
   }
   var existing = matData.find(function(m) { return m.material === mat; });
   if (existing) {
-    await fetch(SUPABASE_URL + '/rest/v1/pricing_materials?id=eq.' + existing.id,
+    var updatedAt = new Date().toISOString();
+    var pr = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials?id=eq.' + existing.id,
       { method: 'PATCH', headers: HDR,
-        body: JSON.stringify({ purchase_price: purchase, multiplier: mult, work_price: work, updated_at: new Date().toISOString() }) });
-    existing.purchase_price = purchase;
+        body: JSON.stringify({ purchase_price: purchase, multiplier: mult, work_price: work, updated_at: updatedAt }) });
+    if (pr.ok) {
+      existing.purchase_price = purchase;
+      existing.multiplier = mult;
+      existing.work_price = work;
+      existing.updated_at = updatedAt;
+      renderMaterials();
+    }
   } else {
     var nr = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials',
       { method: 'POST', headers: HDR,
@@ -2781,7 +2811,16 @@ function switchTab(name, el) {
 
 function showMassModalBtn() { showMassModal(); }
 function showSurchargeModal() { document.getElementById('surchargeModal').style.display = 'flex'; }
-function showAddMaterialModal() { document.getElementById('addMatModal').style.display = 'flex'; }
+function showAddMaterialModal() {
+  editingMaterialId = null;
+  document.getElementById('addMatModalTitle').textContent = '+ Lisää materiaali';
+  document.getElementById('newMatName').value = '';
+  document.getElementById('newMatThickness').value = '';
+  document.getElementById('newMatPurchase').value = '';
+  document.getElementById('newMatMultiplier').value = 1.85;
+  document.getElementById('newMatWork').value = 2.00;
+  document.getElementById('addMatModal').style.display = 'flex';
+}
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function closeIfOverlay(e, id) { if (e.target.id === id) closeModal(id); }
 
