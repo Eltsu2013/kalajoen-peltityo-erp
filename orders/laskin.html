@@ -261,6 +261,15 @@
     margin-top: -8px; margin-bottom: 14px;
     line-height: 1.5;
   }
+
+  /* Tulostus — vain aktiivisen välilehden yhteenveto näkyy, muu piilotetaan */
+  @media print {
+    header, .tab-bar, .no-print { display: none !important; }
+    body { background: #fff; color: #000; }
+    .tab-content.active { padding: 0; max-width: none; }
+    .calc-section { border-color: #ccc; background: #fff; }
+    .result-value { color: #000; }
+  }
 </style>
 </head>
 <body>
@@ -1888,6 +1897,7 @@
   <button class="tab-btn active" onclick="showTab('leikkaus', this)">Leikkaus</button>
   <button class="tab-btn" onclick="showTab('kattopelti', this)">Kattopelti</button>
   <button class="tab-btn" onclick="showTab('kattokaltevuus', this)">Kattokaltevuus</button>
+  <button class="tab-btn" onclick="showTab('seinapellit', this)">Seinäpellit</button>
   <button class="tab-btn" onclick="showTab('listat', this)">Listat</button>
   <button class="tab-btn" onclick="showTab('pituusmitat', this)">Pituusmitat</button>
   <button class="tab-btn" onclick="showTab('kouru', this)">Kouru</button>
@@ -2159,6 +2169,29 @@
     <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:2;">
       <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-dim);">Jiirin kulma (kanttikoneelle)</span> <strong id="kk-jiiri-kulma">—</strong></div>
     </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════ -->
+<!-- VÄLILEHTI: SEINÄPELLIT                -->
+<!-- ══════════════════════════════════════ -->
+<div id="tab-seinapellit" class="tab-content">
+
+  <div class="calc-section no-print">
+    <div class="section-title">Seinäpellit</div>
+    <p class="hint" style="margin-bottom:12px;">Lisää seiniä tarpeen mukaan. Seinä voi olla suora tai vino (esim. päätykolmio), ja siihen voi lisätä ovia/aukkoja — pellintarve lasketaan automaattisesti aukon ympärille.</p>
+    <button type="button" class="calc-btn" style="margin-bottom:0;" onclick="spLisaaSeina()">+ Lisää seinä</button>
+  </div>
+
+  <div id="sp-seinat-container" class="no-print"></div>
+
+  <div class="calc-section">
+    <div class="section-title">Yhteenveto — kaikki seinät</div>
+    <div id="sp-yhteenveto">
+      <div class="result-empty">— lisää seiniä nähdäksesi yhteenvedon —</div>
+    </div>
+    <button type="button" class="calc-btn no-print" style="margin-top:12px;" onclick="window.print()">🖨 Tulosta yhteenveto</button>
   </div>
 
 </div>
@@ -2599,7 +2632,6 @@ function kkLaske() {
 }
 
 // ── PIIPUN JUURIKULMAT ────────────────────────────────────────────
-// Kattotuolin/piipun juuren viistekulmat lapekulman mukaan.
 function kkPaivitaPiippu(lapeKulmaDeg) {
   const etuEl = document.getElementById('kk-piippu-etu');
   const takaEl = document.getElementById('kk-piippu-taka');
@@ -2616,13 +2648,7 @@ function kkPaivitaPiippu(lapeKulmaDeg) {
 }
 
 // ── HARJAPELLIN TOINEN KULMA ──────────────────────────────────────
-// Kulma 1 = kanttikoneen lukema ylemmälle taitteelle (nostaa harjapellin
-// lappeesta). Toinen taite tasoittaa yläosan vaakasuoraksi.
-// Kaava vahvistettu kahdella käyttäjän esimerkillä (1:1 & kulma1=60 → 15°,
-// 1:3 & kulma1=60 → 41,57°):
-//   kulma2 = kulma1 − lapekulma
-// Jos kulma1 ≤ lapekulma, tulos ei ole kelvollinen — silloin kulma1:tä
-// pitää suurentaa (kanttikoneen arvo on käyttäjän valittavissa).
+// kulma2 = kulma1 − lapekulma (vahvistettu käyttäjän kahdella esimerkillä)
 function kkPaivitaHarjapelti(lapeKulmaDeg) {
   if (lapeKulmaDeg === null) {
     setError('result-harjapelti', 'Syötä kaltevuus yllä');
@@ -2638,7 +2664,6 @@ function kkPaivitaHarjapelti(lapeKulmaDeg) {
     setError('result-harjapelti', 'Kulma 1 on liian pieni tälle kaltevuudelle — suurenna kulma 1:tä (nyt vähintään ' + Math.ceil(lapeKulmaDeg) + '°)');
     return;
   }
-
   const rows = [
     { label: 'Kulma 1 (syötetty)', value: roundN(kulma1, 0), unit: '°', small: true },
     { divider: true },
@@ -2648,12 +2673,7 @@ function kkPaivitaHarjapelti(lapeKulmaDeg) {
 }
 
 // ── JIIRIPELTI (L-TALO) ───────────────────────────────────────────
-// Sisäjiirin taitekulma kun kaksi samankaltevuista lapetta kohtaavat
-// 90° kulmassa (tavallinen L-talo). Johdettu 3D-tasogeometriasta
-// (tasojen normaalivektorien välinen kulma) ja tarkistettu kahdella
-// riippumattomalla menetelmällä sekä ääripäillä (0°→180°, 90°→90°):
-//   Jiirin todellinen kulma = 180° − arccos(cos²(lapekulma))
-//   Kanttikoneen lukema     = arccos(cos²(lapekulma))
+// Jiirin todellinen kulma = 180 - arccos(cos²(lapekulma)); kanttikoneelle = arccos(cos²(lapekulma))
 function kkPaivitaJiiri(lapeKulmaDeg) {
   const el = document.getElementById('kk-jiiri-kulma');
   if (!el) return;
@@ -2759,6 +2779,361 @@ function kkPiirra(lapeKulmaDegInput) {
 }
 
 kkPiirra(null);
+
+// ══════════════════════════════════════════════════════════════════
+// ── SEINÄPELLIT ──────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// Datamalli: seinat[] = { id, nimi, tyyppi:'suora'|'vino', leveys,
+//   korkeus (suora), korkeusVas/korkeusOik (vino), paneliLeveys,
+//   aloitus:'vasen'|'oikea', aukot:[{id,tyyppi:'ovi'|'ikkuna',x,leveys,korkeus}] }
+//
+// Aukko oletetaan tähän mennessä aina lattiasta ylöspäin (kuten ovi):
+// aukon kohdalle jää vain "header"-pätkä yläpuolelle, korkeus =
+// seinän korkeus siinä kohtaa miinus aukon korkeus. Ikkunan
+// alapuolisia paloja ei vielä lasketa — odottaa vahvistusta.
+
+let seinat = [];
+let seinaIdSeq = 1;
+
+function spKorkeusKohdassa(s, x) {
+  if (s.tyyppi === 'suora') return s.korkeus;
+  const t = s.leveys > 0 ? x / s.leveys : 0;
+  return s.korkeusVas + (s.korkeusOik - s.korkeusVas) * t;
+}
+
+// Laskee täysleveät paneelit + jäännöspalan välille [xAlku, xLoppu].
+// korkeusFn(x) antaa kattoviivan (tai aukon header-viivan) korkeuden x-kohdassa.
+// Jokainen pelti leikataan sen KORKEAMMAN reunan mukaan (ylimäärä trimmataan asennuksessa).
+function spLaskePaneelitValille(s, xAlku, xLoppu, korkeusFn) {
+  const leveys = xLoppu - xAlku;
+  if (leveys <= 0.01) return [];
+  const panelW = s.paneliLeveys;
+  const paneelit = [];
+  if (s.aloitus === 'vasen') {
+    let x = xAlku;
+    while (x < xLoppu - 0.01) {
+      const jaljella = xLoppu - x;
+      const tamanLev = Math.min(panelW, jaljella);
+      const korkeus = Math.max(korkeusFn(x), korkeusFn(x + tamanLev));
+      paneelit.push({ x, leveys: tamanLev, korkeus });
+      x += panelW;
+    }
+  } else {
+    let x = xLoppu;
+    while (x > xAlku + 0.01) {
+      const jaljella = x - xAlku;
+      const tamanLev = Math.min(panelW, jaljella);
+      const xStart = x - tamanLev;
+      const korkeus = Math.max(korkeusFn(xStart), korkeusFn(x));
+      paneelit.unshift({ x: xStart, leveys: tamanLev, korkeus });
+      x -= panelW;
+    }
+  }
+  return paneelit;
+}
+
+function spLaskeSeina(s) {
+  if (!s.leveys || s.leveys <= 0) return null;
+  if (!s.paneliLeveys || s.paneliLeveys <= 0) return null;
+  if (s.tyyppi === 'suora' && (!s.korkeus || s.korkeus <= 0)) return null;
+  if (s.tyyppi === 'vino' && (!s.korkeusVas || !s.korkeusOik || s.korkeusVas <= 0 || s.korkeusOik <= 0)) return null;
+
+  const aukot = (s.aukot || [])
+    .filter(a => a.x != null && a.leveys > 0 && a.korkeus > 0)
+    .sort((a, b) => a.x - b.x);
+
+  let paneelit = [];
+  let cursor = 0;
+  for (const a of aukot) {
+    const aukkoAlku = Math.max(0, a.x);
+    const aukkoLoppu = Math.min(s.leveys, a.x + a.leveys);
+    if (aukkoAlku > cursor) {
+      paneelit.push(...spLaskePaneelitValille(s, cursor, aukkoAlku, x => spKorkeusKohdassa(s, x)));
+    }
+    if (aukkoLoppu > aukkoAlku) {
+      const headerFn = x => Math.max(0, spKorkeusKohdassa(s, x) - a.korkeus);
+      const headerPaneelit = spLaskePaneelitValille(s, aukkoAlku, aukkoLoppu, headerFn)
+        .filter(p => p.korkeus > 1);
+      headerPaneelit.forEach(p => p.aukonYla = true);
+      paneelit.push(...headerPaneelit);
+    }
+    cursor = Math.max(cursor, aukkoLoppu);
+  }
+  if (cursor < s.leveys - 0.01) {
+    paneelit.push(...spLaskePaneelitValille(s, cursor, s.leveys, x => spKorkeusKohdassa(s, x)));
+  }
+  paneelit.sort((a, b) => a.x - b.x);
+  return paneelit;
+}
+
+function spRyhmittele(paneelit) {
+  const map = new Map();
+  for (const p of paneelit) {
+    const key = Math.round(p.leveys) + 'x' + Math.round(p.korkeus);
+    if (!map.has(key)) map.set(key, { leveys: Math.round(p.leveys), korkeus: Math.round(p.korkeus), kpl: 0 });
+    map.get(key).kpl++;
+  }
+  return Array.from(map.values()).sort((a, b) => b.korkeus - a.korkeus || b.leveys - a.leveys);
+}
+
+function spPiirraSeina(s, paneelit) {
+  const svg = document.getElementById('sp-svg-' + s.id);
+  if (!svg) return;
+  const mitatOk = s.leveys > 0 && ((s.tyyppi === 'suora' && s.korkeus > 0) || (s.tyyppi === 'vino' && s.korkeusVas > 0 && s.korkeusOik > 0));
+  if (!mitatOk) { svg.innerHTML = ''; return; }
+
+  const W = 320, H = 200, margin = 14;
+  const maxH = s.tyyppi === 'suora' ? s.korkeus : Math.max(s.korkeusVas, s.korkeusOik);
+  const drawW = W - 2 * margin, drawH = H - 2 * margin;
+  const scale = Math.min(drawW / s.leveys, drawH / maxH);
+  const originX = margin;
+  const baseY = H - margin;
+
+  const px = x => originX + x * scale;
+  const py = h => baseY - h * scale;
+
+  let c = '';
+
+  (s.aukot || []).forEach(a => {
+    if (a.x == null || !a.leveys || !a.korkeus) return;
+    const ax0 = px(Math.max(0, a.x)), ax1 = px(Math.min(s.leveys, a.x + a.leveys));
+    const ay0 = py(a.korkeus), ay1 = baseY;
+    const col = a.tyyppi === 'ovi' ? '#3a8fe8' : '#3dba6e';
+    c += `<rect x="${ax0}" y="${ay0}" width="${ax1 - ax0}" height="${ay1 - ay0}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="1"/>`;
+  });
+
+  if (s.tyyppi === 'suora') {
+    const x0 = px(0), x1 = px(s.leveys), yTop = py(s.korkeus);
+    c += `<rect x="${x0}" y="${yTop}" width="${x1 - x0}" height="${baseY - yTop}" fill="none" stroke="#e8a020" stroke-width="1.5"/>`;
+  } else {
+    const x0 = px(0), x1 = px(s.leveys);
+    const yL = py(s.korkeusVas), yR = py(s.korkeusOik);
+    c += `<polygon points="${x0},${baseY} ${x0},${yL} ${x1},${yR} ${x1},${baseY}" fill="none" stroke="#e8a020" stroke-width="1.5"/>`;
+  }
+
+  (paneelit || []).forEach(p => {
+    const lineX = px(p.x);
+    const topY = py(spKorkeusKohdassa(s, p.x));
+    c += `<line x1="${lineX}" y1="${baseY}" x2="${lineX}" y2="${topY}" stroke="#9595a0" stroke-width="0.75"/>`;
+  });
+  const lastX = px(s.leveys);
+  const lastTopY = py(spKorkeusKohdassa(s, s.leveys));
+  c += `<line x1="${lastX}" y1="${baseY}" x2="${lastX}" y2="${lastTopY}" stroke="#9595a0" stroke-width="0.75"/>`;
+
+  svg.innerHTML = c;
+}
+
+function spPaivitaSeina(id) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  const paneelit = spLaskeSeina(s);
+  spPiirraSeina(s, paneelit);
+  const boxId = 'sp-result-' + s.id;
+  if (!paneelit || paneelit.length === 0) {
+    setError(boxId, 'Syötä seinän mitat');
+  } else {
+    const ryhmat = spRyhmittele(paneelit);
+    const rows = ryhmat.map(r => ({ label: r.leveys + ' × ' + r.korkeus + ' mm', value: r.kpl, unit: 'kpl' }));
+    rows.push({ divider: true });
+    rows.push({ label: 'Peltejä yhteensä', value: paneelit.length, unit: 'kpl', big: true });
+    setResult(boxId, rows);
+  }
+  spPaivitaYhteenveto();
+}
+
+function spPaivitaYhteenveto() {
+  const cont = document.getElementById('sp-yhteenveto');
+  if (!cont) return;
+  if (seinat.length === 0) {
+    cont.innerHTML = '<div class="result-empty">— lisää seiniä nähdäksesi yhteenvedon —</div>';
+    return;
+  }
+  let html = '';
+  let kaikkiKpl = 0;
+  seinat.forEach(s => {
+    const paneelit = spLaskeSeina(s);
+    if (!paneelit || paneelit.length === 0) return;
+    const ryhmat = spRyhmittele(paneelit);
+    kaikkiKpl += paneelit.length;
+    html += `<div style="margin-bottom:14px;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">${s.nimi}</div>
+      ${ryhmat.map(r => `<div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:2px 0;"><span style="color:var(--text-dim);">${r.leveys} × ${r.korkeus} mm</span><span>${r.kpl} kpl</span></div>`).join('')}
+    </div>`;
+  });
+  if (!html) {
+    cont.innerHTML = '<div class="result-empty">— syötä seinien mitat nähdäksesi yhteenvedon —</div>';
+    return;
+  }
+  html += `<hr class="result-divider"><div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;padding-top:4px;"><span>Peltejä yhteensä</span><span style="color:var(--accent);">${kaikkiKpl} kpl</span></div>`;
+  cont.innerHTML = html;
+}
+
+function spKorttiHTML(s) {
+  const isVino = s.tyyppi === 'vino';
+  const mittaKentat = isVino ? `
+      <div class="field-row col3">
+        <div class="field"><label>Leveys mm</label><input type="number" inputmode="numeric" value="${s.leveys ?? ''}" oninput="spPaivitaKentta(${s.id},'leveys',this.value)"></div>
+        <div class="field"><label>Korkeus vas. mm</label><input type="number" inputmode="numeric" value="${s.korkeusVas ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeusVas',this.value)"></div>
+        <div class="field"><label>Korkeus oik. mm</label><input type="number" inputmode="numeric" value="${s.korkeusOik ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeusOik',this.value)"></div>
+      </div>` : `
+      <div class="field-row col2">
+        <div class="field"><label>Leveys mm</label><input type="number" inputmode="numeric" value="${s.leveys ?? ''}" oninput="spPaivitaKentta(${s.id},'leveys',this.value)"></div>
+        <div class="field"><label>Korkeus mm</label><input type="number" inputmode="numeric" value="${s.korkeus ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeus',this.value)"></div>
+      </div>`;
+
+  const aukkoRivit = (s.aukot || []).map(a => `
+    <div class="siivu-row" style="grid-template-columns:84px 1fr 1fr 1fr auto;">
+      <select onchange="spPaivitaAukko(${s.id},${a.id},'tyyppi',this.value)" style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;border-radius:6px;height:48px;">
+        <option value="ovi" ${a.tyyppi === 'ovi' ? 'selected' : ''}>Ovi</option>
+        <option value="ikkuna" ${a.tyyppi === 'ikkuna' ? 'selected' : ''}>Ikkuna</option>
+      </select>
+      <input type="number" inputmode="numeric" placeholder="x mm" value="${a.x ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'x',this.value)">
+      <input type="number" inputmode="numeric" placeholder="leveys mm" value="${a.leveys ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'leveys',this.value)">
+      <input type="number" inputmode="numeric" placeholder="korkeus mm" value="${a.korkeus ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'korkeus',this.value)">
+      <button type="button" onclick="spPoistaAukko(${s.id},${a.id})" style="background:var(--danger);color:#fff;border:none;border-radius:6px;width:36px;height:48px;cursor:pointer;font-size:16px;">×</button>
+    </div>`).join('');
+
+  return `
+  <div class="calc-section" style="border-color:var(--accent);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;">
+      <input type="text" value="${s.nimi}" oninput="spPaivitaKentta(${s.id},'nimi',this.value)" style="background:none;border:none;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;padding:0;flex:1;">
+      <button type="button" onclick="spPoistaSeina(${s.id})" style="background:var(--danger);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;white-space:nowrap;">Poista seinä</button>
+    </div>
+
+    <div class="field">
+      <label>Seinän tyyppi</label>
+      <div class="seg-group">
+        <button type="button" class="seg-btn ${!isVino ? 'active' : ''}" onclick="spAsetaTyyppi(${s.id},'suora')">Suora</button>
+        <button type="button" class="seg-btn ${isVino ? 'active' : ''}" onclick="spAsetaTyyppi(${s.id},'vino')">Vino</button>
+      </div>
+    </div>
+
+    ${mittaKentat}
+
+    <div class="field-row col2">
+      <div class="field">
+        <label>Paneelin leveys mm</label>
+        <input type="number" inputmode="numeric" value="${s.paneliLeveys}" oninput="spPaivitaKentta(${s.id},'paneliLeveys',this.value)">
+      </div>
+      <div class="field">
+        <label>Pikavalinta</label>
+        <div class="seg-group">
+          <button type="button" class="seg-btn ${s.paneliLeveys == 1090 ? 'active' : ''}" onclick="spAsetaPaneliLeveys(${s.id},1090)">1090</button>
+          <button type="button" class="seg-btn ${s.paneliLeveys == 1180 ? 'active' : ''}" onclick="spAsetaPaneliLeveys(${s.id},1180)">1180</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Täydet paneelit aloitetaan</label>
+      <div class="seg-group">
+        <button type="button" class="seg-btn ${s.aloitus === 'vasen' ? 'active' : ''}" onclick="spAsetaAloitus(${s.id},'vasen')">Vasemmalta</button>
+        <button type="button" class="seg-btn ${s.aloitus === 'oikea' ? 'active' : ''}" onclick="spAsetaAloitus(${s.id},'oikea')">Oikealta</button>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:16px;">Ovet / aukot</div>
+    <div id="sp-aukot-${s.id}">
+      ${aukkoRivit || '<p class="hint" style="margin:0 0 8px;">Ei aukkoja — aukko oletetaan ulottuvan lattiaan asti (kuten ovi), sen kohdalle lasketaan vain yläpuolen pelti.</p>'}
+    </div>
+    <button type="button" class="calc-btn" style="margin-top:8px;" onclick="spLisaaAukko(${s.id})">+ Lisää aukko</button>
+
+    <div style="margin-top:16px;">
+      <svg id="sp-svg-${s.id}" viewBox="0 0 320 200" style="width:100%;height:auto;display:block;background:var(--panel2);border-radius:6px;"></svg>
+    </div>
+
+    <div class="result-box" id="sp-result-${s.id}" style="margin-top:12px;">
+      <div class="result-title">Pellintarve</div>
+      <div class="result-empty">— syötä mitat —</div>
+    </div>
+  </div>`;
+}
+
+function spRenderSeinat() {
+  const cont = document.getElementById('sp-seinat-container');
+  if (!cont) return;
+  cont.innerHTML = seinat.map(spKorttiHTML).join('');
+  seinat.forEach(s => spPaivitaSeina(s.id));
+}
+
+function spLisaaSeina() {
+  seinat.push({
+    id: seinaIdSeq++,
+    nimi: 'Seinä ' + (seinat.length + 1),
+    tyyppi: 'suora',
+    leveys: null, korkeus: null, korkeusVas: null, korkeusOik: null,
+    paneliLeveys: 1180, aloitus: 'vasen', aukot: []
+  });
+  spRenderSeinat();
+}
+
+function spPoistaSeina(id) {
+  seinat = seinat.filter(s => s.id !== id);
+  spRenderSeinat();
+}
+
+function spPaivitaKentta(id, key, value) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  s[key] = key === 'nimi' ? value : (value === '' ? null : parseFloat(value));
+  spPaivitaSeina(id);
+}
+
+function spAsetaTyyppi(id, tyyppi) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  s.tyyppi = tyyppi;
+  spRenderSeinat();
+}
+
+function spAsetaPaneliLeveys(id, val) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  s.paneliLeveys = val;
+  spRenderSeinat();
+}
+
+function spAsetaAloitus(id, val) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  s.aloitus = val;
+  spRenderSeinat();
+}
+
+function spLisaaAukko(seinaId) {
+  const s = seinat.find(w => w.id === seinaId);
+  if (!s) return;
+  s.aukot.push({ id: seinaIdSeq++, tyyppi: 'ovi', x: 0, leveys: 1000, korkeus: 2100 });
+  spRenderSeinat();
+}
+
+function spPoistaAukko(seinaId, aukkoId) {
+  const s = seinat.find(w => w.id === seinaId);
+  if (!s) return;
+  s.aukot = s.aukot.filter(a => a.id !== aukkoId);
+  spRenderSeinat();
+}
+
+function spPaivitaAukko(seinaId, aukkoId, key, value) {
+  const s = seinat.find(w => w.id === seinaId);
+  if (!s) return;
+  const a = s.aukot.find(x => x.id === aukkoId);
+  if (!a) return;
+  a[key] = key === 'tyyppi' ? value : (value === '' ? null : parseFloat(value));
+  spPaivitaSeina(seinaId);
+}
+
+// Esimerkkiseinät — havainnollistamaan sekä vinon seinän että oven header-laskennan
+seinat = [
+  { id: seinaIdSeq++, nimi: 'Sivuseinä (vino, CAD-esimerkki)', tyyppi: 'vino',
+    leveys: 7890, korkeus: null, korkeusVas: 3660, korkeusOik: 2670,
+    paneliLeveys: 1180, aloitus: 'vasen', aukot: [] },
+  { id: seinaIdSeq++, nimi: 'Etuseinä (nosto-ovi, esimerkki)', tyyppi: 'suora',
+    leveys: 6000, korkeus: 3660, korkeusVas: null, korkeusOik: null,
+    paneliLeveys: 1180, aloitus: 'vasen',
+    aukot: [{ id: seinaIdSeq++, tyyppi: 'ovi', x: 960, leveys: 3000, korkeus: 2900 }] },
+];
+spRenderSeinat();
 
 // ── LEIKKAUSLASKIN ───────────────────────────────────────────────
 // Laskee merkkausmiitat ja rissaleikkurimitat levylle.
