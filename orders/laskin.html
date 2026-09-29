@@ -2832,6 +2832,37 @@ function spLaskePaneelitValille(s, xAlku, xLoppu, korkeusFn) {
   return paneelit;
 }
 
+// Jatkuvan paneeliruudukon rajat koko seinän yli — TÄYSIN riippumaton aukoista.
+// Näin paneelien "vaihe" (mistä kohtaa 1180mm-jako lähtee) ei koskaan hyppää
+// aukon reunalla, vaan pysyy samana koko seinän matkalta.
+function spGridRajat(s) {
+  const leveys = s.leveys;
+  const panelW = s.paneliLeveys;
+  const rajat = [0];
+  if (s.aloitus === 'vasen') {
+    let x = 0;
+    while (x < leveys - 0.01) {
+      x = Math.min(x + panelW, leveys);
+      rajat.push(x);
+    }
+  } else {
+    // Rakennetaan oikealta, sitten käännetään kasvavaan järjestykseen.
+    rajat.length = 0;
+    let x = leveys;
+    rajat.push(leveys);
+    while (x > 0.01) {
+      x = Math.max(x - panelW, 0);
+      rajat.push(x);
+    }
+    rajat.reverse();
+  }
+  return rajat;
+}
+
+// Uusi laskentatapa: paneeliruudukko lasketaan YHTENÄ jatkuvana ruudukkona koko
+// seinän yli (spGridRajat), ja aukot vain "syövät" siitä palan pois siltä kohtaa
+// missä ne osuvat — paneeli lyhenee/katkeaa aukon kohdalta sen sijaan, että koko
+// ruudukko nollautuisi ja alkaisi aukon reunasta uudelleen.
 function spLaskeSeina(s) {
   if (!s.leveys || s.leveys <= 0) return null;
   if (!s.paneliLeveys || s.paneliLeveys <= 0) return null;
@@ -2840,28 +2871,59 @@ function spLaskeSeina(s) {
 
   const aukot = (s.aukot || [])
     .filter(a => a.x != null && a.leveys > 0 && a.korkeus > 0)
-    .sort((a, b) => a.x - b.x);
+    .map(a => ({
+      tyyppi: a.tyyppi,
+      korkeus: a.korkeus,
+      alaKorkeus: (a.tyyppi === 'ikkuna' && a.alaKorkeus > 0) ? a.alaKorkeus : 0,
+      alku: Math.max(0, a.x),
+      loppu: Math.min(s.leveys, a.x + a.leveys)
+    }))
+    .filter(a => a.loppu - a.alku > 0.01)
+    .sort((a, b) => a.alku - b.alku);
 
-  let paneelit = [];
-  let cursor = 0;
-  for (const a of aukot) {
-    const aukkoAlku = Math.max(0, a.x);
-    const aukkoLoppu = Math.min(s.leveys, a.x + a.leveys);
-    if (aukkoAlku > cursor) {
-      paneelit.push(...spLaskePaneelitValille(s, cursor, aukkoAlku, x => spKorkeusKohdassa(s, x)));
+  const gridRajat = spGridRajat(s);
+  const paneelit = [];
+
+  for (let i = 0; i < gridRajat.length - 1; i++) {
+    const cx0 = gridRajat[i], cx1 = gridRajat[i + 1];
+    if (cx1 - cx0 <= 0.01) continue;
+
+    // Pilkotaan tämä ruudukon "ruutu" tarvittaessa aukkojen reunoista —
+    // muuten ruutu pysyy kokonaisena.
+    const pisteetSet = new Set([cx0, cx1]);
+    aukot.forEach(a => {
+      if (a.alku > cx0 + 0.01 && a.alku < cx1 - 0.01) pisteetSet.add(a.alku);
+      if (a.loppu > cx0 + 0.01 && a.loppu < cx1 - 0.01) pisteetSet.add(a.loppu);
+    });
+    const pisteet = Array.from(pisteetSet).sort((x, y) => x - y);
+
+    for (let j = 0; j < pisteet.length - 1; j++) {
+      const sx0 = pisteet[j], sx1 = pisteet[j + 1];
+      if (sx1 - sx0 <= 0.01) continue;
+      const mid = (sx0 + sx1) / 2;
+      const aukko = aukot.find(a => a.alku <= mid && a.loppu >= mid);
+
+      if (!aukko) {
+        // Ei aukkoa tässä siivussa — normaali täysikorkuinen (seinän mukainen) pelti.
+        const korkeus = Math.max(spKorkeusKohdassa(s, sx0), spKorkeusKohdassa(s, sx1));
+        paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus });
+      } else {
+        // Aukon kohdalla: yläpuolen pelti (aina, jos jää korkeutta) ja — ikkunalla —
+        // myös alapuolen pelti lattiasta ikkunan alareunaan asti.
+        const aukonYlaraja = aukko.alaKorkeus + aukko.korkeus;
+        const yla0 = Math.max(0, spKorkeusKohdassa(s, sx0) - aukonYlaraja);
+        const yla1 = Math.max(0, spKorkeusKohdassa(s, sx1) - aukonYlaraja);
+        const yla = Math.max(yla0, yla1);
+        if (yla > 1) {
+          paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus: yla, aukonYla: true });
+        }
+        if (aukko.alaKorkeus > 1) {
+          paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus: aukko.alaKorkeus, aukonAla: true });
+        }
+      }
     }
-    if (aukkoLoppu > aukkoAlku) {
-      const headerFn = x => Math.max(0, spKorkeusKohdassa(s, x) - a.korkeus);
-      const headerPaneelit = spLaskePaneelitValille(s, aukkoAlku, aukkoLoppu, headerFn)
-        .filter(p => p.korkeus > 1);
-      headerPaneelit.forEach(p => p.aukonYla = true);
-      paneelit.push(...headerPaneelit);
-    }
-    cursor = Math.max(cursor, aukkoLoppu);
   }
-  if (cursor < s.leveys - 0.01) {
-    paneelit.push(...spLaskePaneelitValille(s, cursor, s.leveys, x => spKorkeusKohdassa(s, x)));
-  }
+
   paneelit.sort((a, b) => a.x - b.x);
   return paneelit;
 }
@@ -2896,8 +2958,9 @@ function spPiirraSeina(s, paneelit) {
 
   (s.aukot || []).forEach(a => {
     if (a.x == null || !a.leveys || !a.korkeus) return;
+    const ala = (a.tyyppi === 'ikkuna' && a.alaKorkeus > 0) ? a.alaKorkeus : 0;
     const ax0 = px(Math.max(0, a.x)), ax1 = px(Math.min(s.leveys, a.x + a.leveys));
-    const ay0 = py(a.korkeus), ay1 = baseY;
+    const ay0 = py(ala + a.korkeus), ay1 = py(ala);
     const col = a.tyyppi === 'ovi' ? '#3a8fe8' : '#3dba6e';
     c += `<rect x="${ax0}" y="${ay0}" width="${ax1 - ax0}" height="${ay1 - ay0}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="1"/>`;
   });
@@ -2981,17 +3044,22 @@ function spKorttiHTML(s) {
         <div class="field"><label>Korkeus mm</label><input type="number" inputmode="numeric" value="${s.korkeus ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeus',this.value)"></div>
       </div>`;
 
-  const aukkoRivit = (s.aukot || []).map(a => `
-    <div class="siivu-row" style="grid-template-columns:84px 1fr 1fr 1fr auto;">
+  const aukkoRivit = (s.aukot || []).map(a => {
+    const isIkkuna = a.tyyppi === 'ikkuna';
+    const cols = isIkkuna ? '84px 1fr 1fr 1fr 1fr auto' : '84px 1fr 1fr 1fr auto';
+    return `
+    <div class="siivu-row" style="grid-template-columns:${cols};">
       <select onchange="spPaivitaAukko(${s.id},${a.id},'tyyppi',this.value)" style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;border-radius:6px;height:48px;">
-        <option value="ovi" ${a.tyyppi === 'ovi' ? 'selected' : ''}>Ovi</option>
-        <option value="ikkuna" ${a.tyyppi === 'ikkuna' ? 'selected' : ''}>Ikkuna</option>
+        <option value="ovi" ${!isIkkuna ? 'selected' : ''}>Ovi</option>
+        <option value="ikkuna" ${isIkkuna ? 'selected' : ''}>Ikkuna</option>
       </select>
       <input type="number" inputmode="numeric" placeholder="x mm" value="${a.x ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'x',this.value)">
       <input type="number" inputmode="numeric" placeholder="leveys mm" value="${a.leveys ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'leveys',this.value)">
       <input type="number" inputmode="numeric" placeholder="korkeus mm" value="${a.korkeus ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'korkeus',this.value)">
+      ${isIkkuna ? `<input type="number" inputmode="numeric" placeholder="lattiasta mm" value="${a.alaKorkeus ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'alaKorkeus',this.value)">` : ''}
       <button type="button" onclick="spPoistaAukko(${s.id},${a.id})" style="background:var(--danger);color:#fff;border:none;border-radius:6px;width:36px;height:48px;cursor:pointer;font-size:16px;">×</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   return `
   <div class="calc-section" style="border-color:var(--accent);">
@@ -3103,7 +3171,7 @@ function spAsetaAloitus(id, val) {
 function spLisaaAukko(seinaId) {
   const s = seinat.find(w => w.id === seinaId);
   if (!s) return;
-  s.aukot.push({ id: seinaIdSeq++, tyyppi: 'ovi', x: 0, leveys: 1000, korkeus: 2100 });
+  s.aukot.push({ id: seinaIdSeq++, tyyppi: 'ovi', x: 0, leveys: 1000, korkeus: 2100, alaKorkeus: 0 });
   spRenderSeinat();
 }
 
@@ -3119,7 +3187,19 @@ function spPaivitaAukko(seinaId, aukkoId, key, value) {
   if (!s) return;
   const a = s.aukot.find(x => x.id === aukkoId);
   if (!a) return;
-  a[key] = key === 'tyyppi' ? value : (value === '' ? null : parseFloat(value));
+  if (key === 'tyyppi') {
+    // Ovi/ikkuna-tyypin vaihto muuttaa lomakkeen kenttiä (lattiasta-kenttä
+    // ilmestyy/katoaa), joten koko kortti pitää piirtää uudelleen.
+    a.tyyppi = value;
+    if (value === 'ikkuna') {
+      if (!a.alaKorkeus || a.alaKorkeus <= 0) a.alaKorkeus = 900;
+    } else {
+      a.alaKorkeus = 0; // ovi lähtee aina lattiasta
+    }
+    spRenderSeinat();
+    return;
+  }
+  a[key] = value === '' ? null : parseFloat(value);
   spPaivitaSeina(seinaId);
 }
 
@@ -3131,7 +3211,11 @@ seinat = [
   { id: seinaIdSeq++, nimi: 'Etuseinä (nosto-ovi, esimerkki)', tyyppi: 'suora',
     leveys: 6000, korkeus: 3660, korkeusVas: null, korkeusOik: null,
     paneliLeveys: 1180, aloitus: 'vasen',
-    aukot: [{ id: seinaIdSeq++, tyyppi: 'ovi', x: 960, leveys: 3000, korkeus: 2900 }] },
+    aukot: [{ id: seinaIdSeq++, tyyppi: 'ovi', x: 960, leveys: 3000, korkeus: 2900, alaKorkeus: 0 }] },
+  { id: seinaIdSeq++, nimi: 'Takaseinä (ikkuna, esimerkki)', tyyppi: 'suora',
+    leveys: 4000, korkeus: 3000, korkeusVas: null, korkeusOik: null,
+    paneliLeveys: 1180, aloitus: 'vasen',
+    aukot: [{ id: seinaIdSeq++, tyyppi: 'ikkuna', x: 1500, leveys: 1200, korkeus: 1200, alaKorkeus: 900 }] },
 ];
 spRenderSeinat();
 
