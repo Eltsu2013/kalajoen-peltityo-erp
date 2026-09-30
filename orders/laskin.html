@@ -2859,10 +2859,22 @@ function spGridRajat(s) {
   return rajat;
 }
 
-// Uusi laskentatapa: paneeliruudukko lasketaan YHTENÄ jatkuvana ruudukkona koko
-// seinän yli (spGridRajat), ja aukot vain "syövät" siitä palan pois siltä kohtaa
-// missä ne osuvat — paneeli lyhenee/katkeaa aukon kohdalta sen sijaan, että koko
-// ruudukko nollautuisi ja alkaisi aukon reunasta uudelleen.
+// Seinän peltilaskenta koostuu KAHDESTA erillisestä laskennasta, joilla on eri logiikka:
+//
+// 1) TÄYSIKORKEAT PELLIT (ei aukon kohdalla): näiden pitää noudattaa YHTÄ jatkuvaa
+//    1180mm-ruudukkoa koko seinän yli (spGridRajat), koska ne ovat näkyvässä julkisivussa
+//    ja niiden rytmin pitää pysyä samana koko matkan — aukko vain "puraisee" siitä
+//    tarvittavan kohdan pois, paneeli lyhenee/katkeaa aukon reunalta, eikä ruudukko
+//    nollaudu ja ala uudesta vaiheesta aukon jälkeen (tämä oli edellinen korjaus, ja se
+//    pitää edelleen paikkansa).
+//
+// 2) AUKON YLÄ-/ALAPUOLEN PELLIT (oven/ikkunan kohdalla): nämä ovat eri asia — ne ovat
+//    lyhyitä täyte-/karmin taakse jääviä paloja, joiden EI tarvitse noudattaa seinän
+//    näkyvää 1180mm-rytmiä lainkaan. Jos ne pilkotaan päägridin rajakohdista (kuten
+//    edellisessä versiossa), aukon kohdalle syntyy turhaan monta pientä palaa vaikka
+//    aukko itse olisi kapeampi kuin yksi paneeli. Oikea tapa (vahvistettu käyttäjän
+//    CAD-kuvasta) on laskea nämä OMANA yksikkönään aukon omasta reunasta alkaen —
+//    aivan kuten ennen jatkuvan-gridin korjausta, mutta nyt vain näille paloille.
 function spLaskeSeina(s) {
   if (!s.leveys || s.leveys <= 0) return null;
   if (!s.paneliLeveys || s.paneliLeveys <= 0) return null;
@@ -2881,9 +2893,10 @@ function spLaskeSeina(s) {
     .filter(a => a.loppu - a.alku > 0.01)
     .sort((a, b) => a.alku - b.alku);
 
-  const gridRajat = spGridRajat(s);
   const paneelit = [];
 
+  // ── 1) Täysikorkeat pellit: jatkuva ruudukko, aukot vain leikkaavat siitä palan pois ──
+  const gridRajat = spGridRajat(s);
   for (let i = 0; i < gridRajat.length - 1; i++) {
     const cx0 = gridRajat[i], cx1 = gridRajat[i + 1];
     if (cx1 - cx0 <= 0.01) continue;
@@ -2901,28 +2914,29 @@ function spLaskeSeina(s) {
       const sx0 = pisteet[j], sx1 = pisteet[j + 1];
       if (sx1 - sx0 <= 0.01) continue;
       const mid = (sx0 + sx1) / 2;
-      const aukko = aukot.find(a => a.alku <= mid && a.loppu >= mid);
+      const peittavaAukko = aukot.find(a => a.alku <= mid && a.loppu >= mid);
+      if (peittavaAukko) continue; // aukon kohta — hoidetaan vaiheessa 2
 
-      if (!aukko) {
-        // Ei aukkoa tässä siivussa — normaali täysikorkuinen (seinän mukainen) pelti.
-        const korkeus = Math.max(spKorkeusKohdassa(s, sx0), spKorkeusKohdassa(s, sx1));
-        paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus });
-      } else {
-        // Aukon kohdalla: yläpuolen pelti (aina, jos jää korkeutta) ja — ikkunalla —
-        // myös alapuolen pelti lattiasta ikkunan alareunaan asti.
-        const aukonYlaraja = aukko.alaKorkeus + aukko.korkeus;
-        const yla0 = Math.max(0, spKorkeusKohdassa(s, sx0) - aukonYlaraja);
-        const yla1 = Math.max(0, spKorkeusKohdassa(s, sx1) - aukonYlaraja);
-        const yla = Math.max(yla0, yla1);
-        if (yla > 1) {
-          paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus: yla, aukonYla: true });
-        }
-        if (aukko.alaKorkeus > 1) {
-          paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus: aukko.alaKorkeus, aukonAla: true });
-        }
-      }
+      const korkeus = Math.max(spKorkeusKohdassa(s, sx0), spKorkeusKohdassa(s, sx1));
+      paneelit.push({ x: sx0, leveys: sx1 - sx0, korkeus });
     }
   }
+
+  // ── 2) Aukkojen ylä-/alapuolen pellit: oma paikallinen jako aukon reunasta ──
+  aukot.forEach(aukko => {
+    const aukonYlaraja = aukko.alaKorkeus + aukko.korkeus;
+    const headerFn = x => Math.max(0, spKorkeusKohdassa(s, x) - aukonYlaraja);
+    const ylaPalat = spLaskePaneelitValille(s, aukko.alku, aukko.loppu, headerFn)
+      .filter(p => p.korkeus > 1);
+    ylaPalat.forEach(p => p.aukonYla = true);
+    paneelit.push(...ylaPalat);
+
+    if (aukko.alaKorkeus > 1) {
+      const alaPalat = spLaskePaneelitValille(s, aukko.alku, aukko.loppu, () => aukko.alaKorkeus);
+      alaPalat.forEach(p => p.aukonAla = true);
+      paneelit.push(...alaPalat);
+    }
+  });
 
   paneelit.sort((a, b) => a.x - b.x);
   return paneelit;
