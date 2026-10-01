@@ -2924,17 +2924,32 @@ function spLaskeSeina(s) {
   }
 
   paneelit.sort((a, b) => a.x - b.x);
+
+  // Tilausleveys = leveys, jonka verstaalla oikeasti tehdään/tilataan.
+  // Jos seinän jäännöspala-asetus EI ole 'tarkka' (eli oletus 'tayslevea'),
+  // kapeampi reuna-/jäännöspala tehdään silti täyteen paneelin leveyteen asti
+  // ja leikataan oikeaan mittaansa vasta työmaalla — joillain profiileilla
+  // (esim. KP-20) kapeampaa ei voi muovata koneesta lainkaan.
+  paneelit.forEach(p => {
+    p.tilausLeveys = (s.jaannos !== 'tarkka' && p.leveys < s.paneliLeveys - 0.5)
+      ? s.paneliLeveys
+      : p.leveys;
+  });
+
   return paneelit;
 }
 
 function spRyhmittele(paneelit) {
   const map = new Map();
   for (const p of paneelit) {
-    const key = Math.round(p.leveys) + 'x' + Math.round(p.korkeus);
-    if (!map.has(key)) map.set(key, { leveys: Math.round(p.leveys), korkeus: Math.round(p.korkeus), kpl: 0 });
+    const tilausLeveys = Math.round(p.tilausLeveys != null ? p.tilausLeveys : p.leveys);
+    const leveys = Math.round(p.leveys);
+    const korkeus = Math.round(p.korkeus);
+    const key = tilausLeveys + 'x' + leveys + 'x' + korkeus;
+    if (!map.has(key)) map.set(key, { tilausLeveys, leveys, korkeus, kpl: 0 });
     map.get(key).kpl++;
   }
-  return Array.from(map.values()).sort((a, b) => b.korkeus - a.korkeus || b.leveys - a.leveys);
+  return Array.from(map.values()).sort((a, b) => b.korkeus - a.korkeus || b.tilausLeveys - a.tilausLeveys);
 }
 
 function spPiirraSeina(s, paneelit) {
@@ -3045,7 +3060,11 @@ function spPaivitaSeina(id) {
     setError(boxId, 'Syötä seinän mitat');
   } else {
     const ryhmat = spRyhmittele(paneelit);
-    const rows = ryhmat.map(r => ({ label: r.leveys + ' × ' + r.korkeus + ' mm', value: r.kpl, unit: 'kpl' }));
+    const rows = ryhmat.map(r => ({
+      label: r.tilausLeveys + ' × ' + r.korkeus + ' mm' + (r.tilausLeveys !== r.leveys ? ' (leikataan ' + r.leveys + ' mm leveäksi)' : ''),
+      value: r.kpl,
+      unit: 'kpl'
+    }));
     rows.push({ divider: true });
     rows.push({ label: 'Peltejä yhteensä', value: paneelit.length, unit: 'kpl', big: true });
     setResult(boxId, rows);
@@ -3069,7 +3088,7 @@ function spPaivitaYhteenveto() {
     kaikkiKpl += paneelit.length;
     html += `<div style="margin-bottom:14px;">
       <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;margin-bottom:4px;">${s.nimi}</div>
-      ${ryhmat.map(r => `<div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:2px 0;"><span style="color:var(--text-dim);">${r.leveys} × ${r.korkeus} mm</span><span>${r.kpl} kpl</span></div>`).join('')}
+      ${ryhmat.map(r => `<div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:13px;padding:2px 0;"><span style="color:var(--text-dim);">${r.tilausLeveys} × ${r.korkeus} mm${r.tilausLeveys !== r.leveys ? ' <span style=\'opacity:0.7;\'>(leikataan ' + r.leveys + ' mm)</span>' : ''}</span><span>${r.kpl} kpl</span></div>`).join('')}
     </div>`;
   });
   if (!html) {
@@ -3171,6 +3190,15 @@ function spKorttiHTML(s) {
       </div>
     </div>
 
+    <div class="field">
+      <label>Viimeinen (jäännös)pelti</label>
+      <div class="seg-group">
+        <button type="button" class="seg-btn ${s.jaannos !== 'tarkka' ? 'active' : ''}" onclick="spAsetaJaannos(${s.id},'tayslevea')">Täysleveä, leikataan työmaalla</button>
+        <button type="button" class="seg-btn ${s.jaannos === 'tarkka' ? 'active' : ''}" onclick="spAsetaJaannos(${s.id},'tarkka')">Tarkka mitta, leikataan verstaalla</button>
+      </div>
+      <p class="hint" style="margin:4px 0 0;">Jotkut profiilit (esim. KP-20) voidaan muovata vain täysleveänä — silloin valitse täysleveä, niin ohjelma lisää reunaan kokonaisen paneelin kapean sijaan.</p>
+    </div>
+
     <div class="section-title" style="margin-top:16px;">Ovet / aukot</div>
     <div id="sp-aukot-${s.id}">
       ${aukkoRivit ? aukkoOtsikko + aukkoRivit : '<p class="hint" style="margin:0 0 8px;">Ei aukkoja — aukko oletetaan ulottuvan lattiaan asti (kuten ovi), sen kohdalle lasketaan vain yläpuolen pelti.</p>'}
@@ -3201,7 +3229,7 @@ function spLisaaSeina() {
     nimi: 'Seinä ' + (seinat.length + 1),
     tyyppi: 'suora',
     leveys: null, korkeus: null, korkeusVas: null, korkeusOik: null,
-    paneliLeveys: 1180, aloitus: 'vasen', aukot: []
+    paneliLeveys: 1090, aloitus: 'vasen', jaannos: 'tayslevea', aukot: []
   });
   spRenderSeinat();
 }
@@ -3246,6 +3274,13 @@ function spAsetaAloitus(id, val) {
   const s = seinat.find(w => w.id === id);
   if (!s) return;
   s.aloitus = val;
+  spRenderSeinat();
+}
+
+function spAsetaJaannos(id, val) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  s.jaannos = val;
   spRenderSeinat();
 }
 
