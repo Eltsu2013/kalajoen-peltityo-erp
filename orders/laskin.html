@@ -2795,8 +2795,24 @@ kkPiirra(null);
 let seinat = [];
 let seinaIdSeq = 1;
 
+// Harjan sijainti vasemmasta reunasta — käyttäjä voi siirtää sitä, mutta oletuksena
+// (tai jos arvo puuttuu/on seinän ulkopuolella) harja on keskellä seinää.
+function spHarjaX(s) {
+  if (s.harjaX != null && s.harjaX > 0 && s.harjaX < s.leveys) return s.harjaX;
+  return s.leveys / 2;
+}
+
 function spKorkeusKohdassa(s, x) {
   if (s.tyyppi === 'suora') return s.korkeus;
+  if (s.tyyppi === 'harja') {
+    const hx = spHarjaX(s);
+    if (x <= hx) {
+      const t = hx > 0 ? x / hx : 0;
+      return s.korkeusVas + (s.harjaKorkeus - s.korkeusVas) * t;
+    }
+    const t = (s.leveys - hx) > 0 ? (x - hx) / (s.leveys - hx) : 0;
+    return s.harjaKorkeus + (s.korkeusOik - s.harjaKorkeus) * t;
+  }
   const t = s.leveys > 0 ? x / s.leveys : 0;
   return s.korkeusVas + (s.korkeusOik - s.korkeusVas) * t;
 }
@@ -2849,6 +2865,7 @@ function spLaskeSeina(s) {
   if (!s.paneliLeveys || s.paneliLeveys <= 0) return null;
   if (s.tyyppi === 'suora' && (!s.korkeus || s.korkeus <= 0)) return null;
   if (s.tyyppi === 'vino' && (!s.korkeusVas || !s.korkeusOik || s.korkeusVas <= 0 || s.korkeusOik <= 0)) return null;
+  if (s.tyyppi === 'harja' && (!s.korkeusVas || !s.korkeusOik || !s.harjaKorkeus || s.korkeusVas <= 0 || s.korkeusOik <= 0 || s.harjaKorkeus <= 0)) return null;
 
   const aukot = (s.aukot || [])
     .filter(a => a.x != null && a.leveys > 0 && a.korkeus > 0)
@@ -2878,17 +2895,17 @@ function spLaskeSeina(s) {
 
     if (!kattavaAukko) {
       const korkeus = Math.max(spKorkeusKohdassa(s, cx0), spKorkeusKohdassa(s, cx1));
-      paneelit.push({ x: cx0, leveys, korkeus });
+      paneelit.push({ x: cx0, leveys, korkeus, yPohja: 0 });
       continue;
     }
 
     const ylaraja = kattavaAukko.alaKorkeus + kattavaAukko.korkeus;
     const ylaKorkeus = Math.max(spKorkeusKohdassa(s, cx0), spKorkeusKohdassa(s, cx1)) - ylaraja;
     if (ylaKorkeus > 1) {
-      paneelit.push({ x: cx0, leveys, korkeus: ylaKorkeus, aukonYla: true });
+      paneelit.push({ x: cx0, leveys, korkeus: ylaKorkeus, yPohja: ylaraja, aukonYla: true });
     }
     if (kattavaAukko.alaKorkeus > 1) {
-      paneelit.push({ x: cx0, leveys, korkeus: kattavaAukko.alaKorkeus, aukonAla: true });
+      paneelit.push({ x: cx0, leveys, korkeus: kattavaAukko.alaKorkeus, yPohja: 0, aukonAla: true });
     }
   }
 
@@ -2909,11 +2926,17 @@ function spRyhmittele(paneelit) {
 function spPiirraSeina(s, paneelit) {
   const svg = document.getElementById('sp-svg-' + s.id);
   if (!svg) return;
-  const mitatOk = s.leveys > 0 && ((s.tyyppi === 'suora' && s.korkeus > 0) || (s.tyyppi === 'vino' && s.korkeusVas > 0 && s.korkeusOik > 0));
+  const mitatOk = s.leveys > 0 && (
+    (s.tyyppi === 'suora' && s.korkeus > 0) ||
+    (s.tyyppi === 'vino' && s.korkeusVas > 0 && s.korkeusOik > 0) ||
+    (s.tyyppi === 'harja' && s.korkeusVas > 0 && s.korkeusOik > 0 && s.harjaKorkeus > 0)
+  );
   if (!mitatOk) { svg.innerHTML = ''; return; }
 
-  const W = 320, H = 200, margin = 14;
-  const maxH = s.tyyppi === 'suora' ? s.korkeus : Math.max(s.korkeusVas, s.korkeusOik);
+  const W = 320, H = 210, margin = 14;
+  const maxH = s.tyyppi === 'suora' ? s.korkeus
+    : s.tyyppi === 'harja' ? Math.max(s.korkeusVas, s.korkeusOik, s.harjaKorkeus)
+    : Math.max(s.korkeusVas, s.korkeusOik);
   const drawW = W - 2 * margin, drawH = H - 2 * margin;
   const scale = Math.min(drawW / s.leveys, drawH / maxH);
   const originX = margin;
@@ -2921,35 +2944,51 @@ function spPiirraSeina(s, paneelit) {
 
   const px = x => originX + x * scale;
   const py = h => baseY - h * scale;
+  const PANEL_BG = '#3d3426'; // vastaa CSS-muuttujaa --panel2, kiinnitetty koska SVG-attribuutti ei aina lue var()-arvoa luotettavasti
 
   let c = '';
 
-  (s.aukot || []).forEach(a => {
-    if (a.x == null || !a.leveys || !a.korkeus) return;
-    const ala = (a.tyyppi === 'ikkuna' && a.alaKorkeus > 0) ? a.alaKorkeus : 0;
-    const ax0 = px(Math.max(0, a.x)), ax1 = px(Math.min(s.leveys, a.x + a.leveys));
-    const ay0 = py(ala + a.korkeus), ay1 = py(ala);
-    const col = a.tyyppi === 'ovi' ? '#3a8fe8' : '#3dba6e';
-    c += `<rect x="${ax0}" y="${ay0}" width="${ax1 - ax0}" height="${ay1 - ay0}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="1"/>`;
-  });
-
+  // 1) Seinän ääriviiva
   if (s.tyyppi === 'suora') {
     const x0 = px(0), x1 = px(s.leveys), yTop = py(s.korkeus);
     c += `<rect x="${x0}" y="${yTop}" width="${x1 - x0}" height="${baseY - yTop}" fill="none" stroke="#e8a020" stroke-width="1.5"/>`;
+  } else if (s.tyyppi === 'harja') {
+    const hx = spHarjaX(s);
+    const x0 = px(0), x1 = px(s.leveys), xh = px(hx);
+    const yL = py(s.korkeusVas), yR = py(s.korkeusOik), yH = py(s.harjaKorkeus);
+    c += `<polygon points="${x0},${baseY} ${x0},${yL} ${xh},${yH} ${x1},${yR} ${x1},${baseY}" fill="none" stroke="#e8a020" stroke-width="1.5"/>`;
   } else {
     const x0 = px(0), x1 = px(s.leveys);
     const yL = py(s.korkeusVas), yR = py(s.korkeusOik);
     c += `<polygon points="${x0},${baseY} ${x0},${yL} ${x1},${yR} ${x1},${baseY}" fill="none" stroke="#e8a020" stroke-width="1.5"/>`;
   }
 
-  (paneelit || []).forEach(p => {
-    const lineX = px(p.x);
-    const topY = py(spKorkeusKohdassa(s, p.x));
+  // 2) Paneeliruudukon viitelinjat lattiasta kattoviivaan — nämä aukot katkaisevat (ks. kohta 3)
+  spGridRajat(s).forEach(x => {
+    const lineX = px(x);
+    const topY = py(spKorkeusKohdassa(s, x));
     c += `<line x1="${lineX}" y1="${baseY}" x2="${lineX}" y2="${topY}" stroke="#9595a0" stroke-width="0.75"/>`;
   });
-  const lastX = px(s.leveys);
-  const lastTopY = py(spKorkeusKohdassa(s, s.leveys));
-  c += `<line x1="${lastX}" y1="${baseY}" x2="${lastX}" y2="${lastTopY}" stroke="#9595a0" stroke-width="0.75"/>`;
+
+  // 3) Aukot: ensin pohjan värinen "kumitus" joka katkaisee alla olevat viivat,
+  //    sitten värillinen korostus päälle — näin esim. ikkuna erottuu selvästi.
+  (s.aukot || []).forEach(a => {
+    if (a.x == null || !a.leveys || !a.korkeus) return;
+    const ala = (a.tyyppi === 'ikkuna' && a.alaKorkeus > 0) ? a.alaKorkeus : 0;
+    const ax0 = px(Math.max(0, a.x)), ax1 = px(Math.min(s.leveys, a.x + a.leveys));
+    const ay0 = py(ala + a.korkeus), ay1 = py(ala);
+    const col = a.tyyppi === 'ovi' ? '#3a8fe8' : '#3dba6e';
+    c += `<rect x="${ax0}" y="${ay0}" width="${ax1 - ax0}" height="${ay1 - ay0}" fill="${PANEL_BG}"/>`;
+    c += `<rect x="${ax0}" y="${ay0}" width="${ax1 - ax0}" height="${ay1 - ay0}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="1.2"/>`;
+  });
+
+  // 4) Pituusmitta jokaiselle laskettavalle pellille (sen omaan pystysuoraan kohtaan)
+  (paneelit || []).forEach(p => {
+    const midX = px(p.x + p.leveys / 2);
+    const y1 = py(p.yPohja || 0);
+    const y2 = py((p.yPohja || 0) + p.korkeus);
+    c += kkMittaviiva(midX, y1, midX, y2, 7, '#c9c4b8', Math.round(p.korkeus));
+  });
 
   svg.innerHTML = c;
 }
@@ -3001,7 +3040,17 @@ function spPaivitaYhteenveto() {
 
 function spKorttiHTML(s) {
   const isVino = s.tyyppi === 'vino';
-  const mittaKentat = isVino ? `
+  const isHarja = s.tyyppi === 'harja';
+  const mittaKentat = isHarja ? `
+      <div class="field-row col3">
+        <div class="field"><label>Leveys mm</label><input type="number" inputmode="numeric" value="${s.leveys ?? ''}" oninput="spPaivitaKentta(${s.id},'leveys',this.value)"></div>
+        <div class="field"><label>Korkeus vas. mm</label><input type="number" inputmode="numeric" value="${s.korkeusVas ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeusVas',this.value)"></div>
+        <div class="field"><label>Korkeus oik. mm</label><input type="number" inputmode="numeric" value="${s.korkeusOik ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeusOik',this.value)"></div>
+      </div>
+      <div class="field-row col2">
+        <div class="field"><label>Harjan korkeus mm</label><input type="number" inputmode="numeric" value="${s.harjaKorkeus ?? ''}" oninput="spPaivitaKentta(${s.id},'harjaKorkeus',this.value)"></div>
+        <div class="field"><label>Harjan sijainti vas. reunasta mm</label><input type="number" inputmode="numeric" placeholder="oletus keskellä" value="${s.harjaX ?? ''}" oninput="spPaivitaKentta(${s.id},'harjaX',this.value)"></div>
+      </div>` : isVino ? `
       <div class="field-row col3">
         <div class="field"><label>Leveys mm</label><input type="number" inputmode="numeric" value="${s.leveys ?? ''}" oninput="spPaivitaKentta(${s.id},'leveys',this.value)"></div>
         <div class="field"><label>Korkeus vas. mm</label><input type="number" inputmode="numeric" value="${s.korkeusVas ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeusVas',this.value)"></div>
@@ -3012,11 +3061,20 @@ function spKorttiHTML(s) {
         <div class="field"><label>Korkeus mm</label><input type="number" inputmode="numeric" value="${s.korkeus ?? ''}" oninput="spPaivitaKentta(${s.id},'korkeus',this.value)"></div>
       </div>`;
 
+  const aukkoOtsikko = (s.aukot || []).length ? `
+    <div class="siivu-row" style="grid-template-columns:84px 1fr 1fr 1fr 1fr auto; margin-bottom:4px;">
+      <span class="col-header">Tyyppi</span>
+      <span class="col-header">X vas. reunasta</span>
+      <span class="col-header">Leveys</span>
+      <span class="col-header">Korkeus</span>
+      <span class="col-header">Lattiasta (ikkuna)</span>
+      <span></span>
+    </div>` : '';
+
   const aukkoRivit = (s.aukot || []).map(a => {
     const isIkkuna = a.tyyppi === 'ikkuna';
-    const cols = isIkkuna ? '84px 1fr 1fr 1fr 1fr auto' : '84px 1fr 1fr 1fr auto';
     return `
-    <div class="siivu-row" style="grid-template-columns:${cols};">
+    <div class="siivu-row" style="grid-template-columns:84px 1fr 1fr 1fr 1fr auto;">
       <select onchange="spPaivitaAukko(${s.id},${a.id},'tyyppi',this.value)" style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;border-radius:6px;height:48px;">
         <option value="ovi" ${!isIkkuna ? 'selected' : ''}>Ovi</option>
         <option value="ikkuna" ${isIkkuna ? 'selected' : ''}>Ikkuna</option>
@@ -3024,7 +3082,9 @@ function spKorttiHTML(s) {
       <input type="number" inputmode="numeric" placeholder="x mm" value="${a.x ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'x',this.value)">
       <input type="number" inputmode="numeric" placeholder="leveys mm" value="${a.leveys ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'leveys',this.value)">
       <input type="number" inputmode="numeric" placeholder="korkeus mm" value="${a.korkeus ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'korkeus',this.value)">
-      ${isIkkuna ? `<input type="number" inputmode="numeric" placeholder="lattiasta mm" value="${a.alaKorkeus ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'alaKorkeus',this.value)">` : ''}
+      ${isIkkuna
+        ? `<input type="number" inputmode="numeric" placeholder="lattiasta mm" value="${a.alaKorkeus ?? ''}" oninput="spPaivitaAukko(${s.id},${a.id},'alaKorkeus',this.value)">`
+        : `<span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-dim);text-align:center;">— (lattiasta)</span>`}
       <button type="button" onclick="spPoistaAukko(${s.id},${a.id})" style="background:var(--danger);color:#fff;border:none;border-radius:6px;width:36px;height:48px;cursor:pointer;font-size:16px;">×</button>
     </div>`;
   }).join('');
@@ -3039,8 +3099,9 @@ function spKorttiHTML(s) {
     <div class="field">
       <label>Seinän tyyppi</label>
       <div class="seg-group">
-        <button type="button" class="seg-btn ${!isVino ? 'active' : ''}" onclick="spAsetaTyyppi(${s.id},'suora')">Suora</button>
+        <button type="button" class="seg-btn ${!isVino && !isHarja ? 'active' : ''}" onclick="spAsetaTyyppi(${s.id},'suora')">Suora</button>
         <button type="button" class="seg-btn ${isVino ? 'active' : ''}" onclick="spAsetaTyyppi(${s.id},'vino')">Vino</button>
+        <button type="button" class="seg-btn ${isHarja ? 'active' : ''}" onclick="spAsetaTyyppi(${s.id},'harja')">Harja</button>
       </div>
     </div>
 
@@ -3061,7 +3122,7 @@ function spKorttiHTML(s) {
     </div>
 
     <div class="field">
-      <label>Täydet paneelit aloitetaan</label>
+      <label>Täydet pellit aloitetaan</label>
       <div class="seg-group">
         <button type="button" class="seg-btn ${s.aloitus === 'vasen' ? 'active' : ''}" onclick="spAsetaAloitus(${s.id},'vasen')">Vasemmalta</button>
         <button type="button" class="seg-btn ${s.aloitus === 'oikea' ? 'active' : ''}" onclick="spAsetaAloitus(${s.id},'oikea')">Oikealta</button>
@@ -3070,12 +3131,12 @@ function spKorttiHTML(s) {
 
     <div class="section-title" style="margin-top:16px;">Ovet / aukot</div>
     <div id="sp-aukot-${s.id}">
-      ${aukkoRivit || '<p class="hint" style="margin:0 0 8px;">Ei aukkoja — aukko oletetaan ulottuvan lattiaan asti (kuten ovi), sen kohdalle lasketaan vain yläpuolen pelti.</p>'}
+      ${aukkoRivit ? aukkoOtsikko + aukkoRivit : '<p class="hint" style="margin:0 0 8px;">Ei aukkoja — aukko oletetaan ulottuvan lattiaan asti (kuten ovi), sen kohdalle lasketaan vain yläpuolen pelti.</p>'}
     </div>
     <button type="button" class="calc-btn" style="margin-top:8px;" onclick="spLisaaAukko(${s.id})">+ Lisää aukko</button>
 
     <div style="margin-top:16px;">
-      <svg id="sp-svg-${s.id}" viewBox="0 0 320 200" style="width:100%;height:auto;display:block;background:var(--panel2);border-radius:6px;"></svg>
+      <svg id="sp-svg-${s.id}" viewBox="0 0 320 210" style="width:100%;height:auto;display:block;background:var(--panel2);border-radius:6px;"></svg>
     </div>
 
     <div class="result-box" id="sp-result-${s.id}" style="margin-top:12px;">
@@ -3112,6 +3173,13 @@ function spPaivitaKentta(id, key, value) {
   const s = seinat.find(w => w.id === id);
   if (!s) return;
   s[key] = key === 'nimi' ? value : (value === '' ? null : parseFloat(value));
+  // Kun leveys syötetään harjakatolle eikä harjan sijaintia ole vielä annettu,
+  // oletetaan harja keskelle — kentän arvo päivittyy näkyviin heti.
+  if (key === 'leveys' && s.tyyppi === 'harja' && s.harjaX == null && s.leveys > 0) {
+    s.harjaX = Math.round(s.leveys / 2);
+    spRenderSeinat();
+    return;
+  }
   spPaivitaSeina(id);
 }
 
@@ -3119,6 +3187,9 @@ function spAsetaTyyppi(id, tyyppi) {
   const s = seinat.find(w => w.id === id);
   if (!s) return;
   s.tyyppi = tyyppi;
+  if (tyyppi === 'harja' && s.harjaX == null && s.leveys > 0) {
+    s.harjaX = Math.round(s.leveys / 2); // oletus keskelle, käyttäjä voi siirtää
+  }
   spRenderSeinat();
 }
 
@@ -3173,14 +3244,14 @@ function spPaivitaAukko(seinaId, aukkoId, key, value) {
 
 // Esimerkkiseinät — havainnollistamaan sekä vinon seinän että oven header-laskennan
 seinat = [
-  { id: seinaIdSeq++, nimi: 'Sivuseinä (vino, CAD-esimerkki)', tyyppi: 'vino',
+  { id: seinaIdSeq++, nimi: 'Sivuseinä', tyyppi: 'vino',
     leveys: 7890, korkeus: null, korkeusVas: 3660, korkeusOik: 2670,
     paneliLeveys: 1180, aloitus: 'vasen', aukot: [] },
-  { id: seinaIdSeq++, nimi: 'Etuseinä (nosto-ovi, esimerkki)', tyyppi: 'suora',
+  { id: seinaIdSeq++, nimi: 'Etuseinä', tyyppi: 'suora',
     leveys: 6000, korkeus: 3660, korkeusVas: null, korkeusOik: null,
     paneliLeveys: 1180, aloitus: 'vasen',
     aukot: [{ id: seinaIdSeq++, tyyppi: 'ovi', x: 960, leveys: 3000, korkeus: 2900, alaKorkeus: 0 }] },
-  { id: seinaIdSeq++, nimi: 'Takaseinä (ikkuna, esimerkki)', tyyppi: 'suora',
+  { id: seinaIdSeq++, nimi: 'Takaseinä', tyyppi: 'suora',
     leveys: 4000, korkeus: 3000, korkeusVas: null, korkeusOik: null,
     paneliLeveys: 1180, aloitus: 'vasen',
     aukot: [{ id: seinaIdSeq++, tyyppi: 'ikkuna', x: 1500, leveys: 1200, korkeus: 1200, alaKorkeus: 900 }] },
