@@ -2817,6 +2817,20 @@ function spKorkeusKohdassa(s, x) {
   return s.korkeusVas + (s.korkeusOik - s.korkeusVas) * t;
 }
 
+// Korkein tarvittava korkeus välillä [x0, x1]. Suora/Vino-seinällä korkeus muuttuu
+// aina tasaisesti, joten reunat riittävät — mutta Harja-seinällä katto NOUSEE ensin
+// ja LASKEE sitten, joten jos harjan huippu osuu pellin leveyden SISÄÄN (ei vain
+// reunalle), pelkät reunakorkeudet eivät riitä: pelti pitää silloin mitoittaa itse
+// huipun korkeuden mukaan, muuten se jäisi liian lyhyeksi eikä yltäisi harjalle asti.
+function spMaxKorkeusValilla(s, x0, x1) {
+  let maxH = Math.max(spKorkeusKohdassa(s, x0), spKorkeusKohdassa(s, x1));
+  if (s.tyyppi === 'harja') {
+    const hx = spHarjaX(s);
+    if (hx > x0 + 0.01 && hx < x1 - 0.01) maxH = Math.max(maxH, s.harjaKorkeus);
+  }
+  return maxH;
+}
+
 // Jatkuvan paneeliruudukon rajat koko seinän yli — TÄYSIN riippumaton aukoista.
 // Näin paneelien "vaihe" (mistä kohtaa 1180mm-jako lähtee) ei koskaan hyppää
 // aukon reunalla, vaan pysyy samana koko seinän matkalta.
@@ -2894,13 +2908,13 @@ function spLaskeSeina(s) {
     const kattavaAukko = aukot.find(a => a.alku <= cx0 + EPS && a.loppu >= cx1 - EPS);
 
     if (!kattavaAukko) {
-      const korkeus = Math.max(spKorkeusKohdassa(s, cx0), spKorkeusKohdassa(s, cx1));
+      const korkeus = spMaxKorkeusValilla(s, cx0, cx1);
       paneelit.push({ x: cx0, leveys, korkeus, yPohja: 0 });
       continue;
     }
 
     const ylaraja = kattavaAukko.alaKorkeus + kattavaAukko.korkeus;
-    const ylaKorkeus = Math.max(spKorkeusKohdassa(s, cx0), spKorkeusKohdassa(s, cx1)) - ylaraja;
+    const ylaKorkeus = spMaxKorkeusValilla(s, cx0, cx1) - ylaraja;
     if (ylaKorkeus > 1) {
       paneelit.push({ x: cx0, leveys, korkeus: ylaKorkeus, yPohja: ylaraja, aukonYla: true });
     }
@@ -2982,12 +2996,40 @@ function spPiirraSeina(s, paneelit) {
     c += `<rect x="${ax0}" y="${ay0}" width="${ax1 - ax0}" height="${ay1 - ay0}" fill="${col}" fill-opacity="0.25" stroke="${col}" stroke-width="1.2"/>`;
   });
 
-  // 4) Pituusmitta jokaiselle laskettavalle pellille (sen omaan pystysuoraan kohtaan)
+  // 4) Pituusmitta jokaiselle laskettavalle pellille — pelkkä teksti (ei mittaviivaa,
+  //    se sekoitti kuvaa varsinkin aukon kohdalla). Teksti kirjoitetaan pellin YLÄREUNAN
+  //    lähelle, ei keskelle — näin se ei osu aukon (oven/ikkunan) päälle, koska aukot
+  //    eivät normaalisti ulotu aivan kattoon asti. Jos monta vierekkäistä NORMAALIA
+  //    (ei aukon ylä-/alapuolen) peltiä on samanpituisia, mitta näytetään vain
+  //    ensimmäisessä — toisto olisi vain kohinaa.
+  let edellinenNormaali = null; // { oikeaReuna, korkeus } viimeisimmästä normaalista pellistä
   (paneelit || []).forEach(p => {
-    const midX = px(p.x + p.leveys / 2);
-    const y1 = py(p.yPohja || 0);
-    const y2 = py((p.yPohja || 0) + p.korkeus);
-    c += kkMittaviiva(midX, y1, midX, y2, 7, '#c9c4b8', Math.round(p.korkeus));
+    const onNormaali = !p.aukonYla && !p.aukonAla;
+    let piilota = false;
+    if (onNormaali) {
+      if (edellinenNormaali &&
+          Math.abs(edellinenNormaali.oikeaReuna - p.x) < 0.5 &&
+          Math.round(edellinenNormaali.korkeus) === Math.round(p.korkeus)) {
+        piilota = true;
+      }
+      edellinenNormaali = { oikeaReuna: p.x + p.leveys, korkeus: p.korkeus };
+    } else {
+      edellinenNormaali = null; // aukko katkaisee "samanpituisten" sarjan
+    }
+    if (piilota) return;
+
+    // Harjan huipulla mitta kirjoitetaan todelliseen huippukohtaan, ei pellin keskelle,
+    // jos huippu sattuu osumaan tämän pellin leveyden sisään.
+    let labelX = p.x + p.leveys / 2;
+    if (s.tyyppi === 'harja') {
+      const hx = spHarjaX(s);
+      if (hx > p.x + 0.01 && hx < p.x + p.leveys - 0.01) labelX = hx;
+    }
+
+    const xPix = px(labelX);
+    const topY = py((p.yPohja || 0) + p.korkeus);
+    const textY = topY + 14; // hieman pellin yläreunan alapuolelle
+    c += `<text x="${xPix}" y="${textY}" font-size="10" font-family="IBM Plex Mono, monospace" fill="#c9c4b8" text-anchor="middle" transform="rotate(-90 ${xPix} ${textY})">${Math.round(p.korkeus)} mm</text>`;
   });
 
   svg.innerHTML = c;
