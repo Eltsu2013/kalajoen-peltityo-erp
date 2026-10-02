@@ -3152,9 +3152,14 @@ function spKorttiHTML(s) {
 
   return `
   <div class="calc-section" style="border-color:var(--accent);">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;">
       <input type="text" value="${s.nimi}" oninput="spPaivitaKentta(${s.id},'nimi',this.value)" style="background:none;border:none;color:var(--accent);font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;padding:0;flex:1;">
       <button type="button" onclick="spPoistaSeina(${s.id})" style="background:var(--danger);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;white-space:nowrap;">Poista seinä</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      <button type="button" onclick="spKopioiSeina(${s.id}, false)" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;white-space:nowrap;">⎘ Kopioi seinä</button>
+      ${(isVino || isHarja) ? `<button type="button" onclick="spKopioiSeina(${s.id}, true)" style="background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;white-space:nowrap;">⎘ Kopioi peilikuvana</button>` : ''}
+      <span class="hint" style="margin:0;align-self:center;">Kopio ei tuo aukkoja mukaan — lisää ne erikseen kopioon.</span>
     </div>
 
     <div class="field">
@@ -3236,6 +3241,41 @@ function spLisaaSeina() {
 
 function spPoistaSeina(id) {
   seinat = seinat.filter(s => s.id !== id);
+  spRenderSeinat();
+}
+
+// Kopioi seinän mitat/asetukset uudeksi seinäksi suoraan listan perään.
+// Aukkoja EI koskaan kopioida mukaan - oven/ikkunan paikka on käytännössä
+// aina eri eri seinissä, niin aukkojen kopioiminen tuottaisi vääriä tuloksia
+// useammin kuin auttaisi. Paneeliasettelu (mitat, paneelin leveys, aloitussuunta)
+// sen sijaan toistuu usein identtisenä esim. etu- ja takaseinällä.
+//
+// peilikuva=true kääntää korkeusVas/korkeusOik toisin päin (ja harjan sijainnin
+// vastaavasti leveys-harjaX:ksi) - käytetään kun kaksi päätyä ovat toistensa
+// peilikuvia (esim. kattolinja nousee eri suuntaan) eivätkä identtisiä kopioita.
+function spKopioiSeina(id, peilikuva) {
+  const s = seinat.find(w => w.id === id);
+  if (!s) return;
+  const harjaXKopio = (s.tyyppi === 'harja' && peilikuva && s.harjaX != null && s.leveys)
+    ? (s.leveys - s.harjaX)
+    : s.harjaX;
+  const kopio = {
+    id: seinaIdSeq++,
+    nimi: s.nimi + ' (kopio)',
+    tyyppi: s.tyyppi,
+    leveys: s.leveys,
+    korkeus: s.korkeus,
+    korkeusVas: peilikuva ? s.korkeusOik : s.korkeusVas,
+    korkeusOik: peilikuva ? s.korkeusVas : s.korkeusOik,
+    harjaKorkeus: s.harjaKorkeus,
+    harjaX: harjaXKopio,
+    paneliLeveys: s.paneliLeveys,
+    aloitus: s.aloitus,
+    jaannos: s.jaannos,
+    aukot: []
+  };
+  const idx = seinat.findIndex(w => w.id === id);
+  seinat.splice(idx + 1, 0, kopio);
   spRenderSeinat();
 }
 
