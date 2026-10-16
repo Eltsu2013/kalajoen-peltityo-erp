@@ -1,3 +1,4 @@
+[tietokanta.md](https://github.com/user-attachments/files/33551002/tietokanta.md)
 # Kalajoen Peltityö ERP — Tietokanta
 
 ## Stack
@@ -16,8 +17,8 @@
 
 ## Käyttäjät
 
-- Admin: kalajoen.peltityo@gmail.com (Kalajoen Peltityö Törnvall)
-- Viewer: kalajoen.peltityo@kotinet.com (johtaja)
+- Admin: ylläpitotili (Kalajoen Peltityö Törnvall)
+- Viewer: johtajan tili
 - Huom: Ilmaisversiossa ei pysty rajoittamaan resurssioikeuksia per käyttäjä — johtajalla ei näy data. Korjataan maksulliseen versioon siirtyessä.
 
 ## Taulut
