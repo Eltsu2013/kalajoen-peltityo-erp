@@ -1,30 +1,16 @@
+[README.md](https://github.com/user-attachments/files/33551683/README.md)
 # Kalajoen Peltityö ERP
 
-Moderni varastonhallinta- ja toiminnanohjausjärjestelmä Kalajoen Peltityölle.
+Varastonhallinta- ja toiminnanohjausjärjestelmä Kalajoen Peltityölle.
 Korvaa 17 vuotta vanhan Access-järjestelmän.
 
 ## Stack
 
-- **Backend:** Supabase (PostgreSQL + Edge Functions)
-- **Frontend:** Retool (desktop + mobiili)
-- **Varastokartta:** GitHub Pages
+- **Backend:** Supabase (PostgreSQL + RLS)
+- **Frontend:** GitHub Pages (HTML/JS)
 
 ## Rakenne
 
-- `docs/` — projektidokumentaatio
+- `orders/` — järjestelmän sivut (kirjautuminen vaaditaan)
 - `maps/` — varastokartat
-- `supabase/functions/` — Edge Function -koodit
-
-## Dokumentaatio
-
-- [Visio ja tavoitteet](docs/visio.md)
-- [Tietokanta](docs/tietokanta.md)
-- [Retool](docs/retool.md)
-- [Varastopaikat](docs/varastopaikat.md)
-- [Leikkauslogiikka](docs/leikkauslogiikka.md)
-- [Todo](docs/todo.md)
-
-## Linkit
-
-- Varastokartta: https://eltsu2013.github.io/kalajoen-peltityo-erp/maps/verstaspohja_mitoitettu.html
-- Supabase-projekti: hjyeugeqmyavxisndlwp
+- `supabase/functions/` — vanhojen Edge Functionien koodi (ei käytössä)
