@@ -3839,6 +3839,8 @@ function removeRow(i) {
 function getVals() {
   const vals = {};
   document.querySelectorAll('#profile-fields input').forEach(inp => {
+    // Nimike on teksti, ei luku — jos se otettaisiin mukaan, siitä tulisi 0
+    if (inp.id === 'profile-nimike') return;
     vals[inp.id] = parseFloat(inp.value) || 0;
   });
   return vals;
