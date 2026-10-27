@@ -4269,7 +4269,7 @@ if (savedCtx) {
         if (btn) btn.textContent = '✓ Päivitä tilaukseen';
       }
     }, 200);
-  } catch(e) {}
+  } catch(e) { console.warn('Tilauskontekstin luku epäonnistui:', e); }
 }
 
 // BroadcastChannel fallback
