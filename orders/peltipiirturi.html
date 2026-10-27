@@ -4248,6 +4248,10 @@ if (savedCtx) {
             if (el) el.checked = !!val;
           });
         }
+        // Palautetaan tilauksen oma nimike vasta nyt, jotta vanhaan profile_dataan
+        // jäänyt 'profile-nimike: 0' ei ylikirjoita sitä
+        const nimikeEl = document.getElementById('profile-nimike');
+        if (nimikeEl && ctx.nimike) nimikeEl.value = ctx.nimike;
         // Ladataan pituusrivit
         if (ctx.existingRows && ctx.existingRows.length > 0) {
           lengthRows = ctx.existingRows.map(r => ({
