@@ -3007,6 +3007,10 @@ if (tilausContext && tilausContext.editItemId && tilausContext.existingData) {
   setType(mappedType);
   // Alapelti erikseen
   if (pt === 'avp2') setIkkunapelti('alapelti');
+  // setType/setIkkunapelti täyttävät nimike-kenttään profiilin oletusnimen —
+  // palautetaan tilauksen oma nimike sen jälkeen
+  const nimikeInp = document.getElementById('nmikeInput');
+  if (nimikeInp && tilausContext.nimike) nimikeInp.value = tilausContext.nimike;
   // Palauta pituusrivit
   if (tilausContext.existingRows && tilausContext.existingRows.length > 0) {
     rivit = tilausContext.existingRows.map(r => ({
