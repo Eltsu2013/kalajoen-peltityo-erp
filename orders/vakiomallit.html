@@ -2951,7 +2951,9 @@ if (savedCtx) {
       bar.style.display = 'flex';
       document.getElementById('mainGrid').classList.add('with-tilausbar');
       document.getElementById('tilaus-ryhma').textContent = (tilausContext.groupName||'') + (tilausContext.groupName?' —':'');
-      document.getElementById('tilaus-nimike-bar').textContent = tilausContext.nimike||'';
+      // Nimike näytetään nmikeInput-kentässä; erillistä 'tilaus-nimike-bar'-elementtiä ei enää ole
+      const nimikeBar = document.getElementById('tilaus-nimike-bar');
+      if (nimikeBar) nimikeBar.textContent = tilausContext.nimike||'';
       // Muokkaustila — asetetaan materiaali/väri/paksuus kun tuotteet on haettu
       if (tilausContext.existingMaterial) {
         setTimeout(() => {
@@ -2972,7 +2974,7 @@ if (savedCtx) {
         }, 500);
       }
     }
-  } catch(e) {}
+  } catch(e) { console.warn('Tilauskontekstin luku epäonnistui:', e); }
 }
 
 // =============================================
