@@ -2204,6 +2204,10 @@
         <span class="summary-value aihio" id="kok-val">— mm</span>
       </div>
       <div class="summary-row">
+        <span class="summary-label">TAITOKSET</span>
+        <span class="summary-value aihio" id="taitokset-val">—</span>
+      </div>
+      <div class="summary-row">
         <span class="summary-label">YHTEENSÄ</span>
         <span class="summary-value" id="total-m2">0.00 m²</span>
       </div>
@@ -3872,6 +3876,41 @@ function buildFromSegments(segs) {
   return points;
 }
 
+// Taitosten määrä. Perusmuoto lasketaan piirroksesta (suuntaa vaihtavat kärjet),
+// ja jokainen valittu lisävalinta (tiiviste, tupla, jiiritaitos) lisää yhden taitoksen.
+function laskeTaitokset() {
+  const cnt = (pts) => {
+    const q = [];
+    for (const a of pts) {
+      const l = q[q.length - 1];
+      if (!l || Math.hypot(a.x - l.x, a.y - l.y) > 1e-6) q.push(a);
+    }
+    let n = 0;
+    for (let i = 1; i < q.length - 1; i++) {
+      const a1 = Math.atan2(q[i].y - q[i-1].y, q[i].x - q[i-1].x);
+      const a2 = Math.atan2(q[i+1].y - q[i].y, q[i+1].x - q[i].x);
+      let d = Math.abs(a1 - a2);
+      d = Math.min(d, 2 * Math.PI - d);
+      if (d > 0.01) n++;
+    }
+    return n;
+  };
+  try {
+    if (activeType === 'vapaa') return cnt(buildFromFreeSegments());
+    const type = TYPES[activeType];
+    const vals = getVals();
+    const opts = getOpts();
+    const noOpts = {};
+    Object.keys(opts).forEach(k => { noOpts[k] = false; });
+    const r = type.build(vals, noOpts);
+    const pts = Array.isArray(r) ? r : r.points;
+    return cnt(pts) + Object.values(opts).filter(Boolean).length;
+  } catch (e) {
+    console.warn('Taitosten lasku epäonnistui:', e);
+    return null;
+  }
+}
+
 function buildFromFreeSegments() {
   let points = [{ x: 0, y: 0 }];
   let cumAngle = 0;
@@ -3972,6 +4011,9 @@ function redraw() {
 
   // Päivitä yhteenvedot
   document.getElementById('aihio-val').textContent = aihio.toFixed(0) + ' mm';
+  const tkVal = laskeTaitokset();
+  const tkEl = document.getElementById('taitokset-val');
+  if (tkEl) tkEl.textContent = tkVal === null ? '—' : tkVal + ' kpl';
   document.getElementById('total-m2').textContent = totalM2.toFixed(2) + ' m²';
 
   // Kaato ja etenemä pintaViivasta
@@ -4316,7 +4358,7 @@ function lisaaTilaukseen() {
     profileType: activeType,
     nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
-    profile_data: { vals, opts },
+    profile_data: { vals, opts, taitokset: laskeTaitokset() },
     rows,
     angles,
     totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0),
