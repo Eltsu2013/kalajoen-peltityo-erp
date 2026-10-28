@@ -2133,6 +2133,22 @@ async function loadOrderById(orderId) {
       groups.push(group);
     }
 
+    // Kappaletavara — palautetaan kappaletavarana (data on profile_data:ssa)
+    if (item.profile_type === 'KAPPALE') {
+      const pd = item.profile_data || {};
+      group.items.push({
+        id: 'i_' + item.id,
+        supabaseId: item.id,
+        itemType: 'kappale',
+        nimike: item.nimike,
+        maara: pd.maara ?? item.quantity ?? 1,
+        pituus: pd.pituus ?? null,
+        yksikko: pd.yksikko || 'kpl',
+        huomio: pd.huomio || '',
+      });
+      return;
+    }
+
     // Pituusrivit — ensin order_item_rows, fallback profile_data.rows
     let rows = [];
     if (item.order_item_rows && item.order_item_rows.length > 0) {
@@ -2255,6 +2271,42 @@ async function copyOrderById(sourceId, keepCustomer) {
       const angles = (srcItem.order_item_angles || [])
         .sort((a, b) => a.position_index - b.position_index)
         .map(a => ({ position_index: a.position_index, angle_value: a.angle_value }));
+
+      // Kappaletavara kopioidaan omana rivityyppinään (ei pelti-rivinä)
+      if (srcItem.profile_type === 'KAPPALE') {
+        const pd = srcItem.profile_data || {};
+        const kopioKappale = {
+          id: 'i_' + Date.now() + '_' + gi,
+          supabaseId: null,
+          itemType: 'kappale',
+          nimike: srcItem.nimike,
+          maara: pd.maara ?? srcItem.quantity ?? 1,
+          pituus: pd.pituus ?? null,
+          yksikko: pd.yksikko || 'kpl',
+          huomio: pd.huomio || '',
+        };
+        newGroup.items.push(kopioKappale);
+        const rk = await fetch(SUPABASE_URL + '/rest/v1/order_items', {
+          method: 'POST',
+          headers: { ...headers, 'Prefer': 'return=representation' },
+          body: JSON.stringify({
+            order_id: newOrderId,
+            group_name: gName,
+            group_order: groups.length - 1,
+            item_order: gi,
+            nimike: srcItem.nimike,
+            profile_type: 'KAPPALE',
+            profile_data: { maara: kopioKappale.maara, pituus: kopioKappale.pituus, yksikko: kopioKappale.yksikko, huomio: kopioKappale.huomio },
+            aihio_width_mm: null,
+            quantity: kopioKappale.maara,
+          })
+        });
+        if (rk.ok) {
+          const savedK = await rk.json();
+          if (savedK && savedK[0]) kopioKappale.supabaseId = savedK[0].id;
+        }
+        continue;
+      }
 
       const newItem = {
         id: 'i_' + Date.now() + '_' + gi,
@@ -2458,7 +2510,10 @@ function copyGroup(id) {
   renderGroups();
   updateSummary();
   // Tallennetaan kaikki kopion pellit Supabaseen
-  newG.items.forEach(item => saveItemToSupabase(item, newGroupId));
+  // Kappaletavarat tallennetaan omalla funktiollaan (profile_type KAPPALE), ei pelteinä
+  newG.items.forEach(item => item.itemType === 'kappale'
+    ? saveKappaleToSupabase(item, newGroupId)
+    : saveItemToSupabase(item, newGroupId));
   setSaveStatus('ok', 'Ryhmä kopioitu!');
 }
 
@@ -2807,6 +2862,8 @@ function addKappaletavara() {
 }
 
 async function saveKappaleToSupabase(item, groupId) {
+  // Luodaan tilaus tarvittaessa (kuten pelleille), muuten rivi ei tallentuisi mihinkään
+  if (!currentOrderId) await createOrder();
   if (!currentOrderId) return;
   const group = groups.find(g => g.id === groupId);
   const body = {
@@ -2821,12 +2878,23 @@ async function saveKappaleToSupabase(item, groupId) {
     quantity: item.maara,
   };
   try {
-    await fetch(SUPABASE_URL + '/rest/v1/order_items', {
+    // return=representation: tarvitaan tietokannan id, jotta poisto toimii samassa istunnossa
+    const r = await fetch(SUPABASE_URL + '/rest/v1/order_items', {
       method: 'POST',
-      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
       body: JSON.stringify(body)
     });
-  } catch(e) { console.log('Kappale save error', e); }
+    if (r.ok) {
+      const saved = await r.json();
+      if (saved && saved[0]) item.supabaseId = saved[0].id;
+    } else {
+      console.warn('Kappale save failed:', r.status);
+      setSaveStatus('err', 'Kappaletavaran tallennus epäonnistui');
+    }
+  } catch(e) {
+    console.warn('Kappale save error', e);
+    setSaveStatus('err', 'Kappaletavaran tallennus epäonnistui');
+  }
 }
 
 function avaapiippu() {
