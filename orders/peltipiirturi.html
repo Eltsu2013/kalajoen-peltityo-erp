@@ -3879,11 +3879,18 @@ function buildFromSegments(segs) {
 // Taitosten määrä. Perusmuoto lasketaan piirroksesta (suuntaa vaihtavat kärjet),
 // ja jokainen valittu lisävalinta (tiiviste, tupla, jiiritaitos) lisää yhden taitoksen.
 function laskeTaitokset() {
-  const cnt = (pts) => {
-    const q = [];
+  const cnt = (pts, siivoaPaluuviivat) => {
+    let q = [];
     for (const a of pts) {
       const l = q[q.length - 1];
       if (!l || Math.hypot(a.x - l.x, a.y - l.y) > 1e-6) q.push(a);
+    }
+    // Esim. nokka piirretään ulos ja takaisin samaa viivaa (A, B, A). Se on yksi
+    // haara, ei kaksi taitosta, joten paluuviiva poistetaan.
+    if (siivoaPaluuviivat) {
+      for (let i = 1; i < q.length - 1; i++) {
+        if (Math.hypot(q[i+1].x - q[i-1].x, q[i+1].y - q[i-1].y) < 1e-6) { q.splice(i + 1, 1); i--; }
+      }
     }
     let n = 0;
     for (let i = 1; i < q.length - 1; i++) {
@@ -3904,7 +3911,9 @@ function laskeTaitokset() {
     Object.keys(opts).forEach(k => { noOpts[k] = false; });
     const r = type.build(vals, noOpts);
     const pts = Array.isArray(r) ? r : r.points;
-    return cnt(pts) + Object.values(opts).filter(Boolean).length;
+    // Aina päällä olevat lisäviivat (esim. tupla joka ei ole valinta) ovat omia taitoksiaan
+    const aina = Array.isArray(r) ? 0 : (r.extraLines || []).length;
+    return cnt(pts, true) + aina + Object.values(opts).filter(Boolean).length;
   } catch (e) {
     console.warn('Taitosten lasku epäonnistui:', e);
     return null;
