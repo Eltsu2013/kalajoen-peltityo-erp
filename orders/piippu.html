@@ -2267,6 +2267,9 @@ async function lisaaTilaukseen() {
       aihio_width_mm: levNum,
       profile_data: i === 0 ? { vals: piippuData } : undefined,
       rows: pitNum ? [{ mitta: pitNum, paat: 0, kok: pitNum, kpl: kplNum, huomio: i === 0 ? huomio : '' }] : [],
+      // Osille joilla ei ole pituutta (piipun jalat, lisäosat) lähetetään kappalemäärä erikseen,
+      // muuten se katoaisi (quantity laskettiin pelkistä pituusriveistä)
+      kpl: pitNum ? undefined : kplNum,
       angles: [],
       totalM2,
       material: materiaali,
