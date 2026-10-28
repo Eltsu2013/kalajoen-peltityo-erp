@@ -2389,29 +2389,51 @@ function laske() {
   piirra();
 }
 
-// Taitosten määrä: profiilin osien (suorien jaksojen) määrä miinus yksi.
-// Tiiviste ja tupla ovat omia osiaan, joten kumpikin tuottaa yhden taitoksen.
+// Taitosten määrä: profiili luetaan osa kerrallaan. Taitos syntyy kahden osan väliin
+// kun osan pituus > 0 ja sen taitoskulma on eri kuin 0 (0° = jatkuu suorana, ei taitosta).
+// Tiiviste ja tupla ovat kiinteä taitos (kulma 1 = aina taitos), kun niiden mitta > 0.
 function laskeTaitokset() {
-  let osat = [];
+  // Ketju: [pituus, taitoskulma edelliseen osaan]; ensimmäisen osan kulmaa ei käytetä.
+  let ketju;
   if (activeType === 'ikkunapellit') {
     if (!activeIkkuna) return null;
-    osat = [gv('f_takareuna'), gv('f_paanYlos') + gv('f_paanAlas'), gv('f_etureuna'), gv('f_etukaannos')];
-  } else if (activeType === 'kynnys1') {
-    osat = [gv('f_suora1'), gv('f_pinta'), gv('f_etureuna'), gv('f_tippanokka'), gv('f_takareuna')];
-  } else if (activeType === 'alaslaskun') {
-    osat = [gv('f_seg0'), gv('f_seg1'), gv('f_seg2'), gv('f_tupB')];
-  } else if (activeType === 'hattupelti') {
-    osat = [gv('f_seg0'), gv('f_seg1'), gv('f_seg2'), gv('f_tupB'), gv('f_tupC')];
+    ketju = [[gv('f_takareuna'), 0],
+             [gv('f_paanYlos') + gv('f_paanAlas'), gv('f_kaannos_taka')],
+             [gv('f_etureuna'), gv('f_kaannos_etu')],
+             [gv('f_etukaannos'), gv('f_etur')]];
   } else if (activeType === 'katkaisulista') {
-    osat = [gv('f_takareuna'), gv('f_pinta'), gv('f_etureuna'), gv('f_etukaannos')];
-  } else if (activeType === 'kattolista') {
-    osat = [gv('f_seg0'), gv('f_seg1'), gv('f_tupA'), gv('f_tupB')];
+    ketju = [[gv('f_takareuna'), 0],
+             [gv('f_pinta'), gv('f_kaannos_taka')],
+             [gv('f_etureuna'), gv('f_kaannos_etu')],
+             [gv('f_etukaannos'), gv('f_etur')]];
   } else if (activeType === 'raystaslista') {
-    osat = [gv('f_ikkuna'), gv('f_takareuna'), gv('f_pinta'), gv('f_etureuna'), gv('f_etukaannos')];
+    ketju = [[gv('f_ikkuna'), 0],
+             [gv('f_takareuna'), gv('f_ikkuna_ang')],
+             [gv('f_pinta'), gv('f_kaannos_taka')],
+             [gv('f_etureuna'), gv('f_kaannos_etu')],
+             [gv('f_etukaannos'), gv('f_etur')]];
+  } else if (activeType === 'kynnys1') {
+    ketju = [[gv('f_tippanokka'), 0],
+             [gv('f_etureuna'), gv('f_nokka_ang')],
+             [gv('f_pinta'), gv('f_kulma_ang')],
+             [gv('f_suora1'), gv('f_suora_ang')],
+             [gv('f_takareuna'), gv('f_kaannos_taka')]];
+  } else if (activeType === 'alaslaskun') {
+    ketju = [[gv('f_tupB'), 0], [gv('f_seg1'), 1], [gv('f_seg0'), gv('f_ang0')], [gv('f_seg2'), gv('f_ang1')]];
+  } else if (activeType === 'hattupelti') {
+    ketju = [[gv('f_tupB'), 0], [gv('f_seg1'), 1], [gv('f_seg0'), gv('f_ang0')], [gv('f_seg2'), gv('f_ang1')], [gv('f_tupC'), 1]];
+  } else if (activeType === 'kattolista') {
+    ketju = [[gv('f_tupA'), 0], [gv('f_seg0'), 1], [gv('f_seg1'), gv('f_ang0')], [gv('f_tupB'), 1]];
   } else {
     return null;
   }
-  return Math.max(0, osat.filter(v => v > 0).length - 1);
+  let n = 0, alkuOlemassa = false;
+  ketju.forEach(([pit, ang]) => {
+    if (!(pit > 0)) return;
+    if (alkuOlemassa && ang !== 0) n++;
+    alkuOlemassa = true;
+  });
+  return n;
 }
 
 function paivitaYhteenveto() {
