@@ -1879,6 +1879,16 @@
         <input type="text" id="order-kohde" placeholder="esim. Mäkisen talo" oninput="saveOrderMeta()">
       </div>
       <div class="field">
+        <label>Työmaan osoite</label>
+        <input type="text" id="order-site-address" autocomplete="off" oninput="onSiteAddressInput()">
+        <div style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-top:3px;">Katuosoite tai koordinaatit (esim. 64.26123, 23.95012 — piste desimaalina)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+          <button type="button" onclick="useCustomerAddress()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 10px;border-radius:3px;cursor:pointer;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">Käytä asiakkaan osoitetta</button>
+          <a id="site-map-btn" href="#" target="_blank" rel="noopener" style="display:none;background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 10px;border-radius:3px;text-decoration:none;" onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">📍 Kartta</a>
+          <a id="site-nav-btn" href="#" target="_blank" rel="noopener" style="display:none;background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:6px 10px;border-radius:3px;text-decoration:none;" onmouseover="this.style.borderColor='var(--success)';this.style.color='var(--success)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">🧭 Navigoi</a>
+        </div>
+      </div>
+      <div class="field">
         <label>Tilauspäivä</label>
         <input type="date" id="order-date" oninput="saveOrderMeta()" value="">
       </div>
@@ -2087,6 +2097,58 @@ function updateMobileSummary() {
   el.textContent = osat.join(' · ');
 }
 
+// ── Työmaan osoite + karttalinkit ─────────────────────────────────
+// Muodostaa Google Mapsin linkin osoitteesta tai koordinaateista ("lat, lon").
+// Jos kentässä on valmis http(s)-linkki, sitä käytetään sellaisenaan.
+// navigate=true → reittiohjeen käynnistys nykyisestä sijainnista.
+function siteMapsUrl(raw, navigate) {
+  let addr = (raw || '').trim();
+  if (!addr) return null;
+  if (/^https?:\/\//i.test(addr)) return addr;
+  // Koordinaatit: poistetaan välilyönnit pilkun ympäriltä (64.26, 23.95 → 64.26,23.95)
+  if (/^-?\d{1,3}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?$/.test(addr)) addr = addr.replace(/\s+/g, '');
+  const q = encodeURIComponent(addr);
+  return navigate
+    ? 'https://www.google.com/maps/dir/?api=1&destination=' + q + '&travelmode=driving&dir_action=navigate'
+    : 'https://www.google.com/maps/search/?api=1&query=' + q;
+}
+
+function updateSiteButtons() {
+  const val = document.getElementById('order-site-address')?.value || '';
+  const map = document.getElementById('site-map-btn');
+  const nav = document.getElementById('site-nav-btn');
+  if (!map || !nav) return;
+  const mapUrl = siteMapsUrl(val, false);
+  if (mapUrl) {
+    map.href = mapUrl;
+    nav.href = siteMapsUrl(val, true);
+    map.style.display = 'inline-block';
+    nav.style.display = 'inline-block';
+  } else {
+    map.style.display = 'none';
+    nav.style.display = 'none';
+  }
+}
+
+function onSiteAddressInput() {
+  updateSiteButtons();
+  saveOrderMeta();
+}
+
+function useCustomerAddress() {
+  const id = document.getElementById('customer-select').value;
+  const c = id ? customers.find(c => c.id === id) : null;
+  if (!c) { setSaveStatus('err', 'Valitse ensin asiakas'); return; }
+  const postal = [c.billing_postal_code, c.billing_city].filter(Boolean).join(' ');
+  const addr = [c.billing_address, postal].filter(Boolean).join(', ');
+  if (!addr) { setSaveStatus('err', 'Asiakkaalla ei ole osoitetta'); return; }
+  const field = document.getElementById('order-site-address');
+  if (field.value.trim() && field.value.trim() !== addr &&
+      !confirm('Korvataanko nykyinen työmaan osoite asiakkaan osoitteella?')) return;
+  field.value = addr;
+  onSiteAddressInput();
+}
+
 // ── Tila ──────────────────────────────────────────────────────────
 let currentOrderId = null;
 let products = [];
@@ -2111,6 +2173,8 @@ async function loadOrderById(orderId) {
   if (order.order_date) document.getElementById('order-date').value = order.order_date.slice(0,10);
   if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
   if (order.kohde) document.getElementById('order-kohde').value = order.kohde;
+  document.getElementById('order-site-address').value = order.site_address || '';
+  updateSiteButtons();
   if (order.notes) document.getElementById('order-notes').value = order.notes;
   updateStatusBadge(order.status);
 
@@ -2225,6 +2289,8 @@ async function copyOrderById(sourceId, keepCustomer) {
       order_date: today,
       customer_id: keepCustomer ? (src.customer_id || null) : null,
       kohde: null,
+      // Työmaan osoite kopioituu vain, jos asiakas säilytetään
+      site_address: keepCustomer ? (src.site_address || null) : null,
       delivery_date: null,
       notes: ''
     })
@@ -2235,6 +2301,8 @@ async function copyOrderById(sourceId, keepCustomer) {
   currentOrderId = newOrderId;
   document.getElementById('order-number-display').textContent = newOrders[0].order_number || newOrderId.slice(0,8);
   document.getElementById('order-date').value = today;
+  document.getElementById('order-site-address').value = keepCustomer ? (src.site_address || '') : '';
+  updateSiteButtons();
   updateStatusBadge('DRAFT');
 
   await fetchCustomers();
@@ -2428,6 +2496,7 @@ async function createOrder() {
     order_date: document.getElementById('order-date')?.value || new Date().toISOString().slice(0,10),
     status: 'DRAFT',
     kohde: document.getElementById('order-kohde')?.value || null,
+    site_address: document.getElementById('order-site-address')?.value.trim() || null,
     notes: document.getElementById('order-notes')?.value || ''
   };
   const r = await fetch(SUPABASE_URL + '/rest/v1/orders', {
@@ -2457,6 +2526,7 @@ async function saveOrderMeta() {
       order_date: document.getElementById('order-date').value || null,
       delivery_date: document.getElementById('order-delivery').value || null,
       kohde: document.getElementById('order-kohde').value || null,
+      site_address: document.getElementById('order-site-address').value.trim() || null,
       notes: document.getElementById('order-notes').value,
       status: document.getElementById('order-status').value || 'DRAFT'
     };
