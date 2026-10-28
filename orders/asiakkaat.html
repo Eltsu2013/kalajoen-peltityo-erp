@@ -2261,7 +2261,7 @@ function renderList() {
       </div>
       ${c.phone || c.email ? `<div class="customer-meta">${[
         c.phone ? `<a href="tel:${c.phone.replace(/\s+/g,'')}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline dotted;">${c.phone}</a>` : null,
-        c.email
+        c.email ? `<a href="mailto:${c.email.trim()}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:underline dotted;">${c.email}</a>` : null
       ].filter(Boolean).join(' · ')}</div>` : ''}
     </div>
   `).join('');
