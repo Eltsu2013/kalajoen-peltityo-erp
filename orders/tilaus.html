@@ -77,9 +77,15 @@
   /* order-status on nyt <select>, muotoillaan näyttämään edelleen pilleriltä eikä
      selaimen oletuslomake-elementiltä. Väri/tausta tulee edelleen status-*-luokista. */
   select.status-badge {
-    border: none; outline: none; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.25); outline: none; cursor: pointer;
     appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    /* Nuoli ja reunus, jotta näkyy että tästä voi valita tilan */
+    padding: 4px 28px 4px 12px; font-size: 12px; width: auto;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23bbbbbb' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-repeat: no-repeat; background-position: right 10px center;
   }
+  select.status-badge:hover, select.status-badge:focus { border-color: rgba(255,255,255,0.55); }
+  .status-label { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); }
   .status-draft { background: #44444f; color: var(--text-dim); }
   .status-active { background: #1e3d2e; color: var(--success); }
   .status-quoted { background: #2a1f3a; color: #a855f7; }
@@ -1989,6 +1995,7 @@
       <div style="font-family:IBM Plex Mono,monospace;font-size:13px;font-weight:600;color:var(--text)">
         Tilausnro: <span id="order-number-display" style="color:var(--accent)">—</span>
       </div>
+      <label for="order-status" class="status-label">Tila:</label>
       <select id="order-status" class="status-badge status-draft" onchange="updateStatusBadge(this.value); saveOrderMeta()">
         <option value="DRAFT">LUONNOS</option>
         <option value="IN_PROGRESS">KESKEN</option>
@@ -2491,9 +2498,33 @@ function updateGroupSelect() {
   if (groups.length > 0) sel.value = groups[groups.length-1].id;
 }
 
-function renameGroup(id, name) {
+async function renameGroup(id, name) {
   const g = groups.find(g => g.id === id);
-  if (g) { g.name = name; updateGroupSelect(); updateSummary(); }
+  if (!g) return;
+  g.name = name;
+  updateGroupSelect();
+  updateSummary();
+
+  // Ryhmän nimi on tallennettu jokaiselle riville (order_items.group_name),
+  // joten päivitetään se kaikille ryhmän jo tallennetuille riveille.
+  // Rivit joilla ei vielä ole tietokanta-id:tä tallentuvat uudella nimellä.
+  const ids = g.items.map(i => i.supabaseId).filter(Boolean);
+  if (!currentOrderId || ids.length === 0) return;
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/order_items?id=in.(' + ids.join(',') + ')', {
+      method: 'PATCH',
+      headers: { ...headers, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ group_name: name })
+    });
+    if (r.ok) setSaveStatus('ok', 'Ryhmän nimi tallennettu');
+    else {
+      console.warn('renameGroup epäonnistui:', r.status);
+      setSaveStatus('err', 'Ryhmän nimen tallennus epäonnistui');
+    }
+  } catch(e) {
+    console.warn('renameGroup virhe:', e);
+    setSaveStatus('err', 'Ryhmän nimen tallennus epäonnistui');
+  }
 }
 
 function copyGroup(id) {
@@ -3138,7 +3169,7 @@ function renderGroups() {
     <div class="order-group">
       <div class="group-header">
         <input type="text" value="${g.name}" onchange="renameGroup('${g.id}', this.value)" title="Klikkaa nimetäksesi uudelleen">
-        <span class="tag">${g.items.reduce((s,i) => s + (i.rows ? i.rows.reduce((a,r) => a+(r.kpl||0),0) : 0), 0)} kpl</span>
+        ${groupQtyTags(g)}
         ${piippuNappi}
         <div style="margin-left:auto;display:flex;gap:6px">
           <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="copyGroup('${g.id}')">Kopioi</button>
@@ -3154,6 +3185,22 @@ function renderGroups() {
       </div>
     </div>
   `}).join('');
+}
+
+// Ryhmän otsikon määrämerkit: pellit (pituusrivien kpl) + kappaletavarat.
+// Kappaletavara yksiköllä "m" lasketaan metreihin, ei kappaleisiin.
+function groupQtyTags(g) {
+  let kpl = 0, m = 0;
+  g.items.forEach(i => {
+    if (i.itemType === 'kappale') {
+      const n = Number(i.maara) || 0;
+      if (i.yksikko === 'm') m += n; else kpl += n;
+    } else if (i.rows) {
+      kpl += i.rows.reduce((a, r) => a + (r.kpl || 0), 0);
+    }
+  });
+  return `<span class="tag">${+kpl.toFixed(2)} kpl</span>` +
+    (m ? `<span class="tag">${+m.toFixed(2)} m</span>` : '');
 }
 
 function renderItemsGrouped(items, groupId) {
