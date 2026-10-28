@@ -1913,6 +1913,10 @@
         <span class="summary-value aihio" id="summAihio">—</span>
       </div>
       <div class="summary-row">
+        <span class="summary-label">Taitokset</span>
+        <span class="summary-value aihio" id="summTaitokset">—</span>
+      </div>
+      <div class="summary-row">
         <span class="summary-label">Kpl yhteensä</span>
         <span class="summary-value" id="summKpl">0</span>
       </div>
@@ -2385,6 +2389,31 @@ function laske() {
   piirra();
 }
 
+// Taitosten määrä: profiilin osien (suorien jaksojen) määrä miinus yksi.
+// Tiiviste ja tupla ovat omia osiaan, joten kumpikin tuottaa yhden taitoksen.
+function laskeTaitokset() {
+  let osat = [];
+  if (activeType === 'ikkunapellit') {
+    if (!activeIkkuna) return null;
+    osat = [gv('f_takareuna'), gv('f_paanYlos') + gv('f_paanAlas'), gv('f_etureuna'), gv('f_etukaannos')];
+  } else if (activeType === 'kynnys1') {
+    osat = [gv('f_suora1'), gv('f_pinta'), gv('f_etureuna'), gv('f_tippanokka'), gv('f_takareuna')];
+  } else if (activeType === 'alaslaskun') {
+    osat = [gv('f_seg0'), gv('f_seg1'), gv('f_seg2'), gv('f_tupB')];
+  } else if (activeType === 'hattupelti') {
+    osat = [gv('f_seg0'), gv('f_seg1'), gv('f_seg2'), gv('f_tupB'), gv('f_tupC')];
+  } else if (activeType === 'katkaisulista') {
+    osat = [gv('f_takareuna'), gv('f_pinta'), gv('f_etureuna'), gv('f_etukaannos')];
+  } else if (activeType === 'kattolista') {
+    osat = [gv('f_seg0'), gv('f_seg1'), gv('f_tupA'), gv('f_tupB')];
+  } else if (activeType === 'raystaslista') {
+    osat = [gv('f_ikkuna'), gv('f_takareuna'), gv('f_pinta'), gv('f_etureuna'), gv('f_etukaannos')];
+  } else {
+    return null;
+  }
+  return Math.max(0, osat.filter(v => v > 0).length - 1);
+}
+
 function paivitaYhteenveto() {
   let aihio = 0;
   if (activeType === 'ikkunapellit' && activeIkkuna) {
@@ -2395,6 +2424,9 @@ function paivitaYhteenveto() {
   document.getElementById('summAihio').textContent = Math.round(aihio) + ' mm';
   const kpl = rivit.reduce((s, r) => s + (parseFloat(r.kpl) || 0), 0);
   document.getElementById('summKpl').textContent = kpl + ' kpl';
+  const tk = laskeTaitokset();
+  const tkEl = document.getElementById('summTaitokset');
+  if (tkEl) tkEl.textContent = tk === null ? '—' : tk + ' kpl';
 }
 
 // =============================================
@@ -2796,7 +2828,7 @@ function lisaaTilaukseen() {
     supabaseId: tilausContext.supabaseId || null,
     nimike: document.getElementById('nmikeInput').value || tilausContext.nimike || '',
     aihio_width_mm: Math.round(aihio),
-    profile_data: { vals: getValsFromDOM(), opts: {} },
+    profile_data: { vals: getValsFromDOM(), opts: {}, taitokset: laskeTaitokset() },
     rows: voimassa.map(r => ({
       mitta: parseFloat(r.mitta)||0, paat: parseFloat(r.paat)||0,
       kok: parseFloat(r.kok)||0, kpl: parseFloat(r.kpl)||1, huomio: r.huomio||''
