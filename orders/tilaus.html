@@ -2571,6 +2571,7 @@ async function receiveFromMallisto(data) {
         material: data.material || group.items[idx].material || null,
         color: data.color || group.items[idx].color || null,
         thickness: data.thickness || group.items[idx].thickness || null,
+        productGroup: data.productGroup || group.items[idx].productGroup || null,
         supabaseId: existingSupabaseId,
       };
       if (existingSupabaseId) {
