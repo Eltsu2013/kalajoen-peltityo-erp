@@ -130,6 +130,15 @@
       font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
     }
     #mobile-summary-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ohjeet-btn {
+      background: none; border: 1px solid var(--success); color: var(--success);
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 5px 10px;
+      border-radius: 3px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    /* Kun Ohjeet-nappi on näkyvissä, napit siirtyvät tekstin alle, ettei teksti puristu */
+    .mobile-summary-bar.has-ohjeet { flex-wrap: wrap; }
+    .mobile-summary-bar.has-ohjeet #mobile-summary-text { flex: 1 1 100%; }
+    .mobile-summary-bar.has-ohjeet #mobile-details-toggle { flex: 1 1 auto; }
     #mobile-details-toggle {
       background: none; border: 1px solid var(--border); color: var(--accent);
       font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 5px 10px;
@@ -139,6 +148,7 @@
     /* Harmonikka: sivupalkki (asiakas/kohde/päivät/uuden rivin lisäys) piilossa
        kunnes käyttäjä avaa sen yllä olevasta napista */
     .left-panel.mobile-collapsed { display: none; }
+    #desktop-ohjeet-btn { display: none !important; } /* mobiilissa nappi on yhteenvetorivillä */
 
     /* Header: jos napit (Mallisto/Vakiomallit/Kopioi) eivät mahdu riville, rivittyvät */
     header { flex-wrap: wrap; row-gap: 8px; }
@@ -1786,7 +1796,46 @@
 <!-- MOBIILI: kevyt yhteenvetorivi + harmonikkanappi. Piilossa desktopilla (@media hoitaa). -->
 <div class="mobile-summary-bar" id="mobile-summary-bar">
   <div id="mobile-summary-text">Uusi tilaus — ei vielä asiakasta</div>
+  <button type="button" id="mobile-ohjeet-btn" class="ohjeet-btn" onclick="openInstructionsModal()" style="display:none">📋 Ohjeet</button>
   <button type="button" id="mobile-details-toggle" onclick="toggleMobileDetails()">▸ Muokkaa tietoja / lisää rivi</button>
+</div>
+
+<!-- Mittausohjeet-modaali. Sijaitsee left-panelin ULKOPUOLELLA, koska mobiilissa
+     left-panel on oletuksena display:none, eikä sen sisällä oleva fixed-elementti näkyisi. -->
+<div id="instructions-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1100;align-items:flex-start;justify-content:center;overflow-y:auto;padding:12px;" onclick="if(event.target===this)closeInstructionsModal()">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:18px;width:560px;max-width:100%;margin:auto 0;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;">
+      <div>
+        <div id="imod-title" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--accent);font-weight:600;"></div>
+        <div id="imod-customer" style="font-size:16px;font-weight:600;color:var(--text);margin-top:4px;"></div>
+        <div id="imod-kohde" style="font-size:13px;color:var(--text-dim);margin-top:2px;"></div>
+      </div>
+      <button type="button" onclick="closeInstructionsModal()" aria-label="Sulje" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-size:18px;line-height:1;width:38px;height:38px;border-radius:3px;cursor:pointer;flex-shrink:0;">✕</button>
+    </div>
+
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:4px;">OHJEET</div>
+    <div id="imod-text" style="white-space:pre-wrap;word-break:break-word;font-size:18px;line-height:1.45;color:var(--text);background:var(--input-bg);border:1px solid var(--border);border-radius:4px;padding:12px;min-height:60px;"></div>
+
+    <div id="imod-address-block" style="margin-top:14px;display:none;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:4px;">TYÖMAAN OSOITE</div>
+      <div id="imod-address" style="font-size:16px;color:var(--text);word-break:break-word;"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+        <a id="imod-map" href="#" target="_blank" rel="noopener" style="flex:1 1 140px;text-align:center;padding:12px 10px;border:1px solid var(--border);border-radius:4px;color:var(--text);text-decoration:none;font-size:15px;">📍 Kartta</a>
+        <a id="imod-nav" href="#" target="_blank" rel="noopener" style="flex:1 1 140px;text-align:center;padding:12px 10px;border:1px solid var(--success);border-radius:4px;color:var(--success);text-decoration:none;font-size:15px;font-weight:600;">🧭 Navigoi</a>
+      </div>
+    </div>
+
+    <div id="imod-phone-block" style="margin-top:14px;display:none;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-bottom:4px;">ASIAKAS</div>
+      <div id="imod-contact" style="font-size:14px;color:var(--text-dim);margin-bottom:6px;"></div>
+      <a id="imod-phone" href="#" style="display:block;text-align:center;padding:12px 10px;border:1px solid var(--accent);border-radius:4px;color:var(--accent);text-decoration:none;font-size:16px;font-weight:600;"></a>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;gap:8px;margin-top:18px;">
+      <button type="button" onclick="editInstructions()" style="background:none;border:1px solid var(--border);color:var(--text-dim);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:9px 14px;border-radius:3px;cursor:pointer;">✎ Muokkaa ohjeita</button>
+      <button type="button" onclick="closeInstructionsModal()" style="background:var(--success);color:#1a1a1a;border:none;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;padding:9px 18px;border-radius:3px;cursor:pointer;">Sulje</button>
+    </div>
+  </div>
 </div>
 
 <div class="main">
@@ -1899,6 +1948,11 @@
       <div class="field">
         <label>Huomio</label>
         <textarea id="order-notes" rows="2" placeholder="Vapaa huomio..." oninput="saveOrderMeta()" style="resize:vertical"></textarea>
+      </div>
+      <div class="field">
+        <label>Mittausohjeet</label>
+        <textarea id="order-site-instructions" rows="4" placeholder="esim. Piipun juuret ja pellitys, lapetikkaat. Soita tarkemmat ohjeet." oninput="onInstructionsInput()" style="resize:vertical"></textarea>
+        <div style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-top:3px;">Näkyy isolla 📋 Ohjeet -napin ikkunassa (myös puhelimella) osoitteen ja puhelinnumeron kanssa.</div>
       </div>
       <!-- Status siirretty 20.8.2026 oikean paneelin yläreunaan (order-status-badge),
            jotta se ei jää unohtumaan sivupalkin syvyyksiin. Ei enää omaa kenttää tässä. -->
@@ -2017,6 +2071,7 @@
         <option value="ARCHIVED">ARKISTO</option>
       </select>
       <div style="margin-left:auto;display:flex;gap:8px">
+        <button type="button" id="desktop-ohjeet-btn" class="btn btn-secondary" onclick="openInstructionsModal()" style="display:none">📋 Ohjeet</button>
         <button class="btn btn-secondary" onclick="addGroup()">+ Luo ryhmä vasemmalta</button>
         <button class="btn btn-primary" onclick="printOrder()">🖨 Tulosta</button>
       </div>
@@ -2116,6 +2171,7 @@ function siteMapsUrl(raw, navigate) {
 }
 
 function updateSiteButtons() {
+  updateInstructionButtons();
   const val = document.getElementById('order-site-address')?.value || '';
   const map = document.getElementById('site-map-btn');
   const nav = document.getElementById('site-nav-btn');
@@ -2151,6 +2207,91 @@ function useCustomerAddress() {
   onSiteAddressInput();
 }
 
+// ── Mittausohjeet + ohjemodaali ───────────────────────────────────
+// Ohjeteksti tallennetaan orders.site_instructions-sarakkeeseen. 📋 Ohjeet -nappi
+// näkyy vain, jos tilauksella on ohjeita tai työmaan osoite.
+function updateInstructionButtons() {
+  const txt = (document.getElementById('order-site-instructions')?.value || '').trim();
+  const addr = (document.getElementById('order-site-address')?.value || '').trim();
+  const show = (txt || addr) ? '' : 'none';
+  const m = document.getElementById('mobile-ohjeet-btn');
+  const d = document.getElementById('desktop-ohjeet-btn');
+  if (m) m.style.display = show;
+  if (d) d.style.display = show;
+  const bar = document.getElementById('mobile-summary-bar');
+  if (bar) bar.classList.toggle('has-ohjeet', !show);
+}
+
+function onInstructionsInput() {
+  updateInstructionButtons();
+  saveOrderMeta();
+}
+
+function openInstructionsModal() {
+  const txt = (document.getElementById('order-site-instructions')?.value || '').trim();
+  const addr = (document.getElementById('order-site-address')?.value || '').trim();
+  const nro = document.getElementById('order-number-display')?.textContent || '';
+  const asiakas = (document.getElementById('customer-search')?.value || '').trim();
+  const kohde = (document.getElementById('order-kohde')?.value || '').trim();
+  const cid = document.getElementById('customer-select')?.value;
+  const c = cid ? customers.find(x => x.id === cid) : null;
+
+  document.getElementById('imod-title').textContent = 'MITTAUSOHJEET · Tilaus ' + nro;
+  document.getElementById('imod-customer').textContent = asiakas || 'Ei asiakasta';
+  document.getElementById('imod-kohde').textContent = kohde;
+  const textEl = document.getElementById('imod-text');
+  textEl.textContent = txt || 'Ei ohjeita. Lisää ne tilauksen tiedoissa kohtaan "Mittausohjeet".';
+  textEl.style.color = txt ? 'var(--text)' : 'var(--text-dim)';
+
+  // Osoite + karttalinkit
+  const addrBlock = document.getElementById('imod-address-block');
+  if (addr) {
+    document.getElementById('imod-address').textContent = addr;
+    document.getElementById('imod-map').href = siteMapsUrl(addr, false);
+    document.getElementById('imod-nav').href = siteMapsUrl(addr, true);
+    addrBlock.style.display = 'block';
+  } else {
+    addrBlock.style.display = 'none';
+  }
+
+  // Asiakkaan puhelin (tel:-linkki) ja yhteyshenkilö
+  const phoneBlock = document.getElementById('imod-phone-block');
+  const phone = c && c.phone ? String(c.phone).trim() : '';
+  if (phone) {
+    document.getElementById('imod-contact').textContent = c.contact_person ? 'Yhteyshenkilö: ' + c.contact_person : '';
+    const a = document.getElementById('imod-phone');
+    a.textContent = '📞 ' + phone;
+    a.href = 'tel:' + phone.replace(/[^\d+]/g, '');
+    phoneBlock.style.display = 'block';
+  } else {
+    phoneBlock.style.display = 'none';
+  }
+
+  document.getElementById('instructions-modal').style.display = 'flex';
+}
+
+function closeInstructionsModal() {
+  document.getElementById('instructions-modal').style.display = 'none';
+}
+
+// Sulkee modaalin ja vie kursorin ohjekenttään (avaa mobiilissa sivupalkin tarvittaessa)
+function editInstructions() {
+  closeInstructionsModal();
+  const panel = document.getElementById('left-panel');
+  if (panel && panel.classList.contains('mobile-collapsed') && getComputedStyle(panel).display === 'none') {
+    toggleMobileDetails();
+  }
+  const ta = document.getElementById('order-site-instructions');
+  if (ta) {
+    ta.scrollIntoView({ block: 'center' });
+    ta.focus();
+  }
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeInstructionsModal();
+});
+
 // ── Tila ──────────────────────────────────────────────────────────
 let currentOrderId = null;
 let products = [];
@@ -2176,6 +2317,7 @@ async function loadOrderById(orderId) {
   if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
   if (order.kohde) document.getElementById('order-kohde').value = order.kohde;
   document.getElementById('order-site-address').value = order.site_address || '';
+  document.getElementById('order-site-instructions').value = order.site_instructions || '';
   updateSiteButtons();
   if (order.notes) document.getElementById('order-notes').value = order.notes;
   updateStatusBadge(order.status);
@@ -2293,6 +2435,7 @@ async function copyOrderById(sourceId, keepCustomer) {
       kohde: null,
       // Työmaan osoite kopioituu vain, jos asiakas säilytetään
       site_address: keepCustomer ? (src.site_address || null) : null,
+      site_instructions: keepCustomer ? (src.site_instructions || null) : null,
       delivery_date: null,
       notes: ''
     })
@@ -2304,6 +2447,7 @@ async function copyOrderById(sourceId, keepCustomer) {
   document.getElementById('order-number-display').textContent = newOrders[0].order_number || newOrderId.slice(0,8);
   document.getElementById('order-date').value = today;
   document.getElementById('order-site-address').value = keepCustomer ? (src.site_address || '') : '';
+  document.getElementById('order-site-instructions').value = keepCustomer ? (src.site_instructions || '') : '';
   updateSiteButtons();
   updateStatusBadge('DRAFT');
 
@@ -2499,6 +2643,7 @@ async function createOrder() {
     status: 'DRAFT',
     kohde: document.getElementById('order-kohde')?.value || null,
     site_address: document.getElementById('order-site-address')?.value.trim() || null,
+    site_instructions: document.getElementById('order-site-instructions')?.value.trim() || null,
     notes: document.getElementById('order-notes')?.value || ''
   };
   const r = await fetch(SUPABASE_URL + '/rest/v1/orders', {
@@ -2529,13 +2674,25 @@ async function saveOrderMeta() {
       delivery_date: document.getElementById('order-delivery').value || null,
       kohde: document.getElementById('order-kohde').value || null,
       site_address: document.getElementById('order-site-address').value.trim() || null,
+      site_instructions: document.getElementById('order-site-instructions').value.trim() || null,
       notes: document.getElementById('order-notes').value,
       status: document.getElementById('order-status').value || 'DRAFT'
     };
-    await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + currentOrderId, {
-      method: 'PATCH', headers, body: JSON.stringify(body)
-    });
-    setSaveStatus('ok', 'Tallennettu');
+    try {
+      const r = await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + currentOrderId, {
+        method: 'PATCH', headers, body: JSON.stringify(body)
+      });
+      if (!r.ok) {
+        const errText = await r.text();
+        console.warn('Tilauksen tietojen tallennus epäonnistui:', r.status, errText);
+        setSaveStatus('err', 'Tallennus epäonnistui (' + r.status + ')');
+        return;
+      }
+      setSaveStatus('ok', 'Tallennettu');
+    } catch (e) {
+      console.warn('Tilauksen tietojen tallennus epäonnistui:', e);
+      setSaveStatus('err', 'Tallennus epäonnistui');
+    }
   }, 800);
 }
 
