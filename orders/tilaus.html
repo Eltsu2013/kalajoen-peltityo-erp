@@ -2397,6 +2397,7 @@ async function loadOrderById(orderId) {
       productGroup: item.product_group || null,
       profile_data: item.profile_data || {},
       rows,
+      kpl: item.quantity || 0, // varalle jos pituusrivejä ei ole
       angles,
       totalM2: 0
     });
@@ -2541,6 +2542,7 @@ async function copyOrderById(sourceId, keepCustomer) {
         productGroup: srcItem.product_group || null,
         profile_data: srcItem.profile_data || {},
         rows,
+        kpl: srcItem.quantity || 0,
         angles,
         totalM2: 0
       };
@@ -2562,7 +2564,7 @@ async function copyOrderById(sourceId, keepCustomer) {
           color: srcItem.color || null,
           thickness_mm: srcItem.thickness_mm || null,
           product_group: srcItem.product_group || null,
-          quantity: rows.reduce((s, r) => s + (r.kpl || 0), 0),
+          quantity: itemQty(newItem),
         })
       });
       if (r4.ok) {
@@ -2853,6 +2855,7 @@ async function receiveFromMallisto(data) {
         color: p.color || null,
         thickness: p.thickness || null,
         productGroup: p.productGroup || null,
+        kpl: p.kpl || 0, // käytössä kun pituusrivejä ei ole (jalat, lisäosat)
       };
       group.items.push(item);
       await saveItemToSupabase(item, data.groupId);
@@ -2976,6 +2979,13 @@ async function saveSubItems(orderItemId, item) {
   }
 }
 
+// Rivin kappalemäärä: pituusrivien kpl-summa; jos pituusrivejä ei ole (esim. piipun jalat,
+// lisäosat) käytetään item.kpl-kenttää. Ilman tätä määrä tallentui nollana.
+function itemQty(item) {
+  if (item.rows && item.rows.length > 0) return item.rows.reduce((s, r) => s + (r.kpl || 0), 0);
+  return Number(item.kpl) || 0;
+}
+
 async function saveItemToSupabase(item, groupId) {
   if (!currentOrderId) await createOrder();
   if (!currentOrderId) return;
@@ -2992,7 +3002,7 @@ async function saveItemToSupabase(item, groupId) {
     color: item.color || null,
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
     product_group: item.productGroup || null,
-    quantity: item.rows ? item.rows.reduce((s, r) => s + (r.kpl || 0), 0) : 0,
+    quantity: itemQty(item),
   };
   const r = await fetch(SUPABASE_URL + '/rest/v1/order_items', {
     method: 'POST',
@@ -3024,7 +3034,7 @@ async function updateItemInSupabase(item, supabaseIdOrEditId) {
     color: item.color || null,
     thickness_mm: item.thickness ? parseFloat(item.thickness) : null,
     product_group: item.productGroup || null,
-    quantity: item.rows ? item.rows.reduce((s, r) => s + (r.kpl || 0), 0) : 0,
+    quantity: itemQty(item),
   };
   await fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + supabaseId, {
     method: 'PATCH',
@@ -3424,8 +3434,8 @@ function groupQtyTags(g) {
     if (i.itemType === 'kappale') {
       const n = Number(i.maara) || 0;
       if (i.yksikko === 'm') m += n; else kpl += n;
-    } else if (i.rows) {
-      kpl += i.rows.reduce((a, r) => a + (r.kpl || 0), 0);
+    } else {
+      kpl += itemQty(i);
     }
   });
   return `<span class="tag">${+kpl.toFixed(2)} kpl</span>` +
@@ -3475,7 +3485,9 @@ function renderItem(item, groupId) {
           : `<strong>${r.kok} mm</strong>`;
         return `<div style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">${kokStr} × ${r.kpl} kpl${r.huomio ? ' ⚠ '+r.huomio : ''}</div>`;
       }).join('') + '</div>'
-    : '<span style="font-size:11px;color:var(--text-dim)">Ei pituuksia</span>';
+    : (item.kpl > 0
+        ? `<span style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace"><strong>${item.kpl} kpl</strong></span>`
+        : '<span style="font-size:11px;color:var(--text-dim)">Ei pituuksia</span>');
 
   return `
     <div class="order-item">
@@ -3486,7 +3498,7 @@ function renderItem(item, groupId) {
             onchange="renameItem('${groupId}','${item.id}',this.value)"
             onfocus="this.style.background='var(--input-bg)';this.style.border='1px solid var(--border)'"
             onblur="this.style.background='transparent';this.style.border='none'">
-          <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">LL-${item.aihio_width_mm || '—'} mm</span>
+          ${item.aihio_width_mm ? `<span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">LL-${item.aihio_width_mm} mm</span>` : ''}
           ${item.totalM2 ? `<span class="tag">${item.totalM2.toFixed(2)} m²</span>` : ''}
         </div>
         ${item.material ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:3px">${item.material}${item.color ? ' · ' + item.color : ''}${item.thickness ? ' · ' + item.thickness + ' mm' : ''}</div>` : ''}
