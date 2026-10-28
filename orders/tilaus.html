@@ -2089,6 +2089,8 @@ function updateMobileSummary() {
   const osat = [];
   osat.push(asiakas ? asiakas : 'Ei vielä asiakasta');
   if (kohde) osat.push(kohde);
+  const tyomaa = (document.getElementById('order-site-address')?.value || '').trim();
+  if (tyomaa) osat.push('📍 ' + tyomaa);
   if (toimitus) {
     // yyyy-mm-dd -> pp.kk.vvvv
     const [y, m, d] = toimitus.split('-');
