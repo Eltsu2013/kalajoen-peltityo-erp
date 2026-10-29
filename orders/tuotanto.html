@@ -282,7 +282,7 @@
   .items-grid {
     padding: 20px 24px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(380px, 100%), 1fr));
     gap: 16px;
   }
 
@@ -448,6 +448,62 @@
   .kap-maara { font-size: 16px; color: var(--accent); font-weight: 600; }
   .kap-unit { font-size: 11px; color: var(--text-dim); }
 
+  /* Kappaletavaran toimitusseuranta */
+  .kap-track {
+    display: flex; flex-direction: column; gap: 8px; margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+  }
+  .kap-progress { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; color: var(--text); }
+  .kap-progress b { font-size: 15px; color: var(--accent); }
+  .kap-progress .kap-left { color: var(--warn); }
+  .kap-progress .kap-over { color: var(--blue); }
+  .kap-steps { display: flex; gap: 6px; }
+  .kap-steps .row-status-btn { padding: 8px 18px; font-size: 12px; }
+  .kap-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .kap-qty-input {
+    width: 80px; background: var(--bg, #1a1f1b); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 7px 8px; font-family: inherit; font-size: 13px;
+  }
+  .kap-qty-input:focus { outline: none; border-color: var(--accent); }
+  .kap-add-btn {
+    background: var(--panel2); border: 1px solid var(--accent); color: var(--accent);
+    border-radius: 4px; padding: 7px 12px; font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+  .kap-add-btn:hover { background: var(--accent); color: #fff; }
+  .kap-log { display: flex; flex-direction: column; gap: 2px; color: var(--text-dim); font-size: 11px; }
+  .kap-log-row { display: flex; gap: 10px; align-items: center; }
+  .kap-log-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 0 4px; }
+  .kap-log-del:hover { color: #e55; }
+
+  /* Kortin materiaalisuodatin */
+  .card-filter-bar { display: none; gap: 6px; flex-wrap: wrap; padding: 12px 24px 0; }
+  .card-filter-chip {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text-dim);
+    border-radius: 4px; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .card-filter-chip:hover { color: var(--text); border-color: var(--text-dim); }
+  .card-filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); font-weight: 600; }
+  @media (max-width: 700px) {
+    .card-filter-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }
+    .all-done-banner { margin: 12px 24px 0; }
+    /* Puhelimella yläpalkki ei saa levittää sivua (Tulosta-nappi pois, väli tiiviimmäksi) */
+    header { padding: 8px 12px; gap: 8px; }
+    .btn-print { display: none; }
+  }
+
+  /* Kaikki valmiit -ilmoitus */
+  .all-done-banner {
+    display: none; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin: 12px 24px 0; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 4px;
+    background: var(--accent-glow); font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text);
+  }
+  .all-done-banner button {
+    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 4px;
+    padding: 7px 14px; font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+  .all-done-banner button.ghost { background: none; color: var(--text-dim); border-color: var(--border); font-weight: 400; }
+
   /* EMPTY STATE */
   .empty-state {
     text-align: center; padding: 60px 20px;
@@ -458,6 +514,7 @@
   @media print {
     header, .filter-bar, .nav-menu-wrap, .back-btn,
     .row-steps, .done-qty-cell, .done-qty-input, .done-all,
+    .kap-steps, .kap-add, .kap-log-del, .card-filter-bar, .all-done-banner,
     #cardStatusSelect, .nav-btn, .card-status-mini, .card-status-badge,
     .header-right { display: none !important; }
     body { background: #fff; color: #000; }
@@ -2213,6 +2270,14 @@
     </div>
   </div>
 
+  <div class="all-done-banner" id="allDoneBanner">
+    <span>✓ Kaikki tilauksen rivit on merkitty valmiiksi. Merkitäänkö koko tilaus Valmiiksi?</span>
+    <button onclick="markOrderCompleted()">Merkitse tilaus Valmiiksi</button>
+    <button class="ghost" onclick="dismissAllDone()">Ei vielä</button>
+  </div>
+
+  <div class="card-filter-bar" id="cardFilterBar"></div>
+
   <!-- Peltikorttien grid -->
   <div class="items-grid" id="itemsGrid">
     <div class="empty-state">Valitse tilaus listalta</div>
@@ -2265,7 +2330,7 @@ async function loadOrders() {
 
   const r2 = await fetch(
     `${SUPABASE_URL}/rest/v1/order_items?order_id=in.(${orderIds})` +
-    `&select=id,order_id,group_name,group_order,item_order,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,product_group,quantity,profile_data,order_item_rows(id,mitta_mm,paat_mm,kok_mm,kpl,huomio,row_order,production_status,done_qty)`,
+    `&select=id,order_id,group_name,group_order,item_order,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,product_group,quantity,production_status,profile_data,order_item_rows(id,mitta_mm,paat_mm,kok_mm,kpl,huomio,row_order,production_status,done_qty)`,
     { headers }
   );
   const items = await r2.json();
@@ -2516,8 +2581,9 @@ function renderOrderList(orders, mat, color, thick) {
         )
       : o.items;
 
-    const total = relevantItems.length;
-    const done  = relevantItems.filter(i => i.production_status === 'DONE').length;
+    const countedItems = relevantItems.filter(countsForProgress);
+    const total = countedItems.length;
+    const done  = countedItems.filter(i => itemOverallStatus(i) === 'DONE').length;
     const pct   = total > 0 ? Math.round(done / total * 100) : 0;
 
     const fillClass = done === total && total > 0 ? '' : done > 0 ? 'partial' : 'zero';
@@ -2593,10 +2659,23 @@ function openOrder(orderId) {
   const sel = document.getElementById('cardStatusSelect');
   if (sel) sel.value = o.status || 'IN_PRODUCTION';
 
+  // Esivalinta: jos listassa on valittu materiaali ja se vastaa täsmälleen yhtä ryhmää, avataan sillä suodatettuna
+  cardFilterKey = '';
+  const fMat = document.getElementById('filterMaterial').value;
+  if (fMat) {
+    const fColor = document.getElementById('filterColor').value;
+    const fThick = document.getElementById('filterThickness').value;
+    const keys = new Set(o.items.filter(i =>
+      i.material === fMat && (!fColor || i.color === fColor) && (!fThick || String(i.thickness_mm) === String(fThick))
+    ).map(itemGroupKey));
+    if (keys.size === 1) cardFilterKey = [...keys][0];
+  }
+  renderCardFilterBar(o);
   renderItemCards(o);
 }
 
 function showList() {
+  applyFilter();
   document.getElementById('view-list').style.display = 'block';
   document.getElementById('view-card').style.display = 'none';
   activeOrderId = null;
@@ -2609,8 +2688,156 @@ const STEP_COLORS = {
   CUT: 'var(--blue)',
   BENT: 'var(--warn)',
   EXTRA: '#a855f7',
-  DONE: 'var(--accent)'
+  DONE: 'var(--accent)',
+  PARTIAL: 'var(--warn)'
 };
+
+// ── Apufunktiot: kappaletavara, kokonaistila ja suodatin ──────────
+function escT(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmtNum(n) {
+  return (Number(n) || 0).toLocaleString('fi-FI', { maximumFractionDigits: 2 });
+}
+function isKappale(item) {
+  const hasRows = (item.order_item_rows || []).length > 0;
+  return item.profile_type === 'KAPPALE' || (!hasRows && !item.profile_type);
+}
+function kapMaara(item) {
+  const pd = item.profile_data || {};
+  return Number(pd.maara) || Number(item.quantity) || 0;
+}
+function kapToimitukset(item) {
+  const t = item.profile_data && item.profile_data.toimitukset;
+  return Array.isArray(t) ? t : [];
+}
+function kapToimitettu(item) {
+  return kapToimitukset(item).reduce((s, x) => s + (Number(x.maara) || 0), 0);
+}
+// Kappaletavaran tila: WAITING (ei mitään), PARTIAL (osa toimitettu), DONE (kaikki)
+function kapStatus(item) {
+  const tot = kapMaara(item);
+  const done = kapToimitettu(item);
+  if (kapToimitukset(item).some(x => x.valmis === true)) return 'DONE';
+  if (tot > 0 && done >= tot - 1e-9) return 'DONE';
+  return done > 0 ? 'PARTIAL' : 'WAITING';
+}
+// Rivin kokonaistila: pituusrivit -> niistä, kappaletavara -> toimituksista, muut -> kannan kentästä
+function itemOverallStatus(item) {
+  const rows = item.order_item_rows || [];
+  if (rows.length) return calcItemStatus(rows);
+  if (isKappale(item)) return kapStatus(item);
+  return item.production_status || 'WAITING';
+}
+// Piipun jalat ja lisäosat (ei pituusrivejä) hoidetaan piippu_tuotanto.html:ssä, joten niitä ei lasketa mukaan
+function countsForProgress(item) {
+  return !(item.profile_type === 'piippu' && !(item.order_item_rows || []).length);
+}
+function itemGroupKey(item) {
+  if (isKappale(item)) return '__KAP__';
+  return [item.material, item.color, item.thickness_mm ? item.thickness_mm + 'mm' : ''].filter(Boolean).join(' ') || '__MUU__';
+}
+function itemGroupLabel(key) {
+  return key === '__KAP__' ? 'Kappaletavara' : key === '__MUU__' ? 'Muut' : key;
+}
+
+let cardFilterKey = '';
+let dismissedAllDone = new Set();
+
+function renderCardFilterBar(order) {
+  const bar = document.getElementById('cardFilterBar');
+  const counts = new Map();
+  order.items.forEach(i => { const k = itemGroupKey(i); counts.set(k, (counts.get(k) || 0) + 1); });
+  if (counts.size < 2) { bar.style.display = 'none'; bar.innerHTML = ''; cardFilterKey = ''; return; }
+  const chip = (key, label, n) =>
+    `<button class="card-filter-chip${cardFilterKey === key ? ' active' : ''}" data-key="${escT(key)}" onclick="setCardFilter(this.dataset.key)">${escT(label)} (${n})</button>`;
+  bar.innerHTML = chip('', 'Kaikki', order.items.length) +
+    [...counts.entries()].map(([k, n]) => chip(k, itemGroupLabel(k), n)).join('');
+  bar.style.display = 'flex';
+}
+
+function setCardFilter(key) {
+  cardFilterKey = key || '';
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (!o) return;
+  renderCardFilterBar(o);
+  renderItemCards(o);
+}
+
+// Ehdotus "Merkitäänkö tilaus Valmiiksi?" kun kaikki rivit on tehty
+function updateAllDoneBanner(order) {
+  const banner = document.getElementById('allDoneBanner');
+  if (!banner) return;
+  const counted = order.items.filter(countsForProgress);
+  const allDone = counted.length > 0 && counted.every(i => itemOverallStatus(i) === 'DONE');
+  const open = order.status === 'ORDERED' || order.status === 'IN_PRODUCTION';
+  banner.style.display = (allDone && open && !dismissedAllDone.has(order.id)) ? 'flex' : 'none';
+}
+function dismissAllDone() {
+  if (activeOrderId) dismissedAllDone.add(activeOrderId);
+  document.getElementById('allDoneBanner').style.display = 'none';
+}
+async function markOrderCompleted() {
+  if (!activeOrderId) return;
+  await changeOrderStatus('COMPLETED');
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (o) updateAllDoneBanner(o);
+}
+
+// ── Kappaletavaran toimitukset ─────────────────────────────────────
+async function saveKapToimitukset(itemId, orderId, toimitukset) {
+  const o = allOrders.find(x => x.id === orderId);
+  const item = o && o.items.find(i => i.id === itemId);
+  if (!item) return;
+  const pd = { ...(item.profile_data || {}), toimitukset };
+  const status = kapStatus({ ...item, profile_data: pd }) === 'DONE' ? 'DONE' : 'WAITING';
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/order_items?id=eq.${itemId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ profile_data: pd, production_status: status })
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    console.warn('Toimituksen tallennus epäonnistui:', res.status, err);
+    alert('Tallennus epäonnistui (' + res.status + ')');
+    return;
+  }
+  item.profile_data = pd;
+  item.production_status = status;
+  renderItemCards(o);
+}
+function todayIso() { return new Date().toLocaleDateString('sv-SE'); }
+
+async function kapLisaaToimitus(itemId, orderId) {
+  const inp = document.getElementById('kapqty-' + itemId);
+  const val = parseFloat(String(inp && inp.value).replace(',', '.'));
+  if (!(val > 0)) { if (inp) inp.focus(); return; }
+  const o = allOrders.find(x => x.id === orderId);
+  const item = o && o.items.find(i => i.id === itemId);
+  if (!item) return;
+  await saveKapToimitukset(itemId, orderId, [...kapToimitukset(item), { pvm: todayIso(), maara: val }]);
+}
+async function kapKaikkiValmis(itemId, orderId) {
+  const o = allOrders.find(x => x.id === orderId);
+  const item = o && o.items.find(i => i.id === itemId);
+  if (!item) return;
+  const remaining = Math.max(0, kapMaara(item) - kapToimitettu(item));
+  await saveKapToimitukset(itemId, orderId, [...kapToimitukset(item), { pvm: todayIso(), maara: remaining, valmis: true }]);
+}
+async function kapNollaa(itemId, orderId) {
+  const o = allOrders.find(x => x.id === orderId);
+  const item = o && o.items.find(i => i.id === itemId);
+  if (!item) return;
+  if (kapToimitukset(item).length && !confirm('Poistetaan kaikki toimitusmerkinnät tältä riviltä?')) return;
+  await saveKapToimitukset(itemId, orderId, []);
+}
+async function kapPoistaToimitus(itemId, orderId, idx) {
+  const o = allOrders.find(x => x.id === orderId);
+  const item = o && o.items.find(i => i.id === itemId);
+  if (!item) return;
+  const list = kapToimitukset(item).filter((_, i) => i !== idx);
+  await saveKapToimitukset(itemId, orderId, list);
+}
 
 // Laskee order_item tason "kokonaistatus" pituusriveistä
 function calcItemStatus(rows) {
@@ -2633,12 +2860,19 @@ function renderItemCards(order) {
     ((a.group_order||0) - (b.group_order||0)) || ((a.item_order||0) - (b.item_order||0))
   );
 
-  grid.innerHTML = sorted.map((item, idx) => {
+  const visible = cardFilterKey ? sorted.filter(i => itemGroupKey(i) === cardFilterKey) : sorted;
+  if (!visible.length) {
+    grid.innerHTML = '<div class="empty-state">Ei rivejä tällä suodattimella</div>';
+    updateAllDoneBanner(order);
+    return;
+  }
+
+  grid.innerHTML = visible.map((item, idx) => {
     const mat = [item.material, item.color, item.thickness_mm ? item.thickness_mm + 'mm' : ''].filter(Boolean).join(' · ');
     const rows = (item.order_item_rows || []).sort((a,b) => (b.kok_mm||0)-(a.kok_mm||0));
 
     // Kokonaistatus lasketaan riveistä (tai suoraan itemistä jos ei rivejä)
-    const overallStatus = rows.length ? calcItemStatus(rows) : 'WAITING';
+    const overallStatus = itemOverallStatus(item);
     const isDone = overallStatus === 'DONE';
 
     // Pituustaulukko — sarakkeet: mitta | päät | kok | huomio | kpl | status | tehty
@@ -2730,16 +2964,44 @@ function renderItemCards(order) {
       } // else
     }
 
-    // Kappaletavara-lohko
+    // Kappaletavara-lohko: määrä, toimitusseuranta ja Odottaa / Valmis
     let kapBlock = '';
-    if (item.profile_type === 'KAPPALE' || (!rows.length && !item.profile_type)) {
+    if (isKappale(item)) {
       const pd = item.profile_data || {};
+      const tot = kapMaara(item);
+      const delivered = kapToimitettu(item);
+      const left = Math.max(0, tot - delivered);
+      const over = Math.max(0, delivered - tot);
+      const kst = kapStatus(item);
+      const unit = escT(pd.yksikko || item.product_group || '');
+      const log = kapToimitukset(item).map((t, ti) => {
+        const d = String(t.pvm || '').slice(0, 10).split('-').reverse().slice(0, 2).join('.');
+        return `<div class="kap-log-row"><span>${escT(d)}</span><span>${fmtNum(t.maara)} ${unit}${t.valmis ? ' (valmis)' : ''}</span>
+          <button class="kap-log-del" title="Poista merkintä" onclick="kapPoistaToimitus('${item.id}', '${order.id}', ${ti})">✕</button></div>`;
+      }).join('');
       kapBlock = `
         <div class="kap-block">
-          <span class="kap-nimike">${item.nimike || '—'}</span>
-          <span class="kap-maara">${pd.maara || item.quantity || ''}</span>
-          <span class="kap-unit">${pd.yksikko || item.product_group || ''}</span>
-          ${pd.huomio ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">⚠ ${pd.huomio}</span>` : ''}
+          <span class="kap-nimike">${escT(item.nimike || '—')}</span>
+          <span class="kap-maara">${fmtNum(tot) || ''}</span>
+          <span class="kap-unit">${unit}</span>
+          ${pd.huomio ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">⚠ ${escT(pd.huomio)}</span>` : ''}
+        </div>
+        <div class="kap-track">
+          <div class="kap-progress">
+            <span>Toimitettu <b>${fmtNum(delivered)}</b> / ${fmtNum(tot)} ${unit}</span>
+            ${left > 0 && delivered > 0 ? `<span class="kap-left">puuttuu ${fmtNum(left)} ${unit}</span>` : ''}
+            ${over > 0 ? `<span class="kap-over">+${fmtNum(over)} yli tilatun</span>` : ''}
+          </div>
+          <div class="kap-steps">
+            <button class="row-status-btn${kst === 'WAITING' ? ' ractive' : ''}" onclick="kapNollaa('${item.id}', '${order.id}')">Odottaa</button>
+            <button class="row-status-btn${kst === 'DONE' ? ' ractive' : ''}" onclick="kapKaikkiValmis('${item.id}', '${order.id}')">Valmis</button>
+          </div>
+          ${kst !== 'DONE' ? `<div class="kap-add">
+            <input type="number" inputmode="decimal" step="any" min="0" class="kap-qty-input" id="kapqty-${item.id}" placeholder="${unit || 'kpl'}"
+              onkeydown="if(event.key==='Enter')kapLisaaToimitus('${item.id}', '${order.id}')">
+            <button class="kap-add-btn" onclick="kapLisaaToimitus('${item.id}', '${order.id}')">+ Toimitettu nyt</button>
+          </div>` : ''}
+          ${log ? `<div class="kap-log">${log}</div>` : ''}
         </div>`;
     }
 
@@ -2759,6 +3021,7 @@ function renderItemCards(order) {
       </div>
     </div>`;
   }).join('');
+  updateAllDoneBanner(order);
 }
 
 // ── Tilauksen statuksen pikamuutos kortilta ───────────────────────
