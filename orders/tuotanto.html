@@ -2985,6 +2985,7 @@ function renderItemCards(order) {
           <span class="kap-maara">${fmtNum(tot) || ''}</span>
           <span class="kap-unit">${unit}</span>
           ${pd.huomio ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">⚠ ${escT(pd.huomio)}</span>` : ''}
+          ${pd.alkup_maara != null ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">muutettu: alun perin ${fmtNum(pd.alkup_maara)}</span>` : ''}
         </div>
         <div class="kap-track">
           <div class="kap-progress">
