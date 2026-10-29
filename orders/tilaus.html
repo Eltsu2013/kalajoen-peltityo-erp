@@ -2360,6 +2360,8 @@ async function loadOrderById(orderId) {
         pituus: pd.pituus ?? null,
         yksikko: pd.yksikko || 'kpl',
         huomio: pd.huomio || '',
+        alkupMaara: pd.alkup_maara ?? null,
+        toimitettu: (Array.isArray(pd.toimitukset) ? pd.toimitukset : []).reduce((s, t) => s + (Number(t.maara) || 0), 0),
       });
       return;
     }
@@ -3461,18 +3463,48 @@ function renderItemsGrouped(items, groupId) {
 function renderItem(item, groupId) {
   // Kappaletavara-rivi
   if (item.itemType === 'kappale') {
+    // Muokkaustila: rivin tilalla pieni lomake
+    if (item.editing) {
+      const gi = escAttr(groupId), ii = escAttr(item.id);
+      return `
+      <div class="order-item" style="flex-direction:column;align-items:stretch;gap:6px">
+        <input type="text" id="kapedit-nimike-${ii}" value="${escAttr(item.nimike)}" placeholder="Nimike" style="width:100%">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div class="field"><label>Pituus m</label>
+            <input type="number" id="kapedit-pituus-${ii}" value="${item.pituus ?? ''}" min="0" step="0.1" placeholder="—"></div>
+          <div class="field"><label>Määrä</label>
+            <input type="number" id="kapedit-maara-${ii}" value="${item.maara ?? ''}" min="0" step="any"></div>
+          <div class="field"><label>Yksikkö</label>
+            <select id="kapedit-yksikko-${ii}">
+              <option value="kpl"${item.yksikko !== 'm' ? ' selected' : ''}>kpl</option>
+              <option value="m"${item.yksikko === 'm' ? ' selected' : ''}>m</option>
+            </select></div>
+        </div>
+        <input type="text" id="kapedit-huomio-${ii}" value="${escAttr(item.huomio)}" placeholder="Huomio" style="width:100%">
+        ${item.toimitettu ? `<div style="font-size:11px;color:var(--text-dim)">Tuotannossa on kirjattu toimitetuksi ${+item.toimitettu.toFixed(2)} ${escAttr(item.yksikko)}; ne säilyvät.</div>` : ''}
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary" style="flex:1" onclick="kapSaveEdit('${gi}','${ii}')">Tallenna</button>
+          <button class="btn btn-secondary" onclick="kapCancelEdit('${gi}','${ii}')">Peruuta</button>
+        </div>
+      </div>`;
+    }
     const pituusStr = item.pituus ? `${item.pituus} m × ` : '';
+    const tags =
+      (item.alkupMaara != null ? `<span class="tag" style="color:#ffaa44;border-color:#ffaa44" title="Alkuperäinen tilattu määrä">alun perin ${+Number(item.alkupMaara).toFixed(2)}</span>` : '') +
+      (item.toimitettu ? `<span class="tag" title="Tuotannossa kirjattu toimitetuksi">toimitettu ${+item.toimitettu.toFixed(2)}</span>` : '');
     return `
       <div class="order-item">
         <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
-            <span class="item-nimike">${item.nimike}</span>
-            <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">${pituusStr}${item.maara} ${item.yksikko}</span>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap">
+            <span class="item-nimike">${escAttr(item.nimike)}</span>
+            <span style="font-size:13px;font-weight:600;color:var(--text-dim);font-family:IBM Plex Mono,monospace">${pituusStr}${item.maara} ${escAttr(item.yksikko)}</span>
+            ${tags}
           </div>
-          ${item.huomio ? `<div style="font-size:11px;color:#ffaa44">⚠ ${item.huomio}</div>` : ''}
+          ${item.huomio ? `<div style="font-size:11px;color:#ffaa44">⚠ ${escAttr(item.huomio)}</div>` : ''}
         </div>
         <div class="item-actions">
-          <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteItem('${groupId}','${item.id}')">✕</button>
+          <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="kapStartEdit('${escAttr(groupId)}','${escAttr(item.id)}')">✎ Muokkaa</button>
+          <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteItem('${escAttr(groupId)}','${escAttr(item.id)}')">✕</button>
         </div>
       </div>
     `;
@@ -3486,7 +3518,14 @@ function renderItem(item, groupId) {
         return `<div style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">${kokStr} × ${r.kpl} kpl${r.huomio ? ' ⚠ '+r.huomio : ''}</div>`;
       }).join('') + '</div>'
     : (item.kpl > 0
-        ? `<span style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace"><strong>${item.kpl} kpl</strong></span>`
+        ? (item.profileType === 'piippu'
+            // Piipun jalat ja lisäosat: määrää voi muuttaa suoraan (esim. 4 -> 6 kpl)
+            ? `<span style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">
+                 <input type="number" min="0" step="1" value="${item.kpl}" style="width:60px;padding:2px 4px;font-size:12px"
+                   onchange="setPiippuItemKpl('${escAttr(groupId)}','${escAttr(item.id)}',this.value)" title="Muuta kappalemäärä"> kpl
+                 ${item.profile_data && item.profile_data.alkup_maara != null ? `<span class="tag" style="color:#ffaa44;border-color:#ffaa44">alun perin ${+Number(item.profile_data.alkup_maara).toFixed(2)}</span>` : ''}
+               </span>`
+            : `<span style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace"><strong>${item.kpl} kpl</strong></span>`)
         : '<span style="font-size:11px;color:var(--text-dim)">Ei pituuksia</span>');
 
   return `
@@ -3512,6 +3551,113 @@ function renderItem(item, groupId) {
       </div>
     </div>
   `;
+}
+
+// ── Kappaletavaran ja piipun lisäosien määrän muutos ───────────────
+function escAttr(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Muuttaa rivin määrän tietokannassa. Hakee ensin tuoreen profile_data:n, jotta tuotannossa kirjatut
+// toimitukset eivät katoa. Kun tilaus on jo tilattu tai pidemmällä, alkuperäinen määrä jää talteen
+// (profile_data.alkup_maara). Palauttaa uuden profile_data:n tai null jos tallennus epäonnistui.
+async function patchItemQty(item, newQty, extraProfileData, extraBody) {
+  const status = document.getElementById('order-status').value || 'DRAFT';
+  if (status === 'COMPLETED' || status === 'INVOICED') {
+    if (!confirm('Tilaus on jo ' + (status === 'INVOICED' ? 'laskutettu' : 'valmis') + '. Muutetaanko määrä silti?')) return null;
+  }
+  let cur = {}, oldQty = null;
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + item.supabaseId + '&select=profile_data,quantity', { headers });
+    const j = await r.json();
+    if (!r.ok || !j || !j[0]) throw new Error('luku epäonnistui ' + r.status);
+    cur = j[0].profile_data || {};
+    oldQty = item.itemType === 'kappale' ? (cur.maara ?? j[0].quantity) : j[0].quantity;
+  } catch (e) {
+    console.warn('Määrän muutos: tuoreen datan haku epäonnistui', e);
+    setSaveStatus('err', 'Määrän muutos epäonnistui');
+    return null;
+  }
+  const pd = { ...cur, ...(extraProfileData || {}) };
+  const historia = ['ORDERED', 'IN_PRODUCTION', 'COMPLETED', 'INVOICED'].includes(status);
+  if (historia && pd.alkup_maara === undefined && Number(oldQty) !== Number(newQty)) pd.alkup_maara = Number(oldQty);
+  if (pd.alkup_maara !== undefined && Number(pd.alkup_maara) === Number(newQty)) delete pd.alkup_maara;
+  try {
+    const r = await fetch(SUPABASE_URL + '/rest/v1/order_items?id=eq.' + item.supabaseId, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ ...(extraBody || {}), profile_data: pd, quantity: newQty })
+    });
+    if (!r.ok) throw new Error('tallennus ' + r.status);
+  } catch (e) {
+    console.warn('Määrän muutos: tallennus epäonnistui', e);
+    setSaveStatus('err', 'Määrän muutos epäonnistui');
+    return null;
+  }
+  return pd;
+}
+
+function kapFindItem(groupId, itemId) {
+  const group = groups.find(g => g.id === groupId);
+  const item = group && group.items.find(i => i.id === itemId);
+  return item || null;
+}
+function kapStartEdit(groupId, itemId) {
+  const item = kapFindItem(groupId, itemId);
+  if (!item) return;
+  item.editing = true;
+  renderGroups();
+}
+function kapCancelEdit(groupId, itemId) {
+  const item = kapFindItem(groupId, itemId);
+  if (!item) return;
+  item.editing = false;
+  renderGroups();
+}
+async function kapSaveEdit(groupId, itemId) {
+  const item = kapFindItem(groupId, itemId);
+  if (!item) return;
+  const nimike = document.getElementById('kapedit-nimike-' + itemId).value.trim();
+  const maara = parseFloat(document.getElementById('kapedit-maara-' + itemId).value);
+  const pituus = parseFloat(document.getElementById('kapedit-pituus-' + itemId).value) || null;
+  const yksikko = document.getElementById('kapedit-yksikko-' + itemId).value;
+  const huomio = document.getElementById('kapedit-huomio-' + itemId).value.trim();
+  if (!nimike) { alert('Kirjoita nimike!'); return; }
+  if (!(maara > 0)) { alert('Määrän pitää olla suurempi kuin 0.'); return; }
+
+  if (!item.supabaseId) {
+    // Ei vielä tallennettu kantaan: päivitetään vain paikallinen rivi
+    Object.assign(item, { nimike, maara, pituus, yksikko, huomio, editing: false });
+    renderGroups(); updateSummary();
+    return;
+  }
+  setSaveStatus('', 'Tallennetaan...');
+  const pd = await patchItemQty(item, maara, { maara, pituus, yksikko, huomio }, { nimike });
+  if (!pd) return;
+  Object.assign(item, {
+    nimike, maara, pituus, yksikko, huomio, editing: false,
+    alkupMaara: pd.alkup_maara ?? null
+  });
+  renderGroups();
+  updateSummary();
+  setSaveStatus('ok', 'Kappaletavara päivitetty');
+}
+
+async function setPiippuItemKpl(groupId, itemId, value) {
+  const item = kapFindItem(groupId, itemId);
+  if (!item) return;
+  const n = Math.round(parseFloat(value));
+  if (!(n >= 0)) { renderGroups(); return; }
+  if (n === Number(item.kpl)) return;
+  if (!item.supabaseId) { item.kpl = n; renderGroups(); updateSummary(); return; }
+  setSaveStatus('', 'Tallennetaan...');
+  const pd = await patchItemQty(item, n, {}, {});
+  if (!pd) { renderGroups(); return; }
+  item.kpl = n;
+  item.profile_data = pd;
+  renderGroups();
+  updateSummary();
+  setSaveStatus('ok', 'Määrä päivitetty');
 }
 
 function renameItem(groupId, itemId, newNimike) {
