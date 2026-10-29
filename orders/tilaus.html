@@ -2361,6 +2361,7 @@ async function loadOrderById(orderId) {
         yksikko: pd.yksikko || 'kpl',
         huomio: pd.huomio || '',
         alkupMaara: pd.alkup_maara ?? null,
+        lisattyTuotannossa: !!pd.lisatty_tuotannossa,
         toimitettu: (Array.isArray(pd.toimitukset) ? pd.toimitukset : []).reduce((s, t) => s + (Number(t.maara) || 0), 0),
       });
       return;
@@ -3490,6 +3491,7 @@ function renderItem(item, groupId) {
     }
     const pituusStr = item.pituus ? `${item.pituus} m × ` : '';
     const tags =
+      (item.lisattyTuotannossa ? `<span class="tag" style="color:#5aa9ff;border-color:#5aa9ff" title="Rivi lisättiin tuotannon aikana">lisätty tuotannossa</span>` : '') +
       (item.alkupMaara != null ? `<span class="tag" style="color:#ffaa44;border-color:#ffaa44" title="Alkuperäinen tilattu määrä">alun perin ${+Number(item.alkupMaara).toFixed(2)}</span>` : '') +
       (item.toimitettu ? `<span class="tag" title="Tuotannossa kirjattu toimitetuksi">toimitettu ${+item.toimitettu.toFixed(2)}</span>` : '');
     return `
