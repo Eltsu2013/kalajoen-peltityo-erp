@@ -492,6 +492,46 @@
     .btn-print { display: none; }
   }
 
+  /* Rivin lisäys tuotannon aikana */
+  .add-row-wrap { padding: 12px 24px 0; font-family: 'IBM Plex Mono', monospace; }
+  .add-row-toggle {
+    background: var(--panel2); border: 1px dashed var(--accent); color: var(--accent);
+    border-radius: 4px; padding: 7px 14px; font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+  .add-row-toggle:hover { background: var(--accent); color: #fff; }
+  .add-row-form {
+    margin-top: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--panel); max-width: 720px;
+  }
+  .add-row-title { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+  .add-row-fields { display: flex; gap: 10px; flex-wrap: wrap; }
+  .add-row-f { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-dim); }
+  .add-row-f-wide { flex: 1 1 220px; }
+  .add-row-f input, .add-row-f select {
+    background: var(--input-bg, #1a1f1b); border: 1px solid var(--border); color: var(--text);
+    border-radius: 4px; padding: 8px; font-family: inherit; font-size: 13px; min-width: 0; width: 100%;
+  }
+  .add-row-f:not(.add-row-f-wide) { flex: 0 0 90px; }
+  .add-row-f input:focus, .add-row-f select:focus { outline: none; border-color: var(--accent); }
+  .add-row-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  .add-row-save {
+    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 4px;
+    padding: 8px 16px; font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+  .add-row-save:disabled { opacity: 0.5; cursor: default; }
+  .add-row-cancel {
+    background: none; color: var(--text-dim); border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px 14px; font-family: inherit; font-size: 12px; cursor: pointer;
+  }
+  .add-row-msg { font-size: 11px; color: var(--warn); }
+  .lisatty-tag {
+    font-size: 10px; color: var(--blue); border: 1px solid var(--blue); border-radius: 3px;
+    padding: 1px 6px; white-space: nowrap; font-family: 'IBM Plex Mono', monospace;
+  }
+  @media (max-width: 700px) {
+    .add-row-wrap { padding: 12px 12px 0; }
+  }
+
   /* Kaikki valmiit -ilmoitus */
   .all-done-banner {
     display: none; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -514,7 +554,7 @@
   @media print {
     header, .filter-bar, .nav-menu-wrap, .back-btn,
     .row-steps, .done-qty-cell, .done-qty-input, .done-all,
-    .kap-steps, .kap-add, .kap-log-del, .card-filter-bar, .all-done-banner,
+    .kap-steps, .kap-add, .kap-log-del, .card-filter-bar, .all-done-banner, .add-row-wrap,
     #cardStatusSelect, .nav-btn, .card-status-mini, .card-status-badge,
     .header-right { display: none !important; }
     body { background: #fff; color: #000; }
@@ -2278,6 +2318,39 @@
 
   <div class="card-filter-bar" id="cardFilterBar"></div>
 
+  <!-- Rivin lisäys tuotannon aikana -->
+  <div class="add-row-wrap" id="addRowWrap">
+    <button class="add-row-toggle" id="addRowToggle" onclick="toggleAddRow()">＋ Lisää rivi</button>
+    <div class="add-row-form" id="addRowForm" style="display:none">
+      <div class="add-row-title">Lisää tilaukseen tuote, jota ei alun perin ollut (esim. lisää piipun jalkoja)</div>
+      <div class="add-row-fields">
+        <label class="add-row-f add-row-f-wide">Nimike
+          <input type="text" id="addRowNimike" placeholder="esim. Piipun jalka" autocomplete="off"
+            onkeydown="if(event.key==='Enter')saveAddRow()">
+        </label>
+        <label class="add-row-f">Määrä
+          <input type="number" inputmode="decimal" step="any" min="0" id="addRowMaara" placeholder="0"
+            onkeydown="if(event.key==='Enter')saveAddRow()">
+        </label>
+        <label class="add-row-f">Yksikkö
+          <select id="addRowYksikko">
+            <option value="kpl">kpl</option>
+            <option value="m">m</option>
+          </select>
+        </label>
+        <label class="add-row-f add-row-f-wide">Huomio (ei pakollinen)
+          <input type="text" id="addRowHuomio" placeholder="—" autocomplete="off"
+            onkeydown="if(event.key==='Enter')saveAddRow()">
+        </label>
+      </div>
+      <div class="add-row-actions">
+        <button class="add-row-save" id="addRowSave" onclick="saveAddRow()">Lisää rivi</button>
+        <button class="add-row-cancel" onclick="toggleAddRow(false)">Peruuta</button>
+        <span class="add-row-msg" id="addRowMsg"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Peltikorttien grid -->
   <div class="items-grid" id="itemsGrid">
     <div class="empty-state">Valitse tilaus listalta</div>
@@ -2670,6 +2743,7 @@ function openOrder(orderId) {
     ).map(itemGroupKey));
     if (keys.size === 1) cardFilterKey = [...keys][0];
   }
+  toggleAddRow(false);
   renderCardFilterBar(o);
   renderItemCards(o);
 }
@@ -2837,6 +2911,86 @@ async function kapPoistaToimitus(itemId, orderId, idx) {
   if (!item) return;
   const list = kapToimitukset(item).filter((_, i) => i !== idx);
   await saveKapToimitukset(itemId, orderId, list);
+}
+
+// ── Rivin lisäys tuotannon aikana ──────────────────────────────────
+const LISATTY_RYHMA = 'Lisätty tuotannossa';
+
+function toggleAddRow(show) {
+  const form = document.getElementById('addRowForm');
+  const open = show === undefined ? form.style.display === 'none' : !!show;
+  form.style.display = open ? 'block' : 'none';
+  document.getElementById('addRowMsg').textContent = '';
+  if (open) {
+    const n = document.getElementById('addRowNimike');
+    if (n) n.focus();
+  } else {
+    ['addRowNimike', 'addRowMaara', 'addRowHuomio'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('addRowYksikko').value = 'kpl';
+  }
+}
+
+async function saveAddRow() {
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (!o) return;
+  const msg = document.getElementById('addRowMsg');
+  const nimike = document.getElementById('addRowNimike').value.trim();
+  const maara = parseFloat(String(document.getElementById('addRowMaara').value).replace(',', '.'));
+  const yksikko = document.getElementById('addRowYksikko').value || 'kpl';
+  const huomio = document.getElementById('addRowHuomio').value.trim();
+  if (!nimike) { msg.textContent = 'Kirjoita nimike.'; document.getElementById('addRowNimike').focus(); return; }
+  if (!(maara > 0)) { msg.textContent = 'Kirjoita määrä (suurempi kuin 0).'; document.getElementById('addRowMaara').focus(); return; }
+  if (o.status === 'COMPLETED' && !confirm('Tilaus on jo merkitty Valmiiksi. Lisätäänkö rivi silti?')) return;
+
+  // Sijoitetaan omaan ryhmään "Lisätty tuotannossa" (jos ryhmä on jo olemassa, sen perään)
+  const inGroup = o.items.filter(i => i.group_name === LISATTY_RYHMA);
+  const maxGroupOrder = o.items.reduce((m, i) => Math.max(m, i.group_order || 0), 0);
+  const group_order = inGroup.length ? (inGroup[0].group_order || 0) : (o.items.length ? maxGroupOrder + 1 : 0);
+  const item_order = inGroup.reduce((m, i) => Math.max(m, i.item_order || 0), -1) + 1;
+
+  const body = {
+    order_id: o.id,
+    group_name: LISATTY_RYHMA,
+    group_order,
+    item_order,
+    nimike,
+    profile_type: 'KAPPALE',
+    profile_data: { maara, pituus: null, yksikko, huomio, lisatty_tuotannossa: true, lisatty_pvm: todayIso() },
+    aihio_width_mm: null,
+    quantity: maara,
+    production_status: 'WAITING'
+  };
+  const btn = document.getElementById('addRowSave');
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/order_items`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.warn('Rivin lisäys epäonnistui:', res.status, err);
+      msg.textContent = 'Tallennus epäonnistui (' + res.status + ').';
+      return;
+    }
+    const saved = await res.json();
+    const row = (saved && saved[0]) ? saved[0] : { ...body, id: 'tmp_' + Date.now() };
+    row.order_item_rows = row.order_item_rows || [];
+    o.items.push(row);
+    toggleAddRow(false);
+    // Näytetään uusi rivi: jos suodatin piilottaisi sen, siirrytään "Kaikki"-näkymään
+    if (cardFilterKey && cardFilterKey !== itemGroupKey(row)) cardFilterKey = '';
+    dismissedAllDone.delete(o.id);
+    renderCardFilterBar(o);
+    renderItemCards(o);
+    applyFilter();
+  } catch (e) {
+    console.warn('Rivin lisäys epäonnistui', e);
+    msg.textContent = 'Tallennus epäonnistui (verkkovirhe).';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // Laskee order_item tason "kokonaistatus" pituusriveistä
@@ -3013,6 +3167,7 @@ function renderItemCards(order) {
       <div class="item-card-header">
         <span class="item-nimike">${item.nimike || item.profile_type || '—'}</span>
         ${mat ? `<span class="item-material">${mat}</span>` : ''}
+        ${item.profile_data && item.profile_data.lisatty_tuotannossa ? `<span class="lisatty-tag" title="Rivi lisättiin tuotannon aikana">lisätty tuotannossa ${escT(String(item.profile_data.lisatty_pvm || '').slice(0,10).split('-').reverse().slice(0,2).join('.'))}</span>` : ''}
         ${isDone ? '<span class="item-done-badge">✓ VALMIS</span>' : ''}
       </div>
       <div class="item-card-body">
