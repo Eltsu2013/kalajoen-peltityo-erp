@@ -492,6 +492,28 @@
     .btn-print { display: none; }
   }
 
+  /* Työaika (ajanseurannasta) */
+  .time-panel {
+    display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap;
+    margin: 12px 24px 0; padding: 10px 14px; border: 1px solid var(--border); border-radius: 4px;
+    background: var(--panel); font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+  }
+  .time-title { color: var(--text-dim); }
+  .time-total { font-size: 16px; font-weight: 600; color: var(--accent); }
+  .time-total.none { font-size: 12px; font-weight: 400; color: var(--text-dim); }
+  .time-cat { border: 1px solid var(--border); border-radius: 3px; padding: 2px 8px; color: var(--text); white-space: nowrap; }
+  .time-running { color: var(--warn); white-space: nowrap; }
+  .time-warn { color: #e55; white-space: nowrap; }
+  .time-link, .time-start {
+    background: var(--panel2); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px;
+    padding: 6px 12px; font-family: inherit; font-size: 12px; cursor: pointer; text-decoration: none; white-space: nowrap;
+  }
+  .time-link:hover, .time-start:hover { background: var(--accent); color: #fff; }
+  .time-start:disabled { opacity: 0.5; cursor: default; }
+  .time-spacer { flex: 1 1 auto; }
+  .time-chip { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: nowrap; }
+  @media (max-width: 700px) { .time-panel { margin: 12px 12px 0; } }
+
   /* Rivin lisäys tuotannon aikana */
   .add-row-wrap { padding: 12px 24px 0; font-family: 'IBM Plex Mono', monospace; }
   .add-row-toggle {
@@ -554,7 +576,7 @@
   @media print {
     header, .filter-bar, .nav-menu-wrap, .back-btn,
     .row-steps, .done-qty-cell, .done-qty-input, .done-all,
-    .kap-steps, .kap-add, .kap-log-del, .card-filter-bar, .all-done-banner, .add-row-wrap,
+    .kap-steps, .kap-add, .kap-log-del, .card-filter-bar, .all-done-banner, .add-row-wrap, .time-panel,
     #cardStatusSelect, .nav-btn, .card-status-mini, .card-status-badge,
     .header-right { display: none !important; }
     body { background: #fff; color: #000; }
@@ -2310,6 +2332,9 @@
     </div>
   </div>
 
+  <!-- Työaika (luetaan ajanseurannasta, ajanseuranta.html) -->
+  <div class="time-panel" id="timePanel" style="display:none"></div>
+
   <div class="all-done-banner" id="allDoneBanner">
     <span>✓ Kaikki tilauksen rivit on merkitty valmiiksi. Merkitäänkö koko tilaus Valmiiksi?</span>
     <button onclick="markOrderCompleted()">Merkitse tilaus Valmiiksi</button>
@@ -2408,15 +2433,172 @@ async function loadOrders() {
   );
   const items = await r2.json();
 
+  // Työaika: aikaprojektit, jotka on liitetty tilauksiin (ajanseuranta.html)
+  const timeByOrder = await fetchTimeProjects(orderIds);
+
   // Yhdistetään
   allOrders = orders.map(o => ({
     ...o,
-    items: (items || []).filter(i => i.order_id === o.id)
+    items: (items || []).filter(i => i.order_id === o.id),
+    timeProjects: timeByOrder[o.id] || []
   }));
 
   buildFilterOptions();
   applyFilter();
 }
+
+// ── Työaika (luetaan ajanseurannan tauluista) ─────────────────────
+// Rakenne: time_projects (order_id) -> time_project_rows (category) -> time_row_segments (alku, loppu, kesto s)
+// Haku ei saa kaataa sivua: epäonnistuessa työaika vain jää näyttämättä.
+const TIME_SELECT = 'id,name,order_id,created_at,time_project_rows(id,category,time_row_segments(id,started_at,stopped_at,duration_seconds))';
+
+async function fetchTimeProjects(orderIdsCsv) {
+  const byOrder = {};
+  if (!orderIdsCsv) return byOrder;
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/rest/v1/time_projects?order_id=in.(${orderIdsCsv})&select=${TIME_SELECT}&order=created_at.asc`,
+      { headers }
+    );
+    if (!r.ok) { console.warn('Työajan haku epäonnistui:', r.status); return byOrder; }
+    const list = await r.json();
+    (Array.isArray(list) ? list : []).forEach(p => { (byOrder[p.order_id] = byOrder[p.order_id] || []).push(p); });
+  } catch (e) {
+    console.warn('Työajan haku epäonnistui', e);
+  }
+  return byOrder;
+}
+
+const TIME_STALE_SECONDS = 12 * 3600;  // käynnissä oleva pätkä yli 12 h = todennäköisesti unohtunut
+
+function timeSegSeconds(seg, now) {
+  if (seg.stopped_at) return Number(seg.duration_seconds) || 0;
+  const t = new Date(seg.started_at).getTime();
+  return isNaN(t) ? 0 : Math.max(0, (now - t) / 1000);
+}
+function fmtDuration(sec) {
+  sec = Math.max(0, Math.round(sec || 0));
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h > 0) return h + ' h ' + m + ' min';
+  if (m > 0) return m + ' min';
+  return s + ' s';
+}
+// Kategoria on vapaata tekstiä: yhdistetään isot/pienet kirjaimet ja ylimääräiset välilyönnit
+function timeCatKey(c) { return String(c || '').trim().replace(/\s+/g, ' ').toLowerCase(); }
+function timeCatLabel(c) {
+  const t = String(c || '').trim().replace(/\s+/g, ' ');
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Ei kategoriaa';
+}
+function orderTimeSummary(order, now) {
+  now = now || Date.now();
+  let total = 0, running = false, stale = false;
+  const cats = new Map();   // avain -> { label, sec }
+  (order.timeProjects || []).forEach(p => (p.time_project_rows || []).forEach(row => {
+    (row.time_row_segments || []).forEach(seg => {
+      const s = timeSegSeconds(seg, now);
+      total += s;
+      if (!seg.stopped_at) { running = true; if (s > TIME_STALE_SECONDS) stale = true; }
+      const k = timeCatKey(row.category);
+      const cur = cats.get(k) || { label: timeCatLabel(row.category), sec: 0 };
+      cur.sec += s;
+      cats.set(k, cur);
+    });
+  }));
+  const catList = [...cats.values()].filter(c => c.sec > 0).sort((a, b) => b.sec - a.sec);
+  return { total, running, stale, cats: catList };
+}
+
+function ajanseurantaUrl(projectId) {
+  return 'ajanseuranta.html' + (projectId ? '?id=' + encodeURIComponent(projectId) : '');
+}
+
+function renderTimePanel(order) {
+  const el = document.getElementById('timePanel');
+  if (!el) return;
+  if (!order) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const sum = orderTimeSummary(order);
+  const projects = order.timeProjects || [];
+  const catsHtml = sum.cats.map(c => `<span class="time-cat">${escT(c.label)} ${escT(fmtDuration(c.sec))}</span>`).join('');
+  let action;
+  if (!projects.length) {
+    action = `<button class="time-start" id="timeStartBtn" onclick="startTimeProject('${order.id}')">▶ Aloita ajanotto</button>`;
+  } else if (projects.length === 1) {
+    action = `<a class="time-link" href="${ajanseurantaUrl(projects[0].id)}" target="_blank" rel="noopener">Avaa ajanseuranta →</a>`;
+  } else {
+    action = projects.map(p => `<a class="time-link" href="${ajanseurantaUrl(p.id)}" target="_blank" rel="noopener" title="${escT(p.name || '')}">${escT((p.name || 'Aikaprojekti').slice(0, 24))} →</a>`).join('');
+  }
+  el.innerHTML =
+    `<span class="time-title">⏱ Työaika</span>` +
+    (sum.total > 0
+      ? `<span class="time-total">${escT(fmtDuration(sum.total))}</span>`
+      : `<span class="time-total none">ei mitattua aikaa</span>`) +
+    (sum.running ? `<span class="time-running">● kello käynnissä</span>` : '') +
+    (sum.stale ? `<span class="time-warn">⚠ pätkä on ollut käynnissä yli 12 h, unohtuiko kello päälle?</span>` : '') +
+    catsHtml +
+    `<span class="time-spacer"></span>` + action;
+  el.style.display = 'flex';
+}
+
+async function getCurrentUserIdSafe() {
+  try {
+    if (typeof window.getAuthSession !== 'function') return null;
+    const s = await window.getAuthSession();
+    return s && s.data && s.data.session && s.data.session.user ? s.data.session.user.id : null;
+  } catch (e) { return null; }
+}
+
+// Luo aikaprojektin tilaukselle ja avaa ajanseurannan. Itse ajanotto (aloita/tauko/jatka) tehdään ajanseurannassa.
+async function startTimeProject(orderId) {
+  const o = allOrders.find(x => x.id === orderId);
+  if (!o) return;
+  const btn = document.getElementById('timeStartBtn');
+  if (btn) btn.disabled = true;
+  const name = [o.customers && o.customers.name, o.kohde].filter(Boolean).join(' — ') || 'Tilaus';
+  const body = { name, order_id: o.id };
+  const uid = await getCurrentUserIdSafe();
+  if (uid) body.created_by = uid;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/time_projects`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.warn('Aikaprojektin luonti epäonnistui:', res.status, err);
+      alert('Aikaprojektin luonti epäonnistui (' + res.status + ')');
+      return;
+    }
+    const created = await res.json();
+    const proj = created && created[0];
+    if (!proj) return;
+    proj.time_project_rows = [];
+    o.timeProjects = (o.timeProjects || []).concat([proj]);
+    renderTimePanel(o);
+    window.open(ajanseurantaUrl(proj.id), '_blank');
+  } catch (e) {
+    console.warn('Aikaprojektin luonti epäonnistui', e);
+    alert('Aikaprojektin luonti epäonnistui (verkkovirhe)');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Päivittää avatun tilauksen työajan (esim. kun palataan ajanseurannasta)
+async function refreshTimeForActive() {
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (!o) return;
+  const fresh = await fetchTimeProjects(o.id);
+  o.timeProjects = fresh[o.id] || [];
+  if (activeOrderId === o.id) renderTimePanel(o);
+}
+window.addEventListener('focus', () => { if (activeOrderId) refreshTimeForActive(); });
+// Käynnissä olevan kellon näyttö päivittyy puolen minuutin välein
+setInterval(() => {
+  if (!activeOrderId) return;
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (o && orderTimeSummary(o).running) renderTimePanel(o);
+}, 30000);
 
 // ── Suodattimet ───────────────────────────────────────────────────
 function buildFilterOptions() {
@@ -2703,6 +2885,7 @@ function renderOrderList(orders, mat, color, thick) {
           </div>
         </div>
         <div class="material-tags">${tags}</div>
+        ${(() => { const ts = orderTimeSummary(o); return ts.total > 0 ? `<div style="margin-top:6px"><span class="time-chip">⏱ ${escT(fmtDuration(ts.total))}${ts.running ? ' ●' : ''}</span></div>` : ''; })()}
       </div>
     </div>`;
   }).join('');
@@ -2744,6 +2927,8 @@ function openOrder(orderId) {
     if (keys.size === 1) cardFilterKey = [...keys][0];
   }
   toggleAddRow(false);
+  renderTimePanel(o);
+  refreshTimeForActive();
   renderCardFilterBar(o);
   renderItemCards(o);
 }
