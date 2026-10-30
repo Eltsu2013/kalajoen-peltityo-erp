@@ -457,6 +457,9 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.35);
     }
     .cut-list { order: 2; width: calc(100% - 16px); max-width: none; margin: 12px 8px; }
+    /* Tilauspalkki (muokkaustila) rivittyy eikä venytä sivua */
+    #tilaus-bar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 8px !important; }
+    header { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
