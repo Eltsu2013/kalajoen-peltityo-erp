@@ -202,6 +202,11 @@
     .cut-list { order: 2; width: calc(100% - 16px); max-width: none; margin: 12px 8px; }
     /* Yläpalkki ei saa levittää sivua leveämmäksi kuin puhelin */
     header { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
+    /* Tilauspalkki (muokkaustila) rivittyy eikä venytä sivua */
+    #tilaus-bar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 8px !important; }
+    /* Pituustaulukko: sarakkeet kutistuvat, huomio-sarake saa kutistua nollaan asti */
+    .table-header, .table-row { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,0.8fr) minmax(0,1.6fr) 28px !important; }
+    .table-header span { padding: 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
