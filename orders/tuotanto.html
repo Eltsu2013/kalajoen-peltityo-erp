@@ -654,7 +654,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113i"></script>
+<script src="profiilit.js?v=20261113k"></script>
 </head>
 <body>
 
@@ -1981,8 +1981,9 @@ function vaihdaLevitys(itemId, nappi) {
     const vb = kourunValsB(item.profile_type, luvut, pd.opts || {}, L) || pd.valsB || {};
     const varo = malli && malli.varoitus ? malli.varoitus(luvut, pd.opts || {}, L) : null;
     const laput = malli && malli.paatylaput ? malli.paatylaput(luvut, pd.opts || {}, L) : [];
+    const kplTama = (item.order_item_rows || []).filter(r => (Number(r.kok_mm) || Number(r.mitta_mm) || 0) === L).reduce((s, r) => s + (Number(r.kpl) || 0), 0);
     const lappuHtml = laput.length ? `<div class="lev-laput"><b>Päätylaput</b> (erillistä peltiä)` +
-      laput.map(x => `<div>${x.nimi}: aihio <b>${P.muotoile(x.leveys)} × ${P.muotoile(x.korkeus)} mm</b></div>`).join('') +
+      laput.map(x => `<div>${x.nimi}: aihio <b>${P.muotoile(x.leveys)} × ${P.muotoile(x.korkeus)} mm</b>${kplTama ? ' · ' + kplTama + ' kpl' : ''}</div>`).join('') +
       `<div class="lev-vihje">Sivut ja pohja 20 mm (10 mm kohdalta lähes kaksinkerroin, 20 mm kohdalta 90° toiseen suuntaan), yläreuna 10 mm. Kulmat lovetaan. Sovita, purista pihdeillä, lukitse, tiivistysmassa.</div></div>` : '';
     const varoHtml = varo ? `<p class="lev-huom">${varo}</p>` : '';
     const lev = P.laskeLevitys(item.profile_type, luvut, vb, pd.opts || {}, L, pd.pituusViite != null ? pd.pituusViite : (malli && malli.oletusViite));
