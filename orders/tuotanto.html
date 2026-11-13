@@ -224,6 +224,8 @@
   .lev-nappi.kiila { border-color: #f0a429; color: #f0a429; }
   .lev-alue { width: 100%; min-width: 0; box-sizing: border-box; align-self: stretch; overflow: hidden; background: #fff; color: #1c1f26; border-radius: 6px; padding: 10px; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .lev-pituus { font-weight: 600; margin: 6px 0; }
+  .lev-laput { margin-top: 8px; padding-top: 6px; border-top: 1px solid #ddd; }
+  .lev-laput > div { margin-top: 2px; }
   .lev-suora { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; color: #1d6b3a; background: #e3f1e6; border: 1px solid #a9d3b4; border-radius: 6px; padding: 5px 8px; margin: 6px 0; }
   .lev-kehys { overflow-x: auto; margin-top: 6px; }
   .lev-taulu { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12px; }
@@ -652,7 +654,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113f"></script>
+<script src="profiilit.js?v=20261113i"></script>
 </head>
 <body>
 
@@ -1723,7 +1725,10 @@ function renderItemCards(order) {
       } else {
       const vals = item.profile_data?.vals || {};
       const opts = item.profile_data?.opts || {};
-      const kiilaTiedot = { valsB: item.profile_data?.valsB || null, viite: item.profile_data?.pituusViite };
+      const pituudet = (item.order_item_rows || []).map(r => Number(r.kok_mm) || Number(r.mitta_mm) || 0).filter(k => k > 0);
+      const pisinRivi = pituudet.length ? Math.max.apply(null, pituudet) : 1000;
+      // Saunan kourussa pään B mitat lasketaan kaadosta ja pellin pituudesta, muissa ne ovat tilausrivillä
+      const kiilaTiedot = { valsB: kourunValsB(item.profile_type, vals, opts, pisinRivi) || item.profile_data?.valsB || null, viite: item.profile_data?.pituusViite };
       const onKiila = !!(kiilaTiedot.valsB && Object.keys(kiilaTiedot.valsB).length);
       const svgHtml = drawKanttausSVG(item.profile_type, vals, opts, item.profile_data?.asento, item.color, kiilaTiedot);
       // Levityskuva ja merkkausmitat: napista auki, kiilapellissä nappi korostettu
@@ -1973,15 +1978,29 @@ function vaihdaLevitys(itemId, nappi) {
   alue.style.display = '';
   const W = Math.max(260, Math.round(alue.getBoundingClientRect().width - 2));
   alue.innerHTML = pituudet.map(L => {
-    const lev = P.laskeLevitys(item.profile_type, luvut, pd.valsB || {}, pd.opts || {}, L, pd.pituusViite);
-    if (!lev) return `<p class="lev-huom">Pituus ${L} mm: levityskuvaa ei voi laskea näillä mitoilla.</p>`;
+    const vb = kourunValsB(item.profile_type, luvut, pd.opts || {}, L) || pd.valsB || {};
+    const varo = malli && malli.varoitus ? malli.varoitus(luvut, pd.opts || {}, L) : null;
+    const laput = malli && malli.paatylaput ? malli.paatylaput(luvut, pd.opts || {}, L) : [];
+    const lappuHtml = laput.length ? `<div class="lev-laput"><b>Päätylaput</b> (erillistä peltiä)` +
+      laput.map(x => `<div>${x.nimi}: aihio <b>${P.muotoile(x.leveys)} × ${P.muotoile(x.korkeus)} mm</b></div>`).join('') +
+      `<div class="lev-vihje">Sivut ja pohja 20 mm (10 mm kohdalta lähes kaksinkerroin, 20 mm kohdalta 90° toiseen suuntaan), yläreuna 10 mm. Kulmat lovetaan. Sovita, purista pihdeillä, lukitse, tiivistysmassa.</div></div>` : '';
+    const varoHtml = varo ? `<p class="lev-huom">${varo}</p>` : '';
+    const lev = P.laskeLevitys(item.profile_type, luvut, vb, pd.opts || {}, L, pd.pituusViite != null ? pd.pituusViite : (malli && malli.oletusViite));
+    if (!lev) return `<div class="lev-pituus">Pituus ${L} mm</div>${varoHtml}<p class="lev-huom">Levityskuvaa ei voi laskea näillä mitoilla.</p>${lappuHtml}`;
     const kuva = P.piirraLevitys(lev, W, { tausta: '#ffffff' });
-    return `<div class="lev-pituus">Pituus ${L} mm · levy ${P.muotoile(lev.aihioL)} × ${P.muotoile(lev.aihioW)} mm${lev.kiila ? ' · aihio ' + P.muotoile(lev.aihioA) + '–' + P.muotoile(lev.aihioB) + ' mm' : ''}</div>
+    return varoHtml + `<div class="lev-pituus">Pituus ${L} mm · levy ${P.muotoile(lev.aihioL)} × ${P.muotoile(lev.aihioW)} mm${lev.kiila ? ' · aihio ' + P.muotoile(lev.aihioA) + '–' + P.muotoile(lev.aihioB) + ' mm' : ''}</div>
       <svg viewBox="0 0 ${kuva.W} ${kuva.H}" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">${kuva.svg}</svg>
-      ${(lev.kiila && lev.suora) ? `<p class="lev-suora">Suora kaista ${P.muotoile(lev.aihioW)} mm: leikkaa suorana, kiila syntyy merkkauksesta.</p>` : ''}
+      ${(lev.kiila && lev.suora && !varo) ? `<p class="lev-suora">Suora kaista ${P.muotoile(lev.aihioW)} mm: leikkaa suorana, kiila syntyy merkkauksesta.</p>` : ''}
       ${lev.kaikkiMukana ? '' : '<p class="lev-huom">Osa tämän mallin viivoista ei ole levityskuvassa mukana.</p>'}
-      <div class="lev-kehys">${P.levitysTaulukko(lev)}</div>`;
+      <div class="lev-kehys">${P.levitysTaulukko(lev)}</div>${lappuHtml}`;
   }).join('') + '<p class="lev-vihje">Merkkaa jokaisen viivan päät molempiin päihin ja yhdistä ne suoralla viivalla. Mitat ovat aihion alareunasta, "päästä" on etäisyys aihion päästä. Kuvassa leveys on venytetty.</p>';
+}
+
+// Saunan kourun pään B mitat lasketaan kaadosta ja pellin pituudesta
+function kourunValsB(profileType, vals, opts, L) {
+  const malli = window.KPT_PROFIILIT && window.KPT_PROFIILIT.mallit[profileType];
+  if (!malli || !malli.pituusKiila) return null;
+  try { return malli.pituusKiila(vals, opts || {}, L); } catch (e) { console.warn('pituusKiila:', e); return null; }
 }
 
 function drawKanttausSVG(profileType, vals, opts, asento, vari, kiila) {
