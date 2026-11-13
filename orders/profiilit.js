@@ -2258,7 +2258,7 @@ function piirraKuva(p) {
   const naytaKulmat = p.naytaKulmat !== false;
   const T = Object.assign({
     viiva: '#222', mitta: '#1a6fc4', kulma: '#c0392b', himmea: '#666', tausta: '#ffffff',
-    paa: '#e8a020', karki: '#555', raita: '#e8a020', valittu: '#b45f00', fontti: 'IBM Plex Mono, monospace'
+    paa: '#e8a020', karki: '#555', raita: '#e8a020', valittu: '#b45f00', korostus: '#1a6fc4', fontti: 'IBM Plex Mono, monospace'
   }, p.teema || {});
   const raitaVari = variHex(p.vari) || T.raita;
 
@@ -2550,6 +2550,24 @@ function piirraKuva(p) {
     }
   }
 
+  // ── Muokattavan kentän korostus (sininen hehku viivan alla, rengas taitoksessa) ──
+  let svgKorostus = '';
+  const kr = p.korosta || null;
+  if (kr) {
+    (kr.viivat || []).forEach(i => {
+      const s = segs[i]; if (!s || s.nolla) return;
+      svgKorostus += `<line x1="${f(s.a.x)}" y1="${f(s.a.y)}" x2="${f(s.b.x)}" y2="${f(s.b.y)}" stroke="${T.korostus}" stroke-opacity="0.38" stroke-width="11" stroke-linecap="round"/>`;
+    });
+    (kr.lisaviivat || []).forEach(i => {
+      const e = ex[i]; if (!e) return;
+      svgKorostus += `<line x1="${f(e.p1.x)}" y1="${f(e.p1.y)}" x2="${f(e.p2.x)}" y2="${f(e.p2.y)}" stroke="${T.korostus}" stroke-opacity="0.38" stroke-width="11" stroke-linecap="round"/>`;
+    });
+    (kr.karjet || []).forEach(i => {
+      const q = sp[i]; if (!q) return;
+      svgKorostus += `<circle cx="${f(q.x)}" cy="${f(q.y)}" r="10" fill="${T.korostus}" fill-opacity="0.22" stroke="${T.korostus}" stroke-width="2"/>`;
+    });
+  }
+
   // ── Viivat ja pisteet ──
   nakyvat.forEach(s => {
     svgViivat += `<line x1="${f(s.a.x)}" y1="${f(s.a.y)}" x2="${f(s.b.x)}" y2="${f(s.b.y)}" stroke="${T.viiva}" stroke-width="2.5" stroke-linecap="round"/>`;
@@ -2571,7 +2589,7 @@ function piirraKuva(p) {
   kulmat.forEach(k => { svgTekstit += teksti(k.x, k.y, k.t, 11, T.kulma); });
 
   return {
-    svg: svgApu + svgRaita + svgViivat + svgPisteet + svgTekstit,
+    svg: svgKorostus + svgApu + svgRaita + svgViivat + svgPisteet + svgTekstit,
     mitat: mitat,
     kulmat: kulmat.map(k => k.kone),
     pisteet: sp,
@@ -2580,13 +2598,68 @@ function piirraKuva(p) {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  KENTÄN KOHDE — mikä viiva tai taitos muuttuu, kun kenttää muokataan
+// ═══════════════════════════════════════════════════════════════════
+// Päätellään kokeilemalla: kaava lasketaan kahdesti, toisella kerralla kentän arvoa on
+// hieman muutettu. Pituuskentässä korostetaan viivat, joiden pituus muuttui, ja
+// kulmakentässä taitokset, joiden kulma muuttui. Näin jokaista mallia ei tarvitse
+// kirjata käsin, ja tieto pysyy oikeana, vaikka kaavaa muutetaan.
+function kentanKohde(tyyppi, vals, opts, kenttaId) {
+  const tyhja = { viivat: [], lisaviivat: [], karjet: [] };
+  const malli = TYPES[tyyppi];
+  if (!malli || !malli.build || !malli.fields || tyyppi === 'vapaa') return tyhja;
+  const kentta = malli.fields.find(f => f.id === kenttaId);
+  if (!kentta) return tyhja;
+  const onKulma = kentta.cls === 'angle';
+  let a, b;
+  try {
+    const v1 = Object.assign({}, vals);
+    const v2 = Object.assign({}, vals);
+    v2[kenttaId] = (parseFloat(vals[kenttaId]) || 0) + (onKulma ? 4 : 6);
+    a = malli.build(v1, opts || {}); b = malli.build(v2, opts || {});
+  } catch (e) { return tyhja; }
+  const pisteet = r => (Array.isArray(r) ? r : (r && r.points) || []);
+  const lisat = r => (Array.isArray(r) ? [] : (r && r.extraLines) || []).filter(e => e && e.p1 && e.p2);
+  const pa = pisteet(a), pb = pisteet(b), ea = lisat(a), eb = lisat(b);
+  if (pa.length !== pb.length || pa.length < 2) return tyhja;
+  const pit = (q, i) => Math.hypot(q[i + 1].x - q[i].x, q[i + 1].y - q[i].y);
+  const kulma = (q, i) => {
+    // sisäkulma pisteessä i lähimpien eri kohdassa olevien naapurien välillä
+    let j = i - 1, k = i + 1;
+    while (j >= 0 && Math.hypot(q[j].x - q[i].x, q[j].y - q[i].y) < 0.01) j--;
+    while (k < q.length && Math.hypot(q[k].x - q[i].x, q[k].y - q[i].y) < 0.01) k++;
+    if (j < 0 || k >= q.length) return null;
+    const ux = q[j].x - q[i].x, uy = q[j].y - q[i].y, wx = q[k].x - q[i].x, wy = q[k].y - q[i].y;
+    return Math.acos(Math.max(-1, Math.min(1, (ux * wx + uy * wy) / (Math.hypot(ux, uy) * Math.hypot(wx, wy))))) * 180 / Math.PI;
+  };
+  const viivat = [], karjet = [], lisaviivat = [];
+  for (let i = 0; i < pa.length - 1; i++) if (Math.abs(pit(pa, i) - pit(pb, i)) > 0.01 && pit(pa, i) > 0.01) viivat.push(i);
+  for (let i = 1; i < pa.length - 1; i++) {
+    const k1 = kulma(pa, i), k2 = kulma(pb, i);
+    if (k1 !== null && k2 !== null && Math.abs(k1 - k2) > 0.05 && k1 > 3) karjet.push(i);
+  }
+  if (ea.length === eb.length) {
+    ea.forEach((e, i) => {
+      const l1 = Math.hypot(e.p2.x - e.p1.x, e.p2.y - e.p1.y), l2 = Math.hypot(eb[i].p2.x - eb[i].p1.x, eb[i].p2.y - eb[i].p1.y);
+      if (Math.abs(l1 - l2) > 0.01) lisaviivat.push(i);
+    });
+  }
+  if (onKulma) {
+    if (karjet.length) return { viivat: [], lisaviivat: [], karjet: karjet.slice(0, 3) };
+    return tyhja;
+  }
+  if (viivat.length || lisaviivat.length) return { viivat: viivat.slice(0, 3), lisaviivat: lisaviivat.slice(0, 3), karjet: [] };
+  return tyhja;
+}
 
 window.KPT_PROFIILIT = {
   versio: '2026-11-13',
   mallit: TYPES,
   tuotantoKuvat: PROD_TYPES,
   piirraKuva: piirraKuva,
-  variHex: variHex
+  variHex: variHex,
+  kentanKohde: kentanKohde
 };
 
 })();
