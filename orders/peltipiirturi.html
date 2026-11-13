@@ -399,6 +399,15 @@
     max-width: 700px;
   }
 
+  .asento-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; max-width: 700px; margin-top: 10px; }
+  .asento-bar > span { display: inline-flex; gap: 8px; }
+  .asento-bar button {
+    min-height: 40px; padding: 0 12px; background: #fff; color: #222; border: 1px solid #b5b5b5; border-radius: 4px;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer;
+  }
+  .asento-bar button.on { background: #e8a020; border-color: #e8a020; color: #1a1a1a; }
+  .asento-vihje { flex-basis: 100%; font-size: 12px; color: #777; font-family: 'IBM Plex Sans', sans-serif; }
+
   .cut-list {
     background: white;
     border: 1px solid #ccc;
@@ -456,6 +465,9 @@
       width: calc(100% - 16px); max-width: none; margin: 8px; max-height: 34vh;
       box-shadow: 0 4px 12px rgba(0,0,0,0.35);
     }
+    .asento-bar { order: -1; width: calc(100% - 16px); max-width: none; margin: 0 8px 8px; }
+    .asento-bar button { min-height: 44px; }
+    .asento-vihje { color: var(--text-dim); }
     .cut-list { order: 2; width: calc(100% - 16px); max-width: none; margin: 12px 8px; }
     /* Tilauspalkki (muokkaustila) rivittyy eikä venytä sivua */
     #tilaus-bar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 8px !important; }
@@ -464,7 +476,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113b"></script>
+<script src="profiilit.js?v=20261113c"></script>
 </head>
 <body>
 
@@ -2234,6 +2246,17 @@
 
   <div class="right-panel">
     <svg id="drawing" class="drawing-area" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="asento-bar" id="asento-bar">
+      <button type="button" onclick="asentoKaanna()" title="Käännä kuvaa 90 astetta">&#10227; Käännä 90°</button>
+      <button type="button" id="asento-peili" onclick="asentoPeilaa()" title="Peilaa kuva">&#8644; Peilaa</button>
+      <span id="asento-suunta" style="display:none">
+        <button type="button" id="asento-vaaka" onclick="asentoSuunta('vaaka')">Vaakaan</button>
+        <button type="button" id="asento-pysty" onclick="asentoSuunta('pysty')">Pystyyn</button>
+      </span>
+      <button type="button" id="asento-palauta" onclick="asentoPalauta()" style="display:none">Palauta oletus</button>
+      <button type="button" id="pinta-nappi" onclick="vaihdaPintaMerkinta()" title="Vaihda pinnan merkintätapa">Pinta: raita</button>
+      <div class="asento-vihje">Napauta mittaa kuvassa, niin se viiva suoristetaan. Asento tallentuu tilaukseen.</div>
+    </div>
     <div class="cut-list">
       <h3>Leikkauslista</h3>
       <div id="cut-list-rows"></div>
@@ -2264,6 +2287,7 @@ let lengthRows = [{ mitta: 1000, paat: 0, kpl: 1, huomio: '' }];
 let activeType = 'avp';
 
 function setType(t) {
+  if (t !== activeType) kuvanAsento = oletusAsento(); // uusi malli alkaa oletusasennosta
   activeType = t;
   document.querySelectorAll('.type-btn').forEach((b) => {
     b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
@@ -2843,30 +2867,26 @@ function redraw() {
   }
   const alaTila = infoRivit.length ? infoRivit.length * 15 + 8 : 0;
 
-  // Pinnan merkinnän vaihtonappi kuvan oikeassa yläkulmassa
-  const nappiW = 104, nappiH = 30;
   const kuva = window.KPT_PROFIILIT.piirraKuva({
     tulos: { points, labels: segmentLabels, extraLines, pintaViiva },
     W: kuvaW, H: kuvaH, alaTila,
     reunus: kapea ? 42 : 56,
     vari: (document.getElementById('pm-color') || {}).value || '',
     merkinta: pintaMerkinta,
-    varaa: [{ x: kuvaW - 6 - nappiW / 2, y: 6 + nappiH / 2, w: nappiW, h: nappiH }]
+    asento: kuvanAsento,
+    korostaValittu: true,
+    mittaToiminto: 'valitseViiva'
   });
+  _viivoja = points.length - 1;
 
   let html = kuva.svg;
   infoRivit.forEach((r, i) => {
     const y = kuvaH - 8 - 15 * (infoRivit.length - 1 - i);
     html += `<text x="10" y="${y}" font-size="11" font-family="IBM Plex Mono, monospace" fill="${r[1]}">${r[0]}</text>`;
   });
-  if (kuva.pintaTiedossa) {
-    html += `<g onclick="vaihdaPintaMerkinta()" style="cursor:pointer" role="button" aria-label="Vaihda pinnan merkintätapa">
-      <rect x="${kuvaW - 6 - nappiW}" y="6" width="${nappiW}" height="${nappiH}" rx="4" fill="#f4f4f4" stroke="#bbb"/>
-      <text x="${kuvaW - 6 - nappiW / 2}" y="${6 + nappiH / 2}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#444" text-anchor="middle" dominant-baseline="central">Pinta: ${pintaMerkinta === 'kolmio' ? 'kolmio' : 'raita'}</text>
-    </g>`;
-  }
   svg.setAttribute('viewBox', `0 0 ${kuvaW} ${kuvaH}`);
   svg.innerHTML = html;
+  paivitaAsentoPalkki(kuva.pintaTiedossa);
 
 
   // Leikkauslista HTML
@@ -2901,6 +2921,46 @@ window.addEventListener('resize', () => {
     if (w > 0 && Math.abs(w - _piirrettyLeveys) > 1) redraw();
   }, 150);
 });
+
+// ─── Kuvan asento ─────────────────────────────────────────────────
+// Kääntää vain kuvaa, ei muuta mittoja. Tallentuu tilausriville (profile_data.asento),
+// ja Tuotanto näyttää kuvan samassa asennossa.
+//   viiva  = suoristettavan viivan järjestysnumero (0 = ensimmäinen), null = mallin oletus
+//   suunta = 'vaaka' tai 'pysty', kierto = 90 asteen käännösten määrä (0–3), peili = peilattu
+function oletusAsento() { return { viiva: null, suunta: 'vaaka', kierto: 0, peili: false }; }
+function siistiAsento(a) {
+  const o = oletusAsento();
+  if (!a || typeof a !== 'object') return o;
+  if (Number.isInteger(a.viiva) && a.viiva >= 0) o.viiva = a.viiva;
+  if (a.suunta === 'pysty') o.suunta = 'pysty';
+  if (Number.isInteger(a.kierto)) o.kierto = ((a.kierto % 4) + 4) % 4;
+  o.peili = !!a.peili;
+  return o;
+}
+let kuvanAsento = oletusAsento();
+let _viivoja = 0;
+function asentoMuutettu() { const a = kuvanAsento; return a.viiva !== null || a.kierto !== 0 || a.peili; }
+function valitseViiva(i) {
+  if (kuvanAsento.viiva === i) kuvanAsento.suunta = kuvanAsento.suunta === 'pysty' ? 'vaaka' : 'pysty';
+  else { kuvanAsento.viiva = i; kuvanAsento.suunta = 'vaaka'; kuvanAsento.kierto = 0; }
+  redraw();
+}
+function asentoSuunta(s) { kuvanAsento.suunta = s === 'pysty' ? 'pysty' : 'vaaka'; redraw(); }
+function asentoKaanna() { kuvanAsento.kierto = (kuvanAsento.kierto + 1) % 4; redraw(); }
+function asentoPeilaa() { kuvanAsento.peili = !kuvanAsento.peili; redraw(); }
+function asentoPalauta() { kuvanAsento = oletusAsento(); redraw(); }
+function paivitaAsentoPalkki(pintaTiedossa) {
+  const g = id => document.getElementById(id);
+  if (!g('asento-bar')) return;
+  const onViiva = kuvanAsento.viiva !== null;
+  g('asento-suunta').style.display = onViiva ? '' : 'none';
+  g('asento-vaaka').classList.toggle('on', kuvanAsento.suunta !== 'pysty');
+  g('asento-pysty').classList.toggle('on', kuvanAsento.suunta === 'pysty');
+  g('asento-peili').classList.toggle('on', kuvanAsento.peili);
+  g('asento-palauta').style.display = asentoMuutettu() ? '' : 'none';
+  g('pinta-nappi').style.display = pintaTiedossa ? '' : 'none';
+  g('pinta-nappi').textContent = 'Pinta: ' + (pintaMerkinta === 'kolmio' ? 'kolmio' : 'raita');
+}
 
 // ─── Init ─────────────────────────────────────────────────────────
 renderProfileFields();
@@ -2941,6 +3001,7 @@ function aktivoiTilausPalkki(ctx) {
       if (ctx.existingThickness) {
         document.getElementById('pm-thick').value = ctx.existingThickness;
       }
+      redraw(); // väriraita pellin värillä
     }, 500);
   }
 }
@@ -2956,6 +3017,7 @@ if (savedCtx) {
       // Jos muokkaustila — ladataan vanhat tiedot
       if (ctx.editItemId && ctx.existingData) {
         const { vals, opts } = ctx.existingData;
+        kuvanAsento = siistiAsento(ctx.existingData.asento); // kuvan asento tilausriviltä
         // Asetetaan kenttien arvot
         if (vals) {
           Object.entries(vals).forEach(([id, val]) => {
@@ -3038,7 +3100,7 @@ function lisaaTilaukseen() {
     profileType: activeType,
     nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
-    profile_data: { vals, opts, taitokset: laskeTaitokset() },
+    profile_data: { vals, opts, taitokset: laskeTaitokset(), asento: siistiAsento(kuvanAsento) },
     rows,
     angles,
     totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0),
