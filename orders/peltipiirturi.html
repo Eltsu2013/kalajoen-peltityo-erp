@@ -552,13 +552,53 @@
     /* Isommat kentät sormelle; 16 px estää selainta zoomaamasta kenttään */
     .field input, .field select { min-height: 44px; font-size: 16px; }
   }
+  /* Kiilanappi ja pään B kenttä */
+  .field label { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .kiila-btn {
+    flex: 0 0 auto; background: transparent; border: 1px dashed #6b7386; color: var(--text-dim); border-radius: 5px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 6px; cursor: pointer; line-height: 1.3;
+  }
+  .kiila-btn.on { border-style: solid; border-color: var(--accent); background: rgba(240,164,41,0.16); color: var(--accent); }
+  .field input.kiila-b { margin-top: 4px; border-color: var(--accent); }
+
+  /* Oikean palstan osat eivät saa kutistua, kun sisältöä on paljon (muuten kuva litistyy) */
+  .right-panel > * { flex-shrink: 0; }
+
+  /* Levityskuva ja merkkausmitat */
+  .lev-kortti { background: var(--paperi); border: 1px solid var(--paperi-reuna); border-radius: 10px; color: #1c1f26;
+    padding: 12px 16px; width: 100%; max-width: 700px; margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  .lev-otsikko { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .lev-otsikko h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #5b6170; margin: 0; font-weight: 600; flex: 1 1 auto; }
+  .lev-otsikko button { min-height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #b9b2a2; background: #fffdf8; color: #1c1f26;
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+  .kiila-merkki { background: #f0a429; color: #1c1f26; font-weight: 600; font-size: 12px; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 5px; }
+  .lev-valinnat { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; }
+  .lev-valinnat label { display: flex; flex-direction: column; gap: 3px; flex: 1 1 180px; min-width: 0; }
+  .lev-valinnat select { min-height: 36px; border-radius: 6px; border: 1px solid #b9b2a2; background: #fffdf8; color: #1c1f26;
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 0 8px; width: 100%; }
+  .lev-svg { display: block; width: 100%; height: auto; background: #fbf9f4; border: 1px solid #e0d9ca; border-radius: 6px; }
+  .lev-luvut { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 10px 0 4px; color: #5b6170; }
+  .lev-luvut b { color: #1c1f26; }
+  .lev-kehys { overflow-x: auto; margin-top: 6px; }
+  .lev-taulu { border-collapse: collapse; width: 100%; min-width: 500px; font-size: 13px; }
+  .lev-taulu th, .lev-taulu td { padding: 6px 8px; text-align: right; border-bottom: 1px solid #e0d9ca; white-space: nowrap; }
+  .lev-taulu th { color: #5b6170; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .lev-taulu .lev-kulma { color: #c0392b; }
+  .lev-taulu .lev-b { color: #8a4b00; font-weight: 600; }
+  .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; margin: 8px 0 0; }
+  .lev-huom { color: #8a4b00; }
+  @media (max-width: 800px) {
+    .lev-kortti { order: 1; width: calc(100% - 16px); max-width: none; margin: 12px 8px 0; }
+    .lev-otsikko button, .lev-valinnat select { min-height: 44px; }
+    .kiila-btn { font-size: 12px; padding: 5px 10px; }
+  }
   @media print {
-    .drawing-area, .cut-list { background: #fff !important; background-image: none !important; }
+    .drawing-area, .cut-list, .lev-kortti { background: #fff !important; background-image: none !important; }
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113d"></script>
+<script src="profiilit.js?v=20261113e"></script>
 </head>
 <body>
 
@@ -750,6 +790,21 @@
       <button type="button" id="pinta-nappi" onclick="vaihdaPintaMerkinta()" title="Vaihda pinnan merkintätapa">Pinta: raita</button>
       <div class="asento-vihje">Napauta mittaa kuvassa, niin se viiva suoristetaan. Asento tallentuu tilaukseen.</div>
     </div>
+    <div class="lev-kortti" id="lev-kortti">
+      <div class="lev-otsikko">
+        <h3>Levityskuva ja merkkausmitat</h3>
+        <span id="lev-kiila" class="kiila-merkki" style="display:none">KIILA</span>
+        <button type="button" id="lev-nappi" onclick="vaihdaLevitys()">Näytä</button>
+      </div>
+      <div id="lev-sisalto" style="display:none">
+        <div class="lev-valinnat" id="lev-valinnat">
+          <label>Pituusrivi <select id="lev-rivi" onchange="levitysRivi=+this.value;paivitaLevitys()"></select></label>
+          <label>Pituus mitataan viivaa pitkin <select id="lev-viite" onchange="pituusViite=+this.value;redraw()"></select></label>
+        </div>
+        <svg id="lev-svg" class="lev-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Levityskuva ylhäältä"></svg>
+        <div id="lev-taulu"></div>
+      </div>
+    </div>
     <div class="cut-list">
       <h3>Leikkauslista</h3>
       <div id="cut-list-rows"></div>
@@ -786,7 +841,7 @@ function setType(t) {
     if (lukko) { lukko.classList.add('huomio'); setTimeout(() => lukko.classList.remove('huomio'), 1800); }
     return;
   }
-  if (t !== activeType) kuvanAsento = oletusAsento(); // uusi malli alkaa oletusasennosta
+  if (t !== activeType) { kuvanAsento = oletusAsento(); kiilaB = {}; pituusViite = 0; levitysAuki = null; } // uusi malli alkaa puhtaalta pöydältä
   activeType = t;
   document.querySelectorAll('.type-btn').forEach((b) => {
     b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
@@ -969,9 +1024,13 @@ function renderProfileFields() {
     div.className = 'field';
     const existing = document.getElementById(f.id);
     const val = existing ? existing.value : f.default;
+    // Kiila: pituusmitta voi olla pellin toisessa päässä (pää B) eri. Kulmille ei kiilaa.
+    const voiKiilata = f.cls !== 'angle' && activeType !== 'vapaa';
+    const kiilaOn = voiKiilata && Object.prototype.hasOwnProperty.call(kiilaB, f.id);
     div.innerHTML = `
-      <label class="${f.cls === 'angle' ? 'angle-label' : ''}">${f.label}</label>
+      <label class="${f.cls === 'angle' ? 'angle-label' : ''}">${f.label}${voiKiilata ? `<button type="button" class="kiila-btn${kiilaOn ? ' on' : ''}" onclick="vaihdaKiila('${f.id}')" aria-pressed="${kiilaOn}" title="Eri mitta pellin toisessa päässä (kiila)">kiila</button>` : ''}</label>
       <input type="number" id="${f.id}" value="${val}" class="${f.cls || ''}" oninput="redraw()">
+      ${kiilaOn ? `<input type="number" id="B__${f.id}" value="${kiilaB[f.id]}" class="kiila-b" placeholder="pää B" aria-label="${f.label}, pää B" oninput="kiilaB['${f.id}']=this.value;redraw()">` : ''}
     `;
     grid.appendChild(div);
   });
@@ -1077,6 +1136,7 @@ function getVals() {
   document.querySelectorAll('#profile-fields input').forEach(inp => {
     // Nimike on teksti, ei luku — jos se otettaisiin mukaan, siitä tulisi 0
     if (inp.id === 'profile-nimike') return;
+    if (inp.id.indexOf('B__') === 0) return; // kiilan pään B kentät luetaan erikseen (kiilaArvotB)
     vals[inp.id] = parseFloat(inp.value) || 0;
   });
   return vals;
@@ -1239,7 +1299,10 @@ function redraw() {
   const segLens = getSegmentLengths();
   const vals2 = getVals();
   const opts2 = getOpts();
-  const aihio = type.aihio ? type.aihio(vals2, opts2) : segLens.reduce((a, b) => a + b, 0);
+  const aihioA = type.aihio ? type.aihio(vals2, opts2) : segLens.reduce((a, b) => a + b, 0);
+  // Kiilapellissä menekki ja hinta lasketaan leveämmän pään mukaan
+  const aihioB = kiilanAihioB(aihioA);
+  const aihio = Math.max(aihioA, aihioB);
 
   // Leikkauslista
   let totalM2 = 0;
@@ -1251,7 +1314,7 @@ function redraw() {
   });
 
   // Päivitä yhteenvedot
-  document.getElementById('aihio-val').textContent = aihio.toFixed(0) + ' mm';
+  document.getElementById('aihio-val').textContent = (Math.abs(aihioA - aihioB) > 0.5 ? aihioA.toFixed(0) + '–' + aihioB.toFixed(0) : aihio.toFixed(0)) + ' mm';
   const tkVal = laskeTaitokset();
   const tkEl = document.getElementById('taitokset-val');
   if (tkEl) tkEl.textContent = tkVal === null ? '—' : tkVal + ' kpl';
@@ -1326,6 +1389,14 @@ function redraw() {
     if (el) el.value = (r.mitta || 0) + (r.paat || 0);
   });
 
+  // Kiila: mitat muodossa "150–200" ja pää B katkoviivalla
+  let haamu = [];
+  const valsB = kiilaArvotB();
+  if (activeType !== 'vapaa' && Object.keys(valsB).length) {
+    const kk = window.KPT_PROFIILIT.kiilaKuva(activeType, getVals(), valsB, getOpts(), pituusViite);
+    if (kk && kk.kiila) { segmentLabels = kk.tulos.labels; extraLines = kk.tulos.extraLines; haamu = kk.haamu; }
+  }
+
   // Piirrä SVG — yhteinen piirto (profiilit.js: piirraKuva). Kuvan yksi yksikkö = yksi ruudun
   // pikseli, joten viewBox asetetaan kuvan todelliseen kokoon ja tekstit pysyvät luettavina.
   const svg = document.getElementById('drawing');
@@ -1374,6 +1445,7 @@ function redraw() {
     merkinta: pintaMerkinta,
     asento: kuvanAsento,
     korostaValittu: true,
+    haamu: haamu,
     teema: { tausta: '#f4f1ea' }, // tekstien reunus kuvan paperin värillä
     korosta: muokattavaKohde(),
     mittaToiminto: 'valitseViiva'
@@ -1388,6 +1460,7 @@ function redraw() {
   svg.setAttribute('viewBox', `0 0 ${kuvaW} ${kuvaH}`);
   svg.innerHTML = html;
   paivitaAsentoPalkki(kuva.pintaTiedossa);
+  paivitaLevitys();
 
 
   // Leikkauslista HTML
@@ -1441,6 +1514,74 @@ function siistiAsento(a) {
 let kuvanAsento = oletusAsento();
 let _malliLukittu = false; // true kun pelti on avattu tilauksesta muokattavaksi
 
+// ─── Kiilamitat ja levityskuva ────────────────────────────────────
+// kiilaB = { kentän id: pään B arvo } vain niille mitoille, jotka ovat toisessa päässä eri.
+// Tallentuu tilausriville (profile_data.valsB ja profile_data.pituusViite).
+let kiilaB = {};
+let pituusViite = 0;      // minkä viivan mukaan pituus mitataan (0 = alkureuna)
+let levitysAuki = null;   // null = automaattinen: auki kun pelti on kiila
+let levitysRivi = 0;      // minkä pituusrivin levityskuva näytetään
+function kiilaArvotB() {
+  const out = {};
+  Object.keys(kiilaB).forEach(k => { const v = parseFloat(kiilaB[k]); if (isFinite(v)) out[k] = v; });
+  return out;
+}
+function vaihdaKiila(id) {
+  if (Object.prototype.hasOwnProperty.call(kiilaB, id)) delete kiilaB[id];
+  else { const el = document.getElementById(id); kiilaB[id] = el ? el.value : ''; }
+  renderProfileFields();
+  redraw();
+  const b = document.getElementById('B__' + id); if (b) b.focus();
+}
+function kiilanAihioB(aihioA) {
+  const vb = kiilaArvotB();
+  if (activeType === 'vapaa' || !Object.keys(vb).length) return aihioA;
+  try {
+    const type = TYPES[activeType], v = Object.assign({}, getVals(), vb);
+    if (type.aihio) return type.aihio(v, getOpts());
+    const lev = window.KPT_PROFIILIT.laskeLevitys(activeType, getVals(), vb, getOpts(), 1000, 0);
+    return lev ? lev.aihioB : aihioA;
+  } catch (e) { console.warn('kiilanAihioB:', e); return aihioA; }
+}
+function vaihdaLevitys() { levitysAuki = !_levitysNakyy; paivitaLevitys(); }
+let _levitysNakyy = false;
+function paivitaLevitys() {
+  const g = id => document.getElementById(id);
+  const kortti = g('lev-kortti'); if (!kortti) return;
+  if (activeType === 'vapaa') { kortti.style.display = 'none'; return; }
+  kortti.style.display = '';
+  const rivit = lengthRows.map(r => (Number(r.mitta) || 0) + (Number(r.paat) || 0)).filter(k => k > 0);
+  if (levitysRivi >= rivit.length) levitysRivi = 0;
+  const L = rivit.length ? rivit[levitysRivi] : 1000;
+  const P = window.KPT_PROFIILIT;
+  const lev = P.laskeLevitys(activeType, getVals(), kiilaArvotB(), getOpts(), L, pituusViite);
+  const kiilaValittu = Object.keys(kiilaArvotB()).length > 0;
+  g('lev-kiila').style.display = (lev && lev.kiila) ? '' : 'none';
+  _levitysNakyy = levitysAuki === null ? !!(lev && lev.kiila) : levitysAuki;
+  g('lev-nappi').textContent = _levitysNakyy ? 'Piilota' : 'Näytä';
+  g('lev-sisalto').style.display = _levitysNakyy ? '' : 'none';
+  if (!_levitysNakyy) return;
+  if (!lev) {
+    g('lev-svg').innerHTML = ''; g('lev-svg').style.display = 'none'; g('lev-valinnat').style.display = 'none';
+    g('lev-taulu').innerHTML = '<p class="lev-huom">Levityskuvaa ei voi laskea näillä mitoilla' + (kiilaValittu ? ' (kiila tässä mitassa ei ole tuettu).' : '.') + '</p>';
+    return;
+  }
+  g('lev-svg').style.display = ''; g('lev-valinnat').style.display = '';
+  if (pituusViite > lev.n) pituusViite = 0;
+  g('lev-rivi').innerHTML = rivit.map((k, i) => `<option value="${i}"${i === levitysRivi ? ' selected' : ''}>${k} mm</option>`).join('') || '<option>1000 mm</option>';
+  g('lev-viite').innerHTML = lev.viivat.map((v, j) => `<option value="${j}"${j === lev.viite ? ' selected' : ''}>${v.nimi}${v.kulma !== null ? ' (' + P.muotoile(v.kulma) + '°)' : v.tupla ? ' (tupla)' : ''}</option>`).join('');
+  const svg = g('lev-svg');
+  const W = Math.max(260, Math.round(svg.getBoundingClientRect().width - 2));
+  const kuva = P.piirraLevitys(lev, W, { tausta: '#f4f1ea' });
+  svg.setAttribute('viewBox', `0 0 ${kuva.W} ${kuva.H}`);
+  svg.innerHTML = kuva.svg;
+  g('lev-taulu').innerHTML =
+    `<div class="lev-luvut"><span>Aihio pää A <b>${P.muotoile(lev.aihioA)} mm</b></span><span>Aihio pää B <b>${P.muotoile(lev.aihioB)} mm</b></span><span>Leikattava levy <b>${P.muotoile(lev.aihioL)} × ${P.muotoile(lev.aihioW)} mm</b></span></div>` +
+    (lev.kaikkiMukana ? '' : '<p class="lev-huom">Osa tämän mallin viivoista ei ole levityskuvassa mukana.</p>') +
+    '<div class="lev-kehys">' + P.levitysTaulukko(lev) + '</div>' +
+    '<p class="lev-vihje">Merkkaa jokaisen viivan päät molempiin päihin ja yhdistä ne suoralla viivalla. Mitat ovat aihion alareunasta. "Päästä" kertoo, kuinka paljon piste on sisempänä kuin aihion pää. Kuvassa leveys on venytetty, jotta viivat erottuvat.</p>';
+}
+
 // ─── Kelluva kuva ja muokattavan kentän korostus ──────────────────
 // Kun profiilin mittakenttä on valittuna, kuva kelluu puhelimella yläreunassa (.telakoitu)
 // ja kuvassa korostuu se viiva tai taitos, jota kenttä muuttaa.
@@ -1450,7 +1591,7 @@ function onProfiiliKentta(el) {
 }
 function muokattavaKohde() {
   if (!_muokattavaKentta) return null;
-  try { return window.KPT_PROFIILIT.kentanKohde(activeType, getVals(), getOpts(), _muokattavaKentta); }
+  try { return window.KPT_PROFIILIT.kentanKohde(activeType, getVals(), getOpts(), _muokattavaKentta.replace(/^B__/, '')); }
   catch (e) { console.warn('kentanKohde:', e); return null; }
 }
 document.addEventListener('focusin', e => {
@@ -1560,6 +1701,11 @@ if (savedCtx) {
         document.getElementById('tilaus-lukko').style.display = '';
         const { vals, opts } = ctx.existingData;
         kuvanAsento = siistiAsento(ctx.existingData.asento); // kuvan asento tilausriviltä
+        // Kiilamitat (pää B) ja pituuden viiteviiva tilausriviltä
+        kiilaB = {};
+        Object.keys(ctx.existingData.valsB || {}).forEach(k => { kiilaB[k] = ctx.existingData.valsB[k]; });
+        pituusViite = Number.isInteger(ctx.existingData.pituusViite) ? ctx.existingData.pituusViite : 0;
+        if (Object.keys(kiilaB).length) renderProfileFields();
         // Asetetaan kenttien arvot
         if (vals) {
           Object.entries(vals).forEach(([id, val]) => {
@@ -1610,7 +1756,8 @@ function lisaaTilaukseen() {
   const opts = getOpts();
   const type = TYPES[activeType];
   const segLens = getSegmentLengths();
-  const aihio = type.aihio ? type.aihio(vals, opts) : segLens.reduce((a,b)=>a+b,0);
+  const aihioA = type.aihio ? type.aihio(vals, opts) : segLens.reduce((a,b)=>a+b,0);
+  const aihio = Math.max(aihioA, kiilanAihioB(aihioA)); // kiilassa leveämmän pään mukaan
 
   // Luetaan rivit suoraan DOM:sta — varmistetaan että kaikki muutokset mukana
   const rows = lengthRows
@@ -1642,7 +1789,8 @@ function lisaaTilaukseen() {
     profileType: activeType,
     nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
-    profile_data: { vals, opts, taitokset: laskeTaitokset(), asento: siistiAsento(kuvanAsento) },
+    profile_data: Object.assign({ vals, opts, taitokset: laskeTaitokset(), asento: siistiAsento(kuvanAsento) },
+      Object.keys(kiilaArvotB()).length ? { valsB: kiilaArvotB(), pituusViite: pituusViite } : {}),
     rows,
     angles,
     totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0),
