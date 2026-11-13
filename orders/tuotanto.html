@@ -106,6 +106,8 @@
   .status-filter-btn[data-status="IN_PRODUCTION"].active { border-color: var(--warn); color: var(--warn); background: rgba(232,160,32,0.12); }
   .status-filter-btn[data-status="IN_PROGRESS"].active { border-color: var(--text-dim); color: var(--text); background: rgba(149,149,160,0.12); }
   .status-filter-btn[data-status="QUOTED"].active { border-color: #a855f7; color: #a855f7; background: rgba(168,85,247,0.12); }
+  .status-filter-btn[data-status="DRAFT"] { border-style: dashed; }
+  .status-filter-btn[data-status="DRAFT"].active { border-color: #9aa3b5; color: #dfe3ec; background: rgba(154,163,181,0.16); }
   .status-filter-btn[data-status="COMPLETED"].active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .filter-select option { background: var(--panel2); }
   .filter-clear {
@@ -216,6 +218,7 @@
     padding: 2px 7px; border-radius: 3px; margin-top: 4px;
     border: 1px solid currentColor;
   }
+  .badge-DRAFT        { color: #9aa3b5; border-color: #9aa3b5; border-style: dashed; }
   .badge-IN_PROGRESS  { color: var(--text-dim); border-color: var(--border); }
   .badge-QUOTED       { color: #a855f7; border-color: #a855f7; }
   .badge-ORDERED      { color: var(--blue); border-color: var(--blue); }
@@ -2279,6 +2282,7 @@
       <button class="status-filter-btn" data-status="IN_PROGRESS" onclick="toggleStatusFilter('IN_PROGRESS')">Kesken</button>
       <button class="status-filter-btn" data-status="QUOTED" onclick="toggleStatusFilter('QUOTED')">Tarjottu</button>
       <button class="status-filter-btn" data-status="COMPLETED" onclick="toggleStatusFilter('COMPLETED')">Valmis</button>
+      <button class="status-filter-btn" data-status="DRAFT" onclick="toggleStatusFilter('DRAFT')" title="Näytä myös luonnokset">Luonnos</button>
     </div>
     <div class="filter-divider"></div>
     <span class="filter-label">MAT:</span>
@@ -2322,6 +2326,7 @@
       <span id="cardDate"></span>
       <span id="cardDelivery"></span>
       <select id="cardStatusSelect" class="filter-select" style="font-size:11px;padding:4px 8px" onchange="changeOrderStatus(this.value)">
+        <option value="DRAFT">Luonnos</option>
         <option value="IN_PROGRESS">Kesken</option>
         <option value="QUOTED">Tarjottu</option>
         <option value="ORDERED">Tilattu</option>
@@ -2395,6 +2400,9 @@ let activeOrderId = null;
 let combinedListActive = false;
 // Oletuksena Tilattu + Työn alla näkyvissä
 let activeStatusFilters = new Set(['ORDERED', 'IN_PRODUCTION']);
+// Luonnos ei saa tulla mukaan mihinkään näkymään (ei myöskään materiaalisuodatukseen eikä
+// yhdistettyyn leikkauslistaan), ellei Luonnos-suodatinta ole erikseen valittu.
+const eiPiilotettuLuonnos = o => o.status !== 'DRAFT' || activeStatusFilters.has('DRAFT');
 
 // ── Statussuodatin ─────────────────────────────────────────────────
 function toggleStatusFilter(status) {
@@ -2413,8 +2421,9 @@ function toggleStatusFilter(status) {
 
 // ── Supabase-haku ─────────────────────────────────────────────────
 async function loadOrders() {
-  // Haetaan kaikki aktiiviset tilaukset (ei DRAFT, ei ARCHIVED) — suodatus clientissä
-  const statuses = ['IN_PROGRESS','QUOTED','ORDERED','IN_PRODUCTION','COMPLETED'];
+  // Haetaan kaikki aktiiviset tilaukset ja luonnokset (ei ARCHIVED) — suodatus clientissä.
+  // Luonnokset (DRAFT) näkyvät vain, kun Luonnos-suodatin on valittu päälle (ks. eiPiilotettuLuonnos).
+  const statuses = ['DRAFT','IN_PROGRESS','QUOTED','ORDERED','IN_PRODUCTION','COMPLETED'];
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/orders?status=in.(${statuses.join(',')})` +
     `&order=order_date.asc` +
@@ -2660,7 +2669,7 @@ function applyFilter() {
   // Suodatetaan ensin statuksen mukaan
   let filtered = allOrders.filter(o => activeStatusFilters.has(o.status));
   if (mat) {
-    filtered = allOrders.filter(o =>
+    filtered = allOrders.filter(eiPiilotettuLuonnos).filter(o =>
       o.items.some(i =>
         i.material === mat &&
         (!color || i.color === color) &&
@@ -2681,7 +2690,7 @@ function applyFilter() {
   if (mat) {
     info.textContent = `${totalItems} riviä ${filtered.length} tilauksessa`;
   } else {
-    info.textContent = `${allOrders.length} tilausta`;
+    info.textContent = `${allOrders.filter(eiPiilotettuLuonnos).length} tilausta`;
   }
 
   renderOrderList(filtered, mat, color, thick);
@@ -2712,7 +2721,7 @@ function toggleCombinedList() {
     const mat   = document.getElementById('filterMaterial').value;
     const color = document.getElementById('filterColor').value;
     const thick = document.getElementById('filterThickness').value;
-    const filtered = allOrders.filter(o =>
+    const filtered = allOrders.filter(eiPiilotettuLuonnos).filter(o =>
       o.items.some(i =>
         i.material === mat &&
         (!color || i.color === color) &&
@@ -2800,7 +2809,7 @@ function renderCombinedList(orders, mat, color, thick) {
         <span class="combined-matval">${mat}${color ? ' · ' + color : ''}</span>
         <span class="combined-date">${date}</span>
         <select class="card-status-mini" onchange="quickChangeStatus('${o.id}', this.value)" style="margin-left:auto">
-          <option value="" selected>${{IN_PROGRESS:'Kesken',QUOTED:'Tarjottu',ORDERED:'Tilattu',IN_PRODUCTION:'Työn alla',COMPLETED:'Valmis',INVOICED:'Laskutettu'}[o.status] || o.status || '—'}</option>
+          <option value="" selected>${{DRAFT:'Luonnos',IN_PROGRESS:'Kesken',QUOTED:'Tarjottu',ORDERED:'Tilattu',IN_PRODUCTION:'Työn alla',COMPLETED:'Valmis',INVOICED:'Laskutettu'}[o.status] || o.status || '—'}</option>
           <option value="IN_PROGRESS">Kesken</option>
           <option value="QUOTED">Tarjottu</option>
           <option value="ORDERED">Tilattu</option>
@@ -2823,7 +2832,7 @@ function renderOrderList(orders, mat, color, thick) {
   }
 
   const STATUS_FI = {
-    IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu',
+    DRAFT: 'Luonnos', IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu',
     IN_PRODUCTION: 'Työn alla', COMPLETED: 'Valmis'
   };
 
@@ -2908,7 +2917,7 @@ function openOrder(orderId) {
     ? 'Toimitus: ' + o.delivery_date.slice(0,10).split('-').reverse().join('.') : '';
 
   const STATUS_FI = {
-    IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu',
+    DRAFT: 'Luonnos', IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu',
     IN_PRODUCTION: 'Työn alla', COMPLETED: 'Valmis'
   };
   document.getElementById('cardStatus') && (document.getElementById('cardStatus').textContent = STATUS_FI[o.status] || o.status);
@@ -3476,7 +3485,7 @@ async function setCombinedRowStatus(rowId, status, itemId, orderId) {
   const mat   = document.getElementById('filterMaterial').value;
   const color = document.getElementById('filterColor').value;
   const thick = document.getElementById('filterThickness').value;
-  const filtered = allOrders.filter(x =>
+  const filtered = allOrders.filter(eiPiilotettuLuonnos).filter(x =>
     x.items.some(i =>
       i.material === mat &&
       (!color || i.color === color) &&
