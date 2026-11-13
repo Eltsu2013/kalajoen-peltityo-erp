@@ -224,6 +224,7 @@
   .lev-nappi.kiila { border-color: #f0a429; color: #f0a429; }
   .lev-alue { width: 100%; min-width: 0; box-sizing: border-box; align-self: stretch; overflow: hidden; background: #fff; color: #1c1f26; border-radius: 6px; padding: 10px; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .lev-pituus { font-weight: 600; margin: 6px 0; }
+  .lev-suora { font-family: 'IBM Plex Sans', sans-serif; font-weight: 600; color: #1d6b3a; background: #e3f1e6; border: 1px solid #a9d3b4; border-radius: 6px; padding: 5px 8px; margin: 6px 0; }
   .lev-kehys { overflow-x: auto; margin-top: 6px; }
   .lev-taulu { border-collapse: collapse; width: 100%; min-width: 480px; font-size: 12px; }
   .lev-taulu th, .lev-taulu td { padding: 5px 7px; text-align: right; border-bottom: 1px solid #ddd; white-space: nowrap; }
@@ -651,7 +652,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113e"></script>
+<script src="profiilit.js?v=20261113f"></script>
 </head>
 <body>
 
@@ -1977,6 +1978,7 @@ function vaihdaLevitys(itemId, nappi) {
     const kuva = P.piirraLevitys(lev, W, { tausta: '#ffffff' });
     return `<div class="lev-pituus">Pituus ${L} mm · levy ${P.muotoile(lev.aihioL)} × ${P.muotoile(lev.aihioW)} mm${lev.kiila ? ' · aihio ' + P.muotoile(lev.aihioA) + '–' + P.muotoile(lev.aihioB) + ' mm' : ''}</div>
       <svg viewBox="0 0 ${kuva.W} ${kuva.H}" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;height:auto">${kuva.svg}</svg>
+      ${(lev.kiila && lev.suora) ? `<p class="lev-suora">Suora kaista ${P.muotoile(lev.aihioW)} mm: leikkaa suorana, kiila syntyy merkkauksesta.</p>` : ''}
       ${lev.kaikkiMukana ? '' : '<p class="lev-huom">Osa tämän mallin viivoista ei ole levityskuvassa mukana.</p>'}
       <div class="lev-kehys">${P.levitysTaulukko(lev)}</div>`;
   }).join('') + '<p class="lev-vihje">Merkkaa jokaisen viivan päät molempiin päihin ja yhdistä ne suoralla viivalla. Mitat ovat aihion alareunasta, "päästä" on etäisyys aihion päästä. Kuvassa leveys on venytetty.</p>';
