@@ -1338,9 +1338,8 @@ const TYPES = {
   },
   // ── Saunan kouru ──────────────────────────────────────────────
   // Pohja vaakasuorassa, sivut pystysuorassa, laipat vaakasuorassa ulospäin.
-  // Toinen pää on syvempi: syväys kasvaa kaadon (mm/m) mukaan pellin pituudella, joten sama
-  // nimike kelpaa monelle eri pituudelle — jokainen pituusrivi saa oman syvän päänsä
-  // (ks. pituusKiila). Vesi valuu syvään päähän.
+  // Toinen pää on syvempi: kaato on koko pellin matkalla (esim. 20 mm), ei metriä kohti, joten
+  // syvä pää on sama riippumatta kourun pituudesta (ks. pituusKiila). Vesi valuu syvään päähän.
   //   Laipat vakiot (oletus): aihio levenee syvään päähän, pelti leikataan kiilaksi.
   //   Suora kaista:           laipat kapenevat syvään päähän saman verran kuin syväys kasvaa,
   //                           jolloin aihion leveys pysyy samana ja kiila syntyy merkkauksesta.
@@ -1349,9 +1348,11 @@ const TYPES = {
     fields: [
       { id: 'pohja_len', label: 'Pohja mm', default: 100 },
       { id: 'syvays_len', label: 'Syväys matala pää mm', default: 50 },
-      { id: 'kaato_mm', label: 'Kaato mm/m', default: 20 },
+      { id: 'kaato_mm', label: 'Kaato koko matkalla mm', default: 20 },
       { id: 'laippaV_len', label: 'Laippa vasen mm', default: 50 },
       { id: 'laippaO_len', label: 'Laippa oikea mm', default: 50 },
+      { id: 'tyo_asetus', label: 'Asetusaika min', default: 12 },
+      { id: 'tyo_kpl', label: 'Työaika / kouru min', default: 18 },
     ],
     options: [
       { id: 'suora', label: 'Suora kaista (laipat kapenevat syvään päähän)' },
@@ -1378,11 +1379,20 @@ const TYPES = {
       };
     },
     aihio: (vals) => vals.pohja_len + 2 * vals.syvays_len + vals.laippaV_len + vals.laippaO_len,
+    // Kouru on materiaali + aika -tuote: työaika = asetusaika + kappaleaika × kpl.
+    // Sarjassa asetus jaetaan koko erälle, joten kappalehinta laskee. Lähtöarvot 12 + 18 min
+    // (1 kpl = 30 min) ovat arvio, joka tarkistetaan oikeasta kourusarjasta.
+    tyoaika: (vals, opts, kplYht) => {
+      const kpl = Math.max(0, Math.round(kplYht || 0));
+      if (!kpl) return null;
+      const asetus = vals.tyo_asetus || 0, per = vals.tyo_kpl || 0;
+      return { asetus: asetus, perKpl: per, kpl: kpl, minuutit: asetus + per * kpl };
+    },
     // Pituus mitataan pohjan keskilinjaa pitkin, jolloin kouru levenee symmetrisesti molemmille sivuille
     oletusViite: 2.5,
     // Pään B (syvä pää) mitat annetulle pellin pituudelle
-    pituusKiila: (vals, opts, L) => {
-      const kasvu = (vals.kaato_mm || 0) * ((parseFloat(L) || 0) / 1000);
+    pituusKiila: (vals, opts) => {
+      const kasvu = vals.kaato_mm || 0; // kaato koko pellin matkalla, ei metriä kohti
       const b = { syvays_len: vals.syvays_len + kasvu };
       if (opts && opts.suora) {
         b.laippaV_len = Math.max(0, vals.laippaV_len - kasvu);
@@ -1390,12 +1400,12 @@ const TYPES = {
       }
       return b;
     },
-    varoitus: (vals, opts, L) => {
-      const kasvu = (vals.kaato_mm || 0) * ((parseFloat(L) || 0) / 1000);
+    varoitus: (vals, opts) => {
+      const kasvu = vals.kaato_mm || 0;
       if (opts && opts.suora) {
         const pienin = Math.min(vals.laippaV_len, vals.laippaO_len) - kasvu;
         if (pienin < 10) return 'Suora kaista ei toimi näillä mitoilla: laippa jäisi syvässä päässä ' +
-          muotoile(pienin) + ' mm. Kasvata laippaa, pienennä kaatoa tai lyhennä kourua.';
+          muotoile(pienin) + ' mm. Kasvata laippaa tai pienennä kaatoa.';
       }
       if ((vals.kaato_mm || 0) <= 0) return 'Kaato on 0, joten kouru on yhtä syvä molemmista päistä.';
       return null;
@@ -1403,8 +1413,8 @@ const TYPES = {
     // Päätylaput ovat erillistä peltiä: leveys = pohja − 1 + 20 + 20, korkeus = syväys + 20 + 10.
     // Sivuihin ja pohjaan 20 mm (taitos 10 mm kohdalta lähes kaksinkerroin, 20 mm kohdalta 90°
     // toiseen suuntaan), yläreunaan yksi 10 mm käännös. Kulmat lovetaan.
-    paatylaput: (vals, opts, L) => {
-      const kasvu = (vals.kaato_mm || 0) * ((parseFloat(L) || 0) / 1000);
+    paatylaput: (vals, opts) => {
+      const kasvu = vals.kaato_mm || 0;
       const out = [];
       if (opts && opts.lappuA) out.push({ nimi: 'matala pää', syvays: vals.syvays_len });
       if (opts && opts.lappuB) out.push({ nimi: 'syvä pää', syvays: vals.syvays_len + kasvu });
