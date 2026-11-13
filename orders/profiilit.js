@@ -2258,7 +2258,7 @@ function piirraKuva(p) {
   const naytaKulmat = p.naytaKulmat !== false;
   const T = Object.assign({
     viiva: '#222', mitta: '#1a6fc4', kulma: '#c0392b', himmea: '#666', tausta: '#ffffff',
-    paa: '#e8a020', karki: '#555', raita: '#e8a020', fontti: 'IBM Plex Mono, monospace'
+    paa: '#e8a020', karki: '#555', raita: '#e8a020', valittu: '#b45f00', fontti: 'IBM Plex Mono, monospace'
   }, p.teema || {});
   const raitaVari = variHex(p.vari) || T.raita;
 
@@ -2436,6 +2436,8 @@ function piirraKuva(p) {
   nakyvat.forEach(s => { if (!pisin || s.px > pisin.px) pisin = s; });
   if (pintaTiedossa && merkinta === 'raita') {
     const siirto = 3.9;
+    const rv = raitaVari.replace('#', '');
+    const vaaleaRaita = (0.299 * parseInt(rv.substr(0, 2), 16) + 0.587 * parseInt(rv.substr(2, 2), 16) + 0.114 * parseInt(rv.substr(4, 2), 16)) > 175;
     patkat.forEach(pt => {
       const ulos = pt.map((q, i) => {
         const n1 = i > 0 ? normaali(pt[i - 1], q, puoli) : null;
@@ -2445,7 +2447,8 @@ function piirraKuva(p) {
         else { const nn = n1 || n2; vx = nn.x; vy = nn.y; }
         return { x: q.x + vx * siirto, y: q.y + vy * siirto };
       });
-      svgRaita += `<path d="${polku(ulos)}" fill="none" stroke="${T.viiva}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+      // Vaalea raita (esim. valkoinen pelti) saa tummat reunat, jotta se erottuu valkoisesta taustasta
+      if (vaaleaRaita) svgRaita += `<path d="${polku(ulos)}" fill="none" stroke="${T.viiva}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
       svgRaita += `<path d="${polku(ulos)}" fill="none" stroke="${raitaVari}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`;
     });
   }
@@ -2463,7 +2466,7 @@ function piirraKuva(p) {
 
   // ── Mitat ──
   const mitat = [];
-  function sijoitaMitta(a, b, nrm, t, salliSiirto) {
+  function sijoitaMitta(a, b, nrm, t, salliSiirto, viivaNro) {
     const koko = 12, w = tekstiW(t, koko), h = 15;
     const px = Math.hypot(b.x - a.x, b.y - a.y);
     const puolikas = Math.abs(nrm.x) * w / 2 + Math.abs(nrm.y) * h / 2;
@@ -2489,7 +2492,14 @@ function piirraKuva(p) {
       for (let q = 8; q < (perus + r.s * 11) - puolikas; q += 6) varatut.push({ x: r.mx + r.suunta * nrm.x * q, y: r.my + r.suunta * nrm.y * q, w: 3, h: 3 });
       svgApu += `<path d="${polku([{ x: r.mx + r.suunta * nrm.x * 5, y: r.my + r.suunta * nrm.y * 5 }, { x: r.x - r.suunta * nrm.x * (puolikas + 1), y: r.y - r.suunta * nrm.y * (puolikas + 1) }])}" fill="none" stroke="${T.himmea}" stroke-width="0.8"/>`;
     }
-    svgTekstit += teksti(r.x, r.y, t, koko, T.mitta);
+    const valittu = !!p.korostaValittu && viivaNro != null && asento.viiva === viivaNro;
+    if (viivaNro != null && p.mittaToiminto) {
+      // Napautettava mitta: läpinäkyvä kosketusalue tekstin ympärillä
+      const kw = Math.max(w, 38), kh = Math.max(h, 30);
+      svgTekstit += `<g onclick="${p.mittaToiminto}(${viivaNro})" style="cursor:pointer"><rect x="${f(r.x - kw / 2)}" y="${f(r.y - kh / 2)}" width="${f(kw)}" height="${f(kh)}" fill="transparent"/>${teksti(r.x, r.y, t, koko, valittu ? T.valittu : T.mitta)}</g>`;
+    } else {
+      svgTekstit += teksti(r.x, r.y, t, koko, valittu ? T.valittu : T.mitta);
+    }
     return { x: r.x, y: r.y, w, h };
   }
 
@@ -2507,7 +2517,7 @@ function piirraKuva(p) {
       let t;
       if (labels) { const l = labels[s.i]; if (l === null || l === undefined || l === '' || l === 0) return; t = muotoile(l); }
       else t = muotoile(s.mm);
-      const paikka = sijoitaMitta(s.a, s.b, mitanNormaali(s), t, true);
+      const paikka = sijoitaMitta(s.a, s.b, mitanNormaali(s), t, true, s.i);
       mitat.push({ viiva: s.i, teksti: t, x: paikka.x, y: paikka.y, w: paikka.w, h: paikka.h });
     });
     ex.forEach(e => {
@@ -2547,8 +2557,9 @@ function piirraKuva(p) {
   ex.forEach(e => {
     svgViivat += `<line x1="${f(e.p1.x)}" y1="${f(e.p1.y)}" x2="${f(e.p2.x)}" y2="${f(e.p2.y)}" stroke="${T.viiva}" stroke-width="2.5" stroke-linecap="round"/>`;
   });
-  if (p.korostaViiva != null && segs[p.korostaViiva] && !segs[p.korostaViiva].nolla) {
-    const s = segs[p.korostaViiva];
+  const kor = p.korostaViiva != null ? p.korostaViiva : (p.korostaValittu ? asento.viiva : null);
+  if (kor != null && segs[kor] && !segs[kor].nolla) {
+    const s = segs[kor];
     svgViivat += `<line x1="${f(s.a.x)}" y1="${f(s.a.y)}" x2="${f(s.b.x)}" y2="${f(s.b.y)}" stroke="${T.paa}" stroke-width="5" stroke-linecap="round"/>`;
   }
   if (p.naytaPisteet !== false) {
