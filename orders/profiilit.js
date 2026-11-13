@@ -5,6 +5,7 @@
  * Tätä tiedostoa käyttävät:
  *   - peltipiirturi.html (Mallisto)  → KPT_PROFIILIT.mallit
  *   - tuotanto.html (Tuotanto)       → KPT_PROFIILIT.tuotantoKuvat
+ *   - yhteinen piirto                → KPT_PROFIILIT.piirraKuva (Mallisto 13.11.2026 alkaen)
  *
  * MALLIT (ent. TYPES, peltipiirturi.html):
  *   Malliston mallit: nimi, kentät, valinnat, aihion laskenta ja build(vals, opts),
@@ -2205,11 +2206,376 @@ const PROD_TYPES = {
     }
   }
 };
+// ═══════════════════════════════════════════════════════════════════
+//  YHTEINEN PIIRTO — piirraKuva()
+// ═══════════════════════════════════════════════════════════════════
+// Piirtää pellin poikkileikkauksen SVG-merkkijonoksi. Yksi viewBox-yksikkö = yksi
+// ruudun pikseli (kutsuja asettaa viewBoxin kuvan todelliseen kokoon), joten tekstit
+// pysyvät luettavina myös puhelimella.
+//
+// - Mitat asettuvat itse: pinnan (värillisen puolen) puolelle, eivät viivan eivätkä
+//   toistensa päälle. Ahtaassa kohdassa mitta siirtyy kauemmas ja saa apuviivan,
+//   viimeisenä keinona vaihtaa puolta.
+// - Kulmat ovat kanttikoneen lukuja: 180 − taitoksen sisäkulma (esim. 130° → 50°).
+//   Kulma näytetään jokaisessa taitoksessa paitsi tuplassa (lähes kaksinkerroin).
+// - Pinnan puoli päätellään mallin pintaViiva-tiedosta: pintaviivan yläpuoli mallin
+//   omassa oletusasennossa. Pelti on yksi viivaketju, joten puoli on sama koko matkan.
+// - asento = { viiva, suunta: 'vaaka'|'pysty', kierto: 0..3, peili } kääntää vain kuvaa.
+
+const RR_VARIT = {
+  // Likimääräiset sävyt väriraitaa varten (ei värimalliksi asiakkaalle)
+  RR11: '#1f3d2b', RR20: '#f1f1ec', RR21: '#b9bbb8', RR22: '#8d8f8f', RR23: '#474b4e',
+  RR29: '#7e2520', RR32: '#3a2a22', RR33: '#1a1a1c', RR35: '#2d4a66', RR37: '#3c5a40',
+  RR750: '#7a3b2a', RR887: '#3b2b25'
+};
+
+function variHex(teksti) {
+  if (!teksti) return null;
+  const s = String(teksti).trim();
+  if (/^#[0-9a-f]{6}$/i.test(s)) return s;
+  const m = s.toUpperCase().match(/RR\s?(\d{2,3})/);
+  if (m && RR_VARIT['RR' + m[1]]) return RR_VARIT['RR' + m[1]];
+  return null;
+}
+
+function muotoile(n) {
+  if (typeof n !== 'number') return String(n);
+  return String(Math.round(n * 10) / 10).replace('.', ',');
+}
+
+function piirraKuva(p) {
+  const tulos = p.tulos || {};
+  const raaka = (Array.isArray(tulos) ? tulos : (tulos.points || [])).filter(q => q && isFinite(q.x) && isFinite(q.y));
+  const labels = Array.isArray(tulos) ? null : (tulos.labels || null);
+  const extra0 = (Array.isArray(tulos) ? [] : (tulos.extraLines || [])).filter(e => e && e.p1 && e.p2);
+  const pintaViiva = Array.isArray(tulos) ? null : (tulos.pintaViiva || null);
+  const W = p.W || 700, H = p.H || 340;
+  const alaTila = p.alaTila || 0;
+  const reunus = p.reunus != null ? p.reunus : 52;
+  const asento = p.asento || {};
+  const merkinta = p.merkinta || 'raita';
+  const naytaMitat = p.naytaMitat !== false;
+  const naytaKulmat = p.naytaKulmat !== false;
+  const T = Object.assign({
+    viiva: '#222', mitta: '#1a6fc4', kulma: '#c0392b', himmea: '#666', tausta: '#ffffff',
+    paa: '#e8a020', karki: '#555', raita: '#e8a020', fontti: 'IBM Plex Mono, monospace'
+  }, p.teema || {});
+  const raitaVari = variHex(p.vari) || T.raita;
+
+  if (raaka.length < 2) return { svg: '', mitat: [], pisteet: [] };
+  const n = raaka.length;
+  const EPS = 0.01;
+  const pit0 = i => Math.hypot(raaka[i + 1].x - raaka[i].x, raaka[i + 1].y - raaka[i].y);
+
+  // ── Pinnan puoli (mallin omassa asennossa) ──
+  function oletusPuoli() {
+    let idx = -1;
+    const lahella = (a, b) => Math.abs(a.x - b.x) < EPS && Math.abs(a.y - b.y) < EPS;
+    if (pintaViiva && pintaViiva.p1 && pintaViiva.p2) {
+      for (let i = 0; i < n - 1; i++) {
+        if ((lahella(raaka[i], pintaViiva.p1) && lahella(raaka[i + 1], pintaViiva.p2)) ||
+            (lahella(raaka[i], pintaViiva.p2) && lahella(raaka[i + 1], pintaViiva.p1))) { idx = i; break; }
+      }
+      if (idx < 0) {
+        // pintaviiva ei ole ketjun viiva: käytetään sen suuntaa lähimpään ketjun viivaan
+        const dx = pintaViiva.p2.x - pintaViiva.p1.x, dy = pintaViiva.p2.y - pintaViiva.p1.y;
+        let paras = -1;
+        for (let i = 0; i < n - 1; i++) {
+          const l = pit0(i); if (l < EPS) continue;
+          const c = Math.abs(((raaka[i + 1].x - raaka[i].x) * dx + (raaka[i + 1].y - raaka[i].y) * dy) / (l * (Math.hypot(dx, dy) || 1)));
+          if (c * l > paras) { paras = c * l; idx = i; }
+        }
+      }
+    }
+    if (idx < 0) return 0; // ei tietoa pinnasta
+    const dx = raaka[idx + 1].x - raaka[idx].x, dy = raaka[idx + 1].y - raaka[idx].y;
+    if (Math.abs(dx) < 0.001) return dy > 0 ? -1 : 1;
+    return dx > 0 ? 1 : -1;
+  }
+  const peili = !!asento.peili;
+  const puoli0 = oletusPuoli();
+  const puoli = puoli0 * (peili ? -1 : 1);
+  const pintaTiedossa = puoli0 !== 0;
+
+  // ── Asento ──
+  let kulma = 0;
+  const sv = asento.viiva;
+  if (sv != null && sv >= 0 && sv < n - 1 && pit0(sv) > EPS) {
+    kulma = -Math.atan2(raaka[sv + 1].y - raaka[sv].y, raaka[sv + 1].x - raaka[sv].x);
+    if (asento.suunta === 'pysty') kulma += Math.PI / 2;
+  }
+  kulma += (asento.kierto || 0) * Math.PI / 2;
+  const kaanna = q => {
+    const c = Math.cos(kulma), s = Math.sin(kulma);
+    const x = q.x * c - q.y * s, y = q.x * s + q.y * c;
+    return { x: peili ? -x : x, y: y };
+  };
+  const kp = raaka.map(kaanna);
+  const ke = extra0.map(e => ({ p1: kaanna(e.p1), p2: kaanna(e.p2), label: e.label }));
+
+  // ── Sovitus kuvaan ──
+  const kaikki = kp.concat(...ke.map(e => [e.p1, e.p2]));
+  const xs = kaikki.map(q => q.x), ys = kaikki.map(q => q.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const rx = (maxX - minX) || 1, ry = (maxY - minY) || 1;
+  const kayttoH = H - alaTila;
+  const mk = Math.max(0.05, Math.min((W - reunus * 2) / rx, (kayttoH - reunus * 2) / ry, p.maxMittakaava || 3));
+  const ox = (W - rx * mk) / 2 - minX * mk, oy = (kayttoH - ry * mk) / 2 - minY * mk;
+  const ruutu = q => ({ x: ox + q.x * mk, y: oy + q.y * mk });
+  const sp = kp.map(ruutu);
+  const ex = ke.map(e => ({ p1: ruutu(e.p1), p2: ruutu(e.p2), label: e.label }));
+
+  const normaali = (a, b, s) => {
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+    return { x: s * dy / d, y: -s * dx / d };
+  };
+  const f = v => v.toFixed(1);
+  const polku = pts => pts.map((q, i) => (i ? 'L' : 'M') + f(q.x) + ' ' + f(q.y)).join(' ');
+
+  // ── Viivat: nollapituiset ja takaisin samaa viivaa palaavat osat merkitään ──
+  const segs = [];
+  for (let i = 0; i < n - 1; i++) {
+    const a = sp[i], b = sp[i + 1];
+    const l = Math.hypot(b.x - a.x, b.y - a.y);
+    segs.push({ i, a, b, px: l, mm: pit0(i), nolla: pit0(i) < EPS, paluu: false });
+  }
+  let edel = null;
+  segs.forEach(s => {
+    if (s.nolla) return;
+    if (edel) {
+      const d = ((s.b.x - s.a.x) * (edel.b.x - edel.a.x) + (s.b.y - s.a.y) * (edel.b.y - edel.a.y)) / (s.px * edel.px || 1);
+      if (d < -0.9999 && s.mm <= edel.mm + EPS) s.paluu = true; // palaa samaa viivaa takaisin
+    }
+    edel = s;
+  });
+  const nakyvat = segs.filter(s => !s.nolla && !s.paluu);
+
+  // Yhtenäiset pätkät (katkeaa paluukohdassa)
+  const patkat = [];
+  let nyk = null;
+  segs.forEach(s => {
+    if (s.nolla) return;
+    if (s.paluu) { nyk = null; return; }
+    if (nyk && Math.abs(nyk[nyk.length - 1].x - s.a.x) < 0.05 && Math.abs(nyk[nyk.length - 1].y - s.a.y) < 0.05) nyk.push(s.b);
+    else { nyk = [s.a, s.b]; patkat.push(nyk); }
+  });
+
+  // ── Törmäystarkistus ──
+  const varatut = (p.varaa || []).map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h }));
+  const naytteet = [];
+  const lisaaNaytteet = (a, b) => {
+    const d = Math.hypot(b.x - a.x, b.y - a.y), askeleet = Math.max(1, Math.ceil(d / 3));
+    for (let i = 0; i <= askeleet; i++) naytteet.push({ x: a.x + (b.x - a.x) * i / askeleet, y: a.y + (b.y - a.y) * i / askeleet });
+  };
+  nakyvat.forEach(s => lisaaNaytteet(s.a, s.b));
+  ex.forEach(e => lisaaNaytteet(e.p1, e.p2));
+  const osuu = (cx, cy, w, h, viivat, vali) => {
+    const m = vali == null ? 2 : vali;
+    if (cx - w / 2 < 2 || cx + w / 2 > W - 2 || cy - h / 2 < 2 || cy + h / 2 > kayttoH - 1) return true;
+    for (const r of varatut) if (Math.abs(cx - r.x) < (w + r.w) / 2 + m && Math.abs(cy - r.y) < (h + r.h) / 2 + m) return true;
+    if (viivat) for (const s of naytteet) if (Math.abs(s.x - cx) < w / 2 + 3 && Math.abs(s.y - cy) < h / 2 + 3) return true;
+    return false;
+  };
+  const tekstiW = (t, koko) => String(t).length * koko * 0.62 + 4;
+
+  let svgViivat = '', svgRaita = '', svgApu = '', svgTekstit = '', svgPisteet = '';
+  const teksti = (x, y, t, koko, vari, paino) =>
+    `<text x="${f(x)}" y="${f(y)}" font-size="${koko}" font-family="${T.fontti}" font-weight="${paino || 600}" fill="${vari}" text-anchor="middle" dominant-baseline="central" stroke="${T.tausta}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${t}</text>`;
+
+  // ── Kulmat (kanttikoneen luku = 180 − sisäkulma), ei tuplaan ──
+  const kulmat = [];
+  function lisaaKulma(v, pa, pb) {
+    let ax = pa.x - v.x, ay = pa.y - v.y, bx = pb.x - v.x, by = pb.y - v.y;
+    const la = Math.hypot(ax, ay), lb = Math.hypot(bx, by);
+    if (la < 0.5 || lb < 0.5) return;
+    if (la / mk < 3 || lb / mk < 3) return; // alle 3 mm pätkä on piirtotekninen, ei taitos
+    ax /= la; ay /= la; bx /= lb; by /= lb;
+    const sisa = Math.acos(Math.max(-1, Math.min(1, ax * bx + ay * by))) * 180 / Math.PI;
+    const kone = 180 - sisa;
+    if (kone < 0.5 || kone > 165) return; // suora tai tupla
+    const t = muotoile(kone) + '°';
+    const w = tekstiW(t, 11), h = 14;
+    let hx = ax + bx, hy = ay + by; const hl = Math.hypot(hx, hy);
+    if (hl < 0.01) return;
+    hx /= hl; hy /= hl;
+    // Ensin taitoksen sisäpuolelle, sitten ulkopuolelle, lopuksi kauemmas
+    const yritykset = [[1, 15], [-1, 14], [1, 26], [-1, 24], [1, 38], [-1, 36], [1, 50], [-1, 48]];
+    let x = v.x + hx * 15, y = v.y + hy * 15, ok = false;
+    for (const [s, d] of yritykset) {
+      const dd = d + Math.abs(hx) * w / 2 * 0.6;
+      x = v.x + s * hx * dd; y = v.y + s * hy * dd;
+      if (!osuu(x, y, w, h, true)) { ok = true; break; }
+    }
+    if (!ok) {
+      for (const [s, d] of yritykset) {
+        const dd = d + Math.abs(hx) * w / 2 * 0.6;
+        x = v.x + s * hx * dd; y = v.y + s * hy * dd;
+        if (!osuu(x, y, w, h, false)) { ok = true; break; }
+      }
+    }
+    if (!ok) { x = v.x + hx * 15; y = v.y + hy * 15; }
+    varatut.push({ x, y, w, h });
+    kulmat.push({ x, y, t, kone });
+  }
+  if (naytaKulmat) {
+    patkat.forEach(pt => { for (let i = 1; i < pt.length - 1; i++) lisaaKulma(pt[i], pt[i - 1], pt[i + 1]); });
+    // Erillisen lisäviivan (tiiviste, jiiritaitos) kulma ketjun päässä
+    const paat = [];
+    patkat.forEach(pt => { paat.push([pt[0], pt[1]]); paat.push([pt[pt.length - 1], pt[pt.length - 2]]); });
+    ex.forEach(e => {
+      [[e.p1, e.p2], [e.p2, e.p1]].forEach(([liitos, toinen]) => {
+        paat.forEach(([paa, viereinen]) => {
+          if (Math.abs(paa.x - liitos.x) < 0.3 && Math.abs(paa.y - liitos.y) < 0.3) lisaaKulma(liitos, viereinen, toinen);
+        });
+      });
+    });
+  }
+
+  // ── Pinnan merkintä ──
+  let pisin = null;
+  nakyvat.forEach(s => { if (!pisin || s.px > pisin.px) pisin = s; });
+  if (pintaTiedossa && merkinta === 'raita') {
+    const siirto = 3.9;
+    patkat.forEach(pt => {
+      const ulos = pt.map((q, i) => {
+        const n1 = i > 0 ? normaali(pt[i - 1], q, puoli) : null;
+        const n2 = i < pt.length - 1 ? normaali(q, pt[i + 1], puoli) : null;
+        let vx, vy;
+        if (n1 && n2) { const den = Math.max(0.3, 1 + n1.x * n2.x + n1.y * n2.y); vx = (n1.x + n2.x) / den; vy = (n1.y + n2.y) / den; }
+        else { const nn = n1 || n2; vx = nn.x; vy = nn.y; }
+        return { x: q.x + vx * siirto, y: q.y + vy * siirto };
+      });
+      svgRaita += `<path d="${polku(ulos)}" fill="none" stroke="${T.viiva}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+      svgRaita += `<path d="${polku(ulos)}" fill="none" stroke="${raitaVari}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>`;
+    });
+  }
+  if (pintaTiedossa && pisin) {
+    const nL = normaali(pisin.a, pisin.b, puoli);
+    const ux = (pisin.b.x - pisin.a.x) / pisin.px, uy = (pisin.b.y - pisin.a.y) / pisin.px;
+    if (merkinta === 'kolmio') {
+      const kohta = pisin.px > 80 ? 0.72 : 0.5;
+      const mx = pisin.a.x + (pisin.b.x - pisin.a.x) * kohta, my = pisin.a.y + (pisin.b.y - pisin.a.y) * kohta;
+      const karki = { x: mx + nL.x * 4, y: my + nL.y * 4 }, kanta = { x: mx + nL.x * 13, y: my + nL.y * 13 };
+      svgRaita += `<path d="${polku([karki, { x: kanta.x + ux * 5.5, y: kanta.y + uy * 5.5 }, { x: kanta.x - ux * 5.5, y: kanta.y - uy * 5.5 }])} Z" fill="${T.kulma}"/>`;
+      varatut.push({ x: (karki.x + kanta.x) / 2, y: (karki.y + kanta.y) / 2, w: 14, h: 14 });
+    }
+  }
+
+  // ── Mitat ──
+  const mitat = [];
+  function sijoitaMitta(a, b, nrm, t, salliSiirto) {
+    const koko = 12, w = tekstiW(t, koko), h = 15;
+    const px = Math.hypot(b.x - a.x, b.y - a.y);
+    const puolikas = Math.abs(nrm.x) * w / 2 + Math.abs(nrm.y) * h / 2;
+    const perus = 11 + puolikas;
+    const kohdat = (salliSiirto && px > 70) ? [0.5, 0.36, 0.64] : [0.5];
+    const kokeile = (suunta, viivat) => {
+      for (let s = 0; s < 8; s++) {
+        for (const k of kohdat) {
+          const mx = a.x + (b.x - a.x) * k, my = a.y + (b.y - a.y) * k;
+          const x = mx + suunta * nrm.x * (perus + s * 11), y = my + suunta * nrm.y * (perus + s * 11);
+          if (!osuu(x, y, w, h, viivat)) return { x, y, s, mx, my, suunta };
+        }
+      }
+      return null;
+    };
+    let r = kokeile(1, true) || kokeile(1, false) || kokeile(-1, true) || kokeile(-1, false);
+    if (!r) {
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      r = { x: Math.max(w / 2 + 2, Math.min(W - w / 2 - 2, mx + nrm.x * perus)), y: Math.max(h / 2 + 2, Math.min(kayttoH - h / 2 - 2, my + nrm.y * perus)), s: 0, mx, my, suunta: 1 };
+    }
+    varatut.push({ x: r.x, y: r.y, w, h });
+    if (r.s >= 2) {
+      for (let q = 8; q < (perus + r.s * 11) - puolikas; q += 6) varatut.push({ x: r.mx + r.suunta * nrm.x * q, y: r.my + r.suunta * nrm.y * q, w: 3, h: 3 });
+      svgApu += `<path d="${polku([{ x: r.mx + r.suunta * nrm.x * 5, y: r.my + r.suunta * nrm.y * 5 }, { x: r.x - r.suunta * nrm.x * (puolikas + 1), y: r.y - r.suunta * nrm.y * (puolikas + 1) }])}" fill="none" stroke="${T.himmea}" stroke-width="0.8"/>`;
+    }
+    svgTekstit += teksti(r.x, r.y, t, koko, T.mitta);
+    return { x: r.x, y: r.y, w, h };
+  }
+
+  // Keskipiste ulkopuolen arviointiin, kun pinnan puolta ei tiedetä
+  let kx = 0, ky = 0; sp.forEach(q => { kx += q.x; ky += q.y; }); kx /= n; ky /= n;
+  const mitanNormaali = s => {
+    if (pintaTiedossa) return normaali(s.a, s.b, puoli);
+    const nn = normaali(s.a, s.b, 1), mx = (s.a.x + s.b.x) / 2, my = (s.a.y + s.b.y) / 2;
+    return ((mx - kx) * nn.x + (my - ky) * nn.y < 0) ? { x: -nn.x, y: -nn.y } : nn;
+  };
+
+  if (naytaMitat) {
+    const jarj = nakyvat.slice().sort((a, b) => b.px - a.px);
+    jarj.forEach(s => {
+      let t;
+      if (labels) { const l = labels[s.i]; if (l === null || l === undefined || l === '' || l === 0) return; t = muotoile(l); }
+      else t = muotoile(s.mm);
+      const paikka = sijoitaMitta(s.a, s.b, mitanNormaali(s), t, true);
+      mitat.push({ viiva: s.i, teksti: t, x: paikka.x, y: paikka.y, w: paikka.w, h: paikka.h });
+    });
+    ex.forEach(e => {
+      if (e.label === undefined || e.label === null || e.label === '' || e.label === 0 || !nakyvat.length) return;
+      const mx = (e.p1.x + e.p2.x) / 2, my = (e.p1.y + e.p2.y) / 2;
+      let lahin = nakyvat[0], et = Infinity;
+      nakyvat.forEach(s => { const d = Math.hypot((s.a.x + s.b.x) / 2 - mx, (s.a.y + s.b.y) / 2 - my); if (d < et) { et = d; lahin = s; } });
+      const viite = mitanNormaali(lahin);
+      let nn = normaali(e.p1, e.p2, 1);
+      if (nn.x * viite.x + nn.y * viite.y < 0) nn = { x: -nn.x, y: -nn.y };
+      sijoitaMitta(e.p1, e.p2, nn, muotoile(e.label), false);
+    });
+  }
+
+  // PINTA-teksti pisimmälle viivalle (mittojen jälkeen, ettei jää mitan tai apuviivan alle)
+  if (pintaTiedossa && pisin) {
+    const nL = normaali(pisin.a, pisin.b, puoli);
+    if (pisin.px > 90) {
+      const w = tekstiW('PINTA', 9) + 8, h = 11;
+      for (const kohta of [0.24, 0.76]) {
+        const fx = pisin.a.x + (pisin.b.x - pisin.a.x) * kohta, fy = pisin.a.y + (pisin.b.y - pisin.a.y) * kohta;
+        const d = 12 + Math.abs(nL.x) * w / 2 + Math.abs(nL.y) * h / 2;
+        const x = fx + nL.x * d, y = fy + nL.y * d;
+        if (!osuu(x, y, w, h, false)) {
+          varatut.push({ x, y, w, h });
+          svgTekstit += `<text x="${f(x)}" y="${f(y)}" font-size="9" font-family="${T.fontti}" font-weight="600" letter-spacing="1.2" fill="${T.himmea}" text-anchor="middle" dominant-baseline="central" stroke="${T.tausta}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">PINTA</text>`;
+          break;
+        }
+      }
+    }
+  }
+
+  // ── Viivat ja pisteet ──
+  nakyvat.forEach(s => {
+    svgViivat += `<line x1="${f(s.a.x)}" y1="${f(s.a.y)}" x2="${f(s.b.x)}" y2="${f(s.b.y)}" stroke="${T.viiva}" stroke-width="2.5" stroke-linecap="round"/>`;
+  });
+  ex.forEach(e => {
+    svgViivat += `<line x1="${f(e.p1.x)}" y1="${f(e.p1.y)}" x2="${f(e.p2.x)}" y2="${f(e.p2.y)}" stroke="${T.viiva}" stroke-width="2.5" stroke-linecap="round"/>`;
+  });
+  if (p.korostaViiva != null && segs[p.korostaViiva] && !segs[p.korostaViiva].nolla) {
+    const s = segs[p.korostaViiva];
+    svgViivat += `<line x1="${f(s.a.x)}" y1="${f(s.a.y)}" x2="${f(s.b.x)}" y2="${f(s.b.y)}" stroke="${T.paa}" stroke-width="5" stroke-linecap="round"/>`;
+  }
+  if (p.naytaPisteet !== false) {
+    sp.forEach((q, i) => {
+      const paa = i === 0 || i === n - 1;
+      svgPisteet += `<circle cx="${f(q.x)}" cy="${f(q.y)}" r="${paa ? 4 : 3}" fill="${paa ? T.paa : T.karki}"/>`;
+    });
+  }
+  kulmat.forEach(k => { svgTekstit += teksti(k.x, k.y, k.t, 11, T.kulma); });
+
+  return {
+    svg: svgApu + svgRaita + svgViivat + svgPisteet + svgTekstit,
+    mitat: mitat,
+    kulmat: kulmat.map(k => k.kone),
+    pisteet: sp,
+    pintaTiedossa: pintaTiedossa,
+    puoli: puoli
+  };
+}
+
 
 window.KPT_PROFIILIT = {
   versio: '2026-11-13',
   mallit: TYPES,
-  tuotantoKuvat: PROD_TYPES
+  tuotantoKuvat: PROD_TYPES,
+  piirraKuva: piirraKuva,
+  variHex: variHex
 };
 
 })();
