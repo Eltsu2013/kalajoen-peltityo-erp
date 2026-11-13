@@ -634,7 +634,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113"></script>
+<script src="profiilit.js?v=20261113c"></script>
 </head>
 <body>
 
@@ -3289,7 +3289,7 @@ function renderItemCards(order) {
       } else {
       const vals = item.profile_data?.vals || {};
       const opts = item.profile_data?.opts || {};
-      const svgHtml = drawKanttausSVG(item.profile_type, vals, opts);
+      const svgHtml = drawKanttausSVG(item.profile_type, vals, opts, item.profile_data?.asento, item.color);
       const valsTable = buildValsTable(item.profile_type, vals);
       kanttausBlock = `
         <div class="kanttaus-section">
@@ -3515,7 +3515,23 @@ const PROD_TYPES = window.KPT_PROFIILIT ? window.KPT_PROFIILIT.tuotantoKuvat : {
 // ── SVG-renderöinti kanttaus-lohkoon ─────────────────────────────────
 // Piirtää mitat viivan vierelle kohtisuoraan (sininen)
 // Piirtää kulmat taitospisteisiin (punainen)
-function drawKanttausSVG(profileType, vals, opts) {
+function drawKanttausSVG(profileType, vals, opts, asento, vari) {
+  // Malliston rivit (kentät täsmäävät Malliston malliin) piirretään yhteisellä piirrolla samasta
+  // kaavasta ja samassa asennossa kuin Mallistossa. Vakiomallien rivit piirretään vanhalla tavalla alempana.
+  const P = window.KPT_PROFIILIT;
+  const malli = P && P.mallit ? P.mallit[profileType] : null;
+  if (malli && profileType !== 'vapaa' && vals && malli.fields && malli.fields.length &&
+      malli.fields.every(f => vals[f.id] !== undefined && vals[f.id] !== null)) {
+    try {
+      const luvut = {};
+      malli.fields.forEach(f => { luvut[f.id] = parseFloat(vals[f.id]) || 0; });
+      let merkinta = 'raita';
+      try { if (localStorage.getItem('kpt_pinta_merkinta') === 'kolmio') merkinta = 'kolmio'; } catch (e) { console.warn('pintaMerkinta:', e); }
+      const KW = 280, KH = 190;
+      const kuva = P.piirraKuva({ tulos: malli.build(luvut, opts || {}), W: KW, H: KH, reunus: 36, asento: asento || null, vari: vari || '', merkinta });
+      if (kuva.svg) return `<svg width="${KW}" height="${KH}" viewBox="0 0 ${KW} ${KH}" xmlns="http://www.w3.org/2000/svg" style="display:block;max-width:100%;height:auto">${kuva.svg}</svg>`;
+    } catch (e) { console.warn('drawKanttausSVG (yhteinen piirto) virhe:', profileType, e); }
+  }
   const type = PROD_TYPES[profileType];
   if (!type || !vals || Object.keys(vals).length === 0) return null;
 
