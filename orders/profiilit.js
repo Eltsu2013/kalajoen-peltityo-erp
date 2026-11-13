@@ -1351,8 +1351,6 @@ const TYPES = {
       { id: 'kaato_mm', label: 'Kaato koko matkalla mm', default: 20 },
       { id: 'laippaV_len', label: 'Laippa vasen mm', default: 50 },
       { id: 'laippaO_len', label: 'Laippa oikea mm', default: 50 },
-      { id: 'tyo_asetus', label: 'Asetusaika min', default: 12 },
-      { id: 'tyo_kpl', label: 'Työaika / kouru min', default: 18 },
     ],
     options: [
       { id: 'suora', label: 'Suora kaista (laipat kapenevat syvään päähän)' },
@@ -1379,15 +1377,6 @@ const TYPES = {
       };
     },
     aihio: (vals) => vals.pohja_len + 2 * vals.syvays_len + vals.laippaV_len + vals.laippaO_len,
-    // Kouru on materiaali + aika -tuote: työaika = asetusaika + kappaleaika × kpl.
-    // Sarjassa asetus jaetaan koko erälle, joten kappalehinta laskee. Lähtöarvot 12 + 18 min
-    // (1 kpl = 30 min) ovat arvio, joka tarkistetaan oikeasta kourusarjasta.
-    tyoaika: (vals, opts, kplYht) => {
-      const kpl = Math.max(0, Math.round(kplYht || 0));
-      if (!kpl) return null;
-      const asetus = vals.tyo_asetus || 0, per = vals.tyo_kpl || 0;
-      return { asetus: asetus, perKpl: per, kpl: kpl, minuutit: asetus + per * kpl };
-    },
     // Pituus mitataan pohjan keskilinjaa pitkin, jolloin kouru levenee symmetrisesti molemmille sivuille
     oletusViite: 2.5,
     // Pään B (syvä pää) mitat annetulle pellin pituudelle
