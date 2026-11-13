@@ -464,7 +464,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113"></script>
+<script src="profiilit.js?v=20261113b"></script>
 </head>
 <body>
 
@@ -2358,6 +2358,7 @@ function pmFilterColor(q) {
     document.getElementById('pm-color').value = c;
     document.getElementById('pm-color-dd').style.display = 'none';
     pmUpdateThick();
+    redraw(); // väriraita pellin värillä
   });
 }
 
@@ -2802,130 +2803,71 @@ function redraw() {
     if (el) el.value = (r.mitta || 0) + (r.paat || 0);
   });
 
-  // Piirrä SVG
+  // Piirrä SVG — yhteinen piirto (profiilit.js: piirraKuva). Kuvan yksi yksikkö = yksi ruudun
+  // pikseli, joten viewBox asetetaan kuvan todelliseen kokoon ja tekstit pysyvät luettavina.
   const svg = document.getElementById('drawing');
-  let html = '';
+  const kapea = window.innerWidth <= 800;
+  const kuvaW = Math.max(240, Math.round((svg.getBoundingClientRect().width || 702) - 2));
+  const kuvaH = kapea
+    ? Math.max(170, Math.round(Math.min(window.innerHeight * 0.34 - 4, kuvaW * 0.8)))
+    : Math.round(kuvaW * 380 / 700);
+  _piirrettyLeveys = kuvaW;
 
-  // Viivat
-  for (let i = 0; i < points.length - 1; i++) {
-    html += `<line x1="${tx(points[i])}" y1="${ty(points[i])}" x2="${tx(points[i+1])}" y2="${ty(points[i+1])}" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>`;
-  }
-
-  // Erilliset tupla-viivat
-  extraLines.forEach(el => {
-    html += `<line x1="${tx(el.p1)}" y1="${ty(el.p1)}" x2="${tx(el.p2)}" y2="${ty(el.p2)}" stroke="#222" stroke-width="2.5" stroke-linecap="round"/>`;
-    if (el.label) {
-      const mx = (tx(el.p1) + tx(el.p2)) / 2 + el.labelOffset[0];
-      const my = (ty(el.p1) + ty(el.p2)) / 2 + el.labelOffset[1];
-      html += `<text x="${mx}" y="${my}" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${el.label}</text>`;
-    }
-  });
-
-  // Mitat viivan vierellä
-  for (let i = 0; i < points.length - 1; i++) {
-    const mx = (tx(points[i]) + tx(points[i+1])) / 2;
-    const my = (ty(points[i]) + ty(points[i+1])) / 2;
-    const len = segmentLabels ? segmentLabels[i] : (segLens[i] || '');
-    const dx = tx(points[i+1]) - tx(points[i]);
-    const dy = ty(points[i+1]) - ty(points[i]);
-    const segLen = Math.sqrt(dx*dx + dy*dy);
-    const ox = -dy / segLen * 16;
-    const oy = dx / segLen * 16;
-    if (len) {
-      html += `<text x="${mx - ox}" y="${my - oy}" font-size="12" font-family="IBM Plex Mono, monospace" font-weight="600" fill="#1a6fc4" text-anchor="middle" dominant-baseline="middle">${len}</text>`;
-    }
-  }
-
-  // Kulmat taitospisteissä (ei alku- eikä loppupiste)
-  const vals = getVals();
-  const angleLabels = activeType === 'avp' ? [
-    null,
-    vals.seg0_ang + '°',
-    vals.seg1_ang + '°',
-    vals.seg3_ang + '°',
-    null
-  ] : [];
-
-  // Kulmaoffsetit per piste: [dx, dy]
-  const angleOffsets = activeType === 'avp' ? [
-    null,
-    [-8, 14],    // käännös taka — oikealle alas
-    [-40, 14],   // käännös etu — vasemmalle
-    [8, 14],     // etur
-    null
-  ] : [];
-
-  points.forEach((p, i) => {
-    const isEnd = i === 0 || i === points.length - 1;
-    html += `<circle cx="${tx(p)}" cy="${ty(p)}" r="${isEnd ? 4 : 3}" fill="${isEnd ? '#e8a020' : '#555'}"/>`;
-    if (angleLabels[i] && angleOffsets[i]) {
-      const [dx, dy] = angleOffsets[i];
-      html += `<text x="${tx(p) + dx}" y="${ty(p) + dy}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c0392b" font-weight="600">${angleLabels[i]}</text>`;
-    }
-  });
-
-  svg.innerHTML = html;
-
-  // Pintamerkintä (kolmio) pintaViivalle
+  // Tekstit kuvan vasempaan alareunaan (kaato, nousu, etenemä, korkeus)
+  const infoRivit = [];
   if (pintaViiva) {
-    const svgEl = document.getElementById('drawing');
-    const mx = (tx(pintaViiva.p1) + tx(pintaViiva.p2)) / 2;
-    const my = (ty(pintaViiva.p1) + ty(pintaViiva.p2)) / 2;
-    const dx = tx(pintaViiva.p2) - tx(pintaViiva.p1);
-    const dy = ty(pintaViiva.p2) - ty(pintaViiva.p1);
-    const segLen = Math.sqrt(dx*dx + dy*dy);
-    // Normaali viivaa kohti — kärki osoittaa pintaan (yläpuoli SVG:ssä = negatiivinen y)
-    const nx = dy / segLen;
-    const ny = -dx / segLen;
-    // Kolmio kiinteästi mitan yläpuolelle — 16px ylös SVG:ssä
-    const ts = 3.5;
-    const lift = 10; // tekstin alapuolelle, viivan yläpuolelle
-    const tx1 = mx - nx * ts * 2 - ny * lift;
-    const ty1 = my - ny * ts * 2 + nx * lift - lift;
-    const tx2 = mx - (dx/segLen) * ts - ny * lift;
-    const ty2 = my - ts + nx * lift - lift;
-    const tx3 = mx + (dx/segLen) * ts - ny * lift;
-    const ty3 = my - ts + nx * lift - lift;
-    svgEl.innerHTML += `<polygon points="${tx1},${ty1} ${tx2},${ty2} ${tx3},${ty3}" fill="#c0392b" opacity="0.8"/>`;
-
-    // Kaato/Nousu ja etenemä SVG:n vasempaan alareunaan
-    const svgH2 = 340;
     if (activeType === 'zlista' && kaatoMm !== null) {
       const kokMmSvg = kokonaisViiva ? Math.round(Math.sqrt(
         Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
         Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
       )) : null;
-      const nousStr = Number(kaatoMm) > 0 ? `NOUSU: ${kaatoMm} mm` : '';
-      svgEl.innerHTML += `
-        ${nousStr ? `<text x="10" y="${svgH2 - 45}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">${nousStr}</text>` : ''}
-        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
-        ${kokMmSvg ? `<text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KOK: ${kokMmSvg} mm</text>` : ''}
-      `;
+      if (Number(kaatoMm) > 0) infoRivit.push([`NOUSU: ${kaatoMm} mm`, '#333']);
+      infoRivit.push([`ETENEMÄ: ${etenemäMm} mm`, '#333']);
+      if (kokMmSvg) infoRivit.push([`KOK: ${kokMmSvg} mm`, '#c07010']);
     } else if (activeType === 'hattulista' && nousuViiva) {
       const nousV = Math.abs(nousuViiva.p2.y - nousuViiva.p1.y).toFixed(0);
       const etenV = Math.abs(nousuViiva.p2.x - nousuViiva.p1.x).toFixed(0);
       const nousO = Math.abs(nousuViiva.p4.y - nousuViiva.p3.y).toFixed(0);
       const etenO = Math.abs(nousuViiva.p4.x - nousuViiva.p3.x).toFixed(0);
       const kokLevSvg = Math.abs(nousuViiva.p6.x - nousuViiva.p5.x).toFixed(0);
-      svgEl.innerHTML += `
-        <text x="10" y="${svgH2 - 45}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">NOUSU: V:${nousV} O:${nousO} mm</text>
-        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: V:${etenV} O:${etenO} mm</text>
-        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KOK LEVEYS: ${kokLevSvg} mm</text>
-      `;
+      infoRivit.push([`NOUSU: V:${nousV} O:${nousO} mm`, '#333']);
+      infoRivit.push([`ETENEMÄ: V:${etenV} O:${etenO} mm`, '#333']);
+      infoRivit.push([`KOK LEVEYS: ${kokLevSvg} mm`, '#c07010']);
     } else if (kaatoMm !== null) {
-      svgEl.innerHTML += `
-        <text x="10" y="${svgH2 - 30}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">KAATO: ${kaatoMm} mm</text>
-        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#333">ETENEMÄ: ${etenemäMm} mm</text>
-      `;
+      infoRivit.push([`KAATO: ${kaatoMm} mm`, '#333']);
+      infoRivit.push([`ETENEMÄ: ${etenemäMm} mm`, '#333']);
     }
-
-    // Korkeus päätypelti huopa -kohdassa
     if (activeType === 'paatypelti_huopa' && korkeus) {
-      svgEl.innerHTML += `
-        <text x="10" y="${svgH2 - 15}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#c07010">KORKEUS: ${korkeus} mm</text>
-      `;
+      infoRivit.push([`KORKEUS: ${korkeus} mm`, '#c07010']);
     }
   }
+  const alaTila = infoRivit.length ? infoRivit.length * 15 + 8 : 0;
+
+  // Pinnan merkinnän vaihtonappi kuvan oikeassa yläkulmassa
+  const nappiW = 104, nappiH = 30;
+  const kuva = window.KPT_PROFIILIT.piirraKuva({
+    tulos: { points, labels: segmentLabels, extraLines, pintaViiva },
+    W: kuvaW, H: kuvaH, alaTila,
+    reunus: kapea ? 42 : 56,
+    vari: (document.getElementById('pm-color') || {}).value || '',
+    merkinta: pintaMerkinta,
+    varaa: [{ x: kuvaW - 6 - nappiW / 2, y: 6 + nappiH / 2, w: nappiW, h: nappiH }]
+  });
+
+  let html = kuva.svg;
+  infoRivit.forEach((r, i) => {
+    const y = kuvaH - 8 - 15 * (infoRivit.length - 1 - i);
+    html += `<text x="10" y="${y}" font-size="11" font-family="IBM Plex Mono, monospace" fill="${r[1]}">${r[0]}</text>`;
+  });
+  if (kuva.pintaTiedossa) {
+    html += `<g onclick="vaihdaPintaMerkinta()" style="cursor:pointer" role="button" aria-label="Vaihda pinnan merkintätapa">
+      <rect x="${kuvaW - 6 - nappiW}" y="6" width="${nappiW}" height="${nappiH}" rx="4" fill="#f4f4f4" stroke="#bbb"/>
+      <text x="${kuvaW - 6 - nappiW / 2}" y="${6 + nappiH / 2}" font-size="11" font-family="IBM Plex Mono, monospace" fill="#444" text-anchor="middle" dominant-baseline="central">Pinta: ${pintaMerkinta === 'kolmio' ? 'kolmio' : 'raita'}</text>
+    </g>`;
+  }
+  svg.setAttribute('viewBox', `0 0 ${kuvaW} ${kuvaH}`);
+  svg.innerHTML = html;
+
 
   // Leikkauslista HTML
   const listEl = document.getElementById('cut-list-rows');
@@ -2938,6 +2880,27 @@ function redraw() {
     </div>
   `).join('');
 }
+
+// ─── Pinnan merkintätapa ja kuvan koon seuranta ───────────────────
+// Pinta merkitään joko ohuella väriraidalla (pellin värillä) tai kolmiolla.
+// Valinta muistetaan tällä laitteella.
+let pintaMerkinta = 'raita';
+try { if (localStorage.getItem('kpt_pinta_merkinta') === 'kolmio') pintaMerkinta = 'kolmio'; } catch (e) { console.warn('pintaMerkinta:', e); }
+function vaihdaPintaMerkinta() {
+  pintaMerkinta = pintaMerkinta === 'kolmio' ? 'raita' : 'kolmio';
+  try { localStorage.setItem('kpt_pinta_merkinta', pintaMerkinta); } catch (e) { console.warn('pintaMerkinta:', e); }
+  redraw();
+}
+// Kuva piirretään ruudun pikseleissä, joten se piirretään uudelleen kun kuvan leveys muuttuu
+let _piirrettyLeveys = 0, _kokoAjastin = null;
+window.addEventListener('resize', () => {
+  clearTimeout(_kokoAjastin);
+  _kokoAjastin = setTimeout(() => {
+    const el = document.getElementById('drawing');
+    const w = el ? Math.round(el.getBoundingClientRect().width - 2) : 0;
+    if (w > 0 && Math.abs(w - _piirrettyLeveys) > 1) redraw();
+  }, 150);
+});
 
 // ─── Init ─────────────────────────────────────────────────────────
 renderProfileFields();
