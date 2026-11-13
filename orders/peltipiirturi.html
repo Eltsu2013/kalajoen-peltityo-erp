@@ -399,6 +399,11 @@
     max-width: 700px;
   }
 
+  /* Muokkaustilassa (pelti avattu tilauksesta) mallia ei voi vaihtaa */
+  body.malli-lukittu .type-btn:not(.active) { opacity: 0.35; cursor: not-allowed; }
+  #tilaus-lukko { color: #9fd8b5; font-size: 11px; transition: color 0.2s; }
+  #tilaus-lukko.huomio { color: #ffb347; font-weight: 600; }
+
   .asento-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; max-width: 700px; margin-top: 10px; }
   .asento-bar > span { display: inline-flex; gap: 8px; }
   .asento-bar button {
@@ -460,11 +465,16 @@
     .left-panel { overflow: visible; border-right: none; }
     .sidebar-resizer { display: none; }
     .right-panel { display: contents; }
+    /* Kuva on sivun alussa. Se nousee kellumaan yläreunaan vain, kun profiilin mittoja
+       muokataan (luokka .telakoitu, ks. focusin/focusout). Paikka sivulla säilyy, joten
+       sisältö ei hypi. */
     .drawing-area {
-      order: -1; position: sticky; top: 0; z-index: 20;
+      order: -1; z-index: 20;
       width: calc(100% - 16px); max-width: none; margin: 8px; max-height: 34vh;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
     }
+    .drawing-area.telakoitu { position: sticky; top: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+    /* Valittu kenttä ei saa jäädä kelluvan kuvan alle */
+    #profile-fields input { scroll-margin-top: calc(34vh + 28px); }
     .asento-bar { order: -1; width: calc(100% - 16px); max-width: none; margin: 0 8px 8px; }
     .asento-bar button { min-height: 44px; }
     .asento-vihje { color: var(--text-dim); }
@@ -476,7 +486,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113c"></script>
+<script src="profiilit.js?v=20261113d"></script>
 </head>
 <body>
 
@@ -2104,6 +2114,7 @@
   <span style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
   <span id="tilaus-ryhmä" style="color:#e8e8e8"></span>
   <span id="tilaus-nimike" style="color:#e8a020; font-weight:600"></span>
+  <span id="tilaus-lukko" style="display:none">Mallia ei voi vaihtaa muokatessa. Poista pelti ja lisää uusi, jos malli on väärä.</span>
   <button onclick="lisaaTilaukseen()" style="margin-left:auto; background:#3dba6e; color:#1a1a1a; border:none; border-radius:4px; padding:6px 16px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer;">
     ✓ Lisää tilaukseen
   </button>
@@ -2287,6 +2298,12 @@ let lengthRows = [{ mitta: 1000, paat: 0, kpl: 1, huomio: '' }];
 let activeType = 'avp';
 
 function setType(t) {
+  // Muokkaustilassa mallia ei voi vaihtaa: tilaukseen jäisi vanha malli mutta uuden mallin mitat
+  if (_malliLukittu && t !== activeType) {
+    const lukko = document.getElementById('tilaus-lukko');
+    if (lukko) { lukko.classList.add('huomio'); setTimeout(() => lukko.classList.remove('huomio'), 1800); }
+    return;
+  }
   if (t !== activeType) kuvanAsento = oletusAsento(); // uusi malli alkaa oletusasennosta
   activeType = t;
   document.querySelectorAll('.type-btn').forEach((b) => {
@@ -2875,6 +2892,7 @@ function redraw() {
     merkinta: pintaMerkinta,
     asento: kuvanAsento,
     korostaValittu: true,
+    korosta: muokattavaKohde(),
     mittaToiminto: 'valitseViiva'
   });
   _viivoja = points.length - 1;
@@ -2938,6 +2956,43 @@ function siistiAsento(a) {
   return o;
 }
 let kuvanAsento = oletusAsento();
+let _malliLukittu = false; // true kun pelti on avattu tilauksesta muokattavaksi
+
+// ─── Kelluva kuva ja muokattavan kentän korostus ──────────────────
+// Kun profiilin mittakenttä on valittuna, kuva kelluu puhelimella yläreunassa (.telakoitu)
+// ja kuvassa korostuu se viiva tai taitos, jota kenttä muuttaa.
+let _muokattavaKentta = null, _telakkaAjastin = null;
+function onProfiiliKentta(el) {
+  return !!(el && el.tagName === 'INPUT' && el.id !== 'profile-nimike' && el.closest && el.closest('#profile-fields'));
+}
+function muokattavaKohde() {
+  if (!_muokattavaKentta) return null;
+  try { return window.KPT_PROFIILIT.kentanKohde(activeType, getVals(), getOpts(), _muokattavaKentta); }
+  catch (e) { console.warn('kentanKohde:', e); return null; }
+}
+document.addEventListener('focusin', e => {
+  if (!onProfiiliKentta(e.target)) return;
+  clearTimeout(_telakkaAjastin);
+  _muokattavaKentta = e.target.id || '__nimeton';
+  const kuvaEl = document.getElementById('drawing');
+  kuvaEl.classList.add('telakoitu');
+  redraw();
+  // Jos valittu kenttä jäi kelluvan kuvan alle, vieritetään se näkyviin kuvan alapuolelle
+  if (getComputedStyle(kuvaEl).position === 'sticky') {
+    const ala = kuvaEl.getBoundingClientRect().bottom + 28, yla = e.target.getBoundingClientRect().top;
+    if (yla < ala) window.scrollBy(0, yla - ala);
+  }
+});
+document.addEventListener('focusout', e => {
+  if (!onProfiiliKentta(e.target)) return;
+  clearTimeout(_telakkaAjastin);
+  // pieni viive, ettei kuva välähdä pois siirryttäessä kentästä toiseen
+  _telakkaAjastin = setTimeout(() => {
+    _muokattavaKentta = null;
+    document.getElementById('drawing').classList.remove('telakoitu');
+    redraw();
+  }, 200);
+});
 let _viivoja = 0;
 function asentoMuutettu() { const a = kuvanAsento; return a.viiva !== null || a.kierto !== 0 || a.peili; }
 function valitseViiva(i) {
@@ -3016,6 +3071,10 @@ if (savedCtx) {
       aktivoiTilausPalkki(ctx);
       // Jos muokkaustila — ladataan vanhat tiedot
       if (ctx.editItemId && ctx.existingData) {
+        // Lukitaan malli muokkauksen ajaksi
+        _malliLukittu = true;
+        document.body.classList.add('malli-lukittu');
+        document.getElementById('tilaus-lukko').style.display = '';
         const { vals, opts } = ctx.existingData;
         kuvanAsento = siistiAsento(ctx.existingData.asento); // kuvan asento tilausriviltä
         // Asetetaan kenttien arvot
@@ -3122,6 +3181,9 @@ function lisaaTilaukseen() {
 
 function peruutaTilaus() {
   tilausContext = null;
+  _malliLukittu = false;
+  document.body.classList.remove('malli-lukittu');
+  document.getElementById('tilaus-lukko').style.display = 'none';
   document.getElementById('tilaus-bar').style.display = 'none';
   if (window.opener && !window.opener.closed) window.close();
 }
