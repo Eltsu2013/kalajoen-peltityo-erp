@@ -2312,9 +2312,11 @@ function piirraKuva(p) {
   };
   const kp = raaka.map(kaanna);
   const ke = extra0.map(e => ({ p1: kaanna(e.p1), p2: kaanna(e.p2), label: e.label }));
+  // Haamuviivat: esim. kiilapellin toisen pään poikkileikkaus katkoviivalla (mallin koordinaateissa)
+  const kh = (p.haamu || []).map(pl => (pl || []).filter(q => q && isFinite(q.x) && isFinite(q.y)).map(kaanna)).filter(pl => pl.length > 1);
 
   // ── Sovitus kuvaan ──
-  const kaikki = kp.concat(...ke.map(e => [e.p1, e.p2]));
+  const kaikki = kp.concat(...ke.map(e => [e.p1, e.p2]), ...kh);
   const xs = kaikki.map(q => q.x), ys = kaikki.map(q => q.y);
   const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
   const rx = (maxX - minX) || 1, ry = (maxY - minY) || 1;
@@ -2379,6 +2381,8 @@ function piirraKuva(p) {
   const tekstiW = (t, koko) => String(t).length * koko * 0.62 + 4;
 
   let svgViivat = '', svgRaita = '', svgApu = '', svgTekstit = '', svgPisteet = '';
+  let svgHaamu = '';
+  kh.forEach(pl => { svgHaamu += `<path d="${polku(pl.map(ruutu))}" fill="none" stroke="${T.himmea}" stroke-width="1.6" stroke-dasharray="6 4" stroke-linejoin="round" stroke-linecap="round"/>`; });
   const teksti = (x, y, t, koko, vari, paino) =>
     `<text x="${f(x)}" y="${f(y)}" font-size="${koko}" font-family="${T.fontti}" font-weight="${paino || 600}" fill="${vari}" text-anchor="middle" dominant-baseline="central" stroke="${T.tausta}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${t}</text>`;
 
@@ -2589,7 +2593,7 @@ function piirraKuva(p) {
   kulmat.forEach(k => { svgTekstit += teksti(k.x, k.y, k.t, 11, T.kulma); });
 
   return {
-    svg: svgKorostus + svgApu + svgRaita + svgViivat + svgPisteet + svgTekstit,
+    svg: svgKorostus + svgHaamu + svgApu + svgRaita + svgViivat + svgPisteet + svgTekstit,
     mitat: mitat,
     kulmat: kulmat.map(k => k.kone),
     pisteet: sp,
@@ -2653,13 +2657,248 @@ function kentanKohde(tyyppi, vals, opts, kenttaId) {
   return tyhja;
 }
 
+// ═══════════════════════════════════════════════════════════════════
+//  KIILAMITAT JA LEVITYSKUVA
+// ═══════════════════════════════════════════════════════════════════
+// Kiilapelti = pelti, jossa jokin pituusmitta on toisessa päässä eri (esim. pinta 150 → 200).
+// Kulmat pysyvät samoina koko matkan. Pää A lasketaan kentillä vals, pää B kentillä
+// vals + valsB (valsB sisältää vain ne kentät, joissa mitta on eri).
+//
+// Levityskuva lasketaan tarkasti: jokainen kaista (kahden taitosviivan väli) on taso,
+// joten se levitetään todellisilla mitoillaan viereisen kaistan jatkoksi. Pituus L mitataan
+// valittua viiteviivaa pitkin, ja se viiva on levityskuvassa suora.
+
+// Pellin todellinen kulkureitti reunasta reunaan: pääketju ilman piirtoteknisiä pätkiä,
+// ja sen päihin liittyvät lisäviivat (tiiviste, tupla). Reitin pituus = aihion leveys
+// (tarkistettu mallien aihio-kaavoja vasten kaikilla valintojen yhdistelmillä).
+function reitti(res) {
+  const pts = (Array.isArray(res) ? res : (res && res.points) || []);
+  const ex = (Array.isArray(res) ? [] : (res.extraLines || [])).filter(e => e && e.p1 && e.p2);
+  const labels = Array.isArray(res) ? null : (res.labels || null);
+  const et = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const idx = [0];
+  for (let i = 1; i < pts.length; i++) {
+    const e = pts[idx[idx.length - 1]], q = pts[i];
+    if (et(q, e) < 0.01) continue; // nollapituinen pätkä
+    if (idx.length >= 2) {
+      const d = pts[idx[idx.length - 2]];
+      const c = ((e.x - d.x) * (q.x - e.x) + (e.y - d.y) * (q.y - e.y)) / (et(e, d) * et(q, e));
+      if (c < -0.9999) break; // palaa samaa viivaa takaisin: ketju päättyy
+    }
+    idx.push(i);
+  }
+  // Piirtotekninen päätypätkä (mallin labels-taulukossa tyhjä merkkijono ja alle 3 mm) ei ole peltiä
+  while (labels && idx.length > 2 && labels[idx[idx.length - 2]] === '' && et(pts[idx[idx.length - 1]], pts[idx[idx.length - 2]]) < 3) idx.pop();
+  while (labels && idx.length > 2 && labels[idx[0]] === '' && et(pts[idx[1]], pts[idx[0]]) < 3) idx.shift();
+  const polku = idx.map(i => ({ x: pts[i].x, y: pts[i].y }));
+  const kaytetty = ex.map(() => false);
+  let muutos = true;
+  while (muutos) {
+    muutos = false;
+    ex.forEach((e, k) => {
+      if (kaytetty[k]) return;
+      const alku = polku[0], loppu = polku[polku.length - 1];
+      if (et(e.p1, loppu) < 0.05) polku.push({ x: e.p2.x, y: e.p2.y });
+      else if (et(e.p2, loppu) < 0.05) polku.push({ x: e.p1.x, y: e.p1.y });
+      else if (et(e.p1, alku) < 0.05) polku.unshift({ x: e.p2.x, y: e.p2.y });
+      else if (et(e.p2, alku) < 0.05) polku.unshift({ x: e.p1.x, y: e.p1.y });
+      else return;
+      kaytetty[k] = true; muutos = true;
+    });
+  }
+  return { polku: polku, irti: kaytetty.filter(u => !u).length };
+}
+
+// Levittää pellin tasoksi. A ja B = reitin pisteet päissä A ja B, L = pituus viiteviivaa r pitkin.
+function levita(A, B, L, r) {
+  const n = A.length - 1;
+  const dP = A.map((q, j) => ({ x: (B[j].x - B[r].x) - (q.x - A[r].x), y: (B[j].y - B[r].y) - (q.y - A[r].y) }));
+  const l = dP.map(v => Math.hypot(L, v.x, v.y));
+  const a = [], b = [], d = [];
+  for (let i = 0; i < n; i++) {
+    a[i] = Math.hypot(A[i + 1].x - A[i].x, A[i + 1].y - A[i].y);
+    b[i] = Math.hypot(B[i + 1].x - B[i].x, B[i + 1].y - B[i].y);
+    const s = a[i] > 0.001 ? [A[i], A[i + 1], a[i]] : [B[i], B[i + 1], b[i] || 1];
+    d[i] = { x: (s[1].x - s[0].x) / s[2], y: (s[1].y - s[0].y) / s[2] };
+  }
+  const FA = [], FB = [];
+  FA[r] = { x: 0, y: 0 }; FB[r] = { x: L, y: 0 };
+  for (let i = r; i < n; i++) {
+    const e = { x: (FB[i].x - FA[i].x) / l[i], y: (FB[i].y - FA[i].y) / l[i] };
+    const c = (dP[i].x * d[i].x + dP[i].y * d[i].y) / l[i], s = Math.sqrt(Math.max(0, 1 - c * c));
+    const g = { x: c * e.x - s * e.y, y: c * e.y + s * e.x };
+    FA[i + 1] = { x: FA[i].x + a[i] * g.x, y: FA[i].y + a[i] * g.y };
+    FB[i + 1] = { x: FB[i].x + b[i] * g.x, y: FB[i].y + b[i] * g.y };
+  }
+  for (let i = r - 1; i >= 0; i--) {
+    const e = { x: (FB[i + 1].x - FA[i + 1].x) / l[i + 1], y: (FB[i + 1].y - FA[i + 1].y) / l[i + 1] };
+    const c = -(dP[i + 1].x * d[i].x + dP[i + 1].y * d[i].y) / l[i + 1], s = Math.sqrt(Math.max(0, 1 - c * c));
+    const g = { x: c * e.x + s * e.y, y: c * e.y - s * e.x };
+    FA[i] = { x: FA[i + 1].x + a[i] * g.x, y: FA[i + 1].y + a[i] * g.y };
+    FB[i] = { x: FB[i + 1].x + b[i] * g.x, y: FB[i + 1].y + b[i] * g.y };
+  }
+  return { FA: FA, FB: FB, l: l, a: a, b: b };
+}
+
+function kiilaArvot(vals, valsB) {
+  const out = Object.assign({}, vals);
+  Object.keys(valsB || {}).forEach(k => { const v = parseFloat(valsB[k]); if (isFinite(v)) out[k] = v; });
+  return out;
+}
+
+// Laskee levityksen ja merkkausmitat. Palauttaa null, jos mallia ei voi laskea.
+//   viivat[j] = { nimi, kulma (kanttikoneen luku tai null), tupla, ya, xa, yb, xb, pituus, viite }
+//   ya/yb = etäisyys aihion alareunasta päässä A/B, xa/xb = etäisyys aihion päästä
+function laskeLevitys(tyyppi, vals, valsB, opts, L, viite) {
+  const malli = TYPES[tyyppi];
+  if (!malli || !malli.build || tyyppi === 'vapaa') return null;
+  let ra, rb;
+  try { ra = malli.build(Object.assign({}, vals), opts || {}); rb = malli.build(kiilaArvot(vals, valsB), opts || {}); }
+  catch (e) { return null; }
+  const RA = reitti(ra), RB = reitti(rb);
+  const A = RA.polku, B = RB.polku;
+  if (A.length < 2 || A.length !== B.length) return null;
+  const n = A.length - 1;
+  const r = (Number.isInteger(viite) && viite >= 0 && viite <= n) ? viite : 0;
+  const pituus = Math.max(1, parseFloat(L) || 0);
+  const lev = levita(A, B, pituus, r);
+  const kaikki = lev.FA.concat(lev.FB);
+  if (kaikki.some(q => !isFinite(q.x) || !isFinite(q.y))) return null;
+  const minX = Math.min.apply(null, kaikki.map(q => q.x)), maxX = Math.max.apply(null, kaikki.map(q => q.x));
+  const minY = Math.min.apply(null, kaikki.map(q => q.y)), maxY = Math.max.apply(null, kaikki.map(q => q.y));
+  const FA = lev.FA.map(q => ({ x: q.x - minX, y: q.y - minY })), FB = lev.FB.map(q => ({ x: q.x - minX, y: q.y - minY }));
+  const aihioL = maxX - minX, aihioW = maxY - minY;
+  const koneKulma = j => {
+    const ux = A[j - 1].x - A[j].x, uy = A[j - 1].y - A[j].y, wx = A[j + 1].x - A[j].x, wy = A[j + 1].y - A[j].y;
+    const c = (ux * wx + uy * wy) / ((Math.hypot(ux, uy) * Math.hypot(wx, wy)) || 1);
+    return 180 - Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
+  };
+  const nolla = v => Math.abs(v) < 0.05 ? 0 : v;
+  const viivat = A.map((q, j) => {
+    const reuna = j === 0 || j === n;
+    const k = reuna ? null : koneKulma(j);
+    return {
+      nimi: j === 0 ? 'Alkureuna' : j === n ? 'Loppureuna' : 'Taitos ' + j,
+      kulma: (k !== null && k <= 165) ? k : null,
+      tupla: k !== null && k > 165,
+      ya: nolla(FA[j].y), xa: nolla(FA[j].x), yb: nolla(FB[j].y), xb: nolla(aihioL - FB[j].x),
+      pituus: lev.l[j], viite: j === r
+    };
+  });
+  const sumA = lev.a.reduce((x, y) => x + y, 0), sumB = lev.b.reduce((x, y) => x + y, 0);
+  return {
+    n: n, viite: r, pituus: pituus, FA: FA, FB: FB, viivat: viivat,
+    aihioA: sumA, aihioB: sumB, aihioL: aihioL, aihioW: aihioW,
+    kiila: lev.a.some((v, i) => Math.abs(v - lev.b[i]) > 0.05),
+    kaikkiMukana: RA.irti === 0 && RB.irti === 0
+  };
+}
+
+// Kiilapellin poikkileikkauksen piirtotiedot piirraKuvalle: mitat muodossa "150–200" ja
+// pää B katkoviivana (haamu), kohdistettuna viiteviivaan.
+function kiilaKuva(tyyppi, vals, valsB, opts, viite) {
+  const malli = TYPES[tyyppi];
+  if (!malli || !malli.build || tyyppi === 'vapaa') return null;
+  let ra, rb;
+  try { ra = malli.build(Object.assign({}, vals), opts || {}); rb = malli.build(kiilaArvot(vals, valsB), opts || {}); }
+  catch (e) { return null; }
+  const pa = Array.isArray(ra) ? ra : ra.points, pb = Array.isArray(rb) ? rb : rb.points;
+  if (!pa || !pb || pa.length !== pb.length) return null;
+  const la = Array.isArray(ra) ? null : (ra.labels || null), lb = Array.isArray(rb) ? null : (rb.labels || null);
+  const ea = (Array.isArray(ra) ? [] : (ra.extraLines || [])), eb = (Array.isArray(rb) ? [] : (rb.extraLines || []));
+  const tyhja = v => v === null || v === undefined || v === '' || v === 0;
+  const vali = (x, y) => (typeof x === 'number' && typeof y === 'number' && Math.abs(x - y) > 0.05) ? muotoile(x) + '–' + muotoile(y) : x;
+  let kiila = false;
+  const labels = [];
+  for (let i = 0; i < pa.length - 1; i++) {
+    const ga = Math.hypot(pa[i + 1].x - pa[i].x, pa[i + 1].y - pa[i].y), gb = Math.hypot(pb[i + 1].x - pb[i].x, pb[i + 1].y - pb[i].y);
+    let x = la ? la[i] : ga, y = lb ? lb[i] : gb;
+    if (la && tyhja(x)) { labels.push(x === undefined ? null : x); continue; }
+    if (!la && ga < 0.01 && gb < 0.01) { labels.push(null); continue; }
+    if (typeof x === 'number' && typeof y === 'number' && Math.abs(x - y) > 0.05) kiila = true;
+    labels.push(vali(x, y));
+  }
+  const extraLines = ea.map((e, i) => {
+    const o = Object.assign({}, e);
+    if (eb[i] && typeof e.label === 'number' && typeof eb[i].label === 'number' && Math.abs(e.label - eb[i].label) > 0.05) { o.label = vali(e.label, eb[i].label); kiila = true; }
+    return o;
+  });
+  let haamu = [];
+  if (kiila) {
+    const A = reitti(ra).polku, B = reitti(rb).polku;
+    const r = (A.length === B.length && Number.isInteger(viite) && viite >= 0 && viite < A.length) ? viite : 0;
+    const sx = A[r].x - B[r].x, sy = A[r].y - B[r].y;
+    const s = q => ({ x: q.x + sx, y: q.y + sy });
+    haamu = [pb.map(s)].concat(eb.filter(e => e && e.p1 && e.p2).map(e => [s(e.p1), s(e.p2)]));
+  }
+  return {
+    kiila: kiila,
+    tulos: { points: pa, labels: labels, extraLines: extraLines, pintaViiva: Array.isArray(ra) ? null : (ra.pintaViiva || null) },
+    haamu: haamu
+  };
+}
+
+// Piirtää levityskuvan ylhäältä SVG-merkkijonoksi. Leveys skaalataan erikseen (venytetty),
+// jotta pitkän ja kapean pellin taitosviivat erottuvat. Palauttaa { svg, W, H }.
+function piirraLevitys(lev, W, asetukset) {
+  const o = asetukset || {};
+  const tausta = o.tausta || '#ffffff';
+  const kapea = W < 560;
+  const pv = kapea ? 44 : 70, py = 34;
+  const kx = (W - pv * 2) / lev.aihioL;
+  const ky = Math.min(2.2, Math.max(kx, 150 / Math.max(lev.aihioW, 1)));
+  const H = Math.round(lev.aihioW * ky + py * 2 + 4);
+  const X = q => pv + q.x * kx, Y = q => H - py - q.y * ky;
+  const f = v => v.toFixed(1);
+  const FA = lev.FA, FB = lev.FB, n = lev.n;
+  const tk = (x, y, s, vari, ank, paino) => `<text x="${f(x)}" y="${f(y)}" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="${paino || 600}" fill="${vari}" text-anchor="${ank}" dominant-baseline="central" stroke="${tausta}" stroke-width="3" paint-order="stroke" stroke-linejoin="round">${s}</text>`;
+  let h = '';
+  const aari = [FA[0], FB[0]].concat(FB.slice(1), FA.slice(1).reverse());
+  h += `<path d="${aari.map((q, i) => (i ? 'L' : 'M') + f(X(q)) + ' ' + f(Y(q))).join(' ')} Z" fill="#ffffff" fill-opacity="0.55" stroke="#222" stroke-width="2" stroke-linejoin="round"/>`;
+  for (let j = 1; j < n; j++) h += `<line x1="${f(X(FA[j]))}" y1="${f(Y(FA[j]))}" x2="${f(X(FB[j]))}" y2="${f(Y(FB[j]))}" stroke="#1a6fc4" stroke-width="1.6" stroke-dasharray="7 4"/>`;
+  const r = lev.viite;
+  h += `<line x1="${f(X(FA[r]))}" y1="${f(Y(FA[r]))}" x2="${f(X(FB[r]))}" y2="${f(Y(FB[r]))}" stroke="#e8a020" stroke-width="4" stroke-opacity="0.55" stroke-linecap="round"/>`;
+  const paa = (pisteet, x, ank) => {
+    let edel = Infinity, out = '';
+    pisteet.map(q => ({ y: Y(q), v: q.y })).sort((p1, p2) => p2.y - p1.y).forEach(p => { let y = p.y; if (edel - y < 14) y = edel - 14; edel = y; out += tk(x, y, muotoile(Math.abs(p.v) < 0.05 ? 0 : p.v), '#1a6fc4', ank); });
+    return out;
+  };
+  h += paa(FA, pv - 8, 'end') + paa(FB, W - pv + 8, 'start');
+  h += tk(pv, 14, 'PÄÄ A', '#5b6170', 'middle', 500) + tk(W - pv, 14, 'PÄÄ B', '#5b6170', 'middle', 500);
+  h += tk(W / 2, H - 12, 'pituus ' + muotoile(lev.pituus) + ' mm (oranssi viiva)', '#8a4b00', 'middle', 500);
+  let edelY = -Infinity;
+  for (let j = n - 1; j >= 1; j--) {
+    const v = lev.viivat[j];
+    const mx = (X(FA[j]) + X(FB[j])) / 2;
+    let my = (Y(FA[j]) + Y(FB[j])) / 2 - 9;
+    if (my - edelY < 13) my = edelY + 13;
+    edelY = my;
+    h += tk(mx, my, 'taitos ' + j + (v.tupla ? ' · tupla' : ' · ' + muotoile(v.kulma) + '°'), '#c0392b', 'middle', 600);
+  }
+  return { svg: h, W: W, H: H };
+}
+
+// Merkkaustaulukko HTML-muodossa (sama Mallistossa ja Tuotannossa)
+function levitysTaulukko(lev) {
+  const rivit = lev.viivat.map(v =>
+    `<tr><td style="text-align:left">${v.nimi}${v.viite ? ' ★' : ''}</td><td class="lev-kulma">${v.tupla ? 'tupla' : (v.kulma === null ? '' : muotoile(v.kulma) + '°')}</td>` +
+    `<td>${muotoile(v.ya)}</td><td>${muotoile(v.xa)}</td><td class="lev-b">${muotoile(v.yb)}</td><td class="lev-b">${muotoile(v.xb)}</td><td>${muotoile(v.pituus)}</td></tr>`
+  ).reverse().join('');
+  return '<table class="lev-taulu"><thead><tr><th style="text-align:left">Viiva</th><th>Kulma</th><th>A: alareunasta</th><th>A: päästä</th><th>B: alareunasta</th><th>B: päästä</th><th>Viivan pituus</th></tr></thead><tbody>' + rivit + '</tbody></table>';
+}
+
 window.KPT_PROFIILIT = {
   versio: '2026-11-13',
   mallit: TYPES,
   tuotantoKuvat: PROD_TYPES,
   piirraKuva: piirraKuva,
   variHex: variHex,
-  kentanKohde: kentanKohde
+  kentanKohde: kentanKohde,
+  laskeLevitys: laskeLevitys,
+  kiilaKuva: kiilaKuva,
+  piirraLevitys: piirraLevitys,
+  levitysTaulukko: levitysTaulukko,
+  muotoile: muotoile
 };
 
 })();
