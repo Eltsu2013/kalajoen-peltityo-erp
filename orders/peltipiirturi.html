@@ -587,6 +587,10 @@
   .lev-taulu .lev-b { color: #8a4b00; font-weight: 600; }
   .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; margin: 8px 0 0; }
   .lev-huom { color: #8a4b00; }
+
+  /* Työaika-arvio */
+  .tyoaika-kentat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .tyoaika-vihje { margin-top: 8px; font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; line-height: 1.5; }
   .lev-laput { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e0d9ca; }
   .lev-laput b { color: #1c1f26; }
   .lev-laput > div { margin-top: 2px; }
@@ -602,7 +606,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113k"></script>
+<script src="profiilit.js?v=20261113m"></script>
 </head>
 <body>
 
@@ -751,6 +755,23 @@
         <div class="table-rows" id="length-rows"></div>
       </div>
       <button class="btn-add" onclick="addRow()">+ Lisää rivi</button>
+    </div>
+
+    <!-- Työaika-arvio: koskee koko nimikettä, ei kappaletta. Suunnittelu tehdään
+         yleensä eri aikaan kuin itse pelti, siksi omana lukunaan. -->
+    <div class="section" id="tyoaika-section">
+      <div class="section-title">Työaika-arvio</div>
+      <div class="tyoaika-kentat">
+        <div class="field">
+          <label for="tyo-suunnittelu">Suunnitteluaika min</label>
+          <input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—" oninput="redraw()">
+        </div>
+        <div class="field">
+          <label for="tyo-tyo">Työaika min</label>
+          <input type="number" id="tyo-tyo" min="0" step="1" placeholder="—" oninput="redraw()">
+        </div>
+      </div>
+      <div class="tyoaika-vihje">Molemmat koko nimikkeelle, ei per kappale. Jätä tyhjäksi, jos aikaa ei arvioida.</div>
     </div>
 
     <!-- Yhteenveto -->
@@ -1332,11 +1353,11 @@ function redraw() {
   const tkEl = document.getElementById('taitokset-val');
   if (tkEl) tkEl.textContent = tkVal === null ? '—' : tkVal + ' kpl';
   document.getElementById('total-m2').textContent = totalM2.toFixed(2) + ' m²';
-  const tyo = mallinTyoaika(kplYht);
+  const tyo = tyoaikaArvio();
   const tyoRow = document.getElementById('tyoaika-row');
   if (tyo) {
     tyoRow.style.display = '';
-    document.getElementById('tyoaika-val').textContent = `${Math.round(tyo.minuutit)} min · ${tyo.kpl} kpl`;
+    document.getElementById('tyoaika-val').textContent = Math.round(tyo.yhteensa_min) + ' min';
   } else tyoRow.style.display = 'none';
 
   // Kaato ja etenemä pintaViivasta
@@ -1500,7 +1521,7 @@ function redraw() {
   `).join('') + (lappuM2 > 0 ? `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #e0d9ca;font-size:11px;color:#5b6170;font-family:IBM Plex Mono,monospace">
       Päätylaput erillistä peltiä: ${(TYPES[activeType].paatylaput(vals2, opts2, kiilaPituus()) || []).map(x => `${kplYht} × ${window.KPT_PROFIILIT.muotoile(x.leveys)}×${window.KPT_PROFIILIT.muotoile(x.korkeus)} mm (${x.nimi})`).join(' + ')} = ${lappuM2.toFixed(2)} m²
     </div>` : '') + (tyo ? `<div style="margin-top:6px;font-size:11px;color:#5b6170;font-family:IBM Plex Mono,monospace">
-      Työaika-arvio: ${tyo.asetus} min asetus + ${tyo.kpl} × ${tyo.perKpl} min = <strong>${Math.round(tyo.minuutit)} min</strong>
+      Työaika-arvio: ${tyo.suunnittelu_min > 0 ? `suunnittelu ${window.KPT_PROFIILIT.muotoile(tyo.suunnittelu_min)} min` : ''}${tyo.suunnittelu_min > 0 && tyo.tyo_min > 0 ? ' + ' : ''}${tyo.tyo_min > 0 ? `työ ${window.KPT_PROFIILIT.muotoile(tyo.tyo_min)} min` : ''}${tyo.suunnittelu_min > 0 && tyo.tyo_min > 0 ? ` = <strong>${window.KPT_PROFIILIT.muotoile(tyo.yhteensa_min)} min</strong>` : ''}
     </div>` : '');
 }
 
@@ -1572,6 +1593,17 @@ function kiilaArvotB(L) {
   Object.keys(kiilaB).forEach(k => { const v = parseFloat(kiilaB[k]); if (isFinite(v)) out[k] = v; });
   return out;
 }
+// ─── Työaika-arvio ────────────────────────────────────────────────
+// Suunnitteluaika ja työaika koko nimikkeelle (ei kappaleelta): suunnittelu tehdään yleensä
+// eri aikaan kuin itse pelti. Arvio menee tarjoukseen; toteutunut aika mitataan erikseen
+// ajanseurannassa. Tallentuu tilausriville profile_data.tyoaika.
+function tyoaikaArvio() {
+  const lue = id => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return isFinite(v) && v >= 0 ? v : null; };
+  const suunnittelu = lue('tyo-suunnittelu'), tyo = lue('tyo-tyo');
+  if (suunnittelu === null && tyo === null) return null;
+  return { suunnittelu_min: suunnittelu || 0, tyo_min: tyo || 0, yhteensa_min: (suunnittelu || 0) + (tyo || 0) };
+}
+
 // Erillistä peltiä olevat osat (saunan kourun päätylaput): m² yhtä kourua kohti
 function lisapeltienM2() {
   const type = TYPES[activeType];
@@ -1580,12 +1612,6 @@ function lisapeltienM2() {
     return (type.paatylaput(getVals(), getOpts(), kiilaPituus()) || [])
       .reduce((s, x) => s + (x.leveys * x.korkeus) / 1e6, 0);
   } catch (e) { console.warn('paatylaput:', e); return 0; }
-}
-function mallinTyoaika(kplYht) {
-  const type = TYPES[activeType];
-  if (!type || !type.tyoaika) return null;
-  try { return type.tyoaika(getVals(), getOpts(), kplYht); }
-  catch (e) { console.warn('tyoaika:', e); return null; }
 }
 function mallinVaroitus(L) {
   const type = TYPES[activeType];
@@ -1778,6 +1804,10 @@ if (savedCtx) {
         const { vals, opts } = ctx.existingData;
         kuvanAsento = siistiAsento(ctx.existingData.asento); // kuvan asento tilausriviltä
         // Kiilamitat (pää B) ja pituuden viiteviiva tilausriviltä
+        // Työaika-arvio tilausriviltä
+        const ta = ctx.existingData.tyoaika || {};
+        document.getElementById('tyo-suunnittelu').value = ta.suunnittelu_min != null && ta.suunnittelu_min !== 0 ? ta.suunnittelu_min : '';
+        document.getElementById('tyo-tyo').value = ta.tyo_min != null && ta.tyo_min !== 0 ? ta.tyo_min : '';
         kiilaB = {};
         Object.keys(ctx.existingData.valsB || {}).forEach(k => { kiilaB[k] = ctx.existingData.valsB[k]; });
         pituusViite = (typeof ctx.existingData.pituusViite === 'number' && isFinite(ctx.existingData.pituusViite)) ? ctx.existingData.pituusViite : 0;
@@ -1836,7 +1866,7 @@ function lisaaTilaukseen() {
   const aihio = Math.max(aihioA, kiilanAihioB(aihioA)); // kiilassa leveämmän pään mukaan
   const kplYht = lengthRows.filter(r => (r.mitta || 0) > 0 && (r.kpl || 0) > 0).reduce((s, r) => s + (Number(r.kpl) || 0), 0);
   const lappuM2Yht = lisapeltienM2() * kplYht;
-  const tyoArvio = mallinTyoaika(kplYht);
+  const tyoArvio = tyoaikaArvio();
   const laputLista = TYPES[activeType].paatylaput ? TYPES[activeType].paatylaput(vals, opts, kiilaPituus()) : [];
 
   // Luetaan rivit suoraan DOM:sta — varmistetaan että kaikki muutokset mukana
