@@ -587,6 +587,7 @@
   .lev-taulu .lev-b { color: #8a4b00; font-weight: 600; }
   .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; margin: 8px 0 0; }
   .lev-huom { color: #8a4b00; }
+  .lev-suora { font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; color: #1d6b3a; background: #e3f1e6; border: 1px solid #a9d3b4; border-radius: 6px; padding: 6px 10px; margin: 8px 0 0; }
   @media (max-width: 800px) {
     .lev-kortti { order: 1; width: calc(100% - 16px); max-width: none; margin: 12px 8px 0; }
     .lev-otsikko button, .lev-valinnat select { min-height: 44px; }
@@ -598,7 +599,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113e"></script>
+<script src="profiilit.js?v=20261113f"></script>
 </head>
 <body>
 
@@ -799,7 +800,7 @@
       <div id="lev-sisalto" style="display:none">
         <div class="lev-valinnat" id="lev-valinnat">
           <label>Pituusrivi <select id="lev-rivi" onchange="levitysRivi=+this.value;paivitaLevitys()"></select></label>
-          <label>Pituus mitataan viivaa pitkin <select id="lev-viite" onchange="pituusViite=+this.value;redraw()"></select></label>
+          <label>Suora viiva (pituus mitataan tätä pitkin) <select id="lev-viite" onchange="pituusViite=+this.value;redraw()"></select></label>
         </div>
         <svg id="lev-svg" class="lev-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Levityskuva ylhäältä"></svg>
         <div id="lev-taulu"></div>
@@ -1567,9 +1568,9 @@ function paivitaLevitys() {
     return;
   }
   g('lev-svg').style.display = ''; g('lev-valinnat').style.display = '';
-  if (pituusViite > lev.n) pituusViite = 0;
+  pituusViite = lev.viiteArvo;
   g('lev-rivi').innerHTML = rivit.map((k, i) => `<option value="${i}"${i === levitysRivi ? ' selected' : ''}>${k} mm</option>`).join('') || '<option>1000 mm</option>';
-  g('lev-viite').innerHTML = lev.viivat.map((v, j) => `<option value="${j}"${j === lev.viite ? ' selected' : ''}>${v.nimi}${v.kulma !== null ? ' (' + P.muotoile(v.kulma) + '°)' : v.tupla ? ' (tupla)' : ''}</option>`).join('');
+  g('lev-viite').innerHTML = lev.viiteVaihtoehdot.map(o => `<option value="${o.arvo}"${o.arvo === lev.viiteArvo ? ' selected' : ''}>${o.nimi}</option>`).join('');
   const svg = g('lev-svg');
   const W = Math.max(260, Math.round(svg.getBoundingClientRect().width - 2));
   const kuva = P.piirraLevitys(lev, W, { tausta: '#f4f1ea' });
@@ -1577,6 +1578,7 @@ function paivitaLevitys() {
   svg.innerHTML = kuva.svg;
   g('lev-taulu').innerHTML =
     `<div class="lev-luvut"><span>Aihio pää A <b>${P.muotoile(lev.aihioA)} mm</b></span><span>Aihio pää B <b>${P.muotoile(lev.aihioB)} mm</b></span><span>Leikattava levy <b>${P.muotoile(lev.aihioL)} × ${P.muotoile(lev.aihioW)} mm</b></span></div>` +
+    ((lev.kiila && lev.suora) ? `<p class="lev-suora">Suora kaista ${P.muotoile(lev.aihioW)} mm: pelti leikataan suorana, kiila syntyy pelkästä merkkauksesta.</p>` : '') +
     (lev.kaikkiMukana ? '' : '<p class="lev-huom">Osa tämän mallin viivoista ei ole levityskuvassa mukana.</p>') +
     '<div class="lev-kehys">' + P.levitysTaulukko(lev) + '</div>' +
     '<p class="lev-vihje">Merkkaa jokaisen viivan päät molempiin päihin ja yhdistä ne suoralla viivalla. Mitat ovat aihion alareunasta. "Päästä" kertoo, kuinka paljon piste on sisempänä kuin aihion pää. Kuvassa leveys on venytetty, jotta viivat erottuvat.</p>';
@@ -1704,7 +1706,7 @@ if (savedCtx) {
         // Kiilamitat (pää B) ja pituuden viiteviiva tilausriviltä
         kiilaB = {};
         Object.keys(ctx.existingData.valsB || {}).forEach(k => { kiilaB[k] = ctx.existingData.valsB[k]; });
-        pituusViite = Number.isInteger(ctx.existingData.pituusViite) ? ctx.existingData.pituusViite : 0;
+        pituusViite = (typeof ctx.existingData.pituusViite === 'number' && isFinite(ctx.existingData.pituusViite)) ? ctx.existingData.pituusViite : 0;
         if (Object.keys(kiilaB).length) renderProfileFields();
         // Asetetaan kenttien arvot
         if (vals) {
