@@ -587,6 +587,9 @@
   .lev-taulu .lev-b { color: #8a4b00; font-weight: 600; }
   .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; margin: 8px 0 0; }
   .lev-huom { color: #8a4b00; }
+  .lev-laput { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e0d9ca; }
+  .lev-laput b { color: #1c1f26; }
+  .lev-laput > div { margin-top: 2px; }
   .lev-suora { font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; color: #1d6b3a; background: #e3f1e6; border: 1px solid #a9d3b4; border-radius: 6px; padding: 6px 10px; margin: 8px 0 0; }
   @media (max-width: 800px) {
     .lev-kortti { order: 1; width: calc(100% - 16px); max-width: none; margin: 12px 8px 0; }
@@ -599,7 +602,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113f"></script>
+<script src="profiilit.js?v=20261113i"></script>
 </head>
 <body>
 
@@ -657,6 +660,7 @@
     <button class="type-btn" onclick="setType('ulistas')">U-lista s</button>
     <button class="type-btn" onclick="setType('kynnys')">Kynnys</button>
     <button class="type-btn" onclick="setType('hattulista')">Hattulista</button>
+    <button class="type-btn" onclick="setType('saunakouru')">Saunan kouru</button>
     <button class="type-btn" onclick="setType('zlista')">Z-lista</button>
     <button class="type-btn" onclick="setType('peitelista')">Peitelista</button>
     <button class="type-btn" onclick="setType('vapaa')">⊕ Vapaa profiili</button>
@@ -799,7 +803,7 @@
       </div>
       <div id="lev-sisalto" style="display:none">
         <div class="lev-valinnat" id="lev-valinnat">
-          <label>Pituusrivi <select id="lev-rivi" onchange="levitysRivi=+this.value;paivitaLevitys()"></select></label>
+          <label>Pituusrivi <select id="lev-rivi" onchange="levitysRivi=+this.value;redraw()"></select></label>
           <label>Suora viiva (pituus mitataan tätä pitkin) <select id="lev-viite" onchange="pituusViite=+this.value;redraw()"></select></label>
         </div>
         <svg id="lev-svg" class="lev-svg" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Levityskuva ylhäältä"></svg>
@@ -842,7 +846,7 @@ function setType(t) {
     if (lukko) { lukko.classList.add('huomio'); setTimeout(() => lukko.classList.remove('huomio'), 1800); }
     return;
   }
-  if (t !== activeType) { kuvanAsento = oletusAsento(); kiilaB = {}; pituusViite = 0; levitysAuki = null; } // uusi malli alkaa puhtaalta pöydältä
+  if (t !== activeType) { kuvanAsento = oletusAsento(); kiilaB = {}; pituusViite = TYPES[t].oletusViite || 0; levitysAuki = null; levitysRivi = 0; } // uusi malli alkaa puhtaalta pöydältä
   activeType = t;
   document.querySelectorAll('.type-btn').forEach((b) => {
     b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
@@ -1026,7 +1030,7 @@ function renderProfileFields() {
     const existing = document.getElementById(f.id);
     const val = existing ? existing.value : f.default;
     // Kiila: pituusmitta voi olla pellin toisessa päässä (pää B) eri. Kulmille ei kiilaa.
-    const voiKiilata = f.cls !== 'angle' && activeType !== 'vapaa';
+    const voiKiilata = f.cls !== 'angle' && activeType !== 'vapaa' && !TYPES[activeType].pituusKiila;
     const kiilaOn = voiKiilata && Object.prototype.hasOwnProperty.call(kiilaB, f.id);
     div.innerHTML = `
       <label class="${f.cls === 'angle' ? 'angle-label' : ''}">${f.label}${voiKiilata ? `<button type="button" class="kiila-btn${kiilaOn ? ' on' : ''}" onclick="vaihdaKiila('${f.id}')" aria-pressed="${kiilaOn}" title="Eri mitta pellin toisessa päässä (kiila)">kiila</button>` : ''}</label>
@@ -1411,7 +1415,13 @@ function redraw() {
   // Tekstit kuvan vasempaan alareunaan (kaato, nousu, etenemä, korkeus)
   const infoRivit = [];
   if (pintaViiva) {
-    if (activeType === 'zlista' && kaatoMm !== null) {
+    if (activeType === 'saunakouru') {
+      const mf = window.KPT_PROFIILIT.muotoile, kv = getVals(), kL = kiilaPituus();
+      const kasvu = (kv.kaato_mm || 0) * kL / 1000;
+      infoRivit.push([`PITUUS: ${mf(kL)} mm`, '#333']);
+      infoRivit.push([`SYVÄYS: ${mf(kv.syvays_len)} → ${mf(kv.syvays_len + kasvu)} mm`, '#333']);
+      if (getOpts().suora) infoRivit.push([`LAIPAT: ${mf(kv.laippaV_len)}/${mf(kv.laippaO_len)} → ${mf(kv.laippaV_len - kasvu)}/${mf(kv.laippaO_len - kasvu)} mm`, '#333']);
+    } else if (activeType === 'zlista' && kaatoMm !== null) {
       const kokMmSvg = kokonaisViiva ? Math.round(Math.sqrt(
         Math.pow(kokonaisViiva.p2.x - kokonaisViiva.p1.x, 2) +
         Math.pow(kokonaisViiva.p2.y - kokonaisViiva.p1.y, 2)
@@ -1522,10 +1532,33 @@ let kiilaB = {};
 let pituusViite = 0;      // minkä viivan mukaan pituus mitataan (0 = alkureuna)
 let levitysAuki = null;   // null = automaattinen: auki kun pelti on kiila
 let levitysRivi = 0;      // minkä pituusrivin levityskuva näytetään
-function kiilaArvotB() {
+function rivienPituudet() {
+  return lengthRows.map(r => (Number(r.mitta) || 0) + (Number(r.paat) || 0)).filter(k => k > 0);
+}
+// Levityskuvassa katseltavan pituusrivin pituus (saunan kourussa myös kuvan pää B)
+function kiilaPituus() {
+  const p = rivienPituudet();
+  if (!p.length) return 1000;
+  return p[Math.min(levitysRivi, p.length - 1)];
+}
+function pisinPituus() { const p = rivienPituudet(); return p.length ? Math.max.apply(null, p) : 1000; }
+// Pään B mitat. Saunan kourussa ne lasketaan kaadosta ja pellin pituudesta (malli: pituusKiila),
+// muissa malleissa ne tulevat käyttäjän kiila-kentistä.
+function kiilaArvotB(L) {
+  const type = TYPES[activeType];
+  if (type && type.pituusKiila) {
+    try { return type.pituusKiila(getVals(), getOpts(), L == null ? kiilaPituus() : L) || {}; }
+    catch (e) { console.warn('pituusKiila:', e); return {}; }
+  }
   const out = {};
   Object.keys(kiilaB).forEach(k => { const v = parseFloat(kiilaB[k]); if (isFinite(v)) out[k] = v; });
   return out;
+}
+function mallinVaroitus(L) {
+  const type = TYPES[activeType];
+  if (!type || !type.varoitus) return null;
+  try { return type.varoitus(getVals(), getOpts(), L == null ? kiilaPituus() : L); }
+  catch (e) { console.warn('varoitus:', e); return null; }
 }
 function vaihdaKiila(id) {
   if (Object.prototype.hasOwnProperty.call(kiilaB, id)) delete kiilaB[id];
@@ -1535,12 +1568,12 @@ function vaihdaKiila(id) {
   const b = document.getElementById('B__' + id); if (b) b.focus();
 }
 function kiilanAihioB(aihioA) {
-  const vb = kiilaArvotB();
+  const vb = kiilaArvotB(pisinPituus()); // hinta ja menekki leveimmän pään mukaan
   if (activeType === 'vapaa' || !Object.keys(vb).length) return aihioA;
   try {
     const type = TYPES[activeType], v = Object.assign({}, getVals(), vb);
     if (type.aihio) return type.aihio(v, getOpts());
-    const lev = window.KPT_PROFIILIT.laskeLevitys(activeType, getVals(), vb, getOpts(), 1000, 0);
+    const lev = window.KPT_PROFIILIT.laskeLevitys(activeType, getVals(), vb, getOpts(), pisinPituus(), 0);
     return lev ? lev.aihioB : aihioA;
   } catch (e) { console.warn('kiilanAihioB:', e); return aihioA; }
 }
@@ -1555,8 +1588,14 @@ function paivitaLevitys() {
   if (levitysRivi >= rivit.length) levitysRivi = 0;
   const L = rivit.length ? rivit[levitysRivi] : 1000;
   const P = window.KPT_PROFIILIT;
-  const lev = P.laskeLevitys(activeType, getVals(), kiilaArvotB(), getOpts(), L, pituusViite);
-  const kiilaValittu = Object.keys(kiilaArvotB()).length > 0;
+  const valsB = kiilaArvotB(L);
+  const lev = P.laskeLevitys(activeType, getVals(), valsB, getOpts(), L, pituusViite);
+  const kiilaValittu = Object.keys(valsB).length > 0;
+  const varoitus = mallinVaroitus(L);
+  const laput = TYPES[activeType].paatylaput ? TYPES[activeType].paatylaput(getVals(), getOpts(), L) : [];
+  const lappuHtml = laput.length ? '<div class="lev-laput"><b>Päätylaput</b> (erillistä peltiä, eivät vielä mukana menekissä)' +
+    laput.map(x => `<div>${x.nimi}: aihio <b>${P.muotoile(x.leveys)} × ${P.muotoile(x.korkeus)} mm</b> (syväys ${P.muotoile(x.syvays)} mm)</div>`).join('') +
+    '<div class="lev-vihje">Sivuihin ja pohjaan 20 mm: taitos 10 mm kohdalta lähes kaksinkerroin, 20 mm kohdalta 90° toiseen suuntaan. Yläreunaan yksi 10 mm käännös samaan suuntaan. Kulmat lovetaan. Asennus: sovita, purista pihdeillä, lukitse, tiivistysmassa.</div></div>' : '';
   g('lev-kiila').style.display = (lev && lev.kiila) ? '' : 'none';
   _levitysNakyy = levitysAuki === null ? !!(lev && lev.kiila) : levitysAuki;
   g('lev-nappi').textContent = _levitysNakyy ? 'Piilota' : 'Näytä';
@@ -1564,7 +1603,8 @@ function paivitaLevitys() {
   if (!_levitysNakyy) return;
   if (!lev) {
     g('lev-svg').innerHTML = ''; g('lev-svg').style.display = 'none'; g('lev-valinnat').style.display = 'none';
-    g('lev-taulu').innerHTML = '<p class="lev-huom">Levityskuvaa ei voi laskea näillä mitoilla' + (kiilaValittu ? ' (kiila tässä mitassa ei ole tuettu).' : '.') + '</p>';
+    g('lev-taulu').innerHTML = (varoitus ? `<p class="lev-huom">${varoitus}</p>` : '') +
+      '<p class="lev-huom">Levityskuvaa ei voi laskea näillä mitoilla' + (kiilaValittu ? ' (kiila tässä mitassa ei ole tuettu).' : '.') + '</p>' + lappuHtml;
     return;
   }
   g('lev-svg').style.display = ''; g('lev-valinnat').style.display = '';
@@ -1578,9 +1618,10 @@ function paivitaLevitys() {
   svg.innerHTML = kuva.svg;
   g('lev-taulu').innerHTML =
     `<div class="lev-luvut"><span>Aihio pää A <b>${P.muotoile(lev.aihioA)} mm</b></span><span>Aihio pää B <b>${P.muotoile(lev.aihioB)} mm</b></span><span>Leikattava levy <b>${P.muotoile(lev.aihioL)} × ${P.muotoile(lev.aihioW)} mm</b></span></div>` +
-    ((lev.kiila && lev.suora) ? `<p class="lev-suora">Suora kaista ${P.muotoile(lev.aihioW)} mm: pelti leikataan suorana, kiila syntyy pelkästä merkkauksesta.</p>` : '') +
+    (varoitus ? `<p class="lev-huom">${varoitus}</p>` : '') +
+    ((lev.kiila && lev.suora && !varoitus) ? `<p class="lev-suora">Suora kaista ${P.muotoile(lev.aihioW)} mm: pelti leikataan suorana, kiila syntyy pelkästä merkkauksesta.</p>` : '') +
     (lev.kaikkiMukana ? '' : '<p class="lev-huom">Osa tämän mallin viivoista ei ole levityskuvassa mukana.</p>') +
-    '<div class="lev-kehys">' + P.levitysTaulukko(lev) + '</div>' +
+    '<div class="lev-kehys">' + P.levitysTaulukko(lev) + '</div>' + lappuHtml +
     '<p class="lev-vihje">Merkkaa jokaisen viivan päät molempiin päihin ja yhdistä ne suoralla viivalla. Mitat ovat aihion alareunasta. "Päästä" kertoo, kuinka paljon piste on sisempänä kuin aihion pää. Kuvassa leveys on venytetty, jotta viivat erottuvat.</p>';
 }
 
@@ -1792,7 +1833,7 @@ function lisaaTilaukseen() {
     nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
     aihio_width_mm: Math.round(aihio),
     profile_data: Object.assign({ vals, opts, taitokset: laskeTaitokset(), asento: siistiAsento(kuvanAsento) },
-      Object.keys(kiilaArvotB()).length ? { valsB: kiilaArvotB(), pituusViite: pituusViite } : {}),
+      (!TYPES[activeType].pituusKiila && Object.keys(kiilaArvotB()).length) ? { valsB: kiilaArvotB(), pituusViite: pituusViite } : (TYPES[activeType].pituusKiila ? { pituusViite: pituusViite } : {})),
     rows,
     angles,
     totalM2: rows.reduce((s, r) => s + (r.kok/1000) * (aihio/1000) * r.kpl, 0),
