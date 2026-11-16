@@ -6,7 +6,7 @@
   <title>QR-tarrat — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="auth-guard.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -59,9 +59,13 @@
       display: flex; align-items: center; gap: 3mm; padding: 3mm;
       page-break-inside: avoid; break-inside: avoid;
     }
-    .label canvas { flex-shrink: 0; }
+    .label .qr { flex-shrink: 0; display: block; }
+    .label .qr svg { display: block; width: 100%; height: 100%; }
+    .size-l .qr { width: 34mm; height: 34mm; }
+    .size-m .qr { width: 25mm; height: 25mm; }
+    .size-s .qr { width: 18mm; height: 18mm; }
     .label .txt { min-width: 0; }
-    .label .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; line-height: 1.1; word-break: break-all; }
+    .label .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere; }
     .label .name { font-family: 'IBM Plex Sans', sans-serif; line-height: 1.2; margin-top: 1mm; }
     .size-l .label { min-height: 42mm; }  .size-l .code { font-size: 22pt; }  .size-l .name { font-size: 12pt; }
     .size-m .label { min-height: 32mm; }  .size-m .code { font-size: 15pt; }  .size-m .name { font-size: 9pt; }
@@ -167,22 +171,33 @@
     document.getElementById('picker').innerHTML = html;
   }
 
-  async function renderLabels() {
+  // QR-koodi SVG:nä: terävä kaikissa koossa, ei piirtoalueen kokoarvailua
+  function qrSvg(text) {
+    const qr = qrcode(0, 'M');   // 0 = koko valitaan automaattisesti
+    qr.addData(text);
+    qr.make();
+    return qr.createSvgTag({ cellSize: 2, margin: 2, scalable: true });
+  }
+
+  function renderLabels() {
     const size = document.getElementById('size').value;
     const box = document.getElementById('labels');
     box.className = 'labels size-' + size;
-    const px = { l: 150, m: 110, s: 80 }[size];
     const chosen = locs.filter(l => selected.has(l.id)).sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true }));
     document.getElementById('count').textContent = chosen.length;
 
-    box.innerHTML = chosen.map(l =>
-      '<div class="label' + (l.parent_location_id && l.parent_location_id !== l.id ? ' sub' : '') + '">' +
-        '<canvas data-code="' + esc(l.code) + '"></canvas>' +
-        '<div class="txt"><div class="code">' + esc(l.code) + '</div><div class="name">' + esc(l.name) + '</div></div>' +
-      '</div>').join('');
-
-    for (const c of box.querySelectorAll('canvas')) {
-      await QRCode.toCanvas(c, labelUrl(c.dataset.code), { width: px, margin: 1, errorCorrectionLevel: 'M' });
+    if (typeof qrcode !== 'function') {
+      box.innerHTML = '<div style="padding:20px;color:#c00">QR-kirjasto ei latautunut (cdn.jsdelivr.net). Tarkista verkkoyhteys ja päivitä sivu.</div>';
+      return;
+    }
+    try {
+      box.innerHTML = chosen.map(l =>
+        '<div class="label' + (l.parent_location_id && l.parent_location_id !== l.id ? ' sub' : '') + '">' +
+          '<div class="qr">' + qrSvg(labelUrl(l.code)) + '</div>' +
+          '<div class="txt"><div class="code">' + esc(l.code) + '</div><div class="name">' + esc(l.name) + '</div></div>' +
+        '</div>').join('');
+    } catch (err) {
+      box.innerHTML = '<div style="padding:20px;color:#c00">QR-koodien teko epäonnistui: ' + esc(err.message) + '</div>';
     }
   }
 
