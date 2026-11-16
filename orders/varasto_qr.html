@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR-tarrat — Kalajoen Peltityö</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="auth-guard.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #222636; --border: #2a2d3a;
+      --text: #e8eaf0; --muted: #7a7f96; --accent: #eab308;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* ── Ohjauspaneeli (ei tulostu) ── */
+    .toolbar {
+      position: sticky; top: 0; z-index: 10;
+      background: var(--surface); border-bottom: 2px solid var(--accent);
+      padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    }
+    .toolbar img { height: 32px; }
+    .toolbar h1 { font-size: 16px; font-weight: 600; margin-right: auto; }
+    .toolbar label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+    .toolbar select, .toolbar input[type=text] {
+      background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+      padding: 7px 10px; font-family: inherit; font-size: 14px;
+    }
+    .toolbar input[type=text] { min-width: 300px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+    .btn {
+      background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 14px; font-family: inherit; font-size: 14px; cursor: pointer;
+    }
+    .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+    .hint { padding: 10px 16px; color: var(--muted); font-size: 13px; }
+
+    /* ── Valintalista ── */
+    .picker { padding: 10px 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .group { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .group h2 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .group h2 button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px; font-family: inherit; }
+    .group label { display: flex; gap: 8px; align-items: center; padding: 5px 0; cursor: pointer; font-size: 14px; }
+    .group label input { width: 16px; height: 16px; accent-color: var(--accent); }
+    .group label .code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); min-width: 80px; }
+    .group label .nm { color: var(--text); }
+
+    /* ── Tarrat ── */
+    .sheet { background: #fff; color: #000; margin: 0 auto; padding: 8mm; width: 210mm; }
+    .labels { display: grid; gap: 4mm; }
+    .labels.size-l { grid-template-columns: repeat(2, 1fr); }
+    .labels.size-m { grid-template-columns: repeat(3, 1fr); }
+    .labels.size-s { grid-template-columns: repeat(4, 1fr); }
+    .label {
+      border: 0.4mm dashed #999; border-radius: 2mm;
+      display: flex; align-items: center; gap: 3mm; padding: 3mm;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .label canvas { flex-shrink: 0; }
+    .label .txt { min-width: 0; }
+    .label .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; line-height: 1.1; word-break: break-all; }
+    .label .name { font-family: 'IBM Plex Sans', sans-serif; line-height: 1.2; margin-top: 1mm; }
+    .size-l .label { min-height: 42mm; }  .size-l .code { font-size: 22pt; }  .size-l .name { font-size: 12pt; }
+    .size-m .label { min-height: 32mm; }  .size-m .code { font-size: 15pt; }  .size-m .name { font-size: 9pt; }
+    .size-s .label { min-height: 24mm; }  .size-s .code { font-size: 11pt; }  .size-s .name { font-size: 7pt; }
+    .label.sub .code { font-weight: 400; }
+
+    .preview-wrap { padding: 20px 16px 40px; overflow-x: auto; }
+    .state { padding: 40px; text-align: center; color: var(--muted); }
+
+    @media print {
+      body { background: #fff; }
+      .toolbar, .hint, .picker, .state { display: none !important; }
+      .preview-wrap { padding: 0; overflow: visible; }
+      .sheet { width: auto; padding: 0; margin: 0; }
+      @page { size: A4; margin: 10mm; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="toolbar">
+  <a href="varasto.html"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö"></a>
+  <h1>QR-tarrat varastopaikoille</h1>
+  <label>Osoite: <input type="text" id="baseUrl" spellcheck="false"></label>
+  <label>Koko:
+    <select id="size">
+      <option value="l">Iso (2 / rivi, hyllyköt)</option>
+      <option value="m" selected>Keski (3 / rivi)</option>
+      <option value="s">Pieni (4 / rivi, piikit)</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="includeLevels"> Myös tasot ja piikit</label>
+  <button class="btn" id="selectAll">Valitse kaikki</button>
+  <button class="btn" id="selectNone">Tyhjennä</button>
+  <button class="btn primary" id="printBtn">🖨 Tulosta (<span id="count">0</span>)</button>
+</div>
+<div class="hint">
+  Osoite on puhelinsivun osoite ilman <span class="mono">?paikka=</span>-osaa. Se on päätelty tämän sivun osoitteesta — tarkista, että se on sama, jolla puhelin avaa varastotyo.html:n.
+  Tulostuksessa valitse "Taustagrafiikat" pois ja skaalaus 100 %.
+</div>
+
+<div class="state" id="state">Ladataan paikkoja…</div>
+<div class="picker" id="picker"></div>
+<div class="preview-wrap"><div class="sheet"><div class="labels size-m" id="labels"></div></div></div>
+
+<script>
+  const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+
+  let locs = [];
+  const selected = new Set();
+
+  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+  async function authHeaders() {
+    const session = await window.getAuthSession();
+    const token = session?.data?.session?.access_token || SUPABASE_KEY;
+    return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' };
+  }
+
+  // Samat ryhmät kuin puhelinsivulla
+  const GROUPS = [
+    { label: 'Oikea seinä',      match: l => l.code.startsWith('IN-R') },
+    { label: 'Vasen seinä',      match: l => l.code.startsWith('IN-L') },
+    { label: 'Koneiden ympärys', match: l => l.code.startsWith('IN-C') },
+    { label: 'Ulkona ja autossa', match: l => /^(ULK|AUTO|KONTTI)/.test(l.code) },
+    { label: 'Muut',             match: () => true },
+  ];
+
+  function baseUrl() {
+    return document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
+  }
+  function labelUrl(code) {
+    const b = baseUrl();
+    // Jos osoite loppuu .html, lisätään parametri siihen; muuten oletetaan kansio
+    return (b.endsWith('.html') ? b : b + '/varastotyo.html') + '?paikka=' + encodeURIComponent(code);
+  }
+
+  function renderPicker() {
+    const withLevels = document.getElementById('includeLevels').checked;
+    const ids = new Set(locs.map(l => l.id));
+    const tops = locs.filter(l => !l.parent_location_id || l.parent_location_id === l.id || !ids.has(l.parent_location_id));
+    const kidsOf = id => locs.filter(l => l.parent_location_id === id && l.parent_location_id !== l.id)
+                              .sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true }));
+    const used = new Set();
+    let html = '';
+    GROUPS.forEach(g => {
+      const items = tops.filter(l => !used.has(l.id) && g.match(l));
+      items.forEach(l => used.add(l.id));
+      if (!items.length) return;
+      const rows = [];
+      items.forEach(t => {
+        rows.push(t);
+        if (withLevels) kidsOf(t.id).forEach(k => rows.push(Object.assign({ _sub: true }, k)));
+      });
+      html += '<div class="group"><h2>' + esc(g.label) +
+        '<button type="button" data-group-select="' + rows.map(r => r.id).join(',') + '">valitse ryhmä</button></h2>' +
+        rows.map(r =>
+          '<label' + (r._sub ? ' style="padding-left:22px"' : '') + '><input type="checkbox" data-id="' + esc(r.id) + '"' + (selected.has(r.id) ? ' checked' : '') + '>' +
+          '<span class="code">' + esc(r.code) + '</span><span class="nm">' + esc(r.name) + '</span></label>').join('') +
+        '</div>';
+    });
+    document.getElementById('picker').innerHTML = html;
+  }
+
+  async function renderLabels() {
+    const size = document.getElementById('size').value;
+    const box = document.getElementById('labels');
+    box.className = 'labels size-' + size;
+    const px = { l: 150, m: 110, s: 80 }[size];
+    const chosen = locs.filter(l => selected.has(l.id)).sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true }));
+    document.getElementById('count').textContent = chosen.length;
+
+    box.innerHTML = chosen.map(l =>
+      '<div class="label' + (l.parent_location_id && l.parent_location_id !== l.id ? ' sub' : '') + '">' +
+        '<canvas data-code="' + esc(l.code) + '"></canvas>' +
+        '<div class="txt"><div class="code">' + esc(l.code) + '</div><div class="name">' + esc(l.name) + '</div></div>' +
+      '</div>').join('');
+
+    for (const c of box.querySelectorAll('canvas')) {
+      await QRCode.toCanvas(c, labelUrl(c.dataset.code), { width: px, margin: 1, errorCorrectionLevel: 'M' });
+    }
+  }
+
+  function setSelection(ids, on) {
+    ids.forEach(id => on ? selected.add(id) : selected.delete(id));
+    renderPicker();
+    renderLabels();
+  }
+
+  document.addEventListener('change', e => {
+    if (e.target.matches('input[data-id]')) { setSelection([e.target.dataset.id], e.target.checked); }
+    if (e.target.id === 'includeLevels') renderPicker();
+    if (e.target.id === 'size') renderLabels();
+  });
+  document.addEventListener('click', e => {
+    const g = e.target.closest('[data-group-select]');
+    if (g) setSelection(g.dataset.groupSelect.split(','), true);
+  });
+  document.getElementById('baseUrl').addEventListener('input', renderLabels);
+  document.getElementById('selectAll').addEventListener('click', () => {
+    const withLevels = document.getElementById('includeLevels').checked;
+    setSelection(locs.filter(l => withLevels || !l.parent_location_id || l.parent_location_id === l.id).map(l => l.id), true);
+  });
+  document.getElementById('selectNone').addEventListener('click', () => { selected.clear(); renderPicker(); renderLabels(); });
+  document.getElementById('printBtn').addEventListener('click', () => {
+    if (!selected.size) { alert('Valitse ensin tarrat.'); return; }
+    window.print();
+  });
+
+  async function init() {
+    // Oletusosoite: tämä sivu samassa kansiossa kuin varastotyo.html
+    document.getElementById('baseUrl').value = location.href.replace(/[^/]*$/, 'varastotyo.html').split('?')[0];
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/locations?select=id,code,name,parent_location_id&is_active=eq.true&order=code`, { headers: await authHeaders() });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      locs = await res.json();
+    } catch (err) {
+      document.getElementById('state').textContent = 'Virhe paikkojen haussa: ' + err.message;
+      return;
+    }
+    document.getElementById('state').hidden = true;
+    renderPicker();
+    renderLabels();
+  }
+  window._authReady.then(init);
+</script>
+</body>
+</html>
