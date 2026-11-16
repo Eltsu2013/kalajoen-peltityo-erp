@@ -144,6 +144,10 @@
     .zone[open] summary { border-color: var(--accent); color: var(--accent); }
     .zone[open] summary .count::after { content: ' ▾'; }
     .zone .big-list { padding: 8px 0 4px 10px; }
+    .zone-group-title {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin: 22px 0 8px; padding-top: 14px; border-top: 1px dashed var(--border);
+    }
 
     /* Taso- ja piikkivalinta */
     .picker-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
@@ -196,7 +200,8 @@
     .placeholder-card strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 17px; }
 
     /* ── RUUTU 2: TUOTE ── */
-    .big-btn .sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .big-btn .sub, .here-row .sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .here-row .sub { color: var(--accent); }
     .big-btn.new-btn { border-style: dashed; border-color: var(--accent2); color: var(--accent); font-weight: 600; }
     .laji-tag {
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
@@ -508,6 +513,9 @@
       </div>
     </div>
 
+    <label class="form-label">HUOMIO <span style="font-weight:400;text-transform:none">(valinnainen)</span></label>
+    <input class="text-input" id="amNote" type="text" placeholder="esim. naarmu toisessa reunassa" autocomplete="off" autocapitalize="sentences">
+
     <div class="np-preview" id="amPreview"></div>
     <button class="primary-btn" type="button" id="amSave">Tallenna</button>
     <button class="secondary-btn accent" type="button" id="amSaveSame">Tallenna + samanlainen</button>
@@ -614,7 +622,7 @@
   // ─── Datan haku ──────────────────────────────────────
   async function loadLocations() {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/locations?select=id,code,name,location_type,parent_location_id&is_active=eq.true&order=code`,
+      `${SUPABASE_URL}/rest/v1/locations?select=id,code,name,zone,location_type,parent_location_id&is_active=eq.true&order=code`,
       { headers: await authHeaders() }
     );
     if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
@@ -623,6 +631,8 @@
     locById = new Map(allLocations.map(l => [l.id, l]));
     childrenOf = new Map();
     allLocations.forEach(l => {
+      // Itseensä osoittava yläpaikka on datavirhe → käsitellään ylätason paikkana
+      if (l.parent_location_id === l.id) l.parent_location_id = null;
       if (!l.parent_location_id) return;
       if (!childrenOf.has(l.parent_location_id)) childrenOf.set(l.parent_location_id, []);
       childrenOf.get(l.parent_location_id).push(l);
@@ -652,7 +662,7 @@
     if (!currentLoc) return;
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,product_id,products(nimi)&status=eq.ACTIVE&location_id=eq.${currentLoc.id}`,
+        `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,note,product_id,products(nimi)&status=eq.ACTIVE&location_id=eq.${currentLoc.id}`,
         { headers: await authHeaders() }
       );
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -775,11 +785,19 @@
 
   // ─── Kaikki paikat seinittäin ────────────────────────
   // Koodin alku kertoo seinän: IN-R = oikea, IN-L = vasen, IN-C = keskellä koneiden ympärillä
-  const ZONES = [
-    { label: 'Oikea seinä',        match: c => c.startsWith('IN-R') },
-    { label: 'Vasen seinä',        match: c => c.startsWith('IN-L') },
-    { label: 'Koneiden ympärys',   match: c => c.startsWith('IN-C') },
-    { label: 'Ulkona ja autossa',  match: c => /^(ULK|AUTO|KONTTI)/.test(c) },
+  // Koodin alku kertoo seinän: IN-R = oikea, IN-L = vasen, IN-C = keskellä koneiden ympärillä.
+  // Varalla DB:n zone-sarake, jos koodi ei ala tutuilla kirjaimilla.
+  const ZONE_GROUPS = [
+    { title: 'Verstaan sisäosa', zones: [
+      { label: 'Oikea seinä',      match: l => l.code.startsWith('IN-R') || l.zone === 'IN-R' },
+      { label: 'Vasen seinä',      match: l => l.code.startsWith('IN-L') || l.zone === 'IN-L' },
+      { label: 'Koneiden ympärys', match: l => l.code.startsWith('IN-C') || l.zone === 'IN-C' },
+    ]},
+    { title: 'Muut varastopaikat', zones: [
+      { label: 'Auto',             match: l => /^AUTO/.test(l.code) },
+      { label: 'Kontti',           match: l => /^KONTTI/.test(l.code) },
+      { label: 'Ulkovarastot',     match: l => /^ULK/.test(l.code) || l.zone === 'ULK' },
+    ]},
   ];
 
   function renderAllPlaces() {
@@ -793,14 +811,22 @@
       '<span class="count">' + locs.length + '</span></summary>' +
       '<div class="big-list">' + locs.map(placeButtonHtml).join('') + '</div></details>';
 
-    ZONES.forEach(z => {
-      const locs = tops.filter(l => !used.has(l.id) && z.match(l.code));
-      locs.forEach(l => used.add(l.id));
-      if (locs.length) html += zoneHtml(z.label, locs);
+    ZONE_GROUPS.forEach((g, gi) => {
+      let groupHtml = '';
+      g.zones.forEach(z => {
+        const locs = tops.filter(l => !used.has(l.id) && z.match(l));
+        locs.forEach(l => used.add(l.id));
+        if (locs.length) groupHtml += zoneHtml(z.label, locs);
+      });
+      if (!groupHtml) return;
+      // Ensimmäinen lohko (verstaan sisäosa) suoraan "Kaikki paikat" -otsikon alle, muut oman väliotsikon alle
+      if (gi > 0) html += '<div class="zone-group-title">' + esc(g.title) + '</div>';
+      html += groupHtml;
     });
     const rest = tops.filter(l => !used.has(l.id));
-    if (rest.length) html += zoneHtml('Muut', rest);
-
+    if (rest.length) {
+      html += '<div class="zone-group-title">Luokittelemattomat</div>' + zoneHtml('Muut', rest);
+    }
     document.getElementById('allPlaces').innerHTML = html;
   }
 
@@ -907,7 +933,8 @@
       html += '<div class="here-list">' + sorted.map(it =>
         // Napautus valitsee saman tuotteen → nopea "lisää samaa"
         '<button class="here-row" type="button" data-product-id="' + esc(it.product_id) + '">' +
-          '<span>' + esc(it.products?.nimi || '—') + ' <span class="dim">· ' + esc(TYPE_FI[it.type] || it.type) + '</span></span>' +
+          '<span>' + esc(it.products?.nimi || '—') + ' <span class="dim">· ' + esc(TYPE_FI[it.type] || it.type) + '</span>' +
+            (it.note ? '<span class="sub">⚠ ' + esc(it.note) + '</span>' : '') + '</span>' +
           '<span class="mitat">' + formatMitat(it) + '</span>' +
         '</button>').join('') + '</div>';
     }
@@ -935,13 +962,15 @@
     document.getElementById('amTarvike').hidden = isPelti;
 
     if (!keep) {
-      am = { type: 'ROLL', length: '', width: '', estimated: false, count: '1', qty: '1' };
+      am = { type: 'ROLL', length: '', width: '', estimated: false, count: '1', qty: '1', note: '' };
+      document.getElementById('amNote').value = '';
       document.getElementById('amEstimated').checked = false;
     }
     if (isPelti) {
       ['amLength','amWidth'].forEach(id => { if (!keep) document.getElementById(id).value = ''; });
       document.getElementById('amCount').value = '1';
       am.count = '1';
+      if (keep) { am.note = ''; document.getElementById('amNote').value = ''; }
       renderAmountPelti();
     } else {
       document.getElementById('amQty').value = keep ? am.qty : '1';
@@ -1043,7 +1072,8 @@
     } else {
       box.innerHTML = '<div class="dim">Tallennetaan paikalle ' + esc(currentLoc.code) + ':</div>' +
         '<div class="np-name">' + esc(currentProduct.nimi) + '</div>' +
-        '<div class="mono" style="color:var(--accent);margin-top:4px">' + esc(r.summary) + '</div>';
+        '<div class="mono" style="color:var(--accent);margin-top:4px">' + esc(r.summary) + '</div>' +
+        (am.note.trim() ? '<div class="dim" style="margin-top:4px">⚠ ' + esc(am.note.trim()) + '</div>' : '');
       save.disabled = false; same.disabled = false;
     }
   }
@@ -1068,6 +1098,7 @@
         rows.push({
           product_id: currentProduct.id, warehouse_id: WAREHOUSE_ID, location_id: currentLoc.id,
           type: r.type, status: 'ACTIVE', quantity: r.qty,
+          note: am.note.trim() || null,
         });
       } else {
         for (let i = 0; i < r.count; i++) {
@@ -1077,11 +1108,12 @@
             original_length_mm: r.lengthMm, remaining_length_mm: r.lengthMm,
             original_width_mm:  r.width,    remaining_width_mm:  r.width,
             length_estimated: r.estimated,
+            note: am.note.trim() || null,
           });
         }
       }
 
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,product_id`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,note,product_id`, {
         method: 'POST', headers, body: JSON.stringify(rows)
       });
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
@@ -1571,6 +1603,7 @@
   document.getElementById('amWidth').addEventListener('input',  e => { am.width  = e.target.value; renderAmountPelti(); renderAmPreview(); });
   document.getElementById('amCount').addEventListener('input',  e => { am.count  = e.target.value; renderAmountPelti(); renderAmPreview(); });
   document.getElementById('amQty').addEventListener('input',    e => { am.qty    = e.target.value; renderAmPreview(); });
+  document.getElementById('amNote').addEventListener('input', e => { am.note = e.target.value; renderAmPreview(); });
   document.getElementById('amEstimated').addEventListener('change', e => { am.estimated = e.target.checked; renderAmPreview(); });
   document.getElementById('amSave').addEventListener('click',     () => saveStock(false));
   document.getElementById('amSaveSame').addEventListener('click', () => saveStock(true));
