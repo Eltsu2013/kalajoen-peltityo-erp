@@ -328,6 +328,19 @@
     }
     .chosen-card .np-name { font-size: 19px; font-weight: 600; }
 
+    /* auth-guard.js lisää uloskirjautumisen headeriin — puhelimessa se osuu peukalon alle, joten piilotetaan
+       ja tarjotaan sama toiminto sivun alalaidassa varmistuksen takana */
+    #auth-user-info { display: none !important; }
+    .page-footer {
+      margin-top: 40px; padding-top: 16px; border-top: 1px dashed var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      font-size: 13px; color: var(--muted);
+    }
+    .page-footer button {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; color: var(--muted); cursor: pointer;
+    }
+
     .state-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
     .spinner {
       display: inline-block; width: 18px; height: 18px;
@@ -521,6 +534,11 @@
     <button class="secondary-btn accent" type="button" id="amSaveSame">Tallenna + samanlainen</button>
     <button class="secondary-btn" type="button" id="changeProduct">← Vaihda tuote</button>
   </section>
+
+  <div class="page-footer">
+    <span id="footerUser"></span>
+    <button type="button" id="logoutBtn">Kirjaudu ulos</button>
+  </div>
 </main>
 
 <!-- TÄLLÄ KERRALLA LISÄTTY -->
@@ -1612,6 +1630,11 @@
     if (v == null) { showToast('Anna määrä', 'error'); return; }
     adjustExisting(0, v);
   });
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    if (!confirm('Kirjaudutaanko ulos?')) return;
+    try { await window.authSignOut(); } catch (e) {}
+    location.replace('login.html');
+  });
   document.getElementById('sessionToggle').addEventListener('click', () => { sessionOpen = !sessionOpen; renderSession(); });
 
   // ─── Käynnistys ──────────────────────────────────────
@@ -1623,6 +1646,7 @@
       return;
     }
     document.getElementById('loadingMsg').hidden = true;
+    document.getElementById('footerUser').textContent = window._currentUser?.email || '';
     renderAllPlaces();
 
     // 1) QR-tarra: varastotyo.html?paikka=IN-R-07
