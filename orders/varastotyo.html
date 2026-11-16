@@ -349,6 +349,39 @@
       padding: 8px 12px; font-size: 13px; color: var(--muted); cursor: pointer;
     }
 
+    /* ── RUUTU 4: INVENTOI ── */
+    .inv-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .inv-summary { font-size: 15px; color: var(--muted); }
+    .inv-summary b { color: var(--text); }
+    .inv-row {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; margin-bottom: 8px;
+    }
+    .inv-row.found   { border-color: var(--ok); }
+    .inv-row.missing { border-color: var(--danger); }
+    .inv-row.missing .inv-name { text-decoration: line-through; color: var(--muted); }
+    .inv-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+    .inv-name { font-size: 16px; font-weight: 500; }
+    .inv-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .inv-mitat { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--accent); white-space: nowrap; }
+    .inv-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+    .inv-btn {
+      min-height: 48px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+    }
+    .inv-btn.on-found   { background: var(--ok); border-color: var(--ok); color: #000; }
+    .inv-btn.on-missing { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .inv-edit { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .inv-edit .form-label { margin-top: 8px; }
+    .inv-edit-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .inv-edit-btns .primary-btn, .inv-edit-btns .secondary-btn { margin-top: 0; min-height: 50px; font-size: 16px; }
+    .inv-actions { margin-top: 18px; }
+    .inv-empty { color: var(--muted); padding: 20px 4px; font-size: 15px; line-height: 1.5; }
+    .move-banner {
+      background: var(--surface2); border: 1px solid var(--accent); border-radius: 8px;
+      padding: 12px 14px; margin-bottom: 14px; font-size: 15px; line-height: 1.4;
+    }
+
     .state-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
     .spinner {
       display: inline-block; width: 18px; height: 18px;
@@ -390,6 +423,8 @@
 
   <!-- RUUTU 1: PAIKKA -->
   <section class="screen" id="screenPlace" hidden>
+
+    <div class="move-banner" id="moveBanner" hidden></div>
 
     <!-- 1a: haku + viimeksi käytetyt -->
     <div id="placeSearchView">
@@ -543,6 +578,20 @@
     <button class="secondary-btn" type="button" id="changeProduct">← Vaihda tuote</button>
   </section>
 
+  <!-- RUUTU 4: INVENTOI -->
+  <section class="screen" id="screenInventory" hidden>
+    <div class="inv-head">
+      <div class="inv-summary" id="invSummary"></div>
+      <button class="secondary-btn" type="button" id="invAllFound" style="margin-top:0">✓ Kaikki löytyi</button>
+    </div>
+    <div id="invList"></div>
+    <div class="inv-actions">
+      <button class="primary-btn" type="button" id="invFinish">Paikka inventoitu</button>
+      <button class="secondary-btn accent" type="button" id="invAddMissing">+ Lisää tavaraa, jota ei ole listalla</button>
+      <button class="secondary-btn" type="button" id="invMoveAll">⇄ Siirrä kaikki toiseen paikkaan</button>
+    </div>
+  </section>
+
   <div class="page-footer">
     <span id="footerUser"></span>
     <button type="button" id="logoutBtn">Kirjaudu ulos</button>
@@ -592,6 +641,10 @@
   let am             = null;      // ruudun 3 lomakkeen tila
   let sessionLog     = [];        // tällä kerralla lisätyt (kumoa)
   let sessionOpen    = false;
+  let mode           = 'lisaa';   // 'lisaa' | 'inventoi'
+  let invMarks       = {};        // itemId → 'found' | 'missing' (vain muistissa kuittaukseen asti)
+  let invEditId      = null;      // rivi, jonka mittoja korjataan
+  let moveFrom       = null;      // paikka, josta "Siirrä kaikki" on kesken (valitaan kohdepaikkaa)
 
   // ─── Apufunktiot ─────────────────────────────────────
   // localStorage voi olla estetty (esim. yksityinen selaus) → aina try/catch
@@ -688,7 +741,7 @@
     if (!currentLoc) return;
     try {
       const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,note,product_id,products(nimi)&status=eq.ACTIVE&location_id=eq.${currentLoc.id}`,
+        `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,note,checked_at,product_id,products(nimi)&status=eq.ACTIVE&location_id=eq.${currentLoc.id}`,
         { headers: await authHeaders() }
       );
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -697,6 +750,7 @@
       console.error('loadHereStock:', e);
     }
     renderHere(false);
+    if (!document.getElementById('screenInventory').hidden) renderInventory();
   }
 
   // ─── Nimi- ja mittafunktiot (samat kuin varasto.html:ssä) ──
@@ -733,11 +787,13 @@
   function fmtThick(t) { return String(Number(t)).replace('.', ','); }
 
   // ─── Näkymien vaihto ─────────────────────────────────
-  const SCREENS = { place: 'screenPlace', product: 'screenProduct', newProduct: 'screenNewProduct', amount: 'screenAmount' };
+  const SCREENS = { place: 'screenPlace', product: 'screenProduct', newProduct: 'screenNewProduct', amount: 'screenAmount', inventory: 'screenInventory' };
   function showScreen(name) {
     Object.entries(SCREENS).forEach(([key, id]) => { document.getElementById(id).hidden = key !== name; });
     if (name === 'place') showSearchView();
     if (name === 'product') { renderProductRecent(); renderProductSearch(document.getElementById('productSearch').value); }
+    if (name === 'inventory') renderInventory();
+    document.getElementById('moveBanner').hidden = !(name === 'place' && moveFrom);
     window.scrollTo(0, 0);
   }
 
@@ -876,14 +932,23 @@
   }
 
   function selectFinal(loc) {
+    if (moveFrom) { doMoveAll(loc); return; }
     currentLoc = loc;
     lsSet(LS_CURRENT_LOC, { id: loc.id, at: Date.now() });
     addRecent(loc.id);
     document.getElementById('placeSearch').value = '';
     document.getElementById('productSearch').value = '';
+    invMarks = {}; invEditId = null;
     renderPlaceBar();
-    showScreen('product');
+    showScreen(mode === 'inventoi' ? 'inventory' : 'product');
     loadHereStock();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+    if (!currentLoc) { showScreen('place'); return; }
+    showScreen(m === 'inventoi' ? 'inventory' : 'product');
   }
 
   // ═══ RUUTU 2: TUOTE ═══════════════════════════════════
@@ -1161,7 +1226,7 @@
       if (keepValues) {
         startAmount(true);                 // tuote, tyyppi ja mitat jäävät
       } else {
-        showScreen('product');             // takaisin tuotehakuun
+        showScreen(mode === 'inventoi' ? 'inventory' : 'product');   // takaisin sinne, mistä tultiin
         renderHere(false);
       }
     } catch (err) {
@@ -1207,6 +1272,194 @@
     }
   }
 
+  // ═══ RUUTU 4: INVENTOI ════════════════════════════════
+
+  function fmtDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return d.getDate() + '.' + (d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2);
+  }
+
+  function renderInventory() {
+    const sum  = document.getElementById('invSummary');
+    const list = document.getElementById('invList');
+    const rows = hereStock.slice().sort((a, b) =>
+      String(a.products?.nimi).localeCompare(String(b.products?.nimi), 'fi', { numeric: true }));
+    const nFound   = rows.filter(r => invMarks[r.id] === 'found').length;
+    const nMissing = rows.filter(r => invMarks[r.id] === 'missing').length;
+    const nOpen    = rows.length - nFound - nMissing;
+
+    document.getElementById('invAllFound').hidden = !rows.length;
+    document.getElementById('invFinish').hidden   = !rows.length;
+    document.getElementById('invMoveAll').hidden  = !rows.length;
+
+    if (!rows.length) {
+      sum.innerHTML = 'Järjestelmän mukaan tällä paikalla <b>ei ole mitään</b>.';
+      list.innerHTML = '<div class="inv-empty">Jos hyllyssä kuitenkin on tavaraa, lisää se alta.</div>';
+      return;
+    }
+    sum.innerHTML = 'Järjestelmän mukaan <b>' + rows.length + ' erää</b>' +
+      ' · <span style="color:var(--ok)">' + nFound + ' löytyi</span>' +
+      ' · <span style="color:var(--danger)">' + nMissing + ' puuttuu</span>' +
+      (nOpen ? ' · ' + nOpen + ' avoinna' : '');
+
+    list.innerHTML = rows.map(it => {
+      const mark = invMarks[it.id];
+      const checked = fmtDate(it.checked_at);
+      const isEdit = invEditId === it.id;
+      return '<div class="inv-row ' + (mark || '') + '">' +
+        '<div class="inv-top"><div>' +
+          '<div class="inv-name">' + esc(it.products?.nimi || '—') + '</div>' +
+          '<div class="inv-meta">' + esc(TYPE_FI[it.type] || it.type) +
+            (checked ? ' · inventoitu ' + checked : ' · ei inventoitu') +
+            (it.note ? '<br>⚠ ' + esc(it.note) : '') + '</div>' +
+        '</div><div class="inv-mitat">' + formatMitat(it) + '</div></div>' +
+        '<div class="inv-btns">' +
+          '<button class="inv-btn' + (mark === 'found' ? ' on-found' : '') + '" type="button" data-inv-mark="found" data-inv-id="' + esc(it.id) + '">✓ Löytyi</button>' +
+          '<button class="inv-btn' + (mark === 'missing' ? ' on-missing' : '') + '" type="button" data-inv-mark="missing" data-inv-id="' + esc(it.id) + '">✗ Ei löydy</button>' +
+          '<button class="inv-btn" type="button" data-inv-edit="' + esc(it.id) + '">✎ Korjaa</button>' +
+        '</div>' +
+        (isEdit ? invEditHtml(it) : '') +
+      '</div>';
+    }).join('');
+    if (invEditId) {
+      const el = list.querySelector('.inv-edit input');
+      if (el) el.focus();
+    }
+  }
+
+  // Korjauslomake: muuttaa vain remaining_* tai quantity, ei koskaan alkuperäisiä mittoja
+  function invEditHtml(it) {
+    if (it.type === 'ITEM' || it.type === 'BULK') {
+      const q = itemQuantity(it);
+      return '<div class="inv-edit">' +
+        '<label class="form-label">OIKEA MÄÄRÄ (' + (it.type === 'BULK' ? 'm' : 'kpl') + ')</label>' +
+        '<input class="text-input num-input" id="invQty" type="text" inputmode="decimal" value="' + esc(q != null ? formatQty(q) : '') + '">' +
+        '<div class="inv-edit-btns"><button class="primary-btn" type="button" id="invEditSave">Tallenna</button>' +
+        '<button class="secondary-btn" type="button" id="invEditCancel">Peru</button></div></div>';
+    }
+    const isRoll = it.type === 'ROLL';
+    const l = it.remaining_length_mm ?? it.original_length_mm;
+    const w = it.remaining_width_mm ?? it.original_width_mm;
+    return '<div class="inv-edit">' +
+      '<label class="form-label">PITUUS (' + (isRoll ? 'm' : 'mm') + ')</label>' +
+      '<input class="text-input num-input" id="invLen" type="text" inputmode="decimal" value="' + esc(l != null ? (isRoll ? formatQty(l / 1000) : l) : '') + '">' +
+      (isRoll ? '<label class="check-row"><input type="checkbox" id="invEst"' + (it.length_estimated ? ' checked' : '') + '> Arvio (ei mitattu)</label>' : '') +
+      '<label class="form-label">LEVEYS (mm)</label>' +
+      '<input class="text-input num-input" id="invWid" type="text" inputmode="numeric" value="' + esc(w ?? '') + '">' +
+      '<div class="inv-edit-btns"><button class="primary-btn" type="button" id="invEditSave">Tallenna</button>' +
+      '<button class="secondary-btn" type="button" id="invEditCancel">Peru</button></div></div>';
+  }
+
+  async function saveInvEdit() {
+    const it = hereStock.find(i => i.id === invEditId);
+    if (!it) return;
+    const patch = {};
+    if (it.type === 'ITEM' || it.type === 'BULK') {
+      const q = parseNum(document.getElementById('invQty').value);
+      if (q == null || q < 0) { showToast('Anna määrä', 'error'); return; }
+      patch.quantity = q;
+    } else {
+      const isRoll = it.type === 'ROLL';
+      const l = parseNum(document.getElementById('invLen').value);
+      const w = parseNum(document.getElementById('invWid').value);
+      if (l == null || l <= 0 || w == null || w <= 0) { showToast('Anna pituus ja leveys', 'error'); return; }
+      patch.remaining_length_mm = Math.round(isRoll ? l * 1000 : l);
+      patch.remaining_width_mm  = Math.round(w);
+      if (isRoll) patch.length_estimated = !!document.getElementById('invEst').checked;
+    }
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=minimal';
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${it.id}`, { method: 'PATCH', headers, body: JSON.stringify(patch) });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      Object.assign(it, patch);
+      invMarks[it.id] = 'found';      // korjattu = nähty hyllyssä
+      invEditId = null;
+      renderInventory();
+      showToast('Korjattu ✓', 'success');
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+  // "Paikka inventoitu": löytyneet leimataan, puuttuvat arkistoidaan — vasta tässä tapahtuu jotain
+  async function finishInventory() {
+    const found   = hereStock.filter(r => invMarks[r.id] === 'found').map(r => r.id);
+    const missing = hereStock.filter(r => invMarks[r.id] === 'missing').map(r => r.id);
+    const open    = hereStock.length - found.length - missing.length;
+    if (!found.length && !missing.length) { showToast('Merkitse ensin rivit', 'error'); return; }
+    let msg = found.length + ' riviä leimataan löytyneeksi.';
+    if (missing.length) msg += '\n' + missing.length + ' riviä ARKISTOIDAAN (poistuu varastosta).';
+    if (open) msg += '\n' + open + ' riviä ilman merkintää jätetään ennalleen.';
+    if (!confirm(msg + '\n\nJatketaanko?')) return;
+
+    const btn = document.getElementById('invFinish');
+    btn.disabled = true;
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=minimal';
+      const now = new Date().toISOString();
+      if (found.length) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.(${found.join(',')})`,
+          { method: 'PATCH', headers, body: JSON.stringify({ checked_at: now }) });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      }
+      if (missing.length) {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.(${missing.join(',')})`,
+          { method: 'PATCH', headers, body: JSON.stringify({ status: 'ARCHIVED', checked_at: now }) });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        addSessionEntry({ kind: 'archive', ids: missing, at: Date.now(),
+          name: 'Inventointi: ' + missing.length + ' riviä arkistoitu', sub: currentLoc.code });
+      }
+      showToast('Paikka ' + currentLoc.code + ' inventoitu ✓', 'success');
+      invMarks = {};
+      await loadHereStock();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // "Siirrä kaikki": valitaan kohdepaikka ruudulla 1, sitten kaikki ACTIVE-rivit vaihtavat paikkaa
+  function startMoveAll() {
+    if (!hereStock.length) return;
+    moveFrom = currentLoc;
+    document.getElementById('moveBanner').innerHTML =
+      '⇄ Siirretään <b>' + hereStock.length + ' erää</b> paikasta <b class="mono">' + esc(moveFrom.code) + '</b>.<br>Valitse kohdepaikka. ' +
+      '<button class="undo-btn" type="button" id="moveCancel" style="margin-top:8px">Peru siirto</button>';
+    showScreen('place');
+  }
+
+  async function doMoveAll(target) {
+    const from = moveFrom;
+    moveFrom = null;
+    document.getElementById('moveBanner').hidden = true;
+    if (target.id === from.id) { showToast('Sama paikka — ei siirretty', 'error'); showScreen('inventory'); return; }
+    const ids = hereStock.map(r => r.id);
+    if (!confirm('Siirretäänkö ' + ids.length + ' erää\n' + from.code + ' → ' + target.code + '?')) { showScreen('inventory'); return; }
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=minimal';
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.(${ids.join(',')})`,
+        { method: 'PATCH', headers, body: JSON.stringify({ location_id: target.id }) });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      addSessionEntry({ kind: 'move', ids, fromId: from.id, at: Date.now(),
+        name: 'Siirto: ' + ids.length + ' erää', sub: from.code + ' → ' + target.code });
+      showToast('Siirretty paikkaan ' + target.code + ' ✓', 'success');
+      // Jatketaan kohdepaikassa
+      invMarks = {};
+      selectFinal(target);
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+      showScreen('inventory');
+    }
+  }
+
   // ─── Tällä kerralla lisätty + kumoa ──────────────────
   function addSessionEntry(entry) {
     sessionLog.unshift(entry);
@@ -1239,6 +1492,19 @@
       headers['Content-Type'] = 'application/json';
       headers['Prefer'] = 'return=minimal';
 
+      if (e.kind === 'archive' || e.kind === 'move') {
+        // Inventoinnin arkistointi → takaisin ACTIVE; siirto → takaisin lähtöpaikkaan
+        const body = e.kind === 'archive' ? { status: 'ACTIVE' } : { location_id: e.fromId };
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.(${e.ids.join(',')})`, {
+          method: 'PATCH', headers, body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        sessionLog.splice(index, 1);
+        renderSession();
+        await loadHereStock();
+        showToast('Kumottu ✓', 'success');
+        return;
+      }
       if (e.kind === 'quantity') {
         // Määrän muutos: palautetaan edellinen määrä
         const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${e.itemId}`, {
@@ -1605,10 +1871,21 @@
     if (rowBtn) { pendingRow = rowBtn.dataset.row; renderLevelView(); return; }
 
     const modeBtn = e.target.closest('[data-mode]');
-    if (modeBtn) {
-      if (modeBtn.dataset.mode === 'inventoi') showToast('Inventointi tulee vaiheessa 3');
+    if (modeBtn) { setMode(modeBtn.dataset.mode); return; }
+
+    // Ruutu 4: inventointi
+    const markBtn = e.target.closest('[data-inv-mark]');
+    if (markBtn) {
+      const id = markBtn.dataset.invId, v = markBtn.dataset.invMark;
+      invMarks[id] = invMarks[id] === v ? undefined : v;   // sama nappi uudestaan = poista merkintä
+      if (invEditId === id) invEditId = null;
+      renderInventory();
       return;
     }
+    const editBtn = e.target.closest('[data-inv-edit]');
+    if (editBtn) { invEditId = invEditId === editBtn.dataset.invEdit ? null : editBtn.dataset.invEdit; renderInventory(); return; }
+    if (e.target.closest('#invEditCancel')) { invEditId = null; renderInventory(); return; }
+    if (e.target.closest('#invEditSave')) { saveInvEdit(); return; }
   });
 
   document.getElementById('placeBar').addEventListener('click', () => showScreen('place'));
@@ -1643,6 +1920,11 @@
     try { await window.authSignOut(); } catch (e) {}
     location.replace('login.html');
   });
+  document.getElementById('invAllFound').addEventListener('click', () => { hereStock.forEach(r => { if (!invMarks[r.id]) invMarks[r.id] = 'found'; }); renderInventory(); });
+  document.getElementById('invFinish').addEventListener('click', finishInventory);
+  document.getElementById('invMoveAll').addEventListener('click', startMoveAll);
+  document.getElementById('invAddMissing').addEventListener('click', () => showScreen('product'));
+  document.addEventListener('click', e => { if (e.target.closest('#moveCancel')) { moveFrom = null; showScreen('inventory'); } });
   document.getElementById('sessionToggle').addEventListener('click', () => { sessionOpen = !sessionOpen; renderSession(); });
 
   // ─── Käynnistys ──────────────────────────────────────
