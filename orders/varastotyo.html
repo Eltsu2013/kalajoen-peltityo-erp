@@ -195,6 +195,80 @@
     }
     .placeholder-card strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 17px; }
 
+    /* ── RUUTU 2: TUOTE ── */
+    .big-btn .sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .big-btn.new-btn { border-style: dashed; border-color: var(--accent2); color: var(--accent); font-weight: 600; }
+    .laji-tag {
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+      padding: 2px 6px; border-radius: 4px; white-space: nowrap;
+    }
+    .laji-pelti   { background: #14371f; color: #22c55e; }
+    .laji-tarvike { background: #2d1845; color: #a855f7; }
+
+    .here-box { margin-top: 22px; }
+    .here-toggle {
+      width: 100%; min-height: 50px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 0 14px; font-size: 15px; color: var(--muted); cursor: pointer;
+    }
+    .here-toggle strong { color: var(--text); }
+    .here-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .here-row {
+      display: flex; justify-content: space-between; gap: 10px; align-items: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; font-size: 15px; text-align: left; cursor: pointer; width: 100%;
+    }
+    .here-row .mitat { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--accent); white-space: nowrap; }
+    .dim { color: var(--muted); }
+
+    /* ── UUSI TUOTE ── */
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 18px 0 8px; letter-spacing: 0.04em; }
+    .form-hint  { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .text-input {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: inherit; font-size: 17px; padding: 13px 14px;
+    }
+    .text-input:focus { outline: none; border-color: var(--accent); }
+    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .seg button { background: var(--surface); border: none; min-height: 52px; font-size: 17px; font-weight: 600; color: var(--muted); cursor: pointer; }
+    .seg button + button { border-left: 1px solid var(--border); }
+    .seg button.active { background: var(--accent); color: #000; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      min-height: 46px; min-width: 64px; padding: 0 14px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 23px;
+      font-size: 15px; font-weight: 500; cursor: pointer;
+    }
+    .chip.selected { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+    .chip.chip-muted { color: var(--muted); }
+    .np-chips-gap { margin-bottom: 8px; }
+    .np-preview {
+      margin-top: 22px; padding: 14px; border-radius: 8px;
+      background: var(--surface); border: 1px solid var(--border); font-size: 15px; line-height: 1.5;
+    }
+    .np-preview .np-name { font-size: 19px; font-weight: 600; color: var(--text); }
+    .np-preview .np-error { color: var(--danger); }
+    .np-preview .np-dup { color: var(--accent); }
+    .primary-btn {
+      width: 100%; min-height: 60px; margin-top: 14px;
+      background: var(--accent); color: #000; border: none; border-radius: 8px;
+      font-size: 18px; font-weight: 600; cursor: pointer;
+    }
+    .primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .secondary-btn {
+      width: 100%; min-height: 54px; margin-top: 10px;
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 16px; cursor: pointer;
+    }
+
+    /* Valittu tuote (ruutu 3:n yläosa) */
+    .chosen-card {
+      background: var(--surface); border: 1px solid var(--accent); border-radius: 8px;
+      padding: 14px; margin-bottom: 14px;
+    }
+    .chosen-card .np-name { font-size: 19px; font-weight: 600; }
+
     .state-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
     .spinner {
       display: inline-block; width: 18px; height: 18px;
@@ -264,13 +338,71 @@
     </div>
   </section>
 
-  <!-- RUUTU 2: TUOTE (tehdään seuraavaksi) -->
+  <!-- RUUTU 2: TUOTE -->
   <section class="screen" id="screenProduct" hidden>
-    <div class="placeholder-card">
-      <strong>Paikka valittu ✓</strong>
-      Ruutu 2 eli tuotteen valinta tehdään seuraavaksi.<br>
-      Vaihda paikkaa napauttamalla yläpalkin 📍-riviä.
+    <input class="search-input" id="productSearch" type="search"
+           placeholder="Hae tuote: rr23 5, kateruuvi…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div id="productResultsWrap" hidden>
+      <div class="section-label">Hakutulokset</div>
+      <div class="big-list" id="productResults"></div>
     </div>
+    <div id="productRecentWrap">
+      <div class="section-label">Viimeksi käytetyt</div>
+      <div class="big-list" id="productRecent"></div>
+    </div>
+    <div class="here-box" id="hereBox"></div>
+  </section>
+
+  <!-- UUSI TUOTE (minimilomake) -->
+  <section class="screen" id="screenNewProduct" hidden>
+    <div class="picker-head">
+      <button class="back-btn" type="button" id="npBack">← Takaisin</button>
+      <div class="picker-title">Uusi tuote</div>
+    </div>
+
+    <div class="seg" id="npLajiSeg">
+      <button type="button" data-np="laji" data-value="pelti">Pelti</button>
+      <button type="button" data-np="laji" data-value="tarvike">Tarvike</button>
+    </div>
+
+    <!-- Pelti: materiaali + paksuus -->
+    <div id="npPelti">
+      <label class="form-label">MATERIAALI</label>
+      <div class="chips np-chips-gap" id="npMaterialChips"></div>
+      <input class="text-input" id="npMaterial" type="text" placeholder="tai kirjoita uusi" autocomplete="off" autocapitalize="words">
+      <label class="form-label">PAKSUUS (mm)</label>
+      <div class="chips np-chips-gap" id="npThickChips"></div>
+      <input class="text-input" id="npThickness" type="text" inputmode="decimal" placeholder="esim. 0,5" autocomplete="off">
+    </div>
+
+    <!-- Tarvike: nimi + yksikkö -->
+    <div id="npTarvike">
+      <label class="form-label">NIMI</label>
+      <input class="text-input" id="npName" type="text" placeholder="esim. Kateruuvi 4,8x35" autocomplete="off" autocapitalize="sentences">
+      <div class="form-hint">Koko tai pituus nimeen. Väri valitaan alta, sitä ei kirjoiteta nimeen.</div>
+      <label class="form-label">YKSIKKÖ</label>
+      <div class="seg" id="npUnitSeg">
+        <button type="button" data-np="unit" data-value="kpl">kpl</button>
+        <button type="button" data-np="unit" data-value="m">metri</button>
+      </div>
+    </div>
+
+    <label class="form-label">VÄRI</label>
+    <div class="chips np-chips-gap" id="npColorChips"></div>
+    <input class="text-input" id="npColorOther" type="text" placeholder="Kirjoita väri, esim. RR 35" autocomplete="off" autocapitalize="characters" hidden>
+
+    <div class="np-preview" id="npPreview"></div>
+    <button class="primary-btn" type="button" id="npSave">Luo tuote ja jatka</button>
+  </section>
+
+  <!-- RUUTU 3: MITAT JA TALLENNUS (tehdään seuraavaksi) -->
+  <section class="screen" id="screenAmount" hidden>
+    <div class="chosen-card" id="chosenCard"></div>
+    <div class="placeholder-card">
+      <strong>Tuote valittu ✓</strong>
+      Ruutu 3 eli mitat, määrä ja tallennus tehdään seuraavaksi.
+    </div>
+    <button class="secondary-btn" type="button" id="changeProduct">← Vaihda tuote</button>
   </section>
 </main>
 
@@ -284,8 +416,11 @@
   // Puhelimen muistiin tallennettavat asiat (localStorage)
   const LS_RECENT_LOCS   = 'varastotyo.recentLocs';   // viimeksi käytetyt paikat (id-lista)
   const LS_CURRENT_LOC   = 'varastotyo.currentLoc';   // valittu paikka + aikaleima
+  const LS_RECENT_PRODS  = 'varastotyo.recentProducts'; // viimeksi käytetyt tuotteet (id-lista)
   const RECENT_MAX       = 4;
+  const RECENT_PROD_MAX  = 6;
   const CURRENT_MAX_AGE  = 4 * 60 * 60 * 1000;        // valittu paikka muistetaan 4 h
+  const TYPE_FI = { ROLL: 'Rulla', SHEET: 'Levy', OFFCUT: 'Siivu', ITEM: 'Kpl', BULK: 'Metri' };
 
   // ─── Tila ────────────────────────────────────────────
   let allLocations = [];
@@ -294,6 +429,12 @@
   let currentLoc   = null;        // lopullinen valittu paikka
   let pendingTop   = null;        // yläpaikka, jonka tasoa/piikkiä valitaan
   let pendingRow   = null;        // piikkien rivi (1/2)
+
+  let allProducts    = [];        // aktiiviset tuotteet
+  let currentProduct = null;      // valittu tuote
+  let hereStock      = [];        // valitun paikan ACTIVE-rivit
+  let hereOpen       = false;     // "Tällä paikalla" -lista auki/kiinni
+  let np             = null;      // uuden tuotteen lomakkeen tila
 
   // ─── Apufunktiot ─────────────────────────────────────
   // localStorage voi olla estetty (esim. yksityinen selaus) → aina try/catch
@@ -367,11 +508,77 @@
     childrenOf.forEach(list => list.sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true })));
   }
 
+  async function loadProducts() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/products?select=id,nimi,laji,material,color,thickness_mm,unit&is_active=eq.true`,
+      { headers: await authHeaders() }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+    allProducts = await res.json();
+    sortProducts();
+  }
+  function sortProducts() {
+    allProducts.sort((a, b) => String(a.nimi).localeCompare(String(b.nimi), 'fi', { numeric: true }));
+  }
+
+  // Valitun paikan nykyinen sisältö ("Tällä paikalla: 4 erää")
+  async function loadHereStock() {
+    hereStock = [];
+    hereOpen = false;
+    renderHere(true);
+    if (!currentLoc) return;
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,product_id,products(nimi)&status=eq.ACTIVE&location_id=eq.${currentLoc.id}`,
+        { headers: await authHeaders() }
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      hereStock = await res.json();
+    } catch (e) {
+      console.error('loadHereStock:', e);
+    }
+    renderHere(false);
+  }
+
+  // ─── Nimi- ja mittafunktiot (samat kuin varasto.html:ssä) ──
+  function lajiFromUnit(unit) { return unit === 'm²' ? 'pelti' : 'tarvike'; }
+  function generoiNimi(material, color, thickness_mm, unit) {
+    const parts = [material, color].filter(Boolean);
+    if (lajiFromUnit(unit) === 'pelti' && thickness_mm) {
+      parts.push(String(Number(thickness_mm)).replace('.', ','));
+    }
+    return parts.join(' ');
+  }
+  function itemQuantity(item) {
+    if (item.quantity != null) return Number(item.quantity);
+    const l = item.remaining_length_mm ?? item.original_length_mm;
+    if (l == null) return null;
+    return item.type === 'BULK' ? l / 1000 : l;
+  }
+  function formatQty(n) {
+    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+  }
+  function formatMitat(item) {
+    const type = item.type;
+    if (type === 'ITEM') { const q = itemQuantity(item); return q != null ? formatQty(q) + ' kpl' : '—'; }
+    if (type === 'BULK') { const q = itemQuantity(item); return q != null ? formatQty(q) + ' m' : '—'; }
+    const w = item.remaining_width_mm ?? item.original_width_mm;
+    const l = item.remaining_length_mm ?? item.original_length_mm;
+    const wStr = w != null ? w + ' mm' : '—';
+    const est  = (type === 'ROLL' && item.length_estimated) ? '~' : '';
+    const lStr = l != null ? est + (l >= 1000 ? (l/1000).toFixed(3).replace('.',',') + ' m' : l + ' mm') : '—';
+    return lStr + ' <span class="dim">× ' + wStr + '</span>';
+  }
+  // "0,5" tai "0.5" → 0.5
+  function parseNum(s) { const n = parseFloat(String(s ?? '').trim().replace(',', '.')); return isNaN(n) ? null : n; }
+  function fmtThick(t) { return String(Number(t)).replace('.', ','); }
+
   // ─── Näkymien vaihto ─────────────────────────────────
+  const SCREENS = { place: 'screenPlace', product: 'screenProduct', newProduct: 'screenNewProduct', amount: 'screenAmount' };
   function showScreen(name) {
-    document.getElementById('screenPlace').hidden   = name !== 'place';
-    document.getElementById('screenProduct').hidden = name !== 'product';
+    Object.entries(SCREENS).forEach(([key, id]) => { document.getElementById(id).hidden = key !== name; });
     if (name === 'place') showSearchView();
+    if (name === 'product') { renderProductRecent(); renderProductSearch(document.getElementById('productSearch').value); }
     window.scrollTo(0, 0);
   }
 
@@ -498,8 +705,300 @@
     lsSet(LS_CURRENT_LOC, { id: loc.id, at: Date.now() });
     addRecent(loc.id);
     document.getElementById('placeSearch').value = '';
+    document.getElementById('productSearch').value = '';
     renderPlaceBar();
     showScreen('product');
+    loadHereStock();
+  }
+
+  // ═══ RUUTU 2: TUOTE ═══════════════════════════════════
+
+  function productButtonHtml(p) {
+    return '<button class="big-btn" type="button" data-product-id="' + esc(p.id) + '">' +
+      '<span class="name">' + esc(p.nimi) +
+        '<span class="sub">' + esc(p.unit || '') + '</span></span>' +
+      '<span class="laji-tag laji-' + esc(p.laji) + '">' + esc(p.laji) + '</span>' +
+      '</button>';
+  }
+
+  // Haku: jokaisen hakusanan pitää löytyä nimestä. "rr23 5" → "Pural RR 23 0,5"
+  function renderProductSearch(query) {
+    const wrap = document.getElementById('productResultsWrap');
+    const tokens = query.trim().split(/\s+/).map(norm).filter(Boolean);
+    document.getElementById('productRecentWrap').hidden = tokens.length > 0;
+    if (!tokens.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+
+    const hits = allProducts.filter(p => {
+      const hay = norm(p.nimi);
+      return tokens.every(t => hay.includes(t));
+    });
+
+    let html = hits.slice(0, 30).map(productButtonHtml).join('');
+    if (hits.length > 30) html += '<div class="empty-msg">' + hits.length + ' osumaa — tarkenna hakua.</div>';
+    if (!hits.length) html += '<div class="empty-msg">Ei osumia.</div>';
+
+    // "Uusi väri" -pikanapit: jos osumat ovat 1–3 eri tuotetta (esim. Kateruuvi 4,8x35),
+    // voi luoda saman tuotteen uudessa värissä ilman nimen kirjoittamista
+    const materials = [...new Map(hits.map(p => [p.material + '|' + p.laji, p])).values()];
+    if (materials.length >= 1 && materials.length <= 3) {
+      materials.forEach(p => {
+        html += '<button class="big-btn new-btn" type="button" data-new-variant="' + esc(p.id) + '">' +
+          '+ ' + esc(p.material) + ' — uusi ' + (p.laji === 'pelti' ? 'väri/paksuus' : 'väri') + '</button>';
+      });
+    }
+    // Aina tarjolla: kokonaan uusi tuote hakusanasta
+    html += '<button class="big-btn new-btn" type="button" data-new-product="1">+ Luo uusi tuote: ' + esc(query.trim()) + '</button>';
+    document.getElementById('productResults').innerHTML = html;
+  }
+
+  function renderProductRecent() {
+    const ids = lsGet(LS_RECENT_PRODS, []);
+    const prods = ids.map(id => allProducts.find(p => p.id === id)).filter(Boolean);
+    document.getElementById('productRecent').innerHTML = prods.length
+      ? prods.map(productButtonHtml).join('')
+      : '<div class="empty-msg">Ei vielä käytettyjä tuotteita. Hae yllä.</div>';
+  }
+
+  function addRecentProduct(id) {
+    const ids = lsGet(LS_RECENT_PRODS, []).filter(x => x !== id);
+    ids.unshift(id);
+    lsSet(LS_RECENT_PRODS, ids.slice(0, RECENT_PROD_MAX));
+  }
+
+  // "Tällä paikalla: 4 erää ▸" — supistettu, aukeaa napauttamalla
+  function renderHere(loading) {
+    const box = document.getElementById('hereBox');
+    if (!currentLoc) { box.innerHTML = ''; return; }
+    if (loading) { box.innerHTML = '<div class="here-toggle"><span><span class="spinner"></span>Tarkistetaan paikan sisältöä…</span></div>'; return; }
+    if (!hereStock.length) {
+      box.innerHTML = '<div class="here-toggle">Tällä paikalla ei ole vielä mitään</div>';
+      return;
+    }
+    let html = '<button class="here-toggle" type="button" id="hereToggle">' +
+      '<span>Tällä paikalla: <strong>' + hereStock.length + ' erää</strong></span>' +
+      '<span>' + (hereOpen ? '▾' : '▸') + '</span></button>';
+    if (hereOpen) {
+      const sorted = hereStock.slice().sort((a, b) =>
+        String(a.products?.nimi).localeCompare(String(b.products?.nimi), 'fi', { numeric: true }));
+      html += '<div class="here-list">' + sorted.map(it =>
+        // Napautus valitsee saman tuotteen → nopea "lisää samaa"
+        '<button class="here-row" type="button" data-product-id="' + esc(it.product_id) + '">' +
+          '<span>' + esc(it.products?.nimi || '—') + ' <span class="dim">· ' + esc(TYPE_FI[it.type] || it.type) + '</span></span>' +
+          '<span class="mitat">' + formatMitat(it) + '</span>' +
+        '</button>').join('') + '</div>';
+    }
+    box.innerHTML = html;
+  }
+
+  function chooseProduct(p) {
+    currentProduct = p;
+    addRecentProduct(p.id);
+    document.getElementById('productSearch').value = '';
+    document.getElementById('chosenCard').innerHTML =
+      '<div class="np-name">' + esc(p.nimi) + '</div>' +
+      '<div class="dim" style="margin-top:4px">' + esc(p.laji) + ' · ' + esc(p.unit || '') + '</div>';
+    showScreen('amount');
+  }
+
+  // ═══ UUSI TUOTE ═══════════════════════════════════════
+
+  // Värit nappeihin: kaikkien aktiivisten tuotteiden värit, RR-värit numerojärjestyksessä ensin
+  function allColors() {
+    const set = [...new Set(allProducts.map(p => p.color).filter(Boolean))];
+    const rrNum = c => { const m = /^RR\s*(\d+)/i.exec(c); return m ? Number(m[1]) : null; };
+    return set.sort((a, b) => {
+      const na = rrNum(a), nb = rrNum(b);
+      if (na != null && nb != null) return na - nb;
+      if (na != null) return -1;
+      if (nb != null) return 1;
+      return a.localeCompare(b, 'fi');
+    });
+  }
+  function peltiMaterials() {
+    return [...new Set(allProducts.filter(p => p.laji === 'pelti').map(p => p.material).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, 'fi'));
+  }
+  // Paksuudet valitulle materiaalille (tai kaikki pellin paksuudet, jos materiaali on uusi)
+  function thicknessesFor(material) {
+    const pelti = allProducts.filter(p => p.laji === 'pelti' && p.thickness_mm);
+    const own = pelti.filter(p => norm(p.material) === norm(material));
+    return [...new Set((own.length ? own : pelti).map(p => Number(p.thickness_mm)))].sort((a, b) => a - b);
+  }
+
+  // Poistaa värin tekstistä: "kateruuvi 4,8x35 rr23" − "RR 23" → "kateruuvi 4,8x35"
+  function removeColorText(text, color) {
+    const pattern = norm(color).split('').map(ch => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s\\-]*');
+    return text.replace(new RegExp(pattern, 'i'), '').replace(/\s+/g, ' ').trim();
+  }
+  function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+
+  // Avaa lomakkeen hakusanasta: arvataan materiaali, väri ja laji, jotta kirjoitettavaa jää vähän
+  function openNewFromQuery(query) {
+    const q  = query.trim();
+    const qn = norm(q);
+
+    // Pisin olemassa oleva materiaali, jolla hakusana alkaa (esim. "Kateruuvi 4,8x35")
+    let best = null;
+    [...new Set(allProducts.map(p => p.material).filter(Boolean))].forEach(m => {
+      const mn = norm(m);
+      if (mn && qn.startsWith(mn) && (!best || mn.length > norm(best).length)) best = m;
+    });
+    const rest = best ? qn.slice(norm(best).length) : qn;
+
+    // Väri, joka löytyy hakusanan lopusta (esim. "rr33" → "RR 33")
+    let color = '';
+    allColors().forEach(c => {
+      const cn = norm(c);
+      if (cn && rest.includes(cn) && (!color || cn.length > norm(color).length)) color = c;
+    });
+
+    const bestProd = best ? allProducts.find(p => p.material === best) : null;
+    const laji = bestProd ? bestProd.laji : 'tarvike';
+    let name = best || capitalize(color ? removeColorText(q, color) : q);
+
+    openNewProduct({
+      laji,
+      material: laji === 'pelti' ? (best || '') : '',
+      name:     laji === 'tarvike' ? name : '',
+      unit:     bestProd && laji === 'tarvike' ? bestProd.unit : 'kpl',
+      color,
+    });
+  }
+
+  // "+ Kateruuvi 4,8x35 — uusi väri": nimi valmiina, väri valitaan
+  function openNewVariant(p) {
+    openNewProduct({
+      laji:     p.laji,
+      material: p.laji === 'pelti' ? p.material : '',
+      name:     p.laji === 'tarvike' ? p.material : '',
+      unit:     p.laji === 'tarvike' ? p.unit : 'kpl',
+      color:    '',
+    });
+  }
+
+  function openNewProduct(opts) {
+    np = {
+      laji:       opts.laji || 'tarvike',
+      material:   opts.material || '',
+      name:       opts.name || '',
+      unit:       opts.unit === 'm' ? 'm' : 'kpl',
+      color:      opts.color || '',   // '' = ei vielä valittu, '__none' = ei väriä, '__other' = muu
+      colorOther: '',
+      thickness:  '',
+    };
+    document.getElementById('npMaterial').value   = np.material;
+    document.getElementById('npName').value       = np.name;
+    document.getElementById('npThickness').value  = '';
+    document.getElementById('npColorOther').value = '';
+    showScreen('newProduct');
+    renderNewProduct();
+  }
+
+  function chipHtml(field, value, label, selected, extraClass) {
+    return '<button class="chip' + (selected ? ' selected' : '') + (extraClass ? ' ' + extraClass : '') +
+      '" type="button" data-np="' + field + '" data-value="' + esc(value) + '">' + esc(label) + '</button>';
+  }
+
+  // Lomakkeen tulos: mitä tietokantaan tallennettaisiin + mahdollinen virhe
+  function npResult() {
+    const isPelti = np.laji === 'pelti';
+    const material = (isPelti ? np.material : np.name).trim();
+    const unit     = isPelti ? 'm²' : np.unit;
+    const thick    = isPelti ? parseNum(np.thickness) : 0;
+    let color, error = null;
+
+    if (np.color === '__none')       color = null;
+    else if (np.color === '__other') color = np.colorOther.trim() || undefined;
+    else                             color = np.color || undefined;
+
+    if (!material)                           error = isPelti ? 'Valitse tai kirjoita materiaali' : 'Kirjoita nimi';
+    else if (isPelti && !(thick > 0))        error = 'Anna paksuus';
+    else if (color === undefined)            error = np.color === '__other' ? 'Kirjoita väri' : 'Valitse väri (tai "Ei väriä")';
+
+    const nimi = generoiNimi(material, color, thick, unit);
+    const dup  = !error ? allProducts.find(p => norm(p.nimi) === norm(nimi)) : null;
+    return { material, color: color ?? null, unit, thick, nimi, error, dup };
+  }
+
+  function renderNewProduct() {
+    const isPelti = np.laji === 'pelti';
+    document.querySelectorAll('#npLajiSeg button').forEach(b => b.classList.toggle('active', b.dataset.value === np.laji));
+    document.querySelectorAll('#npUnitSeg button').forEach(b => b.classList.toggle('active', b.dataset.value === np.unit));
+    document.getElementById('npPelti').hidden   = !isPelti;
+    document.getElementById('npTarvike').hidden = isPelti;
+
+    if (isPelti) {
+      document.getElementById('npMaterialChips').innerHTML = peltiMaterials()
+        .map(m => chipHtml('material', m, m, norm(m) === norm(np.material))).join('');
+      document.getElementById('npThickChips').innerHTML = thicknessesFor(np.material)
+        .map(t => chipHtml('thickness', fmtThick(t), fmtThick(t), parseNum(np.thickness) === t)).join('');
+    }
+
+    document.getElementById('npColorChips').innerHTML =
+      chipHtml('color', '__none', 'Ei väriä', np.color === '__none', 'chip-muted') +
+      allColors().map(c => chipHtml('color', c, c, np.color === c)).join('') +
+      chipHtml('color', '__other', 'Muu…', np.color === '__other', 'chip-muted');
+    document.getElementById('npColorOther').hidden = np.color !== '__other';
+
+    renderNpPreview();
+  }
+
+  function renderNpPreview() {
+    const r = npResult();
+    const box = document.getElementById('npPreview');
+    const btn = document.getElementById('npSave');
+    if (r.error) {
+      box.innerHTML = '<div class="np-error">' + esc(r.error) + '</div>' +
+        (r.nimi ? '<div class="dim" style="margin-top:4px">Nimeksi tulossa: ' + esc(r.nimi) + '</div>' : '');
+      btn.disabled = true;
+    } else if (r.dup) {
+      box.innerHTML = '<div class="np-dup">Tämä tuote on jo olemassa:</div>' +
+        '<div class="np-name">' + esc(r.dup.nimi) + '</div>' +
+        '<button class="secondary-btn" type="button" data-product-id="' + esc(r.dup.id) + '">Valitse se ▸</button>';
+      btn.disabled = true;
+    } else {
+      box.innerHTML = '<div class="dim">Tuotteen nimeksi tulee:</div><div class="np-name">' + esc(r.nimi) + '</div>';
+      btn.disabled = false;
+    }
+  }
+
+  async function saveNewProduct() {
+    const r = npResult();
+    if (r.error || r.dup) return;
+    const btn = document.getElementById('npSave');
+    btn.disabled = true;
+    btn.textContent = 'Tallennetaan…';
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=representation';   // palauttaa luodun rivin (tarvitaan id)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,nimi,laji,material,color,thickness_mm,unit`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          material: r.material,
+          color: r.color,
+          thickness_mm: r.thick,
+          unit: r.unit,
+          default_vat_percent: 25.5,
+          is_active: true,
+          laji: lajiFromUnit(r.unit),
+          nimi: r.nimi,
+        })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      const created = (await res.json())[0];
+      allProducts.push(created);
+      sortProducts();
+      showToast('Tuote luotu: ' + created.nimi, 'success');
+      chooseProduct(created);
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      btn.textContent = 'Luo tuote ja jatka';
+      renderNpPreview();
+    }
   }
 
   // ─── Taso- ja piikkivalinta ──────────────────────────
@@ -563,6 +1062,38 @@
   // Yksi kuuntelija koko sivulle: napin data-loc-id kertoo, mitä napautettiin.
   // (Turvallisempi kuin onclick="..."-tekstit, joissa lainausmerkit menevät helposti sekaisin.)
   document.addEventListener('click', e => {
+    // Ruutu 2: tuotteen valinta
+    const prodBtn = e.target.closest('[data-product-id]');
+    if (prodBtn) {
+      const p = allProducts.find(x => x.id === prodBtn.dataset.productId);
+      if (p) chooseProduct(p);
+      else showToast('Tuote ei ole enää käytössä', 'error');
+      return;
+    }
+    if (e.target.closest('[data-new-product]')) {
+      openNewFromQuery(document.getElementById('productSearch').value);
+      return;
+    }
+    const variantBtn = e.target.closest('[data-new-variant]');
+    if (variantBtn) {
+      const p = allProducts.find(x => x.id === variantBtn.dataset.newVariant);
+      if (p) openNewVariant(p);
+      return;
+    }
+    if (e.target.closest('#hereToggle')) { hereOpen = !hereOpen; renderHere(false); return; }
+
+    // Uusi tuote: valintanapit (laji, yksikkö, materiaali, paksuus, väri)
+    const npBtn = e.target.closest('[data-np]');
+    if (npBtn && np) {
+      const field = npBtn.dataset.np, value = npBtn.dataset.value;
+      np[field] = value;
+      if (field === 'material')  document.getElementById('npMaterial').value = value;
+      if (field === 'thickness') document.getElementById('npThickness').value = value;
+      if (field === 'color' && value === '__other') setTimeout(() => document.getElementById('npColorOther').focus(), 0);
+      renderNewProduct();
+      return;
+    }
+
     const locBtn = e.target.closest('[data-loc-id]');
     if (locBtn) {
       const loc = locById.get(locBtn.dataset.locId);
@@ -585,13 +1116,22 @@
   document.getElementById('placeBar').addEventListener('click', () => showScreen('place'));
   document.getElementById('levelBack').addEventListener('click', levelBack);
   document.getElementById('placeSearch').addEventListener('input', e => renderSearch(e.target.value));
+  document.getElementById('productSearch').addEventListener('input', e => renderProductSearch(e.target.value));
+  document.getElementById('changeProduct').addEventListener('click', () => showScreen('product'));
+  document.getElementById('npBack').addEventListener('click', () => showScreen('product'));
+  document.getElementById('npSave').addEventListener('click', saveNewProduct);
+  // Lomakkeen tekstikentät: päivitetään vain valintanapit ja esikatselu, ei itse kenttää (näppäimistö pysyy auki)
+  document.getElementById('npMaterial').addEventListener('input', e => { np.material = e.target.value; renderNewProduct(); });
+  document.getElementById('npThickness').addEventListener('input', e => { np.thickness = e.target.value; renderNewProduct(); });
+  document.getElementById('npName').addEventListener('input', e => { np.name = e.target.value; renderNpPreview(); });
+  document.getElementById('npColorOther').addEventListener('input', e => { np.colorOther = e.target.value; renderNpPreview(); });
 
   // ─── Käynnistys ──────────────────────────────────────
   async function init() {
     try {
-      await loadLocations();
+      await Promise.all([loadLocations(), loadProducts()]);
     } catch (err) {
-      document.getElementById('loadingMsg').innerHTML = 'Virhe paikkojen haussa:<br>' + esc(err.message);
+      document.getElementById('loadingMsg').innerHTML = 'Virhe tietojen haussa:<br>' + esc(err.message);
       return;
     }
     document.getElementById('loadingMsg').hidden = true;
@@ -617,6 +1157,7 @@
       currentLoc = locById.get(saved.id);
       renderPlaceBar();
       showScreen('product');
+      loadHereStock();
       return;
     }
 
