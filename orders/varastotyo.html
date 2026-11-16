@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1d27">
+  <title>Varastotyö — Kalajoen Peltityö</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth-guard.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* Samat värit kuin varasto.html:ssä */
+    :root {
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --surface2: #222636;
+      --border:   #2a2d3a;
+      --text:     #e8eaf0;
+      --muted:    #7a7f96;
+      --accent:   #eab308;
+      --accent2:  #ca9a06;
+      --danger:   #ef4444;
+      --ok:       #22c55e;
+    }
+
+    html, body { background: var(--bg); }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button { font-family: inherit; color: inherit; }
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* ── YLÄPALKKI ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+      padding: 8px 12px 10px;
+    }
+    .topbar-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .logo img { height: 34px; width: auto; display: block; }
+
+    .mode-toggle {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .mode-btn {
+      background: none; border: none;
+      padding: 9px 16px;
+      font-size: 15px; font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .mode-btn.active { background: var(--accent); color: #000; }
+
+    .place-bar {
+      width: 100%;
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      min-height: 52px;
+    }
+    .place-bar.empty { border-style: dashed; color: var(--muted); }
+    .place-code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--accent); font-size: 17px; white-space: nowrap; }
+    .place-name { font-size: 15px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .place-change { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
+
+    /* ── SISÄLTÖ ── */
+    main { padding: 14px 12px 40px; max-width: 560px; margin: 0 auto; }
+    .screen[hidden] { display: none; }
+
+    .section-label {
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted);
+      margin: 18px 0 8px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 18px;
+      padding: 14px 14px;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+
+    /* Isot napit — sormi ja hanska osuvat */
+    .big-list { display: flex; flex-direction: column; gap: 8px; }
+    .big-btn {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%;
+      min-height: 58px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .big-btn:active { background: var(--surface2); border-color: var(--accent); }
+    .big-btn .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--accent); min-width: 92px; font-size: 15px; }
+    .big-btn .name { flex: 1; }
+    .big-btn .arrow { color: var(--muted); font-size: 14px; }
+
+    .empty-msg { color: var(--muted); font-size: 15px; padding: 14px 4px; }
+
+    /* Taso- ja piikkivalinta */
+    .picker-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .back-btn {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 14px; font-size: 15px; cursor: pointer; white-space: nowrap;
+    }
+    .picker-title { font-size: 18px; font-weight: 600; line-height: 1.3; }
+    .picker-title .code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); display: block; font-size: 14px; }
+    .picker-hint { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+
+    .level-stack { display: flex; flex-direction: column; gap: 8px; }
+    .level-btn {
+      min-height: 60px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 20px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 18px;
+    }
+    .level-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .level-btn .lcode { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); font-weight: 400; }
+    .level-btn:active .lcode { color: #000; }
+
+    .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .num-btn {
+      min-height: 64px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 22px; font-weight: 600;
+      font-family: 'IBM Plex Mono', monospace;
+      cursor: pointer;
+    }
+    .num-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    /* Ruutu 2 -paikanpitäjä */
+    .placeholder-card {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 22px 16px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .placeholder-card strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 17px; }
+
+    .state-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 18px;
+      font-size: 15px; opacity: 0; pointer-events: none;
+      transition: opacity .2s, transform .2s; z-index: 500;
+      max-width: calc(100vw - 32px); text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--ok); color: var(--ok); }
+    .toast.error   { border-color: var(--danger); color: var(--danger); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-row">
+    <a class="logo" href="varasto.html" title="Varasto (pöytäkone)"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="100" height="34"></a>
+    <div class="mode-toggle">
+      <button class="mode-btn active" type="button" data-mode="lisaa">Lisää</button>
+      <button class="mode-btn" type="button" data-mode="inventoi">Inventoi</button>
+    </div>
+  </div>
+  <button class="place-bar empty" id="placeBar" type="button">📍 <span>Valitse paikka</span></button>
+</header>
+
+<main>
+  <div class="state-msg" id="loadingMsg"><span class="spinner"></span>Ladataan varastopaikkoja...</div>
+
+  <!-- RUUTU 1: PAIKKA -->
+  <section class="screen" id="screenPlace" hidden>
+
+    <!-- 1a: haku + viimeksi käytetyt -->
+    <div id="placeSearchView">
+      <input class="search-input" id="placeSearch" type="search"
+             placeholder="Hae: r07, porras, kontti…" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <div id="searchResultsWrap" hidden>
+        <div class="section-label">Hakutulokset</div>
+        <div class="big-list" id="searchResults"></div>
+      </div>
+      <div id="recentWrap">
+        <div class="section-label">Viimeksi käytetyt</div>
+        <div class="big-list" id="recentList"></div>
+      </div>
+    </div>
+
+    <!-- 1b: taso- / piikkivalinta -->
+    <div id="levelView" hidden>
+      <div class="picker-head">
+        <button class="back-btn" type="button" id="levelBack">← Takaisin</button>
+        <div class="picker-title" id="levelTitle"></div>
+      </div>
+      <div class="picker-hint" id="levelHint"></div>
+      <div id="levelButtons"></div>
+    </div>
+  </section>
+
+  <!-- RUUTU 2: TUOTE (tehdään seuraavaksi) -->
+  <section class="screen" id="screenProduct" hidden>
+    <div class="placeholder-card">
+      <strong>Paikka valittu ✓</strong>
+      Ruutu 2 eli tuotteen valinta tehdään seuraavaksi.<br>
+      Vaihda paikkaa napauttamalla yläpalkin 📍-riviä.
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+  const WAREHOUSE_ID = 'e56f3534-50f9-4081-8840-f81f03905113';
+
+  // Puhelimen muistiin tallennettavat asiat (localStorage)
+  const LS_RECENT_LOCS   = 'varastotyo.recentLocs';   // viimeksi käytetyt paikat (id-lista)
+  const LS_CURRENT_LOC   = 'varastotyo.currentLoc';   // valittu paikka + aikaleima
+  const RECENT_MAX       = 4;
+  const CURRENT_MAX_AGE  = 4 * 60 * 60 * 1000;        // valittu paikka muistetaan 4 h
+
+  // ─── Tila ────────────────────────────────────────────
+  let allLocations = [];
+  let locById      = new Map();   // id → paikka
+  let childrenOf   = new Map();   // yläpaikan id → lapset (tasot/piikit)
+  let currentLoc   = null;        // lopullinen valittu paikka
+  let pendingTop   = null;        // yläpaikka, jonka tasoa/piikkiä valitaan
+  let pendingRow   = null;        // piikkien rivi (1/2)
+
+  // ─── Apufunktiot ─────────────────────────────────────
+  // localStorage voi olla estetty (esim. yksityinen selaus) → aina try/catch
+  function lsGet(key, fallback) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+    catch (e) { return fallback; }
+  }
+  function lsSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+  }
+
+  // Tekstit turvallisesti HTML:ään (ettei esim. "<" nimessä riko sivua)
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+  }
+
+  // Hakua varten: pienet kirjaimet, ei välilyöntejä/viivoja, pilkku = piste
+  function norm(s) {
+    return String(s ?? '').toLowerCase().replace(/[\s\-_]/g, '').replace(/,/g, '.');
+  }
+
+  function lastPart(code) { const p = code.split('-'); return p[p.length - 1]; }
+
+  // "Hyllykkö 3 - Hylly 2" → "Hylly 2" (tasonapin teksti)
+  function levelLabel(loc) {
+    const i = loc.name.indexOf(' - ');
+    return i >= 0 ? loc.name.slice(i + 3) : loc.name;
+  }
+  // "Hyllykkö 3 - Hylly 2" → "Hyllykkö 3, Hylly 2" (yläpalkin teksti)
+  function displayName(loc) { return loc.name.replace(' - ', ', '); }
+
+  // Piikkipaikka = kaikkien lasten koodin loppuosa on 2+ numeroa (IN-L-05-11 … -213)
+  function isSpikeParent(topId) {
+    const kids = childrenOf.get(topId) || [];
+    return kids.length > 0 && kids.every(k => /^\d{2,}$/.test(lastPart(k.code)));
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || '');
+    t.classList.add('show');
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  async function authHeaders() {
+    const session = await window.getAuthSession();
+    const token = session?.data?.session?.access_token || SUPABASE_KEY;
+    return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' };
+  }
+
+  // ─── Datan haku ──────────────────────────────────────
+  async function loadLocations() {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/locations?select=id,code,name,location_type,parent_location_id&is_active=eq.true&order=code`,
+      { headers: await authHeaders() }
+    );
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+    allLocations = await res.json();
+
+    locById = new Map(allLocations.map(l => [l.id, l]));
+    childrenOf = new Map();
+    allLocations.forEach(l => {
+      if (!l.parent_location_id) return;
+      if (!childrenOf.has(l.parent_location_id)) childrenOf.set(l.parent_location_id, []);
+      childrenOf.get(l.parent_location_id).push(l);
+    });
+    // Numerojärjestys: 2 ennen 11:tä (tavallinen aakkosjärjestys laittaisi 11 ennen 2:ta)
+    childrenOf.forEach(list => list.sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true })));
+  }
+
+  // ─── Näkymien vaihto ─────────────────────────────────
+  function showScreen(name) {
+    document.getElementById('screenPlace').hidden   = name !== 'place';
+    document.getElementById('screenProduct').hidden = name !== 'product';
+    if (name === 'place') showSearchView();
+    window.scrollTo(0, 0);
+  }
+
+  function showSearchView() {
+    pendingTop = null; pendingRow = null;
+    document.getElementById('placeSearchView').hidden = false;
+    document.getElementById('levelView').hidden = true;
+    renderRecent();
+    renderSearch(document.getElementById('placeSearch').value);
+  }
+
+  // ─── Yläpalkki ───────────────────────────────────────
+  function renderPlaceBar() {
+    const bar = document.getElementById('placeBar');
+    if (!currentLoc) {
+      bar.classList.add('empty');
+      bar.innerHTML = '📍 <span>Valitse paikka</span>';
+      return;
+    }
+    bar.classList.remove('empty');
+    bar.innerHTML =
+      '📍 <span class="place-code">' + esc(currentLoc.code) + '</span>' +
+      '<span class="place-name">' + esc(displayName(currentLoc)) + '</span>' +
+      '<span class="place-change">vaihda ▸</span>';
+  }
+
+  // ─── Haku ────────────────────────────────────────────
+  function renderSearch(query) {
+    const wrap = document.getElementById('searchResultsWrap');
+    const tokens = query.trim().split(/\s+/).map(norm).filter(Boolean);
+    document.getElementById('recentWrap').hidden = tokens.length > 0;
+
+    if (!tokens.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+
+    // Jokaisen hakusanan pitää löytyä koodista tai nimestä
+    const hits = allLocations.filter(l => {
+      const hay = norm(l.code) + '|' + norm(l.name);
+      return tokens.every(t => hay.includes(t));
+    });
+    // Yläpaikat ensin, sitten tasot/piikit
+    hits.sort((a, b) => (a.parent_location_id ? 1 : 0) - (b.parent_location_id ? 1 : 0)
+                        || a.code.localeCompare(b.code, 'fi', { numeric: true }));
+
+    const list = document.getElementById('searchResults');
+    if (!hits.length) {
+      list.innerHTML = '<div class="empty-msg">Ei osumia. Kokeile koodia (esim. r07) tai nimen osaa.</div>';
+      return;
+    }
+    list.innerHTML = hits.slice(0, 25).map(placeButtonHtml).join('');
+  }
+
+  function placeButtonHtml(loc) {
+    const hasKids = (childrenOf.get(loc.id) || []).length > 0;
+    return '<button class="big-btn" type="button" data-loc-id="' + esc(loc.id) + '">' +
+      '<span class="code">' + esc(loc.code) + '</span>' +
+      '<span class="name">' + esc(displayName(loc)) + '</span>' +
+      (hasKids ? '<span class="arrow">valitse taso ▸</span>' : '') +
+      '</button>';
+  }
+
+  // ─── Viimeksi käytetyt ───────────────────────────────
+  function renderRecent() {
+    const ids = lsGet(LS_RECENT_LOCS, []);
+    const locs = ids.map(id => locById.get(id)).filter(Boolean);
+    const list = document.getElementById('recentList');
+    list.innerHTML = locs.length
+      ? locs.map(placeButtonHtml).join('')
+      : '<div class="empty-msg">Ei vielä käytettyjä paikkoja. Hae yllä tai skannaa hyllyn QR-tarra.</div>';
+  }
+
+  function addRecent(id) {
+    const ids = lsGet(LS_RECENT_LOCS, []).filter(x => x !== id);
+    ids.unshift(id);
+    lsSet(LS_RECENT_LOCS, ids.slice(0, RECENT_MAX));
+  }
+
+  // ─── Valinta ─────────────────────────────────────────
+  // Napautettiin paikkaa: jos sillä on tasoja/piikkejä → valitaan ne, muuten valmis
+  function pickLocation(loc) {
+    const kids = childrenOf.get(loc.id) || [];
+    if (kids.length) {
+      pendingTop = loc;
+      pendingRow = null;
+      renderLevelView();
+    } else {
+      selectFinal(loc);
+    }
+  }
+
+  function selectFinal(loc) {
+    currentLoc = loc;
+    lsSet(LS_CURRENT_LOC, { id: loc.id, at: Date.now() });
+    addRecent(loc.id);
+    document.getElementById('placeSearch').value = '';
+    renderPlaceBar();
+    showScreen('product');
+  }
+
+  // ─── Taso- ja piikkivalinta ──────────────────────────
+  function renderLevelView() {
+    document.getElementById('placeSearchView').hidden = true;
+    document.getElementById('levelView').hidden = false;
+
+    const top  = pendingTop;
+    const kids = childrenOf.get(top.id) || [];
+    document.getElementById('levelTitle').innerHTML =
+      '<span class="code">' + esc(top.code) + '</span>' + esc(top.name);
+
+    const hint = document.getElementById('levelHint');
+    const box  = document.getElementById('levelButtons');
+
+    if (!isSpikeParent(top.id)) {
+      // Hyllytasot: ylin hylly ylimpänä, lattia alimpana — kuten hyllykkö edessäsi
+      hint.textContent = 'Valitse taso';
+      box.innerHTML = '<div class="level-stack">' +
+        kids.slice().reverse().map(k =>
+          '<button class="level-btn" type="button" data-loc-id="' + esc(k.id) + '">' +
+            '<span>' + esc(levelLabel(k)) + '</span>' +
+            '<span class="lcode">' + esc(k.code) + '</span>' +
+          '</button>').join('') +
+        '</div>';
+      window.scrollTo(0, 0);
+      return;
+    }
+
+    // Piikit: koodin loppuosa "213" → rivi 2, piikki 13
+    const rows = [...new Set(kids.map(k => lastPart(k.code)[0]))].sort();
+    if (pendingRow == null && rows.length === 1) pendingRow = rows[0];
+
+    if (pendingRow == null) {
+      hint.textContent = 'Valitse rivi';
+      box.innerHTML = '<div class="row-grid">' +
+        rows.map(r => '<button class="num-btn" type="button" data-row="' + esc(r) + '">Rivi ' + esc(r) + '</button>').join('') +
+        '</div>';
+    } else {
+      hint.textContent = 'Rivi ' + pendingRow + ' — valitse piikki';
+      const inRow = kids.filter(k => lastPart(k.code)[0] === pendingRow);
+      box.innerHTML = '<div class="num-grid">' +
+        inRow.map(k => '<button class="num-btn" type="button" data-loc-id="' + esc(k.id) + '">' +
+          esc(lastPart(k.code).slice(1)) + '</button>').join('') +
+        '</div>';
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function levelBack() {
+    // Piikeissä takaisin rivivalintaan, jos rivejä on useampi
+    if (pendingTop && pendingRow != null && isSpikeParent(pendingTop.id)) {
+      const kids = childrenOf.get(pendingTop.id) || [];
+      const rows = new Set(kids.map(k => lastPart(k.code)[0]));
+      if (rows.size > 1) { pendingRow = null; renderLevelView(); return; }
+    }
+    showSearchView();
+  }
+
+  // ─── Tapahtumat ──────────────────────────────────────
+  // Yksi kuuntelija koko sivulle: napin data-loc-id kertoo, mitä napautettiin.
+  // (Turvallisempi kuin onclick="..."-tekstit, joissa lainausmerkit menevät helposti sekaisin.)
+  document.addEventListener('click', e => {
+    const locBtn = e.target.closest('[data-loc-id]');
+    if (locBtn) {
+      const loc = locById.get(locBtn.dataset.locId);
+      if (!loc) return;
+      // Tasonäkymässä napautus on aina lopullinen valinta
+      if (pendingTop && loc.parent_location_id === pendingTop.id) selectFinal(loc);
+      else pickLocation(loc);
+      return;
+    }
+    const rowBtn = e.target.closest('[data-row]');
+    if (rowBtn) { pendingRow = rowBtn.dataset.row; renderLevelView(); return; }
+
+    const modeBtn = e.target.closest('[data-mode]');
+    if (modeBtn) {
+      if (modeBtn.dataset.mode === 'inventoi') showToast('Inventointi tulee vaiheessa 3');
+      return;
+    }
+  });
+
+  document.getElementById('placeBar').addEventListener('click', () => showScreen('place'));
+  document.getElementById('levelBack').addEventListener('click', levelBack);
+  document.getElementById('placeSearch').addEventListener('input', e => renderSearch(e.target.value));
+
+  // ─── Käynnistys ──────────────────────────────────────
+  async function init() {
+    try {
+      await loadLocations();
+    } catch (err) {
+      document.getElementById('loadingMsg').innerHTML = 'Virhe paikkojen haussa:<br>' + esc(err.message);
+      return;
+    }
+    document.getElementById('loadingMsg').hidden = true;
+
+    // 1) QR-tarra: varastotyo.html?paikka=IN-R-07
+    const qrCode = new URLSearchParams(location.search).get('paikka');
+    if (qrCode) {
+      // Poistetaan parametri osoitteesta, ettei sivun päivitys aloita valintaa uudestaan
+      history.replaceState(null, '', location.pathname);
+      const loc = allLocations.find(l => l.code.toUpperCase() === qrCode.trim().toUpperCase());
+      if (loc) {
+        document.getElementById('screenPlace').hidden = false;
+        pickLocation(loc);
+        return;
+      }
+      showToast('Paikkaa ' + qrCode + ' ei löydy', 'error');
+    }
+
+    // 2) Android voi sulkea taustalla olevan välilehden — palautetaan äskeinen paikka
+    const saved = lsGet(LS_CURRENT_LOC, null);
+    if (saved && Date.now() - saved.at < CURRENT_MAX_AGE && locById.has(saved.id)) {
+      currentLoc = locById.get(saved.id);
+      renderPlaceBar();
+      showScreen('product');
+      return;
+    }
+
+    // 3) Muuten paikan valintaan
+    showScreen('place');
+  }
+
+  window._authReady.then(init);
+</script>
+</body>
+</html>
