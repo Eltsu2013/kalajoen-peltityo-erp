@@ -125,6 +125,26 @@
 
     .empty-msg { color: var(--muted); font-size: 15px; padding: 14px 4px; }
 
+    /* Kaikki paikat — ryhmät aukeavat napauttamalla */
+    .zone { margin-bottom: 8px; }
+    .zone summary {
+      list-style: none;
+      display: flex; align-items: center; justify-content: space-between;
+      min-height: 54px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 14px;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer;
+    }
+    .zone summary::-webkit-details-marker { display: none; }
+    .zone summary .count { color: var(--muted); font-weight: 400; font-size: 14px; }
+    .zone summary .count::after { content: ' ▸'; }
+    .zone[open] summary { border-color: var(--accent); color: var(--accent); }
+    .zone[open] summary .count::after { content: ' ▾'; }
+    .zone .big-list { padding: 8px 0 4px 10px; }
+
     /* Taso- ja piikkivalinta */
     .picker-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .back-btn {
@@ -228,6 +248,8 @@
       <div id="recentWrap">
         <div class="section-label">Viimeksi käytetyt</div>
         <div class="big-list" id="recentList"></div>
+        <div class="section-label">Kaikki paikat</div>
+        <div id="allPlaces"></div>
       </div>
     </div>
 
@@ -421,6 +443,37 @@
       : '<div class="empty-msg">Ei vielä käytettyjä paikkoja. Hae yllä tai skannaa hyllyn QR-tarra.</div>';
   }
 
+  // ─── Kaikki paikat seinittäin ────────────────────────
+  // Koodin alku kertoo seinän: IN-R = oikea, IN-L = vasen, IN-C = keskellä koneiden ympärillä
+  const ZONES = [
+    { label: 'Oikea seinä',        match: c => c.startsWith('IN-R') },
+    { label: 'Vasen seinä',        match: c => c.startsWith('IN-L') },
+    { label: 'Koneiden ympärys',   match: c => c.startsWith('IN-C') },
+    { label: 'Ulkona ja autossa',  match: c => /^(ULK|AUTO|KONTTI)/.test(c) },
+  ];
+
+  function renderAllPlaces() {
+    // Vain yläpaikat; tasot valitaan napautuksen jälkeen.
+    // (Lapsi, jonka yläpaikka on pois käytöstä, näytetään myös, ettei se katoa listalta.)
+    const tops = allLocations.filter(l => !l.parent_location_id || !locById.has(l.parent_location_id));
+    const used = new Set();
+    let html = '';
+    const zoneHtml = (label, locs) =>
+      '<details class="zone"><summary>' + esc(label) +
+      '<span class="count">' + locs.length + '</span></summary>' +
+      '<div class="big-list">' + locs.map(placeButtonHtml).join('') + '</div></details>';
+
+    ZONES.forEach(z => {
+      const locs = tops.filter(l => !used.has(l.id) && z.match(l.code));
+      locs.forEach(l => used.add(l.id));
+      if (locs.length) html += zoneHtml(z.label, locs);
+    });
+    const rest = tops.filter(l => !used.has(l.id));
+    if (rest.length) html += zoneHtml('Muut', rest);
+
+    document.getElementById('allPlaces').innerHTML = html;
+  }
+
   function addRecent(id) {
     const ids = lsGet(LS_RECENT_LOCS, []).filter(x => x !== id);
     ids.unshift(id);
@@ -542,6 +595,7 @@
       return;
     }
     document.getElementById('loadingMsg').hidden = true;
+    renderAllPlaces();
 
     // 1) QR-tarra: varastotyo.html?paikka=IN-R-07
     const qrCode = new URLSearchParams(location.search).get('paikka');
