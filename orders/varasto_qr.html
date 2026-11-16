@@ -3,122 +3,1247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QR-tarrat — Kalajoen Peltityö</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <title>Varasto — Kalajoen Peltityö</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="auth-guard.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0f1117; --surface: #1a1d27; --surface2: #222636; --border: #2a2d3a;
-      --text: #e8eaf0; --muted: #7a7f96; --accent: #eab308;
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --border:   #2a2d3a;
+      --text:     #e8eaf0;
+      --muted:    #7a7f96;
+      --accent:   #eab308;
+      --accent2:  #ca9a06;
+      --danger:   #ef4444;
+      --danger-bg:#2d1212;
+      --roll:     #3b82f6;
+      --sheet:    #22c55e;
+      --offcut:   #f97316;
+      --item:     #a855f7;
+      --bulk:     #06b6d4;
     }
-    body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; }
-    .mono { font-family: 'IBM Plex Mono', monospace; }
 
-    /* ── Ohjauspaneeli (ei tulostu) ── */
-    .toolbar {
-      position: sticky; top: 0; z-index: 10;
-      background: var(--surface); border-bottom: 2px solid var(--accent);
-      padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
-    .toolbar img { height: 32px; }
-    .toolbar h1 { font-size: 16px; font-weight: 600; margin-right: auto; }
-    .toolbar label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
-    .toolbar select, .toolbar input[type=text] {
-      background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
-      padding: 7px 10px; font-family: inherit; font-size: 14px;
+
+    /* ── NAV ── */
+    nav {
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 300;
     }
-    .toolbar input[type=text] { min-width: 300px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+    nav h1 { font-size: 16px; font-weight: 500; color: var(--text); }
+    .nav-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+    }
+    .nav-page-title {
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+    .nav-menu-wrap { position: relative; }
+    .nav-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; font-weight: 600;
+      padding: 6px 12px; border-radius: 4px;
+      cursor: pointer; letter-spacing: 0.04em;
+    }
+    .nav-btn:hover { background: var(--border); }
+    .nav-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      min-width: 200px;
+      z-index: 999;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .nav-dropdown.open { display: block; }
+    .nav-section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); padding: 8px 14px 4px;
+    }
+    .nav-item {
+      display: block; width: 100%; text-align: left;
+      padding: 8px 14px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px; color: var(--text);
+      background: none; border: none; cursor: pointer;
+      text-decoration: none; transition: background 0.1s;
+    }
+    .nav-item:hover { background: var(--border); color: var(--accent); }
+    .nav-item.current { color: var(--accent); font-weight: 600; }
+    .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+    /* ── TABS ── */
+    .tabs {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 0;
+      padding: 0 1rem;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 500;
+      padding: 0.75rem 1.1rem;
+      white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── PAGE ── */
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+    }
+    .panel-header h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .badge-count {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.78rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.45rem;
+      color: var(--muted);
+    }
+
+    /* ── FILTERS ── */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    .filters select, .filters input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.85rem;
+      padding: 0.4rem 0.65rem;
+      border-radius: 4px;
+      min-width: 130px;
+    }
+    .filters select:focus, .filters input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .btn-clear {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    thead th {
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 500;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    thead th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    thead th.sortable:hover { color: var(--text); }
+    thead th.sort-asc::after  { content: " ↑"; color: var(--accent); }
+    thead th.sort-desc::after { content: " ↓"; color: var(--accent); }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #1f2335; }
+    tbody td {
+      padding: 0.55rem 0.75rem;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-size: 0.82rem; }
+
+    /* ── BADGES ── */
+    .type-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .type-ROLL   { background: #1e3a5f; color: var(--roll); }
+    .type-SHEET  { background: #14371f; color: var(--sheet); }
+    .type-OFFCUT { background: #3d2010; color: var(--offcut); }
+    .type-ITEM   { background: #2d1845; color: var(--item); }
+    .type-BULK   { background: #0c2e35; color: var(--bulk); }
+
+    .dim { color: var(--muted); }
+
+    .location-chip {
+      display: inline-block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.4rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+
+    /* ── MODAL ── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+    }
+    .modal-close:hover { color: var(--text); background: var(--border); }
+
+    .modal-body { padding: 1.25rem; }
+
+    .modal-info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-info-item { }
+    .modal-info-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.15rem;
+    }
+    .modal-info-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .modal-info-value.big {
+      font-size: 1.1rem;
+      color: var(--accent);
+    }
+    .modal-info-value.big.mono {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem;
+    }
+
+    .form-group { margin-bottom: 0.9rem; }
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+
+    /* Varastopaikkahaku */
+    .loc-search-wrap { position: relative; }
+    .loc-search-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px 4px 0 0;
+      border-bottom: none;
+    }
+    .loc-search-input:focus { outline: none; border-color: var(--accent); }
+    .loc-list {
+      border: 1px solid var(--border);
+      border-radius: 0 0 4px 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--bg);
+    }
+    .loc-group-label {
+      padding: 0.35rem 0.75rem 0.2rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+    .loc-option {
+      padding: 0.45rem 0.75rem 0.45rem 1.2rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .loc-option:hover { background: var(--border); }
+    .loc-option.selected { background: #1e2a0a; color: var(--accent); }
+    .loc-option-code {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      min-width: 80px;
+    }
+    .loc-option.selected .loc-option-code { color: var(--accent2); }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+    }
     .btn {
-      background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
-      padding: 8px 14px; font-family: inherit; font-size: 14px; cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.5rem 1.1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-weight: 500;
+      transition: opacity 0.15s;
     }
-    .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
-    .hint { padding: 10px 16px; color: var(--muted); font-size: 13px; }
-
-    /* ── Valintalista ── */
-    .picker { padding: 10px 16px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-    .group { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
-    .group h2 { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; margin-bottom: 6px; }
-    .group h2 button { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px; font-family: inherit; }
-    .group label { display: flex; gap: 8px; align-items: center; padding: 5px 0; cursor: pointer; font-size: 14px; }
-    .group label input { width: 16px; height: 16px; accent-color: var(--accent); }
-    .group label .code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); min-width: 80px; }
-    .group label .nm { color: var(--text); }
-
-    /* ── Tarrat ── */
-    .sheet { background: #fff; color: #000; margin: 0 auto; padding: 8mm; width: 210mm; }
-    .labels { display: grid; gap: 4mm; }
-    .labels.size-l { grid-template-columns: repeat(2, 1fr); }
-    .labels.size-m { grid-template-columns: repeat(3, 1fr); }
-    .labels.size-s { grid-template-columns: repeat(4, 1fr); }
-    .label {
-      border: 0.4mm dashed #999; border-radius: 2mm;
-      display: flex; align-items: center; gap: 3mm; padding: 3mm;
-      page-break-inside: avoid; break-inside: avoid;
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
     }
-    .label .qr { flex-shrink: 0; display: block; }
-    .label .qr svg { display: block; width: 100%; height: 100%; }
-    .size-l .qr { width: 34mm; height: 34mm; }
-    .size-m .qr { width: 25mm; height: 25mm; }
-    .size-s .qr { width: 18mm; height: 18mm; }
-    .label .txt { min-width: 0; }
-    .label .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere; }
-    .label .name { font-family: 'IBM Plex Sans', sans-serif; line-height: 1.2; margin-top: 1mm; }
-    .size-l .label { min-height: 42mm; }  .size-l .code { font-size: 22pt; }  .size-l .name { font-size: 12pt; }
-    .size-m .label { min-height: 32mm; }  .size-m .code { font-size: 15pt; }  .size-m .name { font-size: 9pt; }
-    .size-s .label { min-height: 24mm; }  .size-s .code { font-size: 11pt; }  .size-s .name { font-size: 7pt; }
-    .label.sub .code { font-weight: 400; }
+    .btn-primary:hover:not(:disabled) { background: var(--accent2); }
+    .btn-secondary {
+      background: none;
+      border-color: var(--border);
+      color: var(--text);
+    }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--muted); }
+    .btn-danger {
+      background: none;
+      border-color: var(--danger);
+      color: var(--danger);
+      margin-left: auto;
+    }
+    .btn-danger:hover:not(:disabled) { background: var(--danger-bg); }
 
-    .preview-wrap { padding: 20px 16px 40px; overflow-x: auto; }
-    .state { padding: 40px; text-align: center; color: var(--muted); }
+    /* ── LISÄÄ-VÄLILEHTI ── */
+    .add-form {
+      max-width: 520px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    .form-select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+    }
+    .form-select:focus { outline: none; border-color: var(--accent); }
 
+    .add-btn-wrap { margin-top: 1.25rem; }
+
+    /* ── YHTEENVETO ── */
+    .summary-grid {
+      display: grid;
+      gap: 0.6rem;
+    }
+    .summary-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.75rem 1rem;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .summary-row:hover { border-color: var(--accent); }
+    .summary-row:hover .summary-name { color: var(--accent); }
+    .summary-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .summary-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .summary-counts {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .summary-chip {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    /* ── STATE MSGS ── */
+    .state-msg {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(2rem);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.88rem;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 600;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    .toast.success { border-color: var(--sheet); color: var(--sheet); }
+    .toast.error   { border-color: var(--danger); color: var(--danger); }
+
+    /* ── RESIZE ── */
+    .resize-handle {
+      width: 6px;
+      min-width: 6px;
+      cursor: col-resize;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 0 2px;
+      transition: background 0.15s;
+      align-self: stretch;
+    }
+    .resize-handle:hover { background: var(--accent); }
+    .selaa-layout {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .selaa-list {
+      flex: 1;
+      min-width: 0;
+    }
+    .map-panel {
+      width: 360px;
+      min-width: 360px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      position: sticky;
+      top: 80px;
+    }
+    .map-panel-header {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .map-panel-header span { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; }
+    .map-panel-body {
+      padding: 0.5rem;
+      max-height: calc(100vh - 160px);
+      overflow-y: auto;
+    }
+    .map-panel-body svg { width: 100%; height: auto; display: block; }
+    /* Kartan korostustyylit — vaalea = suodatusosuma, kirkas = täppävalinta */
+    .map-panel-body .loc-filter,
+    .map-panel-body g.loc-filter > rect,
+    .map-panel-body g.loc-filter > circle,
+    .map-panel-body g.loc-filter > path  { filter: brightness(1.8); opacity: 0.85; }
+    .map-panel-body .loc-select,
+    .map-panel-body g.loc-select > rect,
+    .map-panel-body g.loc-select > circle,
+    .map-panel-body g.loc-select > path  { filter: brightness(2.8); stroke-width: 2.5 !important; }
+    /* Ei-kartalla -lista */
+    .offmap-list {
+      padding: 0.5rem 1rem 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .offmap-list strong { color: var(--text); display: block; margin-bottom: 0.3rem; }
+    .offmap-badge {
+      display: inline-block;
+      background: var(--border);
+      border-radius: 3px;
+      padding: 1px 6px;
+      margin: 2px 2px 2px 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text);
+    }
+    /* Checkbox sarake */
+    .cb-col { width: 32px; text-align: center; }
+    input[type=checkbox] { accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px; }
+    .btn-map-mobile {
+      display: none;
+      margin: 0.5rem 0 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    /* ── KORTIT (mobiili) ── */
+    .card-list { display: none; }
+
+    @media (max-width: 640px) {
+      .hide-mobile { display: none; }
+      .panel-header h2 { font-size: 1rem; }
+      .form-row { grid-template-columns: 1fr; }
+      .modal { max-height: 100vh; border-radius: 0; }
+      .modal-backdrop { padding: 0; align-items: flex-end; }
+
+      /* Piilotetaan taulukko Selaa-välilehdellä, näytetään kortit */
+      #panel-selaa .table-wrap { display: none; }
+      .card-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+      /* Varastopaikkalista — avautuu alaspäin, max-height pienempi mobiilissa */
+      .loc-list { max-height: 150px; }
+
+      /* Karttapaneeli piiloon mobiilissa — käytetään Kartta-välilehteä */
+      .map-panel { display: none; }
+      .btn-map-mobile { display: inline-block; }
+    }
+
+    /* Kortin tyyli */
+    .stock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .stock-card:hover { border-color: var(--accent); }
+    .stock-card-top {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.35rem;
+    }
+    .stock-card-name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      flex: 1;
+    }
+    .stock-card-mitat {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+    .stock-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .stock-card-note-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      padding: 0;
+      font-family: inherit;
+      margin-top: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .stock-card-note-btn:hover { color: var(--text); }
+    .stock-card-note-text {
+      display: none;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.3rem;
+      padding: 0.4rem 0.6rem;
+      background: var(--bg);
+      border-radius: 4px;
+      border-left: 2px solid var(--border);
+    }
+    .stock-card-note-text.open { display: block; }
+
+    /* ── PRINT ── */
     @media print {
-      body { background: #fff; }
-      .toolbar, .hint, .picker, .state { display: none !important; }
-      .preview-wrap { padding: 0; overflow: visible; }
-      .sheet { width: auto; padding: 0; margin: 0; }
-      @page { size: A4; margin: 10mm; }
+      nav, .tabs, .filters, .modal-backdrop { display: none !important; }
+      body { background: #fff; color: #000; }
+      .table-wrap { border: 1px solid #ccc; }
+      thead th { background: #f0f0f0; color: #333; }
+      .type-badge { border: 1px solid #ccc; background: none !important; color: #333 !important; }
     }
   </style>
 </head>
 <body>
 
-<div class="toolbar">
-  <a href="varasto.html"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö"></a>
-  <h1>QR-tarrat varastopaikoille</h1>
-  <label>Osoite: <input type="text" id="baseUrl" spellcheck="false"></label>
-  <label>Koko:
-    <select id="size">
-      <option value="l">Iso (2 / rivi, hyllyköt)</option>
-      <option value="m" selected>Keski (3 / rivi)</option>
-      <option value="s">Pieni (4 / rivi, piikit)</option>
-    </select>
-  </label>
-  <label><input type="checkbox" id="includeLevels"> Myös tasot ja piikit</label>
-  <button class="btn" id="selectAll">Valitse kaikki</button>
-  <button class="btn" id="selectNone">Tyhjennä</button>
-  <button class="btn primary" id="printBtn">🖨 Tulosta (<span id="count">0</span>)</button>
-</div>
-<div class="hint">
-  Osoite on puhelinsivun osoite ilman <span class="mono">?paikka=</span>-osaa. Se on päätelty tämän sivun osoitteesta — tarkista, että se on sama, jolla puhelin avaa varastotyo.html:n.
-  Tulostuksessa valitse "Taustagrafiikat" pois ja skaalaus 100 %.
+<!-- NAV -->
+<nav>
+  <div class="logo-img" style="height:56px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="165" height="56" style="height:56px;width:auto;display:block"></div>
+  <div class="nav-menu-wrap">
+    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <div class="nav-section-label">Sivut</div>
+      <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
+      <a class="nav-item" href="tilaukset.html">📋 Tilaukset</a>
+      <a class="nav-item" href="tilaus.html">✏️ Uusi tilaus</a>
+      <a class="nav-item" href="tuotanto.html">⚙️ Tuotanto</a>
+      <a class="nav-item" href="peltipiirturi.html">🔨 Mallisto</a>
+      <a class="nav-item" href="vakiomallit.html">🔧 Vakiomallit</a>
+      <a class="nav-item current" href="varasto.html">📦 Varasto</a>
+      <hr class="nav-divider">
+      <div class="nav-section-label">Hallinta</div>
+      <a class="nav-item" href="hinnasto.html">💰 Hinnasto</a>
+      <a class="nav-item" href="lasku.html">🧾 Laskutus</a>
+      <hr class="nav-divider">
+      <div class="nav-section-label">Työkalut</div>
+      <a class="nav-item" href="tunnit.html">⏱ Tunnit</a>
+      <a class="nav-item" href="laskin.html">🧮 Laskin</a>
+      <a class="nav-item" href="piippu.html">🏭 Piippu</a>
+    </div>
+  </div>
+  <h1>Varasto</h1>
+</nav>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="selaa" onclick="switchTab('selaa')">📋 Selaa</button>
+  <button class="tab-btn" data-tab="lisaa" onclick="switchTab('lisaa')">➕ Lisää</button>
+  <button class="tab-btn" data-tab="yhteenveto" onclick="switchTab('yhteenveto')">📊 Yhteenveto</button>
+  <button class="tab-btn" data-tab="tuotteet" onclick="switchTab('tuotteet')">🏷 Tuotteet</button>
+  <button class="tab-btn" data-tab="kartta" onclick="switchTab('kartta')">🗺 Kartta</button>
 </div>
 
-<div class="state" id="state">Ladataan paikkoja…</div>
-<div class="picker" id="picker"></div>
-<div class="preview-wrap"><div class="sheet"><div class="labels size-m" id="labels"></div></div></div>
+<!-- PANEL: SELAA -->
+<div class="tab-panel active" id="panel-selaa">
+  <div class="page">
+    <div class="panel-header">
+      <h2>Varastossa</h2>
+      <span class="badge-count" id="countBadge">ladataan...</span>
+    </div>
+
+    <div class="filters">
+      <select id="filterMaterial"><option value="">Kaikki materiaalit</option></select>
+      <select id="filterColor"><option value="">Kaikki värit</option></select>
+      <select id="filterType">
+        <option value="">Kaikki tyypit</option>
+        <option value="ROLL">Rulla</option>
+        <option value="SHEET">Levy</option>
+        <option value="OFFCUT">Siivu</option>
+        <option value="ITEM">Kpl</option>
+        <option value="BULK">Metri</option>
+      </select>
+      <select id="filterThickness"><option value="">Kaikki paksuudet</option></select>
+      <select id="filterChecked">
+        <option value="">Inventointi: kaikki</option>
+        <option value="no">Ei inventoitu</option>
+        <option value="yes">Inventoitu</option>
+        <option value="old">Inventoitu yli 90 pv sitten</option>
+      </select>
+      <button class="btn-clear" id="clearFilters">✕ Tyhjennä</button>
+    </div>
+
+    <button class="btn-map-mobile" onclick="switchTab('kartta')">🗺 Näytä kartalla</button>
+
+    <div class="selaa-layout">
+      <div class="selaa-list" id="selaaList">
+        <div class="table-wrap">
+          <table id="stockTable">
+            <thead>
+              <tr>
+                <th class="cb-col"><input type="checkbox" id="checkAll" title="Valitse kaikki" onchange="toggleCheckAll(this)"></th>
+                <th class="sortable" onclick="sortTable('type')">Tyyppi</th>
+                <th class="sortable" colspan="2" onclick="sortTable('material')">Tuote</th>
+                <th class="sortable hide-mobile" onclick="sortTable('thickness')">Paksuus</th>
+                <th class="sortable" onclick="sortTable('length')">Mitat (jäljellä)</th>
+                <th class="hide-mobile">Varastopaikka</th>
+                <th class="hide-mobile">Huomio</th>
+                <th class="sortable hide-mobile" onclick="sortTable('checked')">Inventoitu</th>
+              </tr>
+            </thead>
+            <tbody id="stockBody">
+              <tr><td colspan="8" class="state-msg"><span class="spinner"></span>Ladataan varastoa...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card-list" id="cardList"></div>
+      </div>
+
+      <!-- Resize-vetopalki -->
+      <div class="resize-handle" id="mapResizeHandle"></div>
+
+      <!-- Karttapaneeli desktop -->
+      <div class="map-panel" id="mapPanel">
+        <div class="map-panel-header">
+          🗺 Varastokartta
+          <span id="mapHighlightCount"></span>
+        </div>
+        <div class="map-panel-body" id="mapPanelBody">
+          <div style="padding:1rem;color:var(--muted);font-size:0.8rem">Ladataan karttaa...</div>
+        </div>
+        <div class="offmap-list" id="offmapList" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: LISÄÄ -->
+<div class="tab-panel" id="panel-lisaa">
+  <div class="page">
+    <div class="panel-header">
+      <h2>Lisää varastoon</h2>
+    </div>
+    <div class="add-form">
+
+      <div class="form-group">
+        <label class="form-label">Tyyppi</label>
+        <select class="form-select" id="addType" onchange="onAddTypeChange()">
+          <option value="ROLL">Rulla</option>
+          <option value="SHEET">Levy</option>
+          <option value="OFFCUT">Siivu</option>
+          <option value="ITEM">Kpl-tavara</option>
+          <option value="BULK">Metrinen</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Materiaali</label>
+        <select class="form-select" id="addMaterial" onchange="onAddMaterialChange()">
+          <option value="">— valitse materiaali —</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tuote (väri + paksuus)</label>
+        <select class="form-select" id="addProduct">
+          <option value="">— valitse materiaali ensin —</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" id="addLengthWrap">
+          <label class="form-label" id="addLengthLabel">Pituus (mm)</label>
+          <input class="form-input" id="addLength" type="number" min="0" step="any" placeholder="esim. 6000">
+        </div>
+        <div class="form-group" id="addWidthWrap">
+          <label class="form-label">Leveys (mm)</label>
+          <input class="form-input" id="addWidth" type="number" min="1" placeholder="esim. 1250">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Määrä (kpl)</label>
+        <input class="form-input" id="addQty" type="number" min="1" value="1">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Varastopaikka</label>
+        <div class="loc-search-wrap">
+          <input class="loc-search-input" id="addLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('add', this.value)" autocomplete="off">
+          <div class="loc-list" id="addLocList">
+            <div style="padding:0.75rem;color:var(--muted);font-size:0.85rem">Ladataan varastopaikkoja...</div>
+          </div>
+        </div>
+        <input type="hidden" id="addLocId">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Huomio (vapaa teksti)</label>
+        <input class="form-input" id="addNote" type="text" placeholder="esim. hieman ruosteinen reuna">
+      </div>
+
+      <div class="add-btn-wrap">
+        <button class="btn btn-primary" id="addBtn" onclick="doAddStock()">➕ Lisää varastoon</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: YHTEENVETO -->
+<div class="tab-panel" id="panel-yhteenveto">
+  <div class="page">
+    <div class="panel-header">
+      <h2>Yhteenveto</h2>
+    </div>
+    <div class="summary-grid" id="summaryGrid">
+      <div class="state-msg"><span class="spinner"></span>Lasketaan...</div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: KARTTA (mobiili) -->
+<div class="tab-panel" id="panel-kartta">
+  <div class="page">
+    <div class="panel-header">
+      <h2>🗺 Varastokartta</h2>
+      <span class="badge-count" id="mapTabHighlightCount"></span>
+    </div>
+    <div id="mapTabBody" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+      <div style="padding:1rem;color:var(--muted);font-size:0.8rem">Ladataan karttaa...</div>
+    </div>
+    <div class="offmap-list" id="offmapListMobile" style="display:none;margin-top:0.5rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;"></div>
+  </div>
+</div>
+
+<!-- MODAL: MUOKKAA -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="onBackdropClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">—</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Tiedot (vain luku) -->
+      <div class="modal-info">
+        <div class="modal-info-item">
+          <div class="modal-info-label">Tyyppi</div>
+          <div class="modal-info-value" id="modalType">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Paksuus</div>
+          <div class="modal-info-value" id="modalThick">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Pituus jäljellä</div>
+          <div class="modal-info-value big" id="modalRemLength">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Leveys jäljellä</div>
+          <div class="modal-info-value big mono" id="modalRemWidth">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Alkuperäiset mitat</div>
+          <div class="modal-info-value mono" id="modalOrig">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Inventoitu</div>
+          <div class="modal-info-value mono" id="modalChecked">—</div>
+        </div>
+        <div class="modal-info-item" id="modalParentItem" style="display:none;grid-column:1 / -1">
+          <div class="modal-info-label">Peräisin</div>
+          <div class="modal-info-value" id="modalParent">—</div>
+        </div>
+      </div>
+
+      <!-- Varastopaikka — ylimpänä jotta lista avautuu alaspäin eikä peitä mittoja -->
+      <div class="form-group">
+        <label class="form-label">Varastopaikka</label>
+        <div id="modalLocCurrent" style="display:none;padding:0.4rem 0.6rem;margin-bottom:0.4rem;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:0.82rem;color:var(--text)"></div>
+        <div class="loc-search-wrap">
+          <input class="loc-search-input" id="modalLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('modal', this.value)" autocomplete="off">
+          <div class="loc-list" id="modalLocList"></div>
+        </div>
+        <input type="hidden" id="modalLocId">
+      </div>
+
+      <!-- Muokkaa mitat -->
+      <div class="form-group">
+        <label class="form-label" id="modalLengthLabel">Uusi pituus (mm) — tyhjä = ei muuteta</label>
+        <input class="form-input mono" id="modalLength" type="number" min="0" step="any" placeholder="esim. 5800">
+      </div>
+      <div class="form-group" id="modalWidthGroup">
+        <label class="form-label">Uusi leveys (mm) — tyhjä = ei muuteta</label>
+        <input class="form-input mono" id="modalWidth" type="number" min="1" placeholder="esim. 1100">
+      </div>
+
+      <!-- Huomio -->
+      <div class="form-group">
+        <label class="form-label">Huomio</label>
+        <input class="form-input" id="modalNote" type="text" placeholder="vapaa muistiinpano">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Peruuta</button>
+        <button class="btn btn-primary" id="modalSaveBtn" onclick="doSaveModal()">💾 Tallenna</button>
+        <button class="btn btn-danger" id="modalArchiveBtn" onclick="doArchive()">🗑 Arkistoi</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PANEL: TUOTTEET -->
+<div class="tab-panel" id="panel-tuotteet">
+  <div class="page">
+    <div class="panel-header">
+      <h2>Tuotteet</h2>
+    </div>
+
+    <!-- Lisää uusi tuote -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin-bottom:1.25rem;max-width:600px">
+      <div style="font-size:0.85rem;font-weight:600;color:var(--accent);margin-bottom:0.9rem">Lisää uusi tuote</div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">Materiaali</label>
+          <input class="form-input" id="newMaterial" type="text" placeholder="esim. Pural">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Väri</label>
+          <input class="form-input" id="newColor" type="text" placeholder="esim. RR 20">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Paksuus (mm)</label>
+          <input class="form-input mono" id="newThickness" type="number" step="0.01" min="0" placeholder="esim. 0.5">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nimi — tyhjä = muodostetaan automaattisesti (esim. "Pural RR 20 0,5")</label>
+        <input class="form-input" id="newNimi" type="text" placeholder="esim. Kattosilta 3 m RR 23">
+      </div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="form-group">
+          <label class="form-label">Tuoteryhmä</label>
+          <input class="form-input" id="newProductGroup" type="text" placeholder="esim. Listat">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Yksikkö</label>
+          <select class="form-select" id="newUnit">
+            <option value="m²">m² (peltitavara)</option>
+            <option value="m">m (metritavara)</option>
+            <option value="kpl">kpl (kappaletavara)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ALV %</label>
+          <input class="form-input mono" id="newVat" type="number" step="0.1" value="25.5">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="doAddProduct()">➕ Lisää tuote</button>
+    </div>
+
+    <!-- Tuotelista -->
+    <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem">
+      <select id="prodFilterMaterial" class="filters" style="min-width:150px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:0.85rem;padding:0.4rem 0.65rem;border-radius:4px" onchange="renderProducts()">
+        <option value="">Kaikki materiaalit</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--muted);cursor:pointer">
+        <input type="checkbox" id="showInactive" onchange="renderProducts()" style="accent-color:var(--accent)">
+        Näytä poistetut
+      </label>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Nimi</th>
+            <th class="hide-mobile">Materiaali</th>
+            <th class="hide-mobile">Väri</th>
+            <th class="hide-mobile">Paksuus</th>
+            <th class="hide-mobile">Tuoteryhmä</th>
+            <th class="hide-mobile">Yksikkö</th>
+            <th class="hide-mobile">ALV%</th>
+            <th>Tila</th>
+          </tr>
+        </thead>
+        <tbody id="productsBody">
+          <tr><td colspan="8" class="state-msg"><span class="spinner"></span>Ladataan...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MUOKKAA TUOTETTA -->
+<div class="modal-backdrop" id="productModalBackdrop" onclick="onProductBackdropClick(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="productModalTitle">Muokkaa tuotetta</h3>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="productModalId">
+      <div class="form-group">
+        <label class="form-label">Nimi (näkyy listoissa ja puhelinsivun haussa)</label>
+        <input class="form-input" id="productModalNimi" type="text">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Materiaali</label>
+          <input class="form-input" id="productModalMaterial" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Väri</label>
+          <input class="form-input" id="productModalColor" type="text">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Paksuus (mm)</label>
+          <input class="form-input mono" id="productModalThickness" type="number" step="0.01" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tuoteryhmä</label>
+          <input class="form-input" id="productModalGroup" type="text">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Yksikkö</label>
+          <select class="form-select" id="productModalUnit">
+            <option value="m²">m² (peltitavara)</option>
+            <option value="m">m (metritavara)</option>
+            <option value="kpl">kpl (kappaletavara)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ALV %</label>
+          <input class="form-input mono" id="productModalVat" type="number" step="0.1">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeProductModal()">Peruuta</button>
+        <button class="btn btn-primary" onclick="doSaveProductModal()">💾 Tallenna</button>
+        <button class="btn btn-danger" onclick="doDeactivateProduct()">🗑 Poista käytöstä</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
 
 <script>
   const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+  const WAREHOUSE_ID = 'e56f3534-50f9-4081-8840-f81f03905113';
+  const TYPE_FI = { ROLL: 'Rulla', SHEET: 'Levy', OFFCUT: 'Siivu', ITEM: 'Kpl', BULK: 'Metri' };
 
-  let locs = [];
-  const selected = new Set();
+  // ─── State ───────────────────────────────────────────
+  let allItems    = [];
+  let allProducts = [];
+  let allLocations = [];
+  let currentModalItem = null;
+  let sortCol = null;
+  let sortDir = 'asc';
 
-  function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+  // Varastopaikat ryhmiteltyinä haun + listan rakentamista varten
+  const LOC_GROUPS = [
+    { label: 'Verstas — Oikea seinä (IN-R)', prefix: 'IN-R' },
+    { label: 'Verstas — Vasen seinä (IN-L)', prefix: 'IN-L' },
+    { label: 'Verstas — Keskialue (IN-C)',   prefix: 'IN-C' },
+    { label: 'Ulkovarasto (ULK)',             prefix: 'ULK' },
+    { label: 'Auto',                          prefix: 'AUTO' },
+    { label: 'Kontti',                        prefix: 'KONTTI' },
+    { label: 'Ulkohylly',                     prefix: 'ULKOHYL' },
+  ];
+
+  // ─── Nav dropdown ────────────────────────────────────
+  function toggleNav(e) {
+    e.stopPropagation();
+    document.getElementById('navDropdown').classList.toggle('open');
+  }
+  document.addEventListener('click', () => {
+    document.getElementById('navDropdown').classList.remove('open');
+  });
+
+  // ─── Tabs ────────────────────────────────────────────
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-tab="' + tab + '"]').classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+    if (tab === 'yhteenveto') renderSummary();
+    if (tab === 'lisaa') populateAddMaterials();
+    if (tab === 'tuotteet') { renderProducts(); populateProdFilter(); }
+    // Kartta ladataan tarvittaessa ja korostus päivitetään
+    if (tab === 'kartta' || tab === 'selaa') {
+      loadMapSvg().then(() => updateMapFromCurrentView());
+    }
+  }
+
+  // ─── Load stock ──────────────────────────────────────
+  async function loadStock() {
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+
+      const baseSelect = 'id,type,quantity,length_estimated,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,note,checked_at,parent_stock_item_id,location_id,product_id,products(nimi,laji,material,color,thickness_mm,unit),locations(id,code,name)';
+      // Emorivi (mistä siivu on leikattu) samaan hakuun; jos upotus ei onnistu, haetaan ilman sitä
+      const parentSelect = ',parent:parent_stock_item_id(id,type,status,original_length_mm,original_width_mm,locations(code))';
+      const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' };
+      let res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=${baseSelect}${parentSelect}&status=eq.ACTIVE&limit=10000`, { headers });
+      if (!res.ok) {
+        console.warn('Emorivin upotus ei onnistunut, haetaan ilman:', await res.text());
+        res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=${baseSelect}&status=eq.ACTIVE&limit=10000`, { headers });
+      }
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+
+      allItems = await res.json();
+      buildFilterOptions();
+      renderTable();
+      // Ladataan kartta taustalla heti kun varasto on ladattu
+      loadMapSvg();
+    } catch (err) {
+      document.getElementById('stockBody').innerHTML =
+        '<tr><td colspan="8" class="state-msg">Virhe: ' + err.message + '</td></tr>';
+    }
+  }
 
   async function authHeaders() {
     const session = await window.getAuthSession();
@@ -126,123 +1251,1229 @@
     return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' };
   }
 
-  // Samat ryhmät kuin puhelinsivulla
-  const GROUPS = [
-    { label: 'Oikea seinä',      match: l => l.code.startsWith('IN-R') },
-    { label: 'Vasen seinä',      match: l => l.code.startsWith('IN-L') },
-    { label: 'Koneiden ympärys', match: l => l.code.startsWith('IN-C') },
-    { label: 'Ulkona ja autossa', match: l => /^(ULK|AUTO|KONTTI)/.test(l.code) },
-    { label: 'Muut',             match: () => true },
-  ];
-
-  function baseUrl() {
-    return document.getElementById('baseUrl').value.trim().replace(/\/$/, '');
-  }
-  function labelUrl(code) {
-    const b = baseUrl();
-    // Jos osoite loppuu .html, lisätään parametri siihen; muuten oletetaan kansio
-    return (b.endsWith('.html') ? b : b + '/varastotyo.html') + '?paikka=' + encodeURIComponent(code);
-  }
-
-  function renderPicker() {
-    const withLevels = document.getElementById('includeLevels').checked;
-    const ids = new Set(locs.map(l => l.id));
-    const tops = locs.filter(l => !l.parent_location_id || l.parent_location_id === l.id || !ids.has(l.parent_location_id));
-    const kidsOf = id => locs.filter(l => l.parent_location_id === id && l.parent_location_id !== l.id)
-                              .sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true }));
-    const used = new Set();
-    let html = '';
-    GROUPS.forEach(g => {
-      const items = tops.filter(l => !used.has(l.id) && g.match(l));
-      items.forEach(l => used.add(l.id));
-      if (!items.length) return;
-      const rows = [];
-      items.forEach(t => {
-        rows.push(t);
-        if (withLevels) kidsOf(t.id).forEach(k => rows.push(Object.assign({ _sub: true }, k)));
+  async function loadProducts() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?select=id,nimi,laji,material,color,thickness_mm,product_group,unit,default_vat_percent,is_active&order=material,color,thickness_mm`, {
+        headers: await authHeaders()
       });
-      html += '<div class="group"><h2>' + esc(g.label) +
-        '<button type="button" data-group-select="' + rows.map(r => r.id).join(',') + '">valitse ryhmä</button></h2>' +
-        rows.map(r =>
-          '<label' + (r._sub ? ' style="padding-left:22px"' : '') + '><input type="checkbox" data-id="' + esc(r.id) + '"' + (selected.has(r.id) ? ' checked' : '') + '>' +
-          '<span class="code">' + esc(r.code) + '</span><span class="nm">' + esc(r.name) + '</span></label>').join('') +
-        '</div>';
+      allProducts = await res.json();
+    } catch (e) { console.error('loadProducts:', e); }
+  }
+
+  async function loadLocations() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/locations?select=id,code,name,location_type&is_active=eq.true&order=code`, {
+        headers: await authHeaders()
+      });
+      allLocations = await res.json();
+      buildLocList('addLocList',   'addLocId',   null);
+      buildLocList('modalLocList', 'modalLocId', null);
+    } catch (e) { console.error('loadLocations:', e); }
+  }
+
+  // ─── Filter options ──────────────────────────────────
+  function buildFilterOptions() {
+    const materials   = [...new Set(allItems.map(i => i.products?.material).filter(Boolean))].sort();
+    const colors      = [...new Set(allItems.map(i => i.products?.color).filter(Boolean))].sort();
+    const thicknesses = [...new Set(allItems.map(i => i.products?.thickness_mm).filter(x => x != null))].sort((a,b) => a-b);
+
+    fillSelect('filterMaterial',  materials,   'Kaikki materiaalit');
+    fillSelect('filterColor',     colors,      'Kaikki värit');
+    fillSelect('filterThickness', thicknesses.map(t => ({ val: t, label: t + ' mm' })), 'Kaikki paksuudet', true);
+  }
+
+  function fillSelect(id, items, placeholder, isObj) {
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = '<option value="">' + placeholder + '</option>';
+    items.forEach(item => {
+      const val   = isObj ? item.val : item;
+      const label = isObj ? item.label : item;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = label;
+      if (String(val) === String(current)) opt.selected = true;
+      sel.appendChild(opt);
     });
-    document.getElementById('picker').innerHTML = html;
   }
 
-  // QR-koodi SVG:nä: terävä kaikissa koossa, ei piirtoalueen kokoarvailua
-  function qrSvg(text) {
-    const qr = qrcode(0, 'M');   // 0 = koko valitaan automaattisesti
-    qr.addData(text);
-    qr.make();
-    return qr.createSvgTag({ cellSize: 2, margin: 2, scalable: true });
-  }
+  // ─── Render table ────────────────────────────────────
+  function renderTable() {
+    const f = {
+      material:  document.getElementById('filterMaterial').value,
+      color:     document.getElementById('filterColor').value,
+      type:      document.getElementById('filterType').value,
+      thickness: document.getElementById('filterThickness').value,
+      checked:   document.getElementById('filterChecked').value,
+    };
+    const old90 = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const filtered = allItems.filter(item => {
+      if (f.checked === 'no'  && item.checked_at)  return false;
+      if (f.checked === 'yes' && !item.checked_at) return false;
+      if (f.checked === 'old' && (!item.checked_at || new Date(item.checked_at).getTime() > old90)) return false;
+      if (f.material  && item.products?.material      !== f.material)          return false;
+      if (f.color     && item.products?.color         !== f.color)             return false;
+      if (f.type      && item.type                    !== f.type)              return false;
+      if (f.thickness && String(item.products?.thickness_mm) !== f.thickness) return false;
+      return true;
+    });
 
-  function renderLabels() {
-    const size = document.getElementById('size').value;
-    const box = document.getElementById('labels');
-    box.className = 'labels size-' + size;
-    const chosen = locs.filter(l => selected.has(l.id)).sort((a, b) => a.code.localeCompare(b.code, 'fi', { numeric: true }));
-    document.getElementById('count').textContent = chosen.length;
+    document.getElementById('countBadge').textContent =
+      filtered.length === allItems.length
+        ? allItems.length + ' erää'
+        : filtered.length + ' / ' + allItems.length + ' erää';
 
-    if (typeof qrcode !== 'function') {
-      box.innerHTML = '<div style="padding:20px;color:#c00">QR-kirjasto ei latautunut (cdn.jsdelivr.net). Tarkista verkkoyhteys ja päivitä sivu.</div>';
+    if (!filtered.length) {
+      document.getElementById('stockBody').innerHTML =
+        '<tr><td colspan="9" class="state-msg">Ei tuloksia.</td></tr>';
+      updateMapHighlights([]);
       return;
     }
+
+    // Lajittelu
+    if (sortCol) {
+      filtered.sort((a, b) => {
+        const av = getSortValue(a, sortCol);
+        const bv = getSortValue(b, sortCol);
+        let cmp = typeof av === 'number' ? av - bv : String(av).localeCompare(String(bv), 'fi');
+        return sortDir === 'desc' ? -cmp : cmp;
+      });
+    }
+
+    // Päivitetään myös korttinäkymä
+    renderCards(filtered);
+
+    document.getElementById('stockBody').innerHTML = filtered.map(item => {
+      const mat    = item.products?.material || '—';
+      const col    = item.products?.color    || '—';
+      const thick  = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '—';
+      const loc    = item.locations?.code || '';
+      const locName = item.locations?.name || loc;
+      const type   = item.type || 'SHEET';
+      const typeFi = TYPE_FI[type] || type;
+      const mitat  = formatMitat(item);
+      const note   = item.note || '';
+      const pname  = productName(item.products);
+      const isChkd = checkedIds.has(item.id) ? ' checked' : '';
+      return '<tr onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+        '<td class="cb-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-cb" data-id="' + item.id + '"' + isChkd + ' onchange="onRowCheck(this)"></td>' +
+        '<td><span class="type-badge type-' + type + '">' + typeFi + '</span></td>' +
+        '<td colspan="2">' + pname + parentHtml(item) + '</td>' +
+        '<td class="hide-mobile mono">' + thick + '</td>' +
+        '<td class="mono">' + mitat + '</td>' +
+        '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '<span style="color:var(--muted)">—</span>') + '</td>' +
+        '<td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
+        '<td class="hide-mobile mono" style="font-size:0.8rem">' + checkedHtml(item) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    // Päivitetään karttakorostus
+    updateMapHighlights(filtered);
+  }
+
+  // Inventointileima: "16.11.26" vihreänä, vanha (>90 pv) keltaisena, puuttuva harmaana
+  function fmtDateShort(iso) {
+    const d = new Date(iso);
+    return d.getDate() + '.' + (d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2);
+  }
+  function checkedHtml(item) {
+    if (!item.checked_at) return '<span style="color:var(--muted)">—</span>';
+    const old = Date.now() - new Date(item.checked_at).getTime() > 90 * 24 * 60 * 60 * 1000;
+    return '<span style="color:' + (old ? 'var(--accent)' : 'var(--sheet)') + '" title="' + new Date(item.checked_at).toLocaleString('fi-FI') + '">' + fmtDateShort(item.checked_at) + '</span>';
+  }
+  // Siivun alkuperä: "← rullasta 40 m · IN-R-07". Emo voi olla jo käytetty tai arkistoitu.
+  function parentHtml(item) {
+    if (!item.parent_stock_item_id) return '';
+    const p = item.parent;
+    if (!p) return '<div style="font-size:0.75rem;color:var(--muted)">← leikattu toisesta erästä</div>';
+    const typeFi = (TYPE_FI[p.type] || p.type || '').toLowerCase();
+    const dim = p.type === 'ROLL'
+      ? (p.original_length_mm != null ? (p.original_length_mm / 1000).toFixed(0).replace('.', ',') + ' m' : '')
+      : (p.original_length_mm != null && p.original_width_mm != null ? p.original_length_mm + '×' + p.original_width_mm : '');
+    const where = p.status === 'ACTIVE' ? (p.locations?.code || '') : (p.status === 'USED' ? 'käytetty loppuun' : 'arkistoitu');
+    return '<div style="font-size:0.75rem;color:var(--muted)">← ' + typeFi + (dim ? ' ' + dim : '') + (where ? ' · ' + where : '') + '</div>';
+  }
+
+  // Määrätavara (ITEM = kpl, BULK = m): määrä on quantity-sarakkeessa.
+  // Vanhoilla riveillä määrä saattoi olla length-kentissä — luetaan varalta sieltä.
+  function itemQuantity(item) {
+    if (item.quantity != null) return Number(item.quantity);
+    const l = item.remaining_length_mm ?? item.original_length_mm;
+    if (l == null) return null;
+    return item.type === 'BULK' ? l / 1000 : l;
+  }
+  function formatQty(n) {
+    return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+  }
+
+  function formatMitat(item) {
+    const type = item.type;
+    if (type === 'ITEM') {
+      const q = itemQuantity(item);
+      return q != null ? formatQty(q) + ' kpl' : '—';
+    }
+    if (type === 'BULK') {
+      const q = itemQuantity(item);
+      return q != null ? formatQty(q) + ' m' : '—';
+    }
+    const w = item.remaining_width_mm ?? item.original_width_mm;
+    const l = item.remaining_length_mm ?? item.original_length_mm;
+    const wStr = w != null ? w + ' mm' : '—';
+    const est  = (type === 'ROLL' && item.length_estimated) ? '~' : '';
+    const lStr = l != null ? est + (l >= 1000 ? (l/1000).toFixed(3).replace('.',',') + ' m' : l + ' mm') : '—';
+    return lStr + ' <span class="dim">× ' + wStr + '</span>';
+  }
+
+  // Filter events
+  ['filterMaterial','filterColor','filterType','filterThickness','filterChecked'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderTable);
+  });
+  document.getElementById('clearFilters').addEventListener('click', () => {
+    ['filterMaterial','filterColor','filterType','filterThickness','filterChecked'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    renderTable();
+  });
+
+
+
+  // Sama logiikka kuin tietokannan nimien täytössä 16.11.2026:
+  // pelti = "Materiaali Väri 0,5", tarvike = "Materiaali Väri"
+  function lajiFromUnit(unit) { return unit === 'm²' ? 'pelti' : 'tarvike'; }
+  function generoiNimi(material, color, thickness_mm, unit) {
+    const parts = [material, color].filter(Boolean);
+    if (lajiFromUnit(unit) === 'pelti' && thickness_mm) {
+      parts.push(String(Number(thickness_mm)).replace('.', ','));
+    }
+    return parts.join(' ');
+  }
+
+  // Tuotteen näyttönimi: tietokannan nimi-kenttä, varalla koottu nimi
+  function productName(p) {
+    if (!p) return '—';
+    if (p.nimi) return p.nimi;
+    const parts = [];
+    if (p.product_group) parts.push(p.product_group);
+    if (p.material)      parts.push(p.material);
+    if (p.color)         parts.push(p.color);
+    if (p.thickness_mm)  parts.push(p.thickness_mm + 'mm');
+    return parts.join(' · ') || '—';
+  }
+
+  // ─── KARTTAPANEELIN RESIZE ───────────────────────────
+  (function() {
+    const handle = document.getElementById('mapResizeHandle');
+    const panel  = document.getElementById('mapPanel');
+    if (!handle || !panel) return;
+    let dragging = false, startX, startW;
+
+    handle.addEventListener('mousedown', e => {
+      dragging = true;
+      startX = e.clientX;
+      startW = panel.offsetWidth;
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+    document.addEventListener('mousemove', e => {
+      if (!dragging) return;
+      const delta = startX - e.clientX; // kartta kasvaa vasemmalle
+      const newW  = Math.max(200, Math.min(700, startW + delta));
+      panel.style.width    = newW + 'px';
+      panel.style.minWidth = newW + 'px';
+    });
+    document.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+  })();
+
+
+
+  let mapSvgLoaded = false;
+  let checkedIds   = new Set();
+
+  // Kartan locs-tietosanakirja — koodi → nimi (varasto.html:n omaa käyttöä varten)
+  const mapLocs = {
+    'inr01':{code:'IN-R-01',name:'Kelateline'},'inr02':{code:'IN-R-02',name:'Hyllykkö 2'},
+    'inr03':{code:'IN-R-03',name:'Lattiarullat'},'inr04':{code:'IN-R-04',name:'Hyllykkö 3'},
+    'inr05':{code:'IN-R-05',name:'Hyllykkö 4'},'inr06':{code:'IN-R-06',name:'Hyllykkö 5'},
+    'inr07':{code:'IN-R-07',name:'Hyllykkö 1'},'inr08':{code:'IN-R-08',name:'Giljotiinin välihylly'},
+    'inr09':{code:'IN-R-09',name:'Päätyhylly'},'inr10':{code:'IN-R-10',name:'Päätyseinän levyalue A'},
+    'inr11':{code:'IN-R-11',name:'Päätyseinän levyalue B'},'inrvr':{code:'IN-R-VR',name:'Vaihtuva rulla'},
+    'inl01':{code:'IN-L-01',name:'Tekninen tila'},'inl03':{code:'IN-L-03',name:'Työkalukoppi'},
+    'inl04':{code:'IN-L-04',name:'Porras hyllykkö'},'inl05a':{code:'IN-L-05',name:'Piikit (rivi A)'},
+    'inl05b':{code:'IN-L-05',name:'Piikit (rivi B)'},'inl06':{code:'IN-L-06',name:'Päätyseinän piikit'},
+    'inl07_1':{code:'IN-L-07',name:'Päätyseinän hylly 1'},'inl07_2':{code:'IN-L-07',name:'Päätyseinän hylly 2'},
+    'inl07_3':{code:'IN-L-07',name:'Päätyseinän hylly 3'},'inl08a':{code:'IN-L-08-A',name:'Stucco alu alue'},
+    'inl08b':{code:'IN-L-08-B',name:'Kyva 0,7–1,0 alue'},'inl08c':{code:'IN-L-08-C',name:'ZN sekalaiset palat'},
+    'inl09':{code:'IN-L-09',name:'Päätyseinän ZN pikkupalat'},'inl10':{code:'IN-L-10',name:'RST levyt'},
+    'inl11':{code:'IN-L-11',name:'Jyvä alu 1,5mm pienet'},'inl12':{code:'IN-L-12',name:'Jyvä alu 1,5mm isot'},
+    'inl13':{code:'IN-L-13',name:'Lattia-alue isoille rullille'},'inl14':{code:'IN-L-14',name:'Kotelot / Tsek kone'},
+    'inl15':{code:'IN-L-15',name:'ZN ja Kyva hyllyt'},
+    'inc01':{code:'IN-C-01',name:'Kanttikoneen pääty'},'inc02':{code:'IN-C-02',name:'Kanttikonetta vasten'},
+    'inc03':{code:'IN-C-03',name:'Kattokonetta vasten Oikea'},'inc04a':{code:'IN-C-04',name:'Kapea tila'},
+    'inc05':{code:'IN-C-05',name:'Kattokoneen nosto-oven puoli'},'inc06a':{code:'IN-C-06',name:'Kattokoneen vasen puoli'},
+    'inc07':{code:'IN-C-07',name:'Vakki (liikkuva kontti)'},'inc08':{code:'IN-C-08',name:'Kattokonetta vasten Vasen'},
+    'inc09a':{code:'IN-C-09-A',name:'Kattokoneen vapaa taso'},'inc09b':{code:'IN-C-09-B',name:'Kattokoneen kiinteä hyllykkö'},
+    'inc09c':{code:'IN-C-09-C',name:'Hylly kattokoneen päällä'},
+    'auto':{code:'AUTO',name:'Pakettiauto'},'kontti':{code:'KONTTI',name:'Kontti'},
+    'ulkv':{code:'ULK-V',name:'Ulkovarasto vasen'},'ulko':{code:'ULK-O',name:'Ulkovarasto oikea'},
+    'ulkohylly':{code:'ULKOHYLLY',name:'Ulkona oleva hylly'},
+  };
+
+  function codeToLoc(code) {
+    if (!code) return '';
+    // Kokeillaan progressiivisesti lyhyempiä versioita kunnes löytyy kartalta
+    // Esim. IN-R-04-11-40 → IN-R-04-11-40 → IN-R-04-11 → IN-R-04 → löytyy
+    const parts = code.split('-');
+    const container = document.getElementById('mapPanelBody');
+    for (let i = parts.length; i > 0; i--) {
+      const candidate = parts.slice(0, i).join('').toLowerCase();
+      if (container) {
+        const found = container.querySelector('[data-loc="' + candidate + '"]') ||
+                      container.querySelector('[data-loc^="' + candidate + '"]');
+        if (found) return candidate;
+      } else {
+        // Fallback ilman DOM-hakua (esim. offmap-tarkistuksessa)
+        return parts.slice(0, 3).join('').toLowerCase();
+      }
+    }
+    return code.replace(/-/g,'').toLowerCase();
+  }
+
+  // Ajetaan fetch():n jälkeen — lisää klikkaukset upotettuun SVG:hen
+  function initMapInteractions(container) {
+    container.querySelectorAll('[data-loc]').forEach(el => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const loc = el.getAttribute('data-loc');
+        const info = mapLocs[loc];
+        // Näytetään tooltip kartan yläpuolella
+        const tooltip = container.closest('.map-panel-body, #mapTabBody');
+        if (tooltip) {
+          let tip = tooltip.querySelector('.map-tooltip');
+          if (!tip) {
+            tip = document.createElement('div');
+            tip.className = 'map-tooltip';
+            tip.style.cssText = 'padding:0.4rem 0.7rem;background:var(--surface);border:1px solid var(--accent);border-radius:4px;font-size:0.8rem;margin-bottom:0.4rem;';
+            tooltip.insertBefore(tip, tooltip.firstChild);
+          }
+          if (info) {
+            tip.innerHTML = '<strong style="font-family:\'IBM Plex Mono\',monospace;color:var(--accent)">' +
+              info.code + '</strong> &ensp;' + info.name;
+          }
+        }
+      });
+    });
+  }
+
+  async function loadMapSvg() {
+    if (mapSvgLoaded) return;
     try {
-      box.innerHTML = chosen.map(l =>
-        '<div class="label' + (l.parent_location_id && l.parent_location_id !== l.id ? ' sub' : '') + '">' +
-          '<div class="qr">' + qrSvg(labelUrl(l.code)) + '</div>' +
-          '<div class="txt"><div class="code">' + esc(l.code) + '</div><div class="name">' + esc(l.name) + '</div></div>' +
-        '</div>').join('');
-    } catch (err) {
-      box.innerHTML = '<div style="padding:20px;color:#c00">QR-koodien teko epäonnistui: ' + esc(err.message) + '</div>';
+      const res  = await fetch('../maps/verstaspohja_mitoitettu.html');
+      const html = await res.text();
+      const tmp  = document.createElement('div');
+      tmp.innerHTML = html;
+      const svg  = tmp.querySelector('svg');
+      if (!svg) return;
+
+      const panel = document.getElementById('mapPanelBody');
+      const tab   = document.getElementById('mapTabBody');
+
+      panel.innerHTML = '';
+      const svg1 = svg.cloneNode(true);
+      panel.appendChild(svg1);
+      initMapInteractions(panel);
+
+      tab.innerHTML = '';
+      const svg2 = svg.cloneNode(true);
+      tab.appendChild(svg2);
+      initMapInteractions(tab);
+
+      mapSvgLoaded = true;
+    } catch(e) {
+      console.error('Kartan lataus epäonnistui:', e);
     }
   }
 
-  function setSelection(ids, on) {
-    ids.forEach(id => on ? selected.add(id) : selected.delete(id));
-    renderPicker();
-    renderLabels();
+  // Korostaa kartan varastopaikat kahdella kerroksella:
+  // loc-filter = suodatusosuma (vaalea), loc-select = täppävalinta (kirkas)
+  function updateMapHighlights(filteredItems) {
+    if (!mapSvgLoaded) return;
+
+    // Kerätään location-koodit molemmista ryhmistä
+    const filterCodes = new Set();
+    const selectCodes = new Set();
+    const offmapCodes = new Set();
+
+    filteredItems.forEach(item => {
+      const code = item.locations?.code;
+      if (!code) return;
+      filterCodes.add(code);
+      if (checkedIds.has(item.id)) selectCodes.add(code);
+    });
+
+    // Päivitetään molemmat SVG:t (desktop + mobiili)
+    ['mapPanelBody','mapTabBody'].forEach(containerId => {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      // Poistetaan vanhat korostukset
+      container.querySelectorAll('.loc-filter, .loc-select').forEach(el => {
+        el.classList.remove('loc-filter','loc-select');
+      });
+
+      // Lisätään suodatuskorostus
+      filterCodes.forEach(code => {
+        const key = codeToLoc(code);
+        container.querySelectorAll('[data-loc]').forEach(el => {
+          const elKey = el.getAttribute('data-loc');
+          if (elKey === key || elKey.startsWith(key)) {
+            // Käytetään g.loc jos löytyy, muuten elementtiä itseään
+            const target = el.closest('g.loc') || el;
+            target.classList.add('loc-filter');
+          }
+        });
+        // Tarkistetaan löytyikö kartalta — jos ei, merkitään offmap
+        const found = container.querySelector('[data-loc="' + key + '"]') ||
+                      container.querySelector('[data-loc^="' + key + '"]');
+        if (!found) offmapCodes.add(code);
+      });
+
+      // Lisätään täppäkorostus päälle (ylikirjoittaa vaalean)
+      selectCodes.forEach(code => {
+        const key = codeToLoc(code);
+        container.querySelectorAll('[data-loc]').forEach(el => {
+          const elKey = el.getAttribute('data-loc');
+          if (elKey === key || elKey.startsWith(key)) {
+            const target = el.closest('g.loc') || el;
+            target.classList.remove('loc-filter');
+            target.classList.add('loc-select');
+          }
+        });
+      });
+    });
+
+    // Laskuri
+    const total = filterCodes.size;
+    const sel   = selectCodes.size;
+    const countEl     = document.getElementById('mapHighlightCount');
+    const countElMob  = document.getElementById('mapTabHighlightCount');
+    const txt = total > 0
+      ? (sel > 0 ? sel + ' valittu / ' + total + ' paikkaa' : total + ' paikkaa')
+      : '';
+    if (countEl)    countEl.textContent    = txt;
+    if (countElMob) countElMob.textContent = txt;
+
+    // Ei-kartalla -lista
+    renderOffmapList(offmapCodes, filteredItems);
   }
 
-  document.addEventListener('change', e => {
-    if (e.target.matches('input[data-id]')) { setSelection([e.target.dataset.id], e.target.checked); }
-    if (e.target.id === 'includeLevels') renderPicker();
-    if (e.target.id === 'size') renderLabels();
-  });
-  document.addEventListener('click', e => {
-    const g = e.target.closest('[data-group-select]');
-    if (g) setSelection(g.dataset.groupSelect.split(','), true);
-  });
-  document.getElementById('baseUrl').addEventListener('input', renderLabels);
-  document.getElementById('selectAll').addEventListener('click', () => {
-    const withLevels = document.getElementById('includeLevels').checked;
-    setSelection(locs.filter(l => withLevels || !l.parent_location_id || l.parent_location_id === l.id).map(l => l.id), true);
-  });
-  document.getElementById('selectNone').addEventListener('click', () => { selected.clear(); renderPicker(); renderLabels(); });
-  document.getElementById('printBtn').addEventListener('click', () => {
-    if (!selected.size) { alert('Valitse ensin tarrat.'); return; }
-    window.print();
-  });
+  function renderOffmapList(offmapCodes, filteredItems) {
+    ['offmapList','offmapListMobile'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (offmapCodes.size === 0) { el.style.display = 'none'; el.innerHTML = ''; return; }
+      const badges = [...offmapCodes].map(code => '<span class="offmap-badge">' + code + '</span>').join('');
+      el.innerHTML = '<strong>Ei näy kartalla:</strong>' + badges;
+      el.style.display = 'block';
+    });
+  }
 
-  async function init() {
-    // Oletusosoite: tämä sivu samassa kansiossa kuin varastotyo.html
-    document.getElementById('baseUrl').value = location.href.replace(/[^/]*$/, 'varastotyo.html').split('?')[0];
+  // ─── CHECKBOX-KÄSITTELY ──────────────────────────────
+
+  function toggleCheckAll(masterCb) {
+    const checkboxes = document.querySelectorAll('.row-cb');
+    checkboxes.forEach(cb => {
+      cb.checked = masterCb.checked;
+      const id = cb.dataset.id;
+      if (masterCb.checked) checkedIds.add(id);
+      else checkedIds.delete(id);
+    });
+    updateMapFromCurrentView();
+  }
+
+  function onRowCheck(cb) {
+    const id = cb.dataset.id;
+    if (cb.checked) checkedIds.add(id);
+    else checkedIds.delete(id);
+    // Päivitä "valitse kaikki" -täpän tila
+    const all  = document.querySelectorAll('.row-cb');
+    const chkd = document.querySelectorAll('.row-cb:checked');
+    const master = document.getElementById('checkAll');
+    if (master) {
+      master.indeterminate = chkd.length > 0 && chkd.length < all.length;
+      master.checked = chkd.length === all.length && all.length > 0;
+    }
+    updateMapFromCurrentView();
+  }
+
+  // Hakee nykyisen suodatetun listan ja päivittää kartan
+  function updateMapFromCurrentView() {
+    const f = {
+      material:  document.getElementById('filterMaterial').value,
+      color:     document.getElementById('filterColor').value,
+      type:      document.getElementById('filterType').value,
+      thickness: document.getElementById('filterThickness').value,
+    };
+    const filtered = allItems.filter(item => {
+      if (f.material  && item.products?.material      !== f.material)          return false;
+      if (f.color     && item.products?.color         !== f.color)             return false;
+      if (f.type      && item.type                    !== f.type)              return false;
+      if (f.thickness && String(item.products?.thickness_mm) !== f.thickness) return false;
+      return true;
+    });
+    updateMapHighlights(filtered);
+  }
+
+
+  function renderCards(filtered) {
+    const list = document.getElementById('cardList');
+    if (!filtered.length) {
+      list.innerHTML = '<div class="state-msg">Ei tuloksia.</div>';
+      return;
+    }
+    list.innerHTML = filtered.map((item, idx) => {
+      const type   = item.type || 'SHEET';
+      const typeFi = TYPE_FI[type] || type;
+      const mat    = item.products?.material || '—';
+      const col    = item.products?.color    || '—';
+      const thick  = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '';
+      const loc    = item.locations?.code || '';
+      const locName = item.locations?.name || loc;
+      const note   = item.note || '';
+      const mitat  = formatMitat(item);
+      const pname  = productName(item.products);
+
+      const noteHtml = note
+        ? '<button class="stock-card-note-btn" onclick="toggleNote(event,' + idx + ')">▶ Huomio</button>' +
+          '<div class="stock-card-note-text" id="note-' + idx + '">' + note + '</div>'
+        : '';
+
+      const isChkd = checkedIds.has(item.id) ? ' checked' : '';
+      const cbHtml = '<div style="position:absolute;top:0.75rem;right:0.75rem" onclick="event.stopPropagation()">' +
+        '<input type="checkbox" class="row-cb" data-id="' + item.id + '"' + isChkd + ' onchange="onRowCheck(this)"></div>';
+
+      return '<div class="stock-card" style="position:relative" onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
+        cbHtml +
+        '<div class="stock-card-top">' +
+          '<span class="type-badge type-' + type + '">' + typeFi + '</span>' +
+          '<span class="stock-card-name">' + pname + '</span>' +
+        '</div>' +
+        '<div class="stock-card-mitat">' + mitat + '</div>' +
+        '<div class="stock-card-meta">' +
+          (locName ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '') +
+          ' <span class="mono" style="font-size:0.75rem;margin-left:auto">inv. ' + checkedHtml(item) + '</span>' +
+        '</div>' +
+        parentHtml(item) +
+        noteHtml +
+        '</div>';
+    }).join('');
+  }
+
+  function toggleNote(e, idx) {
+    e.stopPropagation(); // ei avaa modaalia
+    const noteEl = document.getElementById('note-' + idx);
+    const btn    = e.currentTarget;
+    const open   = noteEl.classList.toggle('open');
+    btn.textContent = (open ? '▼' : '▶') + ' Huomio';
+  }
+
+  // ─── Lajittelu ───────────────────────────────────────
+  function sortTable(col) {
+    if (sortCol === col) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = col;
+      sortDir = 'asc';
+    }
+    // Päivitetään otsikkojen CSS-luokat
+    document.querySelectorAll('thead th.sortable').forEach(th => {
+      th.classList.remove('sort-asc', 'sort-desc');
+    });
+    const idx = { type: 0, material: 1, color: 2, thickness: 3, length: 4 };
+    const ths = document.querySelectorAll('#stockTable thead th.sortable');
+    if (ths[Object.keys(idx).indexOf(col)]) {
+      ths[Object.keys(idx).indexOf(col)].classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+    renderTable();
+  }
+
+  function getSortValue(item, col) {
+    switch (col) {
+      case 'type':      return item.type || '';
+      case 'material':  return item.products?.material || '';
+      case 'color':     return item.products?.color || '';
+      case 'thickness': return item.products?.thickness_mm ?? 0;
+      case 'length':    return item.remaining_length_mm ?? item.original_length_mm ?? 0;
+      case 'checked':   return item.checked_at ? new Date(item.checked_at).getTime() : 0;
+      default:          return '';
+    }
+  }
+
+  // ─── Varastopaikka-lista ─────────────────────────────
+  // Rakentaa ryhmitellyn listan; selectedId = esivalittu
+  function buildLocList(listId, hiddenId, selectedId) {
+    const list = document.getElementById(listId);
+    if (!allLocations.length) {
+      list.innerHTML = '<div style="padding:0.75rem;color:var(--muted);font-size:0.85rem">Ei varastopaikkoja</div>';
+      return;
+    }
+
+    let html = '';
+    LOC_GROUPS.forEach(group => {
+      const locs = allLocations.filter(l => l.code.startsWith(group.prefix));
+      if (!locs.length) return;
+      html += '<div class="loc-group-label">' + group.label + '</div>';
+      locs.forEach(loc => {
+        const sel = loc.id === selectedId ? ' selected' : '';
+        // data-search sisältää sekä koodin että nimen hakua varten
+        html += '<div class="loc-option' + sel + '" data-id="' + loc.id + '" data-code="' + loc.code + '" data-search="' + loc.code + ' ' + loc.name + '" onclick="selectLocation(\'' + listId + '\',\'' + hiddenId + '\',\'' + loc.id + '\',\'' + loc.code + '\',this)">' +
+          '<span class="loc-option-code">' + loc.code + '</span>' +
+          '<span>' + loc.name + '</span>' +
+          '</div>';
+      });
+    });
+
+    // Muut jotka eivät sovi ryhmiin
+    const ungrouped = allLocations.filter(l => !LOC_GROUPS.some(g => l.code.startsWith(g.prefix)));
+    if (ungrouped.length) {
+      html += '<div class="loc-group-label">Muut</div>';
+      ungrouped.forEach(loc => {
+        const sel = loc.id === selectedId ? ' selected' : '';
+        html += '<div class="loc-option' + sel + '" data-id="' + loc.id + '" data-code="' + loc.code + '" data-search="' + loc.code + ' ' + loc.name + '" onclick="selectLocation(\'' + listId + '\',\'' + hiddenId + '\',\'' + loc.id + '\',\'' + loc.code + '\',this)">' +
+          '<span class="loc-option-code">' + loc.code + '</span>' +
+          '<span>' + loc.name + '</span>' +
+          '</div>';
+      });
+    }
+
+    list.innerHTML = html;
+  }
+
+  function selectLocation(listId, hiddenId, id, code, el) {
+    document.querySelectorAll('#' + listId + ' .loc-option').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById(hiddenId).value = id;
+    // Näytetään valittu hakukentässä
+    const searchInputId = listId === 'addLocList' ? 'addLocSearch' : 'modalLocSearch';
+    document.getElementById(searchInputId).value = code;
+  }
+
+  function filterLocations(context, query) {
+    const listId = context === 'add' ? 'addLocList' : 'modalLocList';
+    const q = query.toLowerCase();
+    document.querySelectorAll('#' + listId + ' .loc-option').forEach(opt => {
+      const matches = opt.dataset.search.toLowerCase().includes(q);
+      opt.style.display = matches ? '' : 'none';
+    });
+    // Piilotetaan tyhjät ryhmäotsikot
+    document.querySelectorAll('#' + listId + ' .loc-group-label').forEach(label => {
+      let next = label.nextElementSibling;
+      let hasVisible = false;
+      while (next && !next.classList.contains('loc-group-label')) {
+        if (next.style.display !== 'none') hasVisible = true;
+        next = next.nextElementSibling;
+      }
+      label.style.display = hasVisible ? '' : 'none';
+    });
+  }
+
+  // ─── Modal ───────────────────────────────────────────
+  function openModal(item) {
+    currentModalItem = item;
+    const type = item.type || 'SHEET';
+    const mat  = item.products?.material  || '—';
+    const col  = item.products?.color     || '—';
+    const thick = item.products?.thickness_mm != null ? item.products.thickness_mm + ' mm' : '—';
+
+    document.getElementById('modalTitle').textContent = productName(item.products);
+    document.getElementById('modalType').textContent  = TYPE_FI[type] || type;
+    document.getElementById('modalThick').textContent = thick;
+    document.getElementById('modalChecked').innerHTML = item.checked_at ? checkedHtml(item) : '<span style="color:var(--muted)">ei inventoitu</span>';
+    const origL = item.original_length_mm, origW = item.original_width_mm;
+    document.getElementById('modalOrig').textContent = (type === 'ITEM' || type === 'BULK') ? '—'
+      : ((origL != null ? (origL >= 1000 ? (origL/1000).toFixed(3).replace('.',',') + ' m' : origL + ' mm') : '—') + ' × ' + (origW != null ? origW + ' mm' : '—'));
+    const parentHtmlStr = parentHtml(item);
+    document.getElementById('modalParentItem').style.display = parentHtmlStr ? '' : 'none';
+    document.getElementById('modalParent').innerHTML = parentHtmlStr.replace('← ', '').replace(/font-size:0.75rem;color:var\(--muted\)/, '');
+
+    const remLen = item.remaining_length_mm ?? item.original_length_mm;
+    const remWid = item.remaining_width_mm  ?? item.original_width_mm;
+
+    // Näytetään jäljellä olevat mitat isolla
+    if (type === 'BULK' || type === 'ITEM') {
+      const q = itemQuantity(item);
+      document.getElementById('modalRemLength').textContent = q != null ? formatQty(q) + (type === 'BULK' ? ' m' : ' kpl') : '—';
+      document.getElementById('modalRemWidth').textContent  = '—';
+    } else {
+      document.getElementById('modalRemLength').textContent = remLen != null ? (remLen >= 1000 ? (remLen/1000).toFixed(3).replace('.',',') + ' m' : remLen + ' mm') : '—';
+      document.getElementById('modalRemWidth').textContent  = remWid != null ? remWid + ' mm' : '—';
+    }
+
+    // Tyhjät muokkauskentät (käyttäjä kirjoittaa vain jos haluaa muuttaa)
+    document.getElementById('modalLength').value = '';
+    document.getElementById('modalWidth').value  = '';
+    document.getElementById('modalNote').value   = item.note || '';
+
+    // Leveys-kenttä piilotetaan jos ei relevantti
+    document.getElementById('modalWidthGroup').style.display =
+      (type === 'ROLL' || type === 'SHEET' || type === 'OFFCUT') ? '' : 'none';
+
+    // Pituus-label tyypin mukaan
+    document.getElementById('modalLengthLabel').textContent =
+      type === 'BULK' ? 'Uusi metrimäärä (m) — tyhjä = ei muuteta'
+      : type === 'ITEM' ? 'Uusi kpl-määrä — tyhjä = ei muuteta'
+      : 'Uusi pituus jäljellä (mm) — tyhjä = ei muuteta';
+
+    // Varastopaikka
+    buildLocList('modalLocList', 'modalLocId', item.location_id || null);
+    const locCode = item.locations?.code || '';
+    const locName = item.locations?.name || '';
+    document.getElementById('modalLocSearch').value = locCode;
+    document.getElementById('modalLocId').value     = item.location_id || '';
+
+    // Näytetään nykyinen varastopaikka selkeästi koodin + nimen kera
+    const locCurrentEl = document.getElementById('modalLocCurrent');
+    if (locCode) {
+      locCurrentEl.innerHTML = '📍 <strong style="font-family:\'IBM Plex Mono\',monospace">' + locCode + '</strong>' +
+        (locName ? '&ensp;<span style="color:var(--muted)">' + locName + '</span>' : '');
+      locCurrentEl.style.display = 'block';
+    } else {
+      locCurrentEl.style.display = 'none';
+    }
+
+    document.getElementById('modalBackdrop').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modalBackdrop').classList.remove('open');
+    currentModalItem = null;
+  }
+
+  function onBackdropClick(e) {
+    if (e.target === document.getElementById('modalBackdrop')) closeModal();
+  }
+
+  async function doSaveModal() {
+    if (!currentModalItem) return;
+    const btn = document.getElementById('modalSaveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Tallennetaan...';
+
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/locations?select=id,code,name,parent_location_id&is_active=eq.true&order=code`, { headers: await authHeaders() });
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+
+      const newLen   = document.getElementById('modalLength').value.trim();
+      const newWid   = document.getElementById('modalWidth').value.trim();
+      const newLocId = document.getElementById('modalLocId').value || null;
+      const newNote  = document.getElementById('modalNote').value.trim();
+
+      // Rakennetaan päivitysobjekti — vain muuttuneet kentät
+      // Vain jäljellä olevat mitat muuttuvat — original_* on alkuperäinen mitta eikä sitä koskaan ylikirjoiteta.
+      const patch = {};
+      const type = currentModalItem.type;
+      if (newLen) {
+        if (type === 'ITEM' || type === 'BULK') {
+          patch.quantity = parseFloat(newLen.replace(',', '.'));
+        } else {
+          patch.remaining_length_mm = parseInt(newLen);
+        }
+      }
+      if (newWid && type !== 'ITEM' && type !== 'BULK') {
+        patch.remaining_width_mm = parseInt(newWid);
+      }
+      patch.location_id = newLocId;
+      patch.note        = newNote || null;
+
+      // Suora REST PATCH — ei Edge Functionia, ei CORS-ongelmaa
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${currentModalItem.id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(patch)
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error('HTTP ' + res.status + ': ' + err);
+      }
+
+      showToast('Tallennettu ✓', 'success');
+      closeModal();
+      await loadStock();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '💾 Tallenna';
+    }
+  }
+
+  async function doArchive() {
+    if (!currentModalItem) return;
+    if (!confirm('Arkistoidaanko pelti? Tätä ei voi perua.')) return;
+
+    const btn = document.getElementById('modalArchiveBtn');
+    btn.disabled = true;
+
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+
+      // Arkistointi: päivitetään status ARCHIVED suoraan REST-kyselyllä
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${currentModalItem.id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ status: 'ARCHIVED' })
+      });
+
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      locs = await res.json();
+
+      showToast('Arkistoitu ✓', 'success');
+      closeModal();
+      await loadStock();
     } catch (err) {
-      document.getElementById('state').textContent = 'Virhe paikkojen haussa: ' + err.message;
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ─── Lisää-lomake ────────────────────────────────────
+  function populateAddMaterials() {
+    const materials = [...new Set(allProducts.filter(p => p.is_active).map(p => p.material))].sort();
+    const sel = document.getElementById('addMaterial');
+    sel.innerHTML = '<option value="">— valitse materiaali —</option>';
+    materials.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      sel.appendChild(opt);
+    });
+  }
+
+  function onAddMaterialChange() {
+    const mat = document.getElementById('addMaterial').value;
+    const prods = allProducts.filter(p => p.material === mat && p.is_active);
+    const sel = document.getElementById('addProduct');
+    sel.innerHTML = '<option value="">— valitse tuote —</option>';
+    prods.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.nimi || (p.color + ' ' + p.thickness_mm + 'mm');
+      sel.appendChild(opt);
+    });
+  }
+
+  function onAddTypeChange() {
+    const type = document.getElementById('addType').value;
+    // BULK: pituus on metreinä
+    document.getElementById('addLengthLabel').textContent =
+      type === 'BULK' ? 'Metrimäärä (m)'
+      : 'Pituus (mm)';
+    // ITEM: ei leveyttä eikä pituutta, muutetaan qty-label
+    document.getElementById('addWidthWrap').style.display =
+      (type === 'ROLL' || type === 'SHEET' || type === 'OFFCUT') ? '' : 'none';
+    document.getElementById('addLengthWrap').style.display =
+      type === 'ITEM' ? 'none' : '';
+    // BULK: metrimäärä tulee pituuskentästä, erämäärä ei ole mielekäs
+    document.getElementById('addQty').closest('.form-group').style.display =
+      type === 'BULK' ? 'none' : '';
+    document.getElementById('addQty').closest('.form-group').querySelector('.form-label').textContent =
+      type === 'ITEM' ? 'Kappalemäärä' : 'Erien määrä (kpl)';
+  }
+
+  async function doAddStock() {
+    const type      = document.getElementById('addType').value;
+    const productId = document.getElementById('addProduct').value;
+    const lengthRaw = document.getElementById('addLength').value.trim();
+    const widthRaw  = document.getElementById('addWidth').value.trim();
+    const qty       = parseInt(document.getElementById('addQty').value) || 1;
+    const locId     = document.getElementById('addLocId').value || null;
+    const note      = document.getElementById('addNote').value.trim();
+
+    if (!productId) { showToast('Valitse tuote', 'error'); return; }
+    if (type !== 'ITEM' && !lengthRaw) { showToast('Syötä pituus/metrimäärä', 'error'); return; }
+
+    const btn = document.getElementById('addBtn');
+    btn.disabled = true;
+    btn.textContent = 'Lisätään...';
+
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+
+      const isMaara = (type === 'ITEM' || type === 'BULK');
+      const lengthMm = isMaara ? null : parseInt(lengthRaw);
+      const widthMm  = (!isMaara && widthRaw) ? parseInt(widthRaw) : null;
+      // Määrätavara: ITEM = kpl (qty), BULK = metrit (pituuskenttä). Määrä quantity-sarakkeeseen, yksi rivi.
+      const quantity = type === 'ITEM' ? qty
+                     : type === 'BULK' ? parseFloat(lengthRaw.replace(',', '.'))
+                     : null;
+
+      const rows = [];
+      for (let i = 0; i < qty; i++) {
+        rows.push({
+          product_id:          productId,
+          warehouse_id:        WAREHOUSE_ID,
+          type:                type,
+          status:              'ACTIVE',
+          quantity:            quantity,
+          original_length_mm:  lengthMm,
+          remaining_length_mm: lengthMm,
+          original_width_mm:   widthMm,
+          remaining_width_mm:  widthMm,
+          location_id:         locId,
+          note:                note || null,
+        });
+        if (isMaara) break; // määrätavara: yksi rivi riittää
+      }
+
+      // Suora REST INSERT — ei Edge Functionia, ei CORS-ongelmaa
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(rows)
+      });
+
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+
+      showToast('Lisätty varastoon ✓', 'success');
+
+      // Nollataan lomake
+      document.getElementById('addLength').value = '';
+      document.getElementById('addWidth').value  = '';
+      document.getElementById('addQty').value    = '1';
+      document.getElementById('addNote').value   = '';
+      document.getElementById('addLocId').value  = '';
+      document.getElementById('addLocSearch').value = '';
+      buildLocList('addLocList', 'addLocId', null);
+
+      await loadStock();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '➕ Lisää varastoon';
+    }
+  }
+
+  // ─── Yhteenveto ──────────────────────────────────────
+  function renderSummary() {
+    if (!allItems.length) {
+      document.getElementById('summaryGrid').innerHTML =
+        '<div class="state-msg">Ei dataa.</div>';
       return;
     }
-    document.getElementById('state').hidden = true;
-    renderPicker();
-    renderLabels();
+
+    // Ryhmitellään material + color + thickness_mm
+    const groups = {};
+    allItems.forEach(item => {
+      const mat   = item.products?.material   || '?';
+      const col   = item.products?.color      || '?';
+      const thick = item.products?.thickness_mm != null ? item.products.thickness_mm : '?';
+      const key   = mat + '|' + col + '|' + thick;
+      if (!groups[key]) groups[key] = { mat, col, thick, nimi: productName(item.products), laji: item.products?.laji, counts: {} };
+      const type = item.type || 'SHEET';
+      groups[key].counts[type] = (groups[key].counts[type] || 0) + 1;
+    });
+
+    const typeColors = { ROLL: 'var(--roll)', SHEET: 'var(--sheet)', OFFCUT: 'var(--offcut)', ITEM: 'var(--item)', BULK: 'var(--bulk)' };
+    const typeBg     = { ROLL: '#1e3a5f', SHEET: '#14371f', OFFCUT: '#3d2010', ITEM: '#2d1845', BULK: '#0c2e35' };
+
+    const sorted = Object.values(groups).sort((a, b) =>
+      (a.mat + a.col + String(a.thick)).localeCompare(b.mat + b.col + String(b.thick))
+    );
+
+    document.getElementById('summaryGrid').innerHTML = sorted.map(g => {
+      const chips = Object.entries(g.counts).map(([t, n]) =>
+        '<span class="summary-chip" style="background:' + typeBg[t] + ';color:' + typeColors[t] + '">' +
+        n + ' × ' + (TYPE_FI[t] || t) + '</span>'
+      ).join('');
+      return '<div class="summary-row" onclick="filterToSelaa(' +
+        JSON.stringify(g.mat).replace(/"/g, '&quot;') + ',' +
+        JSON.stringify(g.col).replace(/"/g, '&quot;') + ',' +
+        JSON.stringify(String(g.thick)).replace(/"/g, '&quot;') + ')" title="Näytä nämä pellit Selaa-välilehdellä">' +
+        '<div>' +
+          '<div class="summary-name">' + g.nimi + '</div>' +
+          '<div class="summary-sub">' + (g.laji === 'pelti' ? g.thick + ' mm' : 'tarvike') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:0.5rem">' +
+          '<div class="summary-counts">' + chips + '</div>' +
+          '<span style="color:var(--muted);font-size:0.8rem">→</span>' +
+        '</div>' +
+        '</div>';
+    }).join('');
   }
-  window._authReady.then(init);
+
+  function filterToSelaa(mat, col, thick) {
+    // Asetetaan suodattimet
+    document.getElementById('filterMaterial').value  = mat;
+    document.getElementById('filterColor').value     = col;
+    document.getElementById('filterThickness').value = thick;
+    document.getElementById('filterType').value      = '';
+    document.getElementById('filterChecked').value   = '';
+    // Vaihdetaan Selaa-välilehdelle
+    switchTab('selaa');
+    // Scrollataan ylös
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ─── Toast ───────────────────────────────────────────
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + (type || '');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ─── Tuotteet-välilehti ──────────────────────────────
+  function populateProdFilter() {
+    const materials = [...new Set(allProducts.map(p => p.material))].sort();
+    const sel = document.getElementById('prodFilterMaterial');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Kaikki materiaalit</option>';
+    materials.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      if (m === cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderProducts() {
+    const matF      = document.getElementById('prodFilterMaterial').value;
+    const showInact = document.getElementById('showInactive').checked;
+    const filtered  = allProducts.filter(p => {
+      if (matF && p.material !== matF) return false;
+      // showInactive: näytä vain poistetut — muuten vain aktiiviset
+      if (showInact) return !p.is_active;
+      return p.is_active;
+    });
+
+    if (!filtered.length) {
+      document.getElementById('productsBody').innerHTML =
+        '<tr><td colspan="8" class="state-msg">Ei tuotteita.</td></tr>';
+      return;
+    }
+
+    document.getElementById('productsBody').innerHTML = filtered.map(p => {
+      const activeLabel = p.is_active
+        ? '<span style="color:var(--sheet);font-size:0.78rem">● Aktiivinen</span>'
+        : '<span style="color:var(--muted);font-size:0.78rem">○ Poistettu</span>';
+      const editBtn = p.is_active
+        ? '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem" onclick="openProductModal(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">Muokkaa</button>'
+        : '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem;color:var(--sheet);border-color:var(--sheet)" onclick="doRestoreProduct(\'' + p.id + '\')">↩ Palauta</button>';
+      const lajiChip = p.laji === 'pelti'
+        ? '<span class="type-badge type-SHEET" style="margin-right:0.4rem">pelti</span>'
+        : '<span class="type-badge type-ITEM" style="margin-right:0.4rem">tarvike</span>';
+      return '<tr>' +
+        '<td>' + lajiChip + productName(p) + '</td>' +
+        '<td class="hide-mobile">' + (p.material || '—') + '</td>' +
+        '<td class="hide-mobile">' + (p.color || '—') + '</td>' +
+        '<td class="hide-mobile mono">' + (p.thickness_mm != null ? p.thickness_mm + ' mm' : '—') + '</td>' +
+        '<td class="hide-mobile" style="color:var(--muted)">' + (p.product_group || '—') + '</td>' +
+        '<td class="hide-mobile" style="color:var(--muted)">' + (p.unit || '—') + '</td>' +
+        '<td class="hide-mobile mono" style="color:var(--muted)">' + (p.default_vat_percent != null ? p.default_vat_percent + ' %' : '—') + '</td>' +
+        '<td>' + activeLabel + ' ' + editBtn + '</td>' +
+        '</tr>';
+    }).join('');
+  }
+
+  async function doAddProduct() {
+    const mat   = document.getElementById('newMaterial').value.trim();
+    const col   = document.getElementById('newColor').value.trim();
+    const thick = parseFloat(document.getElementById('newThickness').value) || 0;
+    const grp   = document.getElementById('newProductGroup').value.trim();
+    const unit  = document.getElementById('newUnit').value;
+    const vat   = parseFloat(document.getElementById('newVat').value) || 25.5;
+    const nimi  = document.getElementById('newNimi').value.trim();
+
+    if (!mat) { showToast('Syötä materiaali', 'error'); return; }
+    if (!col) { showToast('Syötä väri', 'error'); return; }
+
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          material: mat, color: col, thickness_mm: thick,
+          product_group: grp || null, unit, default_vat_percent: vat, is_active: true,
+          laji: lajiFromUnit(unit),
+          nimi: nimi || generoiNimi(mat, col, thick, unit)
+        })
+      });
+
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+
+      showToast('Tuote lisätty ✓', 'success');
+      document.getElementById('newMaterial').value = '';
+      document.getElementById('newColor').value    = '';
+      document.getElementById('newThickness').value = '';
+      document.getElementById('newProductGroup').value = '';
+      document.getElementById('newNimi').value = '';
+      await loadProducts();
+      renderProducts();
+      populateProdFilter();
+      populateAddMaterials();
+      buildFilterOptions();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+  // Tuotteen muokkausmodaali
+  function openProductModal(p) {
+    document.getElementById('productModalId').value           = p.id;
+    document.getElementById('productModalTitle').textContent  = productName(p);
+    document.getElementById('productModalNimi').value         = p.nimi || '';
+    document.getElementById('productModalMaterial').value     = p.material || '';
+    document.getElementById('productModalColor').value        = p.color || '';
+    document.getElementById('productModalThickness').value    = p.thickness_mm ?? '';
+    document.getElementById('productModalGroup').value        = p.product_group || '';
+    document.getElementById('productModalUnit').value         = p.unit || 'm²';
+    document.getElementById('productModalVat').value          = p.default_vat_percent ?? 25.5;
+    document.getElementById('productModalBackdrop').classList.add('open');
+  }
+
+  function closeProductModal() {
+    document.getElementById('productModalBackdrop').classList.remove('open');
+  }
+
+  function onProductBackdropClick(e) {
+    if (e.target === document.getElementById('productModalBackdrop')) closeProductModal();
+  }
+
+  async function doSaveProductModal() {
+    const id    = document.getElementById('productModalId').value;
+    const mat   = document.getElementById('productModalMaterial').value.trim();
+    const col   = document.getElementById('productModalColor').value.trim();
+    const thick = parseFloat(document.getElementById('productModalThickness').value) || 0;
+    const grp   = document.getElementById('productModalGroup').value.trim() || null;
+    const unit  = document.getElementById('productModalUnit').value;
+    const vat   = parseFloat(document.getElementById('productModalVat').value) || 25.5;
+    const nimi  = document.getElementById('productModalNimi').value.trim() || generoiNimi(mat, col, thick, unit);
+    if (!mat) { showToast('Syötä materiaali', 'error'); return; }
+    if (!col) { showToast('Syötä väri', 'error'); return; }
+    await doUpdateProduct(id, mat, col, thick, grp, unit, vat, nimi);
+    closeProductModal();
+  }
+
+  async function doDeactivateProduct() {
+    if (!confirm('Poistetaanko tuote käytöstä?')) return;
+    const id = document.getElementById('productModalId').value;
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_active: false })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('Tuote poistettu käytöstä ✓', 'success');
+      closeProductModal();
+      await loadProducts();
+      renderProducts();
+      populateProdFilter();
+      populateAddMaterials();
+      buildFilterOptions();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+  async function doUpdateProduct(id, material, color, thickness_mm, product_group, unit, default_vat_percent, nimi) {
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ material, color, thickness_mm, product_group, unit, default_vat_percent, nimi, laji: lajiFromUnit(unit) })
+      });
+
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('Tallennettu ✓', 'success');
+      await loadProducts();
+      renderProducts();
+      populateAddMaterials();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+
+  async function doRestoreProduct(id) {
+    if (!confirm('Palautetaanko tuote aktiiviseksi?')) return;
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + token,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ is_active: true })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      showToast('Tuote palautettu ✓', 'success');
+      await loadProducts();
+      renderProducts();
+      populateProdFilter();
+      populateAddMaterials();
+      buildFilterOptions();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+  // ─── Init ────────────────────────────────────────────
+  window._authReady.then(async () => {
+    await Promise.all([loadStock(), loadProducts(), loadLocations()]);
+  });
 </script>
 </body>
 </html>
