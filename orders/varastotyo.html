@@ -711,6 +711,25 @@
     return { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' };
   }
 
+  // ─── Liikeloki (stock_movements) ─────────────────────
+  // Lokin epäonnistuminen ei estä toimenpidettä → vain varoitus
+  async function logMovements(rows) {
+    if (!rows.length) return;
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=minimal';
+      const uid = window._currentUser?.id || null;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_movements`, {
+        method: 'POST', headers, body: JSON.stringify(rows.map(r => Object.assign({ created_by: uid }, r)))
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+    } catch (err) {
+      console.warn('Liikeloki:', err);
+      showToast('Tehty, mutta lokimerkintä epäonnistui', 'error');
+    }
+  }
+
   // ─── Datan haku ──────────────────────────────────────
   async function loadLocations() {
     const res = await fetch(
@@ -1223,6 +1242,13 @@
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
       const created = await res.json();
 
+      await logMovements(created.map(c => ({
+        stock_item_id: c.id, movement_type: 'IN',
+        remaining_length_after_mm: c.remaining_length_mm ?? null,
+        remaining_width_after_mm:  c.remaining_width_mm  ?? null,
+        reference_note: 'Lisätty ' + currentLoc.code + (r.kind === 'tarvike' ? ' · ' + r.summary : '') + (am.note.trim() ? ' · ' + am.note.trim() : ''),
+      })));
+
       // Paikan sisältö ja leveyden pikanapit ajan tasalle
       created.forEach(c => hereStock.push({ ...c, products: { nimi: currentProduct.nimi } }));
       if (r.kind === 'pelti') rememberWidth(r.width);
@@ -1273,6 +1299,8 @@
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
       ex.item.quantity = after;
       const unit = currentProduct.unit === 'm' ? 'm' : 'kpl';
+      await logMovements([{ stock_item_id: ex.item.id, movement_type: 'ADJUST',
+        reference_note: 'Määrä ' + formatQty(before) + ' → ' + formatQty(after) + ' ' + unit + ' · ' + currentLoc.code }]);
       addSessionEntry({
         kind: 'quantity', itemId: ex.item.id, before, at: Date.now(),
         name: currentProduct.nimi,
@@ -1396,6 +1424,10 @@
       const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${it.id}`, { method: 'PATCH', headers, body: JSON.stringify(patch) });
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
       Object.assign(it, patch);
+      await logMovements([{ stock_item_id: it.id, movement_type: 'ADJUST',
+        remaining_length_after_mm: it.remaining_length_mm ?? null,
+        remaining_width_after_mm:  it.remaining_width_mm  ?? null,
+        reference_note: patch.quantity != null ? 'Inventointi: määrä → ' + formatQty(patch.quantity) : 'Inventointi: mitat korjattu' }]);
       invMarks[it.id] = 'found';      // korjattu = nähty hyllyssä
       invEditId = null;
       renderInventory();
@@ -1432,6 +1464,7 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.(${missing.join(',')})`,
           { method: 'PATCH', headers, body: JSON.stringify({ status: 'ARCHIVED', checked_at: now }) });
         if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        await logMovements(missing.map(id => ({ stock_item_id: id, movement_type: 'ARCHIVE', reference_note: 'Inventointi: ei löytynyt paikasta ' + currentLoc.code })));
         addSessionEntry({ kind: 'archive', ids: missing, at: Date.now(),
           name: 'Inventointi: ' + missing.length + ' riviä arkistoitu', sub: currentLoc.code });
       }
@@ -1474,6 +1507,7 @@
       const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.(${ids.join(',')})`,
         { method: 'PATCH', headers, body: JSON.stringify({ location_id: target.id }) });
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      await logMovements(ids.map(id => ({ stock_item_id: id, movement_type: 'TRANSFER', reference_note: from.code + ' → ' + target.code })));
       addSessionEntry({ kind: 'move', ids, fromId: from.id, at: Date.now(),
         name: 'Siirto: ' + ids.length + ' erää', sub: from.code + ' → ' + target.code });
       showToast('Siirretty paikkaan ' + target.code + ' ✓', 'success');
@@ -1597,6 +1631,20 @@
       }
 
       const offLoc = locById.get(cut.offLocId);
+      const logs = [{
+        stock_item_id: it.id, movement_type: 'CUT',
+        length_used_mm: c.isRoll ? c.takenMm : null,
+        width_used_mm:  c.isRoll ? null : c.takenMm,
+        remaining_length_after_mm: it.remaining_length_mm ?? null,
+        remaining_width_after_mm:  it.remaining_width_mm  ?? null,
+        reference_note: (c.left === 0 ? 'Käytetty loppuun' : 'Leikattu') + (off ? ' · pala ' + off.l + '×' + off.w + ' → ' + (offLoc?.code || '') : ''),
+      }];
+      offIds.forEach(id => logs.push({
+        stock_item_id: id, movement_type: 'IN',
+        remaining_length_after_mm: off.l, remaining_width_after_mm: off.w,
+        reference_note: 'Ylijäämäpala leikkauksesta · ' + (offLoc?.code || ''),
+      }));
+      await logMovements(logs);
       addSessionEntry({ kind: 'cut', parentId: it.id, before, offIds, at: Date.now(),
         name: 'Leikkaus: ' + (it.products?.nimi || ''),
         sub: (c.isRoll ? '−' + formatQty(c.takenMm / 1000) + ' m' : '−' + c.takenMm + ' mm') +
@@ -1649,6 +1697,9 @@
         const r1 = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${e.parentId}`,
           { method: 'PATCH', headers, body: JSON.stringify(e.before) });
         if (!r1.ok) throw new Error('HTTP ' + r1.status + ': ' + await r1.text());
+        await logMovements([{ stock_item_id: e.parentId, movement_type: 'ADJUST',
+          remaining_length_after_mm: e.before.remaining_length_mm ?? null, remaining_width_after_mm: e.before.remaining_width_mm ?? null,
+          reference_note: 'Kumottu: leikkaus' }]);
         if (e.offIds.length) {
           const idList = '(' + e.offIds.join(',') + ')';
           const fresh = Date.now() - e.at < 60 * 60 * 1000;
@@ -1670,6 +1721,9 @@
           method: 'PATCH', headers, body: JSON.stringify(body)
         });
         if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        await logMovements(e.ids.map(id => e.kind === 'archive'
+          ? { stock_item_id: id, movement_type: 'ADJUST', reference_note: 'Kumottu: arkistointi → takaisin varastoon' }
+          : { stock_item_id: id, movement_type: 'TRANSFER', reference_note: 'Kumottu siirto → ' + (locById.get(e.fromId)?.code || '') }));
         sessionLog.splice(index, 1);
         renderSession();
         await loadHereStock();
@@ -1684,6 +1738,7 @@
         if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
         const row = hereStock.find(i => i.id === e.itemId);
         if (row) row.quantity = e.before;
+        await logMovements([{ stock_item_id: e.itemId, movement_type: 'ADJUST', reference_note: 'Kumottu: määrä → ' + formatQty(e.before) }]);
       } else {
         // Lisäys: alle tunnin vanhat rivit poistetaan kokonaan (ei jätetä roskaa),
         // vanhemmat arkistoidaan, koska poisto-oikeus kattaa vain tuoreet rivit
@@ -1694,6 +1749,7 @@
           : await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.${idList}`, {
               method: 'PATCH', headers, body: JSON.stringify({ status: 'ARCHIVED' }) });
         if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        if (!fresh) await logMovements(e.ids.map(id => ({ stock_item_id: id, movement_type: 'ARCHIVE', reference_note: 'Kumottu lisäys (yli tunnin vanha → arkistoitu)' })));
         hereStock = hereStock.filter(i => !e.ids.includes(i.id));
       }
 
