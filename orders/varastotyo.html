@@ -262,6 +262,60 @@
       font-size: 16px; cursor: pointer;
     }
 
+    /* ── RUUTU 3: MITAT JA MÄÄRÄ ── */
+    .num-input { font-family: 'IBM Plex Mono', monospace; font-size: 22px; }
+    .check-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-top: 10px; font-size: 16px; color: var(--muted); cursor: pointer;
+      min-height: 44px;
+    }
+    .check-row input { width: 22px; height: 22px; accent-color: var(--accent); }
+    .qty-row { display: flex; align-items: stretch; gap: 8px; }
+    .qty-row .text-input { flex: 1; text-align: center; }
+    .qty-btn {
+      min-width: 68px; min-height: 56px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      font-size: 24px; font-weight: 600; cursor: pointer;
+    }
+    .qty-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .qty-btn.wide { min-width: 92px; font-size: 17px; }
+    .qty-row.big { margin-top: 10px; }
+    .qty-row.big .qty-btn { flex: 1; min-height: 62px; }
+    .existing-box {
+      background: var(--surface); border: 1px solid var(--accent2); border-radius: 8px;
+      padding: 14px; margin-top: 4px;
+    }
+    .existing-qty { font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 600; color: var(--accent); margin: 4px 0 2px; }
+    .secondary-btn.accent { border-color: var(--accent2); color: var(--accent); }
+
+    /* ── TÄLLÄ KERRALLA LISÄTTY ── */
+    .session-bar {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .session-toggle {
+      width: 100%; min-height: 50px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: none; border: none; padding: 0 14px;
+      font-size: 15px; color: var(--muted); cursor: pointer;
+    }
+    .session-toggle strong { color: var(--accent); }
+    .session-list { max-height: 45vh; overflow-y: auto; border-top: 1px solid var(--border); }
+    .session-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 14px;
+    }
+    .session-row .srow-main { flex: 1; min-width: 0; }
+    .session-row .srow-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .session-row .srow-sub { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+    .undo-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      min-height: 42px; padding: 0 14px; font-size: 14px; color: var(--muted); cursor: pointer; white-space: nowrap;
+    }
+    .undo-btn:active { border-color: var(--danger); color: var(--danger); }
+    .session-spacer { height: 56px; }
+
     /* Valittu tuote (ruutu 3:n yläosa) */
     .chosen-card {
       background: var(--surface); border: 1px solid var(--accent); border-radius: 8px;
@@ -395,16 +449,81 @@
     <button class="primary-btn" type="button" id="npSave">Luo tuote ja jatka</button>
   </section>
 
-  <!-- RUUTU 3: MITAT JA TALLENNUS (tehdään seuraavaksi) -->
+  <!-- RUUTU 3: MITAT JA TALLENNUS -->
   <section class="screen" id="screenAmount" hidden>
     <div class="chosen-card" id="chosenCard"></div>
-    <div class="placeholder-card">
-      <strong>Tuote valittu ✓</strong>
-      Ruutu 3 eli mitat, määrä ja tallennus tehdään seuraavaksi.
+
+    <!-- Pelti: tyyppi + mitat + määrä -->
+    <div id="amPelti">
+      <label class="form-label">TYYPPI</label>
+      <div class="seg" id="amTypeSeg">
+        <button type="button" data-am="type" data-value="ROLL">Rulla</button>
+        <button type="button" data-am="type" data-value="SHEET">Levy</button>
+        <button type="button" data-am="type" data-value="OFFCUT">Siivu</button>
+      </div>
+
+      <label class="form-label" id="amLengthLabel">PITUUS (m)</label>
+      <input class="text-input num-input" id="amLength" type="text" inputmode="decimal" placeholder="esim. 40" autocomplete="off">
+      <label class="check-row" id="amEstRow">
+        <input type="checkbox" id="amEstimated"> Arvio (ei mitattu)
+      </label>
+
+      <label class="form-label">LEVEYS (mm)</label>
+      <div class="chips np-chips-gap" id="amWidthChips"></div>
+      <input class="text-input num-input" id="amWidth" type="text" inputmode="numeric" placeholder="esim. 1250" autocomplete="off">
+
+      <label class="form-label">MÄÄRÄ (kpl)</label>
+      <div class="qty-row">
+        <button class="qty-btn" type="button" data-qty="-1">−</button>
+        <input class="text-input num-input qty-input" id="amCount" type="text" inputmode="numeric" value="1">
+        <button class="qty-btn" type="button" data-qty="1">+</button>
+      </div>
+      <div class="form-hint" id="amCountHint"></div>
     </div>
+
+    <!-- Tarvike: määrä (uusi rivi tai olemassa olevan päivitys) -->
+    <div id="amTarvike">
+      <div id="amExisting" hidden>
+        <div class="existing-box">
+          <div class="dim">Tällä paikalla on jo</div>
+          <div class="existing-qty"><span id="amExistingQty">—</span> <span id="amExistingUnit"></span></div>
+          <div class="qty-row big">
+            <button class="qty-btn" type="button" data-adj="-1">−1</button>
+            <button class="qty-btn" type="button" data-adj="1">+1</button>
+          </div>
+          <div class="form-hint" style="margin-top:10px">tai aseta uusi määrä:</div>
+          <div class="qty-row">
+            <input class="text-input num-input" id="amSetQty" type="text" inputmode="decimal" placeholder="uusi määrä" autocomplete="off">
+            <button class="qty-btn wide" type="button" id="amSetBtn">Aseta</button>
+          </div>
+        </div>
+      </div>
+      <div id="amNewQty">
+        <label class="form-label" id="amQtyLabel">MÄÄRÄ</label>
+        <div class="qty-row">
+          <button class="qty-btn" type="button" data-qty="-1">−</button>
+          <input class="text-input num-input qty-input" id="amQty" type="text" inputmode="decimal" value="1">
+          <button class="qty-btn" type="button" data-qty="1">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="np-preview" id="amPreview"></div>
+    <button class="primary-btn" type="button" id="amSave">Tallenna</button>
+    <button class="secondary-btn accent" type="button" id="amSaveSame">Tallenna + samanlainen</button>
     <button class="secondary-btn" type="button" id="changeProduct">← Vaihda tuote</button>
   </section>
 </main>
+
+<!-- TÄLLÄ KERRALLA LISÄTTY -->
+<div class="session-bar" id="sessionBar" hidden>
+  <button class="session-toggle" type="button" id="sessionToggle">
+    <span>Tällä kerralla lisätty: <strong id="sessionCount">0</strong></span>
+    <span id="sessionArrow">▴</span>
+  </button>
+  <div class="session-list" id="sessionList" hidden></div>
+</div>
+<div class="session-spacer" id="sessionSpacer" hidden></div>
 
 <div class="toast" id="toast"></div>
 
@@ -417,6 +536,7 @@
   const LS_RECENT_LOCS   = 'varastotyo.recentLocs';   // viimeksi käytetyt paikat (id-lista)
   const LS_CURRENT_LOC   = 'varastotyo.currentLoc';   // valittu paikka + aikaleima
   const LS_RECENT_PRODS  = 'varastotyo.recentProducts'; // viimeksi käytetyt tuotteet (id-lista)
+  const LS_RECENT_WIDTHS = 'varastotyo.recentWidths';   // viimeksi käytetyt leveydet (mm)
   const RECENT_MAX       = 4;
   const RECENT_PROD_MAX  = 6;
   const CURRENT_MAX_AGE  = 4 * 60 * 60 * 1000;        // valittu paikka muistetaan 4 h
@@ -435,6 +555,9 @@
   let hereStock      = [];        // valitun paikan ACTIVE-rivit
   let hereOpen       = false;     // "Tällä paikalla" -lista auki/kiinni
   let np             = null;      // uuden tuotteen lomakkeen tila
+  let am             = null;      // ruudun 3 lomakkeen tila
+  let sessionLog     = [];        // tällä kerralla lisätyt (kumoa)
+  let sessionOpen    = false;
 
   // ─── Apufunktiot ─────────────────────────────────────
   // localStorage voi olla estetty (esim. yksityinen selaus) → aina try/catch
@@ -798,7 +921,295 @@
     document.getElementById('chosenCard').innerHTML =
       '<div class="np-name">' + esc(p.nimi) + '</div>' +
       '<div class="dim" style="margin-top:4px">' + esc(p.laji) + ' · ' + esc(p.unit || '') + '</div>';
+    startAmount();
     showScreen('amount');
+  }
+
+  // ═══ RUUTU 3: MITAT, MÄÄRÄ JA TALLENNUS ═══════════════
+
+  // Aloittaa ruudun 3 tyhjältä pöydältä (tai säilyttää arvot "Tallenna + samanlainen" -napin jälkeen)
+  function startAmount(keep) {
+    const p = currentProduct;
+    const isPelti = p.laji === 'pelti';
+    document.getElementById('amPelti').hidden   = !isPelti;
+    document.getElementById('amTarvike').hidden = isPelti;
+
+    if (!keep) {
+      am = { type: 'ROLL', length: '', width: '', estimated: false, count: '1', qty: '1' };
+      document.getElementById('amEstimated').checked = false;
+    }
+    if (isPelti) {
+      ['amLength','amWidth'].forEach(id => { if (!keep) document.getElementById(id).value = ''; });
+      document.getElementById('amCount').value = '1';
+      am.count = '1';
+      renderAmountPelti();
+    } else {
+      document.getElementById('amQty').value = keep ? am.qty : '1';
+      if (!keep) am.qty = '1';
+      renderAmountTarvike();
+    }
+    renderAmPreview();
+  }
+
+  // Leveydelle pikanapit: viimeksi käytetyt + yleisimmät
+  function widthChips() {
+    const used = lsGet(LS_RECENT_WIDTHS, []);
+    const common = [1250, 1200, 1000, 625];
+    return [...new Set([...used, ...common])].slice(0, 6);
+  }
+
+  function renderAmountPelti() {
+    document.querySelectorAll('#amTypeSeg button').forEach(b => b.classList.toggle('active', b.dataset.value === am.type));
+    const isRoll = am.type === 'ROLL';
+    // Rullan pituus metreinä (kymmeniä metrejä), levyn ja siivun millimetreinä
+    document.getElementById('amLengthLabel').textContent = isRoll ? 'PITUUS (m)' : 'PITUUS (mm)';
+    document.getElementById('amLength').placeholder = isRoll ? 'esim. 40' : 'esim. 2500';
+    document.getElementById('amEstRow').hidden = !isRoll;
+    document.getElementById('amCountHint').textContent =
+      Number(am.count) > 1 ? 'Tallentaa ' + Number(am.count) + ' erillistä riviä, jokaisella omat mitat.' : '';
+    document.getElementById('amWidthChips').innerHTML = widthChips().map(w =>
+      '<button class="chip' + (String(w) === String(parseNum(am.width)) ? ' selected' : '') +
+      '" type="button" data-am="width" data-value="' + w + '">' + w + '</button>').join('');
+  }
+
+  function renderAmountTarvike() {
+    // Jos samaa tuotetta on jo tällä paikalla, näytetään nykyinen määrä ja +1 / −1
+    const ex = existingHere();
+    document.getElementById('amExisting').hidden = !ex;
+    document.getElementById('amNewQty').hidden   = !!ex;
+    const unit = currentProduct.unit === 'm' ? 'm' : 'kpl';
+    if (ex) {
+      const q = itemQuantity(ex.item);
+      document.getElementById('amExistingQty').textContent  = q != null ? formatQty(q) : '—';
+      document.getElementById('amExistingUnit').textContent = unit;
+      document.getElementById('amSetQty').value = '';
+      if (ex.extra) {
+        showToast('Huom: tällä paikalla on ' + (ex.extra + 1) + ' riviä samaa tuotetta — korjaa pöytäkoneella', 'error');
+      }
+    } else {
+      document.getElementById('amQtyLabel').textContent = 'MÄÄRÄ (' + unit + ')';
+    }
+  }
+
+  // Saman tuotteen ACTIVE-rivi tällä paikalla (tuplat: päivitetään ensimmäistä ja varoitetaan)
+  function existingHere() {
+    if (!currentProduct || currentProduct.laji === 'pelti') return null;
+    const rows = hereStock.filter(i => i.product_id === currentProduct.id && (i.type === 'ITEM' || i.type === 'BULK'));
+    if (!rows.length) return null;
+    return { item: rows[0], extra: rows.length - 1 };
+  }
+
+  // Mitä tallennetaan: rivit tietokantaan + virheteksti, jos jotain puuttuu
+  function amResult() {
+    const p = currentProduct;
+    if (p.laji !== 'pelti') {
+      const unit = p.unit === 'm' ? 'm' : 'kpl';
+      const qty = parseNum(am.qty);
+      if (qty == null || qty <= 0) return { error: 'Anna määrä' };
+      return { kind: 'tarvike', type: unit === 'm' ? 'BULK' : 'ITEM', qty, unit,
+               summary: formatQty(qty) + ' ' + unit };
+    }
+    const isRoll = am.type === 'ROLL';
+    const lenRaw = parseNum(am.length);
+    const width  = parseNum(am.width);
+    const count  = parseInt(am.count, 10);
+    if (lenRaw == null || lenRaw <= 0) return { error: isRoll ? 'Anna pituus metreinä' : 'Anna pituus millimetreinä' };
+    if (width == null || width <= 0)   return { error: 'Anna leveys millimetreinä' };
+    if (!(count >= 1))                 return { error: 'Määrän pitää olla vähintään 1' };
+    // Rullan pituus metreistä millimetreiksi, jotta kaikki pituudet ovat tietokannassa samassa yksikössä
+    const lengthMm = Math.round(isRoll ? lenRaw * 1000 : lenRaw);
+    const lenTxt = isRoll ? (am.estimated ? '~' : '') + formatQty(lenRaw) + ' m' : formatQty(lenRaw) + ' mm';
+    return { kind: 'pelti', type: am.type, lengthMm, width, count, estimated: isRoll && am.estimated,
+             summary: (count > 1 ? count + ' × ' : '') + lenTxt + ' × ' + width + ' mm' };
+  }
+
+  function renderAmPreview() {
+    const r = amResult();
+    const box  = document.getElementById('amPreview');
+    const save = document.getElementById('amSave');
+    const same = document.getElementById('amSaveSame');
+    const ex = existingHere();
+    if (ex) {
+      // Olemassa olevaa määrää muutetaan napeista, ei Tallenna-napista
+      box.innerHTML = '<div class="dim">Määrän muutos tallentuu heti napista.</div>';
+      save.hidden = true; same.hidden = true;
+      return;
+    }
+    save.hidden = false;
+    same.hidden = currentProduct.laji !== 'pelti';
+    if (r.error) {
+      box.innerHTML = '<div class="np-error">' + esc(r.error) + '</div>';
+      save.disabled = true; same.disabled = true;
+    } else {
+      box.innerHTML = '<div class="dim">Tallennetaan paikalle ' + esc(currentLoc.code) + ':</div>' +
+        '<div class="np-name">' + esc(currentProduct.nimi) + '</div>' +
+        '<div class="mono" style="color:var(--accent);margin-top:4px">' + esc(r.summary) + '</div>';
+      save.disabled = false; same.disabled = false;
+    }
+  }
+
+  // ─── Tallennus ───────────────────────────────────────
+  async function saveStock(keepValues) {
+    const r = amResult();
+    if (r.error) return;
+    const save = document.getElementById('amSave');
+    const same = document.getElementById('amSaveSame');
+    save.disabled = true; same.disabled = true;
+    const label = save.textContent;
+    save.textContent = 'Tallennetaan…';
+
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=representation';
+
+      const rows = [];
+      if (r.kind === 'tarvike') {
+        rows.push({
+          product_id: currentProduct.id, warehouse_id: WAREHOUSE_ID, location_id: currentLoc.id,
+          type: r.type, status: 'ACTIVE', quantity: r.qty,
+        });
+      } else {
+        for (let i = 0; i < r.count; i++) {
+          rows.push({
+            product_id: currentProduct.id, warehouse_id: WAREHOUSE_ID, location_id: currentLoc.id,
+            type: r.type, status: 'ACTIVE', quantity: null,
+            original_length_mm: r.lengthMm, remaining_length_mm: r.lengthMm,
+            original_width_mm:  r.width,    remaining_width_mm:  r.width,
+            length_estimated: r.estimated,
+          });
+        }
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_length_mm,remaining_width_mm,original_length_mm,original_width_mm,product_id`, {
+        method: 'POST', headers, body: JSON.stringify(rows)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      const created = await res.json();
+
+      // Paikan sisältö ja leveyden pikanapit ajan tasalle
+      created.forEach(c => hereStock.push({ ...c, products: { nimi: currentProduct.nimi } }));
+      if (r.kind === 'pelti') rememberWidth(r.width);
+
+      addSessionEntry({
+        kind: 'insert',
+        ids: created.map(c => c.id),
+        at: Date.now(),
+        name: currentProduct.nimi,
+        sub: currentLoc.code + ' · ' + r.summary,
+      });
+
+      showToast('Tallennettu ✓', 'success');
+      if (keepValues) {
+        startAmount(true);                 // tuote, tyyppi ja mitat jäävät
+      } else {
+        showScreen('product');             // takaisin tuotehakuun
+        renderHere(false);
+      }
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      save.textContent = label;
+      renderAmPreview();
+    }
+  }
+
+  function rememberWidth(w) {
+    const list = lsGet(LS_RECENT_WIDTHS, []).filter(x => x !== w);
+    list.unshift(w);
+    lsSet(LS_RECENT_WIDTHS, list.slice(0, 4));
+  }
+
+  // Määrätavaran määrän muutos: päivitetään olemassa olevaa riviä, ei luoda uutta
+  async function adjustExisting(delta, absolute) {
+    const ex = existingHere();
+    if (!ex) return;
+    const before = itemQuantity(ex.item) ?? 0;
+    const after  = absolute != null ? absolute : before + delta;
+    if (after < 0) { showToast('Määrä ei voi olla negatiivinen', 'error'); return; }
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=minimal';
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${ex.item.id}`, {
+        method: 'PATCH', headers, body: JSON.stringify({ quantity: after })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      ex.item.quantity = after;
+      const unit = currentProduct.unit === 'm' ? 'm' : 'kpl';
+      addSessionEntry({
+        kind: 'quantity', itemId: ex.item.id, before, at: Date.now(),
+        name: currentProduct.nimi,
+        sub: currentLoc.code + ' · ' + formatQty(before) + ' → ' + formatQty(after) + ' ' + unit,
+      });
+      renderAmountTarvike();
+      showToast('Määrä: ' + formatQty(after) + ' ' + unit, 'success');
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    }
+  }
+
+  // ─── Tällä kerralla lisätty + kumoa ──────────────────
+  function addSessionEntry(entry) {
+    sessionLog.unshift(entry);
+    renderSession();
+  }
+
+  function renderSession() {
+    const bar = document.getElementById('sessionBar');
+    const spacer = document.getElementById('sessionSpacer');
+    if (!sessionLog.length) { bar.hidden = true; spacer.hidden = true; return; }
+    bar.hidden = false; spacer.hidden = false;
+    document.getElementById('sessionCount').textContent = sessionLog.length;
+    document.getElementById('sessionArrow').textContent = sessionOpen ? '▾' : '▴';
+    const list = document.getElementById('sessionList');
+    list.hidden = !sessionOpen;
+    if (!sessionOpen) return;
+    list.innerHTML = sessionLog.map((e, i) =>
+      '<div class="session-row">' +
+        '<div class="srow-main"><div class="srow-name">' + esc(e.name) + '</div>' +
+        '<div class="srow-sub">' + esc(e.sub) + '</div></div>' +
+        '<button class="undo-btn" type="button" data-undo="' + i + '">Kumoa</button>' +
+      '</div>').join('');
+  }
+
+  async function undoEntry(index) {
+    const e = sessionLog[index];
+    if (!e) return;
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      headers['Prefer'] = 'return=minimal';
+
+      if (e.kind === 'quantity') {
+        // Määrän muutos: palautetaan edellinen määrä
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${e.itemId}`, {
+          method: 'PATCH', headers, body: JSON.stringify({ quantity: e.before })
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        const row = hereStock.find(i => i.id === e.itemId);
+        if (row) row.quantity = e.before;
+      } else {
+        // Lisäys: alle tunnin vanhat rivit poistetaan kokonaan (ei jätetä roskaa),
+        // vanhemmat arkistoidaan, koska poisto-oikeus kattaa vain tuoreet rivit
+        const idList = '(' + e.ids.join(',') + ')';
+        const fresh  = Date.now() - e.at < 60 * 60 * 1000;
+        const res = fresh
+          ? await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.${idList}`, { method: 'DELETE', headers })
+          : await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.${idList}`, {
+              method: 'PATCH', headers, body: JSON.stringify({ status: 'ARCHIVED' }) });
+        if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+        hereStock = hereStock.filter(i => !e.ids.includes(i.id));
+      }
+
+      sessionLog.splice(index, 1);
+      renderSession();
+      renderHere(false);
+      if (!document.getElementById('screenAmount').hidden && currentProduct?.laji !== 'pelti') renderAmountTarvike();
+      showToast('Kumottu ✓', 'success');
+    } catch (err) {
+      showToast('Kumoaminen ei onnistunut: ' + err.message, 'error');
+    }
   }
 
   // ═══ UUSI TUOTE ═══════════════════════════════════════
@@ -1082,6 +1493,35 @@
     }
     if (e.target.closest('#hereToggle')) { hereOpen = !hereOpen; renderHere(false); return; }
 
+    // Ruutu 3: tyyppi, leveyspikanappi, määrän +/− ja olemassa olevan määrän muutos
+    const amBtn = e.target.closest('[data-am]');
+    if (amBtn && am) {
+      const field = amBtn.dataset.am, value = amBtn.dataset.value;
+      am[field] = value;
+      if (field === 'width') document.getElementById('amWidth').value = value;
+      renderAmountPelti();
+      renderAmPreview();
+      return;
+    }
+    const qtyBtn = e.target.closest('[data-qty]');
+    if (qtyBtn && am) {
+      const isPelti = currentProduct.laji === 'pelti';
+      const id = isPelti ? 'amCount' : 'amQty';
+      const field = isPelti ? 'count' : 'qty';
+      const step = Number(qtyBtn.dataset.qty);
+      const next = Math.max(isPelti ? 1 : 0, (parseNum(am[field]) ?? 0) + step);
+      am[field] = formatQty(next);
+      document.getElementById(id).value = am[field];
+      if (isPelti) renderAmountPelti();
+      renderAmPreview();
+      return;
+    }
+    const adjBtn = e.target.closest('[data-adj]');
+    if (adjBtn) { adjustExisting(Number(adjBtn.dataset.adj)); return; }
+
+    const undoBtn = e.target.closest('[data-undo]');
+    if (undoBtn) { undoEntry(Number(undoBtn.dataset.undo)); return; }
+
     // Uusi tuote: valintanapit (laji, yksikkö, materiaali, paksuus, väri)
     const npBtn = e.target.closest('[data-np]');
     if (npBtn && np) {
@@ -1125,6 +1565,21 @@
   document.getElementById('npThickness').addEventListener('input', e => { np.thickness = e.target.value; renderNewProduct(); });
   document.getElementById('npName').addEventListener('input', e => { np.name = e.target.value; renderNpPreview(); });
   document.getElementById('npColorOther').addEventListener('input', e => { np.colorOther = e.target.value; renderNpPreview(); });
+
+  // Ruutu 3
+  document.getElementById('amLength').addEventListener('input', e => { am.length = e.target.value; renderAmPreview(); });
+  document.getElementById('amWidth').addEventListener('input',  e => { am.width  = e.target.value; renderAmountPelti(); renderAmPreview(); });
+  document.getElementById('amCount').addEventListener('input',  e => { am.count  = e.target.value; renderAmountPelti(); renderAmPreview(); });
+  document.getElementById('amQty').addEventListener('input',    e => { am.qty    = e.target.value; renderAmPreview(); });
+  document.getElementById('amEstimated').addEventListener('change', e => { am.estimated = e.target.checked; renderAmPreview(); });
+  document.getElementById('amSave').addEventListener('click',     () => saveStock(false));
+  document.getElementById('amSaveSame').addEventListener('click', () => saveStock(true));
+  document.getElementById('amSetBtn').addEventListener('click', () => {
+    const v = parseNum(document.getElementById('amSetQty').value);
+    if (v == null) { showToast('Anna määrä', 'error'); return; }
+    adjustExisting(0, v);
+  });
+  document.getElementById('sessionToggle').addEventListener('click', () => { sessionOpen = !sessionOpen; renderSession(); });
 
   // ─── Käynnistys ──────────────────────────────────────
   async function init() {
