@@ -365,6 +365,17 @@
     .inv-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
     .inv-mitat { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--accent); white-space: nowrap; }
     .inv-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
+    .inv-btns2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+    .inv-btns2 .inv-btn { color: var(--muted); font-weight: 400; }
+    .inv-btn.on-edit { border-color: var(--accent); color: var(--accent); }
+    .cut-calc { font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: var(--accent); margin-top: 8px; }
+    .cut-calc.bad { color: var(--danger); }
+    .cut-loc {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-top: 4px;
+    }
+    .cut-loc .code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-weight: 600; }
+    .cut-loc button { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 14px; cursor: pointer; }
     .inv-btn {
       min-height: 48px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
       font-size: 15px; font-weight: 500; cursor: pointer;
@@ -644,7 +655,9 @@
   let mode           = 'lisaa';   // 'lisaa' | 'inventoi'
   let invMarks       = {};        // itemId → 'found' | 'missing' (vain muistissa kuittaukseen asti)
   let invEditId      = null;      // rivi, jonka mittoja korjataan
-  let moveFrom       = null;      // paikka, josta "Siirrä kaikki" on kesken (valitaan kohdepaikkaa)
+  let pendingPick    = null;      // { banner, onPick(loc) } — paikan valinta jollekin toimenpiteelle (siirto, palan paikka)
+  let invCutId       = null;      // rivi, josta leikataan
+  let cut            = null;      // leikkauslomakkeen tila
 
   // ─── Apufunktiot ─────────────────────────────────────
   // localStorage voi olla estetty (esim. yksityinen selaus) → aina try/catch
@@ -793,7 +806,7 @@
     if (name === 'place') showSearchView();
     if (name === 'product') { renderProductRecent(); renderProductSearch(document.getElementById('productSearch').value); }
     if (name === 'inventory') renderInventory();
-    document.getElementById('moveBanner').hidden = !(name === 'place' && moveFrom);
+    document.getElementById('moveBanner').hidden = !(name === 'place' && pendingPick);
     window.scrollTo(0, 0);
   }
 
@@ -932,7 +945,7 @@
   }
 
   function selectFinal(loc) {
-    if (moveFrom) { doMoveAll(loc); return; }
+    if (pendingPick) { const p = pendingPick; pendingPick = null; document.getElementById('moveBanner').hidden = true; p.onPick(loc); return; }
     currentLoc = loc;
     lsSet(LS_CURRENT_LOC, { id: loc.id, at: Date.now() });
     addRecent(loc.id);
@@ -1307,6 +1320,7 @@
       const mark = invMarks[it.id];
       const checked = fmtDate(it.checked_at);
       const isEdit = invEditId === it.id;
+      const isCut  = invCutId === it.id;
       return '<div class="inv-row ' + (mark || '') + '">' +
         '<div class="inv-top"><div>' +
           '<div class="inv-name">' + esc(it.products?.nimi || '—') + '</div>' +
@@ -1317,16 +1331,23 @@
         '<div class="inv-btns">' +
           '<button class="inv-btn' + (mark === 'found' ? ' on-found' : '') + '" type="button" data-inv-mark="found" data-inv-id="' + esc(it.id) + '">✓ Löytyi</button>' +
           '<button class="inv-btn' + (mark === 'missing' ? ' on-missing' : '') + '" type="button" data-inv-mark="missing" data-inv-id="' + esc(it.id) + '">✗ Ei löydy</button>' +
-          '<button class="inv-btn" type="button" data-inv-edit="' + esc(it.id) + '">✎ Korjaa</button>' +
+          '<button class="inv-btn' + (isEdit ? ' on-edit' : '') + '" type="button" data-inv-edit="' + esc(it.id) + '">✎ Korjaa</button>' +
+        '</div>' +
+        '<div class="inv-btns2">' +
+          (isPelti(it) ? '<button class="inv-btn' + (isCut ? ' on-edit' : '') + '" type="button" data-inv-cut="' + esc(it.id) + '">✂ Leikkaa</button>' : '<span></span>') +
+          '<button class="inv-btn" type="button" data-inv-move="' + esc(it.id) + '">⇄ Siirrä tämä</button>' +
         '</div>' +
         (isEdit ? invEditHtml(it) : '') +
+        (isCut ? invCutHtml(it) : '') +
       '</div>';
     }).join('');
-    if (invEditId) {
+    if (invEditId || (invCutId && !cut?.returned)) {
       const el = list.querySelector('.inv-edit input');
       if (el) el.focus();
     }
+    if (cut) cut.returned = false;
   }
+  function isPelti(it) { return it.type === 'ROLL' || it.type === 'SHEET' || it.type === 'OFFCUT'; }
 
   // Korjauslomake: muuttaa vain remaining_* tai quantity, ei koskaan alkuperäisiä mittoja
   function invEditHtml(it) {
@@ -1424,22 +1445,27 @@
     }
   }
 
-  // "Siirrä kaikki": valitaan kohdepaikka ruudulla 1, sitten kaikki ACTIVE-rivit vaihtavat paikkaa
-  function startMoveAll() {
-    if (!hereStock.length) return;
-    moveFrom = currentLoc;
+  // ─── Siirto: kaikki rivit tai yksi rivi ──────────────
+  function startMove(ids, label) {
+    if (!ids.length) return;
+    const from = currentLoc;
+    pendingPick = {
+      onPick: target => doMove(ids, from, target),
+    };
     document.getElementById('moveBanner').innerHTML =
-      '⇄ Siirretään <b>' + hereStock.length + ' erää</b> paikasta <b class="mono">' + esc(moveFrom.code) + '</b>.<br>Valitse kohdepaikka. ' +
-      '<button class="undo-btn" type="button" id="moveCancel" style="margin-top:8px">Peru siirto</button>';
+      '⇄ Siirretään <b>' + esc(label) + '</b> paikasta <b class="mono">' + esc(from.code) + '</b>.<br>Valitse kohdepaikka. ' +
+      '<button class="undo-btn" type="button" id="pickCancel" style="margin-top:8px">Peru</button>';
     showScreen('place');
   }
+  function startMoveAll() { startMove(hereStock.map(r => r.id), hereStock.length + ' erää'); }
+  function startMoveOne(id) {
+    const it = hereStock.find(r => r.id === id);
+    if (it) startMove([id], (it.products?.nimi || 'erä') + ' (' + (TYPE_FI[it.type] || it.type) + ')');
+  }
 
-  async function doMoveAll(target) {
-    const from = moveFrom;
-    moveFrom = null;
-    document.getElementById('moveBanner').hidden = true;
+  async function doMove(ids, from, target) {
     if (target.id === from.id) { showToast('Sama paikka — ei siirretty', 'error'); showScreen('inventory'); return; }
-    const ids = hereStock.map(r => r.id);
+    const all = ids.length === hereStock.length;
     if (!confirm('Siirretäänkö ' + ids.length + ' erää\n' + from.code + ' → ' + target.code + '?')) { showScreen('inventory'); return; }
     try {
       const headers = await authHeaders();
@@ -1451,12 +1477,138 @@
       addSessionEntry({ kind: 'move', ids, fromId: from.id, at: Date.now(),
         name: 'Siirto: ' + ids.length + ' erää', sub: from.code + ' → ' + target.code });
       showToast('Siirretty paikkaan ' + target.code + ' ✓', 'success');
-      // Jatketaan kohdepaikassa
-      invMarks = {};
-      selectFinal(target);
+      // Kaikki siirrettiin → jatketaan kohdepaikassa. Yksi siirrettiin → jäädään tähän paikkaan.
+      if (all) { invMarks = {}; selectFinal(target); }
+      else { ids.forEach(id => delete invMarks[id]); showScreen('inventory'); loadHereStock(); }
     } catch (err) {
       showToast('Virhe: ' + err.message, 'error');
       showScreen('inventory');
+    }
+  }
+
+  // ─── Leikkaus: rullasta/levystä otetaan osa, ylijäämäpala varastoon emoon linkitettynä ──
+  function startCut(id) {
+    const it = hereStock.find(r => r.id === id);
+    if (!it) return;
+    if (invCutId === id) { invCutId = null; cut = null; renderInventory(); return; }
+    invEditId = null;
+    invCutId = id;
+    cut = { taken: '', makeOff: false, offLen: '', offWid: '', offLocId: currentLoc.id, note: '', returned: false };
+    renderInventory();
+  }
+
+  // Rulla: otettu pituus metreinä → remaining_length pienenee.
+  // Levy/siivu: otettu leveys millimetreinä koko pituudelta → remaining_width pienenee (remaining-malli).
+  function cutCalc(it) {
+    const isRoll = it.type === 'ROLL';
+    const have = isRoll ? (it.remaining_length_mm ?? it.original_length_mm) : (it.remaining_width_mm ?? it.original_width_mm);
+    const takenRaw = parseNum(cut.taken);
+    const takenMm = takenRaw == null ? null : Math.round(isRoll ? takenRaw * 1000 : takenRaw);
+    const left = takenMm == null ? null : have - takenMm;
+    return { isRoll, have, takenMm, left };
+  }
+
+  function invCutHtml(it) {
+    const c = cutCalc(it);
+    const unit = c.isRoll ? 'm' : 'mm';
+    let calc = '';
+    if (c.takenMm != null) {
+      if (c.takenMm <= 0) calc = '<div class="cut-calc bad">Anna otettu määrä</div>';
+      else if (c.left < 0) calc = '<div class="cut-calc bad">Ei riitä: ' + (c.isRoll ? 'rullassa' : 'levyssä') + ' on vain ' + (c.isRoll ? formatQty(c.have / 1000) + ' m' : c.have + ' mm') + '</div>';
+      else if (c.left === 0) calc = '<div class="cut-calc">' + (c.isRoll ? 'Rulla' : 'Levy') + ' käytetään kokonaan → merkitään käytetyksi</div>';
+      else calc = '<div class="cut-calc">' + (c.isRoll ? 'Rullaan jää ' + formatQty(c.left / 1000) + ' m' : 'Levyyn jää ' + c.left + ' mm leveyttä') + '</div>';
+    }
+    const offLoc = locById.get(cut.offLocId) || currentLoc;
+    return '<div class="inv-edit">' +
+      '<label class="form-label">' + (c.isRoll ? 'OTETTU RULLASTA (m)' : 'OTETTU LEVEYS (mm, koko pituudelta)') + '</label>' +
+      '<input class="text-input num-input" id="cutTaken" type="text" inputmode="decimal" value="' + esc(cut.taken) + '" placeholder="' + (c.isRoll ? 'esim. 3' : 'esim. 350') + '">' +
+      calc +
+      '<label class="check-row"><input type="checkbox" id="cutMakeOff"' + (cut.makeOff ? ' checked' : '') + '> Otetusta jää pala varastoon</label>' +
+      (cut.makeOff ?
+        '<label class="form-label">PALAN PITUUS (mm)</label>' +
+        '<input class="text-input num-input" id="cutOffLen" type="text" inputmode="numeric" value="' + esc(cut.offLen) + '" placeholder="esim. 3000">' +
+        '<label class="form-label">PALAN LEVEYS (mm)</label>' +
+        '<input class="text-input num-input" id="cutOffWid" type="text" inputmode="numeric" value="' + esc(cut.offWid) + '" placeholder="esim. 350">' +
+        '<label class="form-label">PALAN PAIKKA</label>' +
+        '<div class="cut-loc"><span><span class="code">' + esc(offLoc.code) + '</span> ' + esc(displayName(offLoc)) + '</span>' +
+        '<button type="button" id="cutPickLoc">Vaihda</button></div>' +
+        '<label class="form-label">HUOMIO (valinnainen)</label>' +
+        '<input class="text-input" id="cutNote" type="text" value="' + esc(cut.note) + '" placeholder="esim. naarmu reunassa" autocapitalize="sentences">'
+      : '') +
+      '<div class="inv-edit-btns"><button class="primary-btn" type="button" id="cutSave">Tallenna leikkaus</button>' +
+      '<button class="secondary-btn" type="button" id="cutCancel">Peru</button></div></div>';
+  }
+
+  function startCutPickLoc() {
+    const it = hereStock.find(r => r.id === invCutId);
+    pendingPick = {
+      onPick: loc => { cut.offLocId = loc.id; cut.returned = true; showScreen('inventory'); },
+    };
+    document.getElementById('moveBanner').innerHTML =
+      '✂ Mihin paikkaan <b>' + esc(it?.products?.nimi || 'pala') + '</b> -pala laitetaan?<br>' +
+      '<button class="undo-btn" type="button" id="pickCancel" style="margin-top:8px">Peru</button>';
+    showScreen('place');
+  }
+
+  async function saveCut() {
+    const it = hereStock.find(r => r.id === invCutId);
+    if (!it) return;
+    const c = cutCalc(it);
+    if (c.takenMm == null || c.takenMm <= 0) { showToast('Anna otettu määrä', 'error'); return; }
+    if (c.left < 0) { showToast('Otettu määrä on suurempi kuin varastossa', 'error'); return; }
+    let off = null;
+    if (cut.makeOff) {
+      const l = parseNum(cut.offLen), w = parseNum(cut.offWid);
+      if (!(l > 0) || !(w > 0)) { showToast('Anna palan pituus ja leveys', 'error'); return; }
+      off = { l: Math.round(l), w: Math.round(w) };
+    }
+    const parentPatch = c.isRoll ? { remaining_length_mm: c.left } : { remaining_width_mm: c.left };
+    if (c.left === 0) parentPatch.status = 'USED';
+    const before = { remaining_length_mm: it.remaining_length_mm, remaining_width_mm: it.remaining_width_mm, status: 'ACTIVE' };
+
+    const btn = document.getElementById('cutSave');
+    btn.disabled = true;
+    try {
+      const headers = await authHeaders();
+      headers['Content-Type'] = 'application/json';
+      // 1) Emo pienenee
+      const r1 = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${it.id}`,
+        { method: 'PATCH', headers: { ...headers, 'Prefer': 'return=minimal' }, body: JSON.stringify(parentPatch) });
+      if (!r1.ok) throw new Error('HTTP ' + r1.status + ': ' + await r1.text());
+      Object.assign(it, parentPatch);
+
+      // 2) Ylijäämäpala uutena OFFCUT-rivinä, viittaus emoon
+      let offIds = [];
+      if (off) {
+        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=id`, {
+          method: 'POST', headers: { ...headers, 'Prefer': 'return=representation' },
+          body: JSON.stringify({
+            product_id: it.product_id, warehouse_id: WAREHOUSE_ID, location_id: cut.offLocId,
+            type: 'OFFCUT', status: 'ACTIVE', quantity: null,
+            original_length_mm: off.l, remaining_length_mm: off.l,
+            original_width_mm:  off.w, remaining_width_mm:  off.w,
+            length_estimated: false,
+            parent_stock_item_id: it.id,
+            note: cut.note.trim() || null,
+          })
+        });
+        if (!r2.ok) throw new Error('Pala: HTTP ' + r2.status + ': ' + await r2.text());
+        offIds = (await r2.json()).map(x => x.id);
+      }
+
+      const offLoc = locById.get(cut.offLocId);
+      addSessionEntry({ kind: 'cut', parentId: it.id, before, offIds, at: Date.now(),
+        name: 'Leikkaus: ' + (it.products?.nimi || ''),
+        sub: (c.isRoll ? '−' + formatQty(c.takenMm / 1000) + ' m' : '−' + c.takenMm + ' mm') +
+             (off ? ' · pala ' + off.l + '×' + off.w + ' → ' + (offLoc?.code || '') : '') });
+      showToast('Leikkaus tallennettu ✓', 'success');
+      invCutId = null; cut = null;
+      invMarks[it.id] = c.left === 0 ? undefined : 'found';
+      await loadHereStock();
+    } catch (err) {
+      showToast('Virhe: ' + err.message, 'error');
+    } finally {
+      btn.disabled = false;
     }
   }
 
@@ -1492,6 +1644,25 @@
       headers['Content-Type'] = 'application/json';
       headers['Prefer'] = 'return=minimal';
 
+      if (e.kind === 'cut') {
+        // Emo takaisin entisiin mittoihin; pala pois (tuore → poisto, vanha → arkisto)
+        const r1 = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=eq.${e.parentId}`,
+          { method: 'PATCH', headers, body: JSON.stringify(e.before) });
+        if (!r1.ok) throw new Error('HTTP ' + r1.status + ': ' + await r1.text());
+        if (e.offIds.length) {
+          const idList = '(' + e.offIds.join(',') + ')';
+          const fresh = Date.now() - e.at < 60 * 60 * 1000;
+          const r2 = fresh
+            ? await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.${idList}`, { method: 'DELETE', headers })
+            : await fetch(`${SUPABASE_URL}/rest/v1/stock_items?id=in.${idList}`, { method: 'PATCH', headers, body: JSON.stringify({ status: 'ARCHIVED' }) });
+          if (!r2.ok) throw new Error('HTTP ' + r2.status + ': ' + await r2.text());
+        }
+        sessionLog.splice(index, 1);
+        renderSession();
+        await loadHereStock();
+        showToast('Kumottu ✓', 'success');
+        return;
+      }
       if (e.kind === 'archive' || e.kind === 'move') {
         // Inventoinnin arkistointi → takaisin ACTIVE; siirto → takaisin lähtöpaikkaan
         const body = e.kind === 'archive' ? { status: 'ACTIVE' } : { location_id: e.fromId };
@@ -1883,8 +2054,15 @@
       return;
     }
     const editBtn = e.target.closest('[data-inv-edit]');
-    if (editBtn) { invEditId = invEditId === editBtn.dataset.invEdit ? null : editBtn.dataset.invEdit; renderInventory(); return; }
+    if (editBtn) { invEditId = invEditId === editBtn.dataset.invEdit ? null : editBtn.dataset.invEdit; invCutId = null; cut = null; renderInventory(); return; }
     if (e.target.closest('#invEditCancel')) { invEditId = null; renderInventory(); return; }
+    const cutBtn = e.target.closest('[data-inv-cut]');
+    if (cutBtn) { startCut(cutBtn.dataset.invCut); return; }
+    const moveOneBtn = e.target.closest('[data-inv-move]');
+    if (moveOneBtn) { startMoveOne(moveOneBtn.dataset.invMove); return; }
+    if (e.target.closest('#cutCancel'))  { invCutId = null; cut = null; renderInventory(); return; }
+    if (e.target.closest('#cutSave'))    { saveCut(); return; }
+    if (e.target.closest('#cutPickLoc')) { startCutPickLoc(); return; }
     if (e.target.closest('#invEditSave')) { saveInvEdit(); return; }
   });
 
@@ -1920,11 +2098,29 @@
     try { await window.authSignOut(); } catch (e) {}
     location.replace('login.html');
   });
+  document.addEventListener('input', e => {
+    if (!cut) return;
+    const id = e.target.id;
+    if (id === 'cutTaken') {
+      cut.taken = e.target.value;
+      const it = hereStock.find(r => r.id === invCutId);
+      const old = e.target.parentElement.querySelector('.cut-calc');
+      const tmp = document.createElement('div'); tmp.innerHTML = invCutHtml(it);
+      const fresh = tmp.querySelector('.cut-calc');
+      if (old && fresh) old.replaceWith(fresh); else if (old) old.remove(); else if (fresh) e.target.after(fresh);
+    }
+    if (id === 'cutOffLen') cut.offLen = e.target.value;
+    if (id === 'cutOffWid') cut.offWid = e.target.value;
+    if (id === 'cutNote')   cut.note   = e.target.value;
+  });
+  document.addEventListener('change', e => {
+    if (cut && e.target.id === 'cutMakeOff') { cut.makeOff = e.target.checked; renderInventory(); }
+  });
   document.getElementById('invAllFound').addEventListener('click', () => { hereStock.forEach(r => { if (!invMarks[r.id]) invMarks[r.id] = 'found'; }); renderInventory(); });
   document.getElementById('invFinish').addEventListener('click', finishInventory);
   document.getElementById('invMoveAll').addEventListener('click', startMoveAll);
   document.getElementById('invAddMissing').addEventListener('click', () => showScreen('product'));
-  document.addEventListener('click', e => { if (e.target.closest('#moveCancel')) { moveFrom = null; showScreen('inventory'); } });
+  document.addEventListener('click', e => { if (e.target.closest('#pickCancel')) { pendingPick = null; showScreen('inventory'); } });
   document.getElementById('sessionToggle').addEventListener('click', () => { sessionOpen = !sessionOpen; renderSession(); });
 
   // ─── Käynnistys ──────────────────────────────────────
