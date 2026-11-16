@@ -783,6 +783,10 @@
     <div class="panel-header">
       <h2>Varastossa</h2>
       <span class="badge-count" id="countBadge">ladataan...</span>
+      <span style="margin-left:auto;display:flex;gap:0.5rem;flex-wrap:wrap">
+        <a class="btn btn-secondary" href="varastotyo.html" style="text-decoration:none;font-size:0.8rem;padding:0.35rem 0.7rem">📱 Varastotyö</a>
+        <a class="btn btn-secondary" href="varasto_qr.html" style="text-decoration:none;font-size:0.8rem;padding:0.35rem 0.7rem">🏷 QR-tarrat</a>
+      </span>
     </div>
 
     <div class="filters">
@@ -797,6 +801,12 @@
         <option value="BULK">Metri</option>
       </select>
       <select id="filterThickness"><option value="">Kaikki paksuudet</option></select>
+      <select id="filterChecked">
+        <option value="">Inventointi: kaikki</option>
+        <option value="no">Ei inventoitu</option>
+        <option value="yes">Inventoitu</option>
+        <option value="old">Inventoitu yli 90 pv sitten</option>
+      </select>
       <button class="btn-clear" id="clearFilters">✕ Tyhjennä</button>
     </div>
 
@@ -815,6 +825,7 @@
                 <th class="sortable" onclick="sortTable('length')">Mitat (jäljellä)</th>
                 <th class="hide-mobile">Varastopaikka</th>
                 <th class="hide-mobile">Huomio</th>
+                <th class="sortable hide-mobile" onclick="sortTable('checked')">Inventoitu</th>
               </tr>
             </thead>
             <tbody id="stockBody">
@@ -968,6 +979,18 @@
         <div class="modal-info-item">
           <div class="modal-info-label">Leveys jäljellä</div>
           <div class="modal-info-value big mono" id="modalRemWidth">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Alkuperäiset mitat</div>
+          <div class="modal-info-value mono" id="modalOrig">—</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">Inventoitu</div>
+          <div class="modal-info-value mono" id="modalChecked">—</div>
+        </div>
+        <div class="modal-info-item" id="modalParentItem" style="display:none;grid-column:1 / -1">
+          <div class="modal-info-label">Peräisin</div>
+          <div class="modal-info-value" id="modalParent">—</div>
         </div>
       </div>
 
@@ -1198,17 +1221,41 @@
     }
   }
 
+  // ─── Liikeloki (stock_movements) ─────────────────────
+  // Kirjaa tapahtuman. Lokin epäonnistuminen ei saa estää itse toimenpidettä → vain varoitus.
+  async function logMovements(rows) {
+    if (!rows.length) return;
+    try {
+      const session = await window.getAuthSession();
+      const token = session?.data?.session?.access_token || SUPABASE_KEY;
+      const uid = session?.data?.session?.user?.id || null;
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/stock_movements`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(rows.map(r => Object.assign({ created_by: uid }, r)))
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+    } catch (err) {
+      console.warn('Liikeloki:', err);
+      showToast('Toimenpide tehty, mutta lokimerkintä epäonnistui', 'error');
+    }
+  }
+
   // ─── Load stock ──────────────────────────────────────
   async function loadStock() {
     try {
       const session = await window.getAuthSession();
       const token = session?.data?.session?.access_token || SUPABASE_KEY;
 
-      const url = `${SUPABASE_URL}/rest/v1/stock_items?select=id,type,quantity,length_estimated,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,note,location_id,product_id,products(nimi,laji,material,color,thickness_mm,unit),locations(id,code,name)&status=eq.ACTIVE&limit=10000`;
-
-      const res = await fetch(url, {
-        headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' }
-      });
+      const baseSelect = 'id,type,quantity,length_estimated,remaining_width_mm,remaining_length_mm,original_width_mm,original_length_mm,note,checked_at,parent_stock_item_id,location_id,product_id,products(nimi,laji,material,color,thickness_mm,unit),locations(id,code,name)';
+      // Emorivi (mistä siivu on leikattu) samaan hakuun; jos upotus ei onnistu, haetaan ilman sitä
+      const parentSelect = ',parent:parent_stock_item_id(id,type,status,original_length_mm,original_width_mm,locations(code))';
+      const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + token, 'Accept': 'application/json' };
+      let res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=${baseSelect}${parentSelect}&status=eq.ACTIVE&limit=10000`, { headers });
+      if (!res.ok) {
+        console.warn('Emorivin upotus ei onnistunut, haetaan ilman:', await res.text());
+        res = await fetch(`${SUPABASE_URL}/rest/v1/stock_items?select=${baseSelect}&status=eq.ACTIVE&limit=10000`, { headers });
+      }
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
 
       allItems = await res.json();
@@ -1281,8 +1328,13 @@
       color:     document.getElementById('filterColor').value,
       type:      document.getElementById('filterType').value,
       thickness: document.getElementById('filterThickness').value,
+      checked:   document.getElementById('filterChecked').value,
     };
+    const old90 = Date.now() - 90 * 24 * 60 * 60 * 1000;
     const filtered = allItems.filter(item => {
+      if (f.checked === 'no'  && item.checked_at)  return false;
+      if (f.checked === 'yes' && !item.checked_at) return false;
+      if (f.checked === 'old' && (!item.checked_at || new Date(item.checked_at).getTime() > old90)) return false;
       if (f.material  && item.products?.material      !== f.material)          return false;
       if (f.color     && item.products?.color         !== f.color)             return false;
       if (f.type      && item.type                    !== f.type)              return false;
@@ -1297,7 +1349,7 @@
 
     if (!filtered.length) {
       document.getElementById('stockBody').innerHTML =
-        '<tr><td colspan="8" class="state-msg">Ei tuloksia.</td></tr>';
+        '<tr><td colspan="9" class="state-msg">Ei tuloksia.</td></tr>';
       updateMapHighlights([]);
       return;
     }
@@ -1330,16 +1382,40 @@
       return '<tr onclick="openModal(' + JSON.stringify(item).replace(/"/g, '&quot;') + ')">' +
         '<td class="cb-col" onclick="event.stopPropagation()"><input type="checkbox" class="row-cb" data-id="' + item.id + '"' + isChkd + ' onchange="onRowCheck(this)"></td>' +
         '<td><span class="type-badge type-' + type + '">' + typeFi + '</span></td>' +
-        '<td colspan="2">' + pname + '</td>' +
+        '<td colspan="2">' + pname + parentHtml(item) + '</td>' +
         '<td class="hide-mobile mono">' + thick + '</td>' +
         '<td class="mono">' + mitat + '</td>' +
         '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '<span style="color:var(--muted)">—</span>') + '</td>' +
         '<td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
+        '<td class="hide-mobile mono" style="font-size:0.8rem">' + checkedHtml(item) + '</td>' +
         '</tr>';
     }).join('');
 
     // Päivitetään karttakorostus
     updateMapHighlights(filtered);
+  }
+
+  // Inventointileima: "16.11.26" vihreänä, vanha (>90 pv) keltaisena, puuttuva harmaana
+  function fmtDateShort(iso) {
+    const d = new Date(iso);
+    return d.getDate() + '.' + (d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2);
+  }
+  function checkedHtml(item) {
+    if (!item.checked_at) return '<span style="color:var(--muted)">—</span>';
+    const old = Date.now() - new Date(item.checked_at).getTime() > 90 * 24 * 60 * 60 * 1000;
+    return '<span style="color:' + (old ? 'var(--accent)' : 'var(--sheet)') + '" title="' + new Date(item.checked_at).toLocaleString('fi-FI') + '">' + fmtDateShort(item.checked_at) + '</span>';
+  }
+  // Siivun alkuperä: "← rullasta 40 m · IN-R-07". Emo voi olla jo käytetty tai arkistoitu.
+  function parentHtml(item) {
+    if (!item.parent_stock_item_id) return '';
+    const p = item.parent;
+    if (!p) return '<div style="font-size:0.75rem;color:var(--muted)">← leikattu toisesta erästä</div>';
+    const typeFi = (TYPE_FI[p.type] || p.type || '').toLowerCase();
+    const dim = p.type === 'ROLL'
+      ? (p.original_length_mm != null ? (p.original_length_mm / 1000).toFixed(0).replace('.', ',') + ' m' : '')
+      : (p.original_length_mm != null && p.original_width_mm != null ? p.original_length_mm + '×' + p.original_width_mm : '');
+    const where = p.status === 'ACTIVE' ? (p.locations?.code || '') : (p.status === 'USED' ? 'käytetty loppuun' : 'arkistoitu');
+    return '<div style="font-size:0.75rem;color:var(--muted)">← ' + typeFi + (dim ? ' ' + dim : '') + (where ? ' · ' + where : '') + '</div>';
   }
 
   // Määrätavara (ITEM = kpl, BULK = m): määrä on quantity-sarakkeessa.
@@ -1373,11 +1449,11 @@
   }
 
   // Filter events
-  ['filterMaterial','filterColor','filterType','filterThickness'].forEach(id => {
+  ['filterMaterial','filterColor','filterType','filterThickness','filterChecked'].forEach(id => {
     document.getElementById(id).addEventListener('change', renderTable);
   });
   document.getElementById('clearFilters').addEventListener('click', () => {
-    ['filterMaterial','filterColor','filterType','filterThickness'].forEach(id => {
+    ['filterMaterial','filterColor','filterType','filterThickness','filterChecked'].forEach(id => {
       document.getElementById(id).value = '';
     });
     renderTable();
@@ -1714,7 +1790,9 @@
         '<div class="stock-card-mitat">' + mitat + '</div>' +
         '<div class="stock-card-meta">' +
           (locName ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '') +
+          ' <span class="mono" style="font-size:0.75rem;margin-left:auto">inv. ' + checkedHtml(item) + '</span>' +
         '</div>' +
+        parentHtml(item) +
         noteHtml +
         '</div>';
     }).join('');
@@ -1755,6 +1833,7 @@
       case 'color':     return item.products?.color || '';
       case 'thickness': return item.products?.thickness_mm ?? 0;
       case 'length':    return item.remaining_length_mm ?? item.original_length_mm ?? 0;
+      case 'checked':   return item.checked_at ? new Date(item.checked_at).getTime() : 0;
       default:          return '';
     }
   }
@@ -1838,6 +1917,13 @@
     document.getElementById('modalTitle').textContent = productName(item.products);
     document.getElementById('modalType').textContent  = TYPE_FI[type] || type;
     document.getElementById('modalThick').textContent = thick;
+    document.getElementById('modalChecked').innerHTML = item.checked_at ? checkedHtml(item) : '<span style="color:var(--muted)">ei inventoitu</span>';
+    const origL = item.original_length_mm, origW = item.original_width_mm;
+    document.getElementById('modalOrig').textContent = (type === 'ITEM' || type === 'BULK') ? '—'
+      : ((origL != null ? (origL >= 1000 ? (origL/1000).toFixed(3).replace('.',',') + ' m' : origL + ' mm') : '—') + ' × ' + (origW != null ? origW + ' mm' : '—'));
+    const parentHtmlStr = parentHtml(item);
+    document.getElementById('modalParentItem').style.display = parentHtmlStr ? '' : 'none';
+    document.getElementById('modalParent').innerHTML = parentHtmlStr.replace('← ', '').replace(/font-size:0.75rem;color:var\(--muted\)/, '');
 
     const remLen = item.remaining_length_mm ?? item.original_length_mm;
     const remWid = item.remaining_width_mm  ?? item.original_width_mm;
@@ -1945,6 +2031,26 @@
         throw new Error('HTTP ' + res.status + ': ' + err);
       }
 
+      // Loki: mittamuutos → ADJUST, paikan vaihto → TRANSFER
+      const it = currentModalItem;
+      const logs = [];
+      if (patch.remaining_length_mm != null || patch.remaining_width_mm != null || patch.quantity != null) {
+        logs.push({
+          stock_item_id: it.id, movement_type: 'ADJUST',
+          remaining_length_after_mm: patch.remaining_length_mm ?? it.remaining_length_mm ?? null,
+          remaining_width_after_mm:  patch.remaining_width_mm  ?? it.remaining_width_mm  ?? null,
+          reference_note: patch.quantity != null
+            ? 'Määrä ' + (itemQuantity(it) ?? '—') + ' → ' + patch.quantity + ' (pöytäkone)'
+            : 'Mitat korjattu (pöytäkone)',
+        });
+      }
+      if (newLocId !== (it.location_id || null)) {
+        const toCode = allLocations.find(l => l.id === newLocId)?.code || '—';
+        logs.push({ stock_item_id: it.id, movement_type: 'TRANSFER',
+          reference_note: (it.locations?.code || '—') + ' → ' + toCode + ' (pöytäkone)' });
+      }
+      await logMovements(logs);
+
       showToast('Tallennettu ✓', 'success');
       closeModal();
       await loadStock();
@@ -1980,6 +2086,7 @@
       });
 
       if (!res.ok) throw new Error('HTTP ' + res.status);
+      await logMovements([{ stock_item_id: currentModalItem.id, movement_type: 'ARCHIVE', reference_note: 'Arkistoitu (pöytäkone)' }]);
 
       showToast('Arkistoitu ✓', 'success');
       closeModal();
@@ -2088,12 +2195,19 @@
           'apikey': SUPABASE_KEY,
           'Authorization': 'Bearer ' + token,
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal'
+          'Prefer': 'return=representation'
         },
         body: JSON.stringify(rows)
       });
 
       if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
+      const created = await res.json();
+      await logMovements(created.map(c => ({
+        stock_item_id: c.id, movement_type: 'IN',
+        remaining_length_after_mm: c.remaining_length_mm ?? null,
+        remaining_width_after_mm:  c.remaining_width_mm  ?? null,
+        reference_note: (isMaara ? 'Lisätty ' + quantity + (type === 'BULK' ? ' m' : ' kpl') : 'Lisätty varastoon') + ' (pöytäkone)',
+      })));
 
       showToast('Lisätty varastoon ✓', 'success');
 
@@ -2169,6 +2283,7 @@
     document.getElementById('filterColor').value     = col;
     document.getElementById('filterThickness').value = thick;
     document.getElementById('filterType').value      = '';
+    document.getElementById('filterChecked').value   = '';
     // Vaihdetaan Selaa-välilehdelle
     switchTab('selaa');
     // Scrollataan ylös
@@ -2220,7 +2335,7 @@
         : '<span style="color:var(--muted);font-size:0.78rem">○ Poistettu</span>';
       const editBtn = p.is_active
         ? '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem" onclick="openProductModal(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">Muokkaa</button>'
-        : '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem;color:var(--sheet);border-color:var(--sheet)" onclick="doRestoreProduct(\"' + p.id + '\")">↩ Palauta</button>';
+        : '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem;color:var(--sheet);border-color:var(--sheet)" onclick="doRestoreProduct(\'' + p.id + '\')">↩ Palauta</button>';
       const lajiChip = p.laji === 'pelti'
         ? '<span class="type-badge type-SHEET" style="margin-right:0.4rem">pelti</span>'
         : '<span class="type-badge type-ITEM" style="margin-right:0.4rem">tarvike</span>';
