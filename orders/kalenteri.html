@@ -274,7 +274,10 @@
     display:none;
   }
   .toast.show{display:block;}
-</style>
+
+    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
+    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+  </style>
 </head>
 <body>
 
@@ -284,6 +287,7 @@
     <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <div class="nav-section-label">Sivut</div>
+      <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
       <a class="nav-item" href="asiakkaat.html">👤 Asiakkaat</a>
       <a class="nav-item" href="tilaukset.html">📋 Tilaukset</a>
       <a class="nav-item" href="tilaus.html">✏️ Uusi tilaus</a>
@@ -293,6 +297,7 @@
       <a class="nav-item" href="varasto.html">📦 Varasto</a>
       <hr class="nav-divider">
       <div class="nav-section-label">Hallinta</div>
+      <a class="nav-item" href="henkilosto.html">👥 Henkilöstö</a>
       <a class="nav-item" href="hinnasto.html">💰 Hinnasto</a>
       <a class="nav-item" href="lasku.html">🧾 Laskutus</a>
       <a class="nav-item" href="tehtavat.html">✅ Tehtävät</a>
@@ -300,8 +305,10 @@
       <hr class="nav-divider">
       <div class="nav-section-label">Työkalut</div>
       <a class="nav-item" href="tunnit.html">⏱ Tunnit</a>
+      <a class="nav-item" href="ajanseuranta.html">⏲ Ajanseuranta</a>
       <a class="nav-item" href="laskin.html">🧮 Laskin</a>
       <a class="nav-item" href="piippu.html">🏭 Piippu</a>
+      <a class="nav-item" href="../maps/verstaspohja_mitoitettu.html">🗺 Varastokartta</a>
     </div>
   </div>
   <h1>Kalenteri</h1>
