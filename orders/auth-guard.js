@@ -30,6 +30,14 @@
   const _originalFetch = window.fetch.bind(window);
   window.fetch = async function (url, options = {}) {
     if (typeof url === 'string' && url.includes(SUPABASE_URL)) {
+      // Tietokantahaut odottavat, kunnes kirjautuminen on tarkistettu. Muuten sivu,
+      // joka hakee dataa heti latautuessaan, lähettää haun julkisella avaimella
+      // silloin, kun tallennettu kirjautuminen on vanhentunut ja sitä vasta uusitaan,
+      // ja RLS palauttaa tyhjän listan (sivu näyttää tyhjää, päivitys auttaa).
+      // Vain /rest/v1/-haut: kirjautumisen omat kutsut (/auth/v1/) eivät saa jäädä odottamaan.
+      if (!_cachedSession && url.includes('/rest/v1/')) {
+        await window._authReady;
+      }
       if (_cachedSession) {
         options = options || {};
         options.headers = options.headers || {};

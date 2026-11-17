@@ -708,7 +708,7 @@ function render(items, order) {
   `;
 }
 
-load();
+window._authReady.then(load);
 </script>
 </body>
 </html>
