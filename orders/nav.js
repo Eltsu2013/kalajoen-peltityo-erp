@@ -6,7 +6,7 @@
  *
  * Sivulla tarvitaan:
  *   <div class="nav-dropdown" id="navDropdown"> ... </div>   (tai id="navDropdownLasku")
- *   <script src="nav.js?v=1"></script>   heti valikon jälkeen
+ *   <script src="nav.js?v=N"></script>   heti valikon jälkeen
  * Valikon avaus/sulku ja ulkoasu (.nav-item, .nav-divider jne.) ovat sivun omia.
  *
  * Toiminta:
@@ -95,6 +95,15 @@
     const st = document.createElement('style');
     st.id = 'kpt-nav-tyylit';
     st.textContent = `
+      /* Kategoriarivi on <button>. Nollataan selaimen oletusnapin ulkoasu (harmaa tausta,
+         reunus, oma fontti) — kaikkien sivujen .nav-item-tyyli ei sitä tee (17.11. tilaukset.html).
+         :where() = tämän säännön painoarvo on nolla, joten sivun oma .nav-item-tyyli voittaa
+         aina, kun se määrittää saman asian (fontti, väri, hover-tausta). */
+      :where(#navDropdown .nav-kat, #navDropdownLasku .nav-kat) {
+        -webkit-appearance: none; appearance: none;
+        background: transparent; border: 0; border-radius: 0; box-shadow: none; margin: 0;
+        font: inherit; color: inherit; text-align: left; cursor: pointer;
+      }
       #navDropdown .nav-kat, #navDropdownLasku .nav-kat {
         display: flex; align-items: center; justify-content: space-between; gap: 8px;
         font-weight: 600; width: 100%;
