@@ -29,6 +29,8 @@ svg { background:#1a1e24; border:1px solid #2a3038; border-radius:4px; }
 .info-type { font-size:10px; color:#5a6370; }
 .info-empty { font-size:11px; color:#5a6370; font-style:italic; }
 .legend { display:flex; flex-direction:column; gap:6px; }
+.rel-link { display:block; width:100%; text-align:left; margin-top:3px; padding:8px 10px; font:inherit; font-size:10px; color:#7be0a0; background:#0e2218; border:1px dashed #3dba6e; border-radius:4px; cursor:pointer; }
+.rel-link:hover { background:#1d4a30; }
 /* Koko kartta mahtuu ruudulle myös läppärillä (18.11.2026); yksityiskohdat zoomaamalla */
 .map-wrap .kz-kehys { width:min(100%, 620px, calc((100vh - 110px) * 620 / 870)); }
 .leg { display:flex; align-items:center; gap:7px; font-size:10px; color:#5a6370; }
@@ -208,12 +210,8 @@ IN-R-10 (vaihtuva rulla):
 <text x="70" y="86" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:start">IN-L-12</text>
 
 <!-- ═══ VASEN SEINÄ kaistaleet ═══ -->
-<!-- IN-L-09-11/213, IN-L-08, IN-L-08 kapeat pystysuuntaiset -->
-<!-- IN-L-09-11/213 sisältyy nyt IN-L-08 alueeseen -->
-<rect data-loc="inl08" x="50" y="110" width="16" height="208" fill="#0e2218" stroke="#3dba6e" stroke-width="1"/>
-<text x="58" y="214" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle;writing-mode:tb">IN-L-08</text>
 <rect data-loc="inl06" x="50" y="200" width="12" height="118" fill="#0e2218" stroke="#3dba6e" stroke-width="1"/>
-<text x="56" y="259" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle;writing-mode:tb">IN-L-06</text>
+<text x="59" y="259" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle;writing-mode:tb">IN-L-06</text>
 
 <!-- IN-L-07 ZN sekalaiset palat — vasen seinä, inl06:n vasemmalla puolella -->
 <rect data-loc="inl07" x="63" y="200" width="12" height="118" fill="#0e2218" stroke="#3dba6e" stroke-width="1"/>
@@ -221,19 +219,24 @@ IN-R-10 (vaihtuva rulla):
 
 <!-- IN-L-11 Kyva -->
 <rect data-loc="inl11" x="50" y="101" width="12" height="97" fill="#0e2218" stroke="#3dba6e" stroke-width="1"/>
-<text x="56" y="149" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle;writing-mode:tb">IN-L-11 Kyva</text>
+<text x="59" y="149" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle;writing-mode:tb">IN-L-11 Kyva</text>
 
 <!-- IN-L-10: vasen 650-2980, nosto 11000-11300 -->
 <rect data-loc="inl10" x="76" y="198" width="93" height="12" fill="#0e2218" stroke="#3dba6e" stroke-width="1.2" rx="1"/>
 <text x="122" y="205" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle">IN-L-10 Kotelot/Tsekki</text>
 
-<!-- IN-L-05 porras hyllykkö -->
-<rect data-loc="inl05" x="50" y="318" width="12" height="100" fill="#0e2218" stroke="#3dba6e" stroke-width="1.2" rx="1"/>
-<text x="56" y="368" style="font-family:'IBM Plex Mono',monospace;font-size:5.5px;fill:#3dba6e;text-anchor:middle;writing-mode:tb">IN-L-05</text>
-
 <!-- IN-L-04 iso lattia-alue -->
 <rect data-loc="inl04" x="50" y="318" width="119" height="100" fill="#0b1c12" stroke="#3dba6e" stroke-width="1.2" rx="2"/>
-<text x="109" y="368" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#3dba6e;text-anchor:middle">IN-L-04  Isot rullat</text>
+<text x="112" y="368" style="font-family:'IBM Plex Mono',monospace;font-size:7px;fill:#3dba6e;text-anchor:middle">IN-L-04  Isot rullat</text>
+
+
+<!-- ═══ SEINÄHYLLYT lattia-alueiden yläpuolella (18.11.2026) ═══
+     Kapea katkoviivakaista kiinni seinässä = hylly seinällä ylempänä, lattia-alue sen alla.
+     Piirretään lattia-alueiden jälkeen, jotta kaista on päällimmäisenä ja klikattavissa. -->
+<rect data-loc="inl08" x="50.5" y="110" width="6" height="208" fill="#1d4a30" stroke="#7be0a0" stroke-width="0.8" stroke-dasharray="2.5,1.5"/>
+<text x="53.5" y="214" style="font-family:'IBM Plex Mono',monospace;font-size:4.2px;fill:#c8f5d8;text-anchor:middle;writing-mode:tb">▲ IN-L-08 ZN ja Kyva hyllyt</text>
+<rect data-loc="inl05" x="50.5" y="318" width="6" height="100" fill="#1d4a30" stroke="#7be0a0" stroke-width="0.8" stroke-dasharray="2.5,1.5"/>
+<text x="53.5" y="368" style="font-family:'IBM Plex Mono',monospace;font-size:4.2px;fill:#c8f5d8;text-anchor:middle;writing-mode:tb">▲ IN-L-05 Porras</text>
 
 <!-- ═══ IN-C — KATTOKONE PÄÄLLÄ ═══ -->
 <!-- IN-C-KT kaksitasoinen hylly: vasen 5380-7040, nosto 3300-7000 -->
@@ -397,10 +400,11 @@ IN-R-10 (vaihtuva rulla):
       <div class="leg"><div class="dot" style="background:#0b1c12;border:1px solid #3dba6e"></div>Lattia</div>
       <div class="leg"><div class="dot" style="background:#0a2018;border:1px solid #2aaa88"></div>Hylly</div>
       <div class="leg"><div class="dot" style="background:#0e2218;border:1px solid #5de88a"></div>Piikki</div>
+      <div class="leg"><div class="dot" style="background:#1d4a30;border:1px dashed #7be0a0"></div>▲ Seinähylly lattia-alueen yläpuolella</div>
     </div>
   </div>
   <div style="margin-top:auto;padding-top:10px;border-top:1px solid #2a3038">
-    <p style="font-size:9px;color:#2a3038;line-height:1.6">v9.4 · 18.11.2026 (zoomaus, IN-R ja IN-L uusi numerointi)<br>1px = 25mm</p>
+    <p style="font-size:9px;color:#2a3038;line-height:1.6">v9.5 · 18.11.2026 (seinähyllyt kaistoina)<br>1px = 25mm</p>
   </div>
 </div>
 
@@ -415,18 +419,18 @@ const locs = {
   'inl17':  {code:'IN-L-17', name:'Jyvä Alu 1,5mm isot', type:'floor', zone:'IN-L'},
   'inl07': {code:'IN-L-07', name:'ZN pienet alue', type:'floor', zone:'IN-L'},
   'inl0913':{code:'IN-L-09-11/213', name:'Piikit vasen seinä', type:'linear', zone:'IN-L'},
-  'inl08':  {code:'IN-L-08', name:'ZN ja Kyva hyllyt (tasot 1–3)', type:'shelf', zone:'IN-L'},
+  'inl08':  {code:'IN-L-08', name:'ZN ja Kyva hyllyt', type:'seinähylly · 3 hyllyä', zone:'IN-L', levels:['Hylly 1 — IN-L-08-1','Hylly 2 — IN-L-08-2','Hylly 3 — IN-L-08-3'], alla:['inl11','inl06']},
   'inl13lat': {code:'IN-L-13', name:'Päätyseinä lattia — isot levyt', type:'floor · 1400mm', zone:'IN-L'},
   'inl14p1': {code:'IN-L-14', name:'Päätyseinän piikit — rivi 1', type:'linear', zone:'IN-L'},
   'inl13_1': {code:'IN-L-13-1', name:'Päätyseinän hylly 1 (alin)', type:'shelf', zone:'IN-L'},
   'inl13_2': {code:'IN-L-13-2', name:'Päätyseinän hylly 2 (keski)', type:'shelf', zone:'IN-L'},
   'inl13_3': {code:'IN-L-13-3', name:'Päätyseinän hylly 3 (ylin)', type:'shelf', zone:'IN-L'},
-  'inl06':  {code:'IN-L-06', name:'Stucco alu alue', type:'floor', zone:'IN-L'},
+  'inl06':  {code:'IN-L-06', name:'Stucco alu alue', type:'floor', zone:'IN-L', ylla:['inl08']},
   'inl12':  {code:'IN-L-12', name:'Päätyseinän ZN pikkupalat (nurkka)', type:'floor', zone:'IN-L'},
-  'inl11': {code:'IN-L-11', name:'Kyva 0,7–1,0 alue', type:'floor', zone:'IN-L'},
+  'inl11': {code:'IN-L-11', name:'Kyva 0,7–1,0 alue', type:'floor', zone:'IN-L', ylla:['inl08']},
   'inl10':  {code:'IN-L-10', name:'Kotelot / Tsekki kone takana', type:'grid', zone:'IN-L'},
-  'inl05':  {code:'IN-L-05', name:'Porras hyllykkö (alapuoli)', type:'shelf', zone:'IN-L'},
-  'inl04':  {code:'IN-L-04', name:'Lattia-alue isoille rullille', type:'floor', zone:'IN-L'},
+  'inl05':  {code:'IN-L-05', name:'Porras hyllykkö', type:'seinähylly · 8 hyllyä', zone:'IN-L', levels:['Hylly 1 — IN-L-05-1','Hylly 2 — IN-L-05-2','Hylly 3 — IN-L-05-3','Hylly 4 — IN-L-05-4','Hylly 5 — IN-L-05-5','Hylly 6 — IN-L-05-6','Hylly 7 — IN-L-05-7','Hylly 8 — IN-L-05-8'], alla:['inl04']},
+  'inl04':  {code:'IN-L-04', name:'Lattia-alue isoille rullille', type:'floor', zone:'IN-L', ylla:['inl05']},
   'inl03':  {code:'IN-L-03', name:'Työkalukoppi', type:'shelf', zone:'IN-L'},
   'inl02':  {code:'IN-L-02', name:'Vessa (erikoisväripellit)', type:'room', zone:'IN-L'},
   'inl01':  {code:'IN-L-01', name:'Tekninen tila (ruuvihyllyt 5 tasoa)', type:'room/shelf', zone:'IN-L'},
@@ -472,6 +476,14 @@ function codeToKey(code) {
     .replace(/\//g, '')
     .replace(/ /g, '');
 }
+
+// Ristiviittauksen napautus avaa toisen paikan (sama kuin sen klikkaus kartalla)
+document.getElementById('panel').addEventListener('click', e => {
+  const b = e.target.closest('.rel-link');
+  if (!b) return;
+  const el = document.querySelector(`[data-loc="${b.dataset.goto}"]`);
+  if (el) el.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+});
 
 // Zoomaus ja siirto (kartta-zoom.js)
 const kz = window.KarttaZoom ? KarttaZoom.liita(document.querySelector('.map-wrap svg')) : null;
@@ -526,10 +538,20 @@ document.querySelectorAll('[data-loc]').forEach(el => {
         levelsHtml += `<div style="font-size:9px;color:#c8cdd3;padding:2px 0">${l}</div>`;
       });
     }
+    // Ristiviittaukset: seinähylly lattia-alueen yläpuolella ja päinvastoin
+    let relHtml = '';
+    const rel = (keys, otsikko) => {
+      const k2 = (keys || []).filter(k => locs[k]);
+      if (!k2.length) return;
+      relHtml += `<div style="margin-top:8px;font-size:9px;color:#aaa">${otsikko}</div>`;
+      k2.forEach(k => { relHtml += `<button type="button" class="rel-link" data-goto="${k}">${locs[k].code} ${locs[k].name} ▸</button>`; });
+    };
+    rel(d.ylla, '▲ SEINÄLLÄ YLÄPUOLELLA:');
+    rel(d.alla, '▼ LATTIALLA ALAPUOLELLA:');
     document.getElementById('panel').innerHTML =
       `<div class="info-code" style="color:${c}">${d.code}</div>
        <div class="info-name">${d.name}</div>
-       <div class="info-type">${d.type}</div>${levelsHtml}`;
+       <div class="info-type">${d.type}</div>${relHtml}${levelsHtml}`;
     if (kz) kz.zoomaaElementtiin(el);
   });
 });
