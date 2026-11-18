@@ -31,6 +31,8 @@
     st.textContent = `
       .kz-kehys { position: relative; width: 100%; }
       .kz-kehys > svg { display: block; width: 100%; height: auto; }
+      /* Tekstit eivät saa napata klikkausta: muuten paikan nimen kohdalta klikattaessa tiedot eivät aukea */
+      .kz-kehys svg text { pointer-events: none; }
       .kz-napit { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 6px; z-index: 5; }
       .kz-napit button {
         width: 40px; height: 40px; padding: 0; margin: 0;

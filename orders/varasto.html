@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth-guard.js"></script>
-  <script src="../maps/kartta-zoom.js?v=1"></script>
+  <script src="../maps/kartta-zoom.js?v=2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1516,16 +1516,16 @@
     'inr01':{code:'IN-R-01',name:'Hyllykkö 1'},'inr12':{code:'IN-R-12',name:'Giljotiinin välihylly'},
     'inr07':{code:'IN-R-07',name:'Päätyhylly'},'inr09':{code:'IN-R-09',name:'Päätyseinän levyalue A'},
     'inr08':{code:'IN-R-08',name:'Päätyseinän levyalue B'},'inr10':{code:'IN-R-10',name:'Vaihtuva rulla'},
-    'inl01':{code:'IN-L-01',name:'Tekninen tila'},'inl03':{code:'IN-L-03',name:'Työkalukoppi'},
-    'inl04':{code:'IN-L-04',name:'Porras hyllykkö'},'inl05a':{code:'IN-L-05',name:'Piikit (rivi A)'},
-    'inl05b':{code:'IN-L-05',name:'Piikit (rivi B)'},'inl06':{code:'IN-L-06',name:'Päätyseinän piikit'},
-    'inl07_1':{code:'IN-L-07',name:'Päätyseinän hylly 1'},'inl07_2':{code:'IN-L-07',name:'Päätyseinän hylly 2'},
-    'inl07_3':{code:'IN-L-07',name:'Päätyseinän hylly 3'},'inl08a':{code:'IN-L-08-A',name:'Stucco alu alue'},
-    'inl08b':{code:'IN-L-08-B',name:'Kyva 0,7–1,0 alue'},'inl08c':{code:'IN-L-08-C',name:'ZN sekalaiset palat'},
-    'inl09':{code:'IN-L-09',name:'Päätyseinän ZN pikkupalat'},'inl10':{code:'IN-L-10',name:'RST levyt'},
-    'inl11':{code:'IN-L-11',name:'Jyvä alu 1,5mm pienet'},'inl12':{code:'IN-L-12',name:'Jyvä alu 1,5mm isot'},
-    'inl13':{code:'IN-L-13',name:'Lattia-alue isoille rullille'},'inl14':{code:'IN-L-14',name:'Kotelot / Tsek kone'},
-    'inl15':{code:'IN-L-15',name:'ZN ja Kyva hyllyt'},
+    'inl01':{code:'IN-L-01',name:'Tekninen tila'},'inl02':{code:'IN-L-02',name:'Vessa'},'inl03':{code:'IN-L-03',name:'Työkalukoppi'},
+    'inl05':{code:'IN-L-05',name:'Porras hyllykkö'},'inl09a':{code:'IN-L-09',name:'Piikit (rivi A)'},
+    'inl09b':{code:'IN-L-09',name:'Piikit (rivi B)'},'inl14':{code:'IN-L-14',name:'Päätyseinän piikit'},
+    'inl13_1':{code:'IN-L-13',name:'Päätyseinän hylly 1'},'inl13_2':{code:'IN-L-13',name:'Päätyseinän hylly 2'},
+    'inl13_3':{code:'IN-L-13',name:'Päätyseinän hylly 3'},'inl06':{code:'IN-L-06',name:'Stucco alu alue'},
+    'inl11':{code:'IN-L-11',name:'Kyva 0,7–1,0 alue'},'inl07':{code:'IN-L-07',name:'ZN sekalaiset palat'},
+    'inl12':{code:'IN-L-12',name:'Päätyseinän ZN pikkupalat'},'inl15':{code:'IN-L-15',name:'RST levyt'},
+    'inl16':{code:'IN-L-16',name:'Jyvä alu 1,5mm pienet'},'inl17':{code:'IN-L-17',name:'Jyvä alu 1,5mm isot'},
+    'inl04':{code:'IN-L-04',name:'Lattia-alue isoille rullille'},'inl10':{code:'IN-L-10',name:'Kotelot / Tsek kone'},
+    'inl08':{code:'IN-L-08',name:'ZN ja Kyva hyllyt'},
     'inc01':{code:'IN-C-01',name:'Kanttikoneen pääty'},'inc02':{code:'IN-C-02',name:'Kanttikonetta vasten'},
     'inc03':{code:'IN-C-03',name:'Kattokonetta vasten Oikea'},'inc04a':{code:'IN-C-04',name:'Kapea tila'},
     'inc05':{code:'IN-C-05',name:'Kattokoneen nosto-oven puoli'},'inc06a':{code:'IN-C-06',name:'Kattokoneen vasen puoli'},
