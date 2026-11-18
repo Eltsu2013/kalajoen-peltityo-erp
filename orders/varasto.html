@@ -1395,7 +1395,7 @@
     const old = Date.now() - new Date(item.checked_at).getTime() > 90 * 24 * 60 * 60 * 1000;
     return '<span style="color:' + (old ? 'var(--accent)' : 'var(--sheet)') + '" title="' + new Date(item.checked_at).toLocaleString('fi-FI') + '">' + fmtDateShort(item.checked_at) + '</span>';
   }
-  // Siivun alkuperä: "← rullasta 40 m · IN-R-07". Emo voi olla jo käytetty tai arkistoitu.
+  // Siivun alkuperä: "← rullasta 40 m · IN-R-01". Emo voi olla jo käytetty tai arkistoitu.
   function parentHtml(item) {
     if (!item.parent_stock_item_id) return '';
     const p = item.parent;
@@ -1510,12 +1510,12 @@
 
   // Kartan locs-tietosanakirja — koodi → nimi (varasto.html:n omaa käyttöä varten)
   const mapLocs = {
-    'inr01':{code:'IN-R-01',name:'Kelateline'},'inr02':{code:'IN-R-02',name:'Hyllykkö 2'},
-    'inr03':{code:'IN-R-03',name:'Lattiarullat'},'inr04':{code:'IN-R-04',name:'Hyllykkö 3'},
-    'inr05':{code:'IN-R-05',name:'Hyllykkö 4'},'inr06':{code:'IN-R-06',name:'Hyllykkö 5'},
-    'inr07':{code:'IN-R-07',name:'Hyllykkö 1'},'inr08':{code:'IN-R-08',name:'Giljotiinin välihylly'},
-    'inr09':{code:'IN-R-09',name:'Päätyhylly'},'inr10':{code:'IN-R-10',name:'Päätyseinän levyalue A'},
-    'inr11':{code:'IN-R-11',name:'Päätyseinän levyalue B'},'inrvr':{code:'IN-R-VR',name:'Vaihtuva rulla'},
+    'inr11':{code:'IN-R-11',name:'Kelateline'},'inr03':{code:'IN-R-03',name:'Hyllykkö 3'},
+    'inr02':{code:'IN-R-02',name:'Lattiarullat'},'inr04':{code:'IN-R-04',name:'Hyllykkö 4'},
+    'inr05':{code:'IN-R-05',name:'Hyllykkö 5'},'inr06':{code:'IN-R-06',name:'Hyllykkö 6'},
+    'inr01':{code:'IN-R-01',name:'Hyllykkö 1'},'inr12':{code:'IN-R-12',name:'Giljotiinin välihylly'},
+    'inr07':{code:'IN-R-07',name:'Päätyhylly'},'inr09':{code:'IN-R-09',name:'Päätyseinän levyalue A'},
+    'inr08':{code:'IN-R-08',name:'Päätyseinän levyalue B'},'inr10':{code:'IN-R-10',name:'Vaihtuva rulla'},
     'inl01':{code:'IN-L-01',name:'Tekninen tila'},'inl03':{code:'IN-L-03',name:'Työkalukoppi'},
     'inl04':{code:'IN-L-04',name:'Porras hyllykkö'},'inl05a':{code:'IN-L-05',name:'Piikit (rivi A)'},
     'inl05b':{code:'IN-L-05',name:'Piikit (rivi B)'},'inl06':{code:'IN-L-06',name:'Päätyseinän piikit'},
