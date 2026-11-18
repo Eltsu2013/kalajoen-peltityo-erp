@@ -759,7 +759,10 @@ function laske() {
   const q9 = hasHuppu ? (nousu + 20) : p10;
 
   // Kaltevuuskorjaus hupun korkeuteen
-  const kaltkorj = (huplis / 2) * Math.tan(kattokulma_rad);
+  // Hupun kaltevuuskorjaus: huppu on huplis/2 piippua leveämpi joka suuntaan, joten sen alareuna on vinolla katolla
+  // (huplis/2) × katon kaltevuus (korkeusero / suora) korkeammalla/matalammalla. Korjattu 18.11.2026: aiemmin suhde oli
+  // käänteinen (tan(kattokulma) = suora / korkeusero), mikä teki loivalla katolla hupusta edestä liian korkean.
+  const kaltkorj = suora > 0 ? (huplis / 2) * (korkeuserot / suora) : 0;
 
   const juuret = [];
   const muut = [];
