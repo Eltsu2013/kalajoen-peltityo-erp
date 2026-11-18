@@ -112,6 +112,42 @@
   .saving.ok { color: var(--success); }
   .saving.err { color: var(--danger); }
 
+
+  /* ── Tuloste (18.11.2026) ───────────────────────────────────────
+     Tulostettaessa näytetään vain #tuloste: mustavalkoinen A4-tilauslomake,
+     joka rakennetaan tilauksen tiedoista juuri ennen tulostusta (printOrder / beforeprint).
+     Ruudulla se on piilossa. */
+  #tuloste { display: none; }
+  @media print {
+    @page { size: A4 portrait; margin: 12mm; }
+    html, body { background: #fff !important; color: #000 !important; }
+    body > *:not(#tuloste) { display: none !important; }
+    #tuloste { display: block !important; font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 10pt; color: #000; line-height: 1.35; }
+    #tuloste * { color: #000 !important; background: transparent !important; box-shadow: none !important; }
+    #tuloste .tl-yla { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #000; padding-bottom: 3mm; margin-bottom: 4mm; }
+    #tuloste .tl-yla img { height: 14mm; width: auto; display: block; }
+    #tuloste .tl-otsikko { text-align: right; }
+    #tuloste .tl-otsikko h1 { font-size: 18pt; margin: 0; letter-spacing: 0.04em; }
+    #tuloste .tl-otsikko div { font-size: 9pt; }
+    #tuloste .tl-tiedot { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 8mm; margin-bottom: 4mm; }
+    #tuloste .tl-tiedot .tl-lab { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.08em; color: #444 !important; }
+    #tuloste .tl-tiedot .tl-arvo { font-size: 10pt; font-weight: 600; white-space: pre-line; }
+    #tuloste .tl-ohjeet { border: 1px solid #000; padding: 2mm 3mm; margin-bottom: 4mm; white-space: pre-line; }
+    #tuloste .tl-ryhma { margin-top: 4mm; break-inside: auto; }
+    #tuloste .tl-ryhma h2 { font-size: 11.5pt; margin: 0 0 1.5mm; padding-bottom: 1mm; border-bottom: 1px solid #000; display: flex; justify-content: space-between; break-after: avoid; }
+    #tuloste .tl-ryhma h2 span { font-size: 9.5pt; font-weight: 600; }
+    #tuloste table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    #tuloste col.k1 { width: 27%; } #tuloste col.k2 { width: 23%; } #tuloste col.k3 { width: 10%; } #tuloste col.k4 { width: 28%; } #tuloste col.k5 { width: 12%; }
+    #tuloste td { overflow-wrap: anywhere; }
+    #tuloste th { text-align: left; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid #888; padding: 1mm 1.5mm; }
+    #tuloste td { vertical-align: top; border-bottom: 0.5px solid #bbb; padding: 1.2mm 1.5mm; }
+    #tuloste tr { break-inside: avoid; }
+    #tuloste td.tl-num, #tuloste th.tl-num { text-align: right; white-space: nowrap; }
+    #tuloste .tl-mitat div { white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 9pt; }
+    #tuloste .tl-huom { font-size: 8.5pt; font-style: italic; }
+    #tuloste .tl-ala { margin-top: 6mm; padding-top: 2mm; border-top: 1px solid #000; font-size: 8pt; display: flex; justify-content: space-between; }
+  }
+
   /* ── Mobiiliyhteenvetorivi — piilossa desktopilla, näkyviin @media hoitaa ── */
   .mobile-summary-bar { display: none; }
 
@@ -2168,7 +2204,82 @@ function updateSummary() {
 
 // ── Tulostus ──────────────────────────────────────────────────────
 function printOrder() {
+  rakennaTuloste();
   window.print();
+}
+// Myös selaimen oma tulostus (Ctrl+P / valikko) saa saman lomakkeen
+window.addEventListener('beforeprint', rakennaTuloste);
+
+// Rakentaa mustavalkoisen tilauslomakkeen #tuloste-elementtiin nykyisistä tiedoista.
+// Sisäinen Huomio-kenttä (order-notes) ei tule tulosteeseen; mittausohjeet tulevat.
+function rakennaTuloste() {
+  const el = document.getElementById('tuloste');
+  if (!el) return;
+  const e = escAttr;
+  const val = id => (document.getElementById(id)?.value || '').trim();
+  const pvm = iso => { if (!iso) return ''; const [y, m, d] = iso.slice(0, 10).split('-'); return (y && m && d) ? `${+d}.${+m}.${y}` : iso; };
+  const luku = n => (+Number(n).toFixed(2)).toLocaleString('fi-FI');
+
+  const nyt = new Date();
+  const tulostettu = `${nyt.getDate()}.${nyt.getMonth() + 1}.${nyt.getFullYear()} klo ${String(nyt.getHours()).padStart(2, '0')}.${String(nyt.getMinutes()).padStart(2, '0')}`;
+  const numero = document.getElementById('order-number-display')?.textContent.trim() || '—';
+  const tila = ORDER_STATUS_LABEL[val('order-status')] || '';
+
+  const asiakasId = val('customer-select');
+  const c = (customers || []).find(x => x.id === asiakasId);
+  const asiakasRivit = c
+    ? [c.name, c.contact_person, c.billing_address, [c.billing_postal_code, c.billing_city].filter(Boolean).join(' '), c.phone].filter(Boolean)
+    : [val('customer-search') || '—'];
+
+  const tieto = (lab, arvo) => arvo ? `<div><div class="tl-lab">${lab}</div><div class="tl-arvo">${e(arvo)}</div></div>` : '';
+
+  let h = `
+    <div class="tl-yla">
+      <img src="logo-musta.png" alt="Kalajoen Peltityö">
+      <div class="tl-otsikko"><h1>TILAUS ${e(numero)}</h1><div>${e(tila)}</div></div>
+    </div>
+    <div class="tl-tiedot">
+      ${tieto('Asiakas', asiakasRivit.join('\n'))}
+      <div>
+        ${tieto('Kohde / viite', val('order-kohde'))}
+        ${tieto('Työmaan osoite', val('order-site-address'))}
+      </div>
+      ${tieto('Tilauspäivä', pvm(val('order-date')))}
+      ${tieto('Toimitus', pvm(val('order-delivery')))}
+    </div>`;
+  const ohjeet = val('order-site-instructions');
+  if (ohjeet) h += `<div class="tl-lab" style="font-size:7.5pt;text-transform:uppercase;letter-spacing:.08em">Mittaus- ja työmaaohjeet</div><div class="tl-ohjeet">${e(ohjeet)}</div>`;
+
+  groups.forEach(g => {
+    if (!g.items.length) return;
+    let kpl = 0;
+    const rivit = g.items.map(i => {
+      if (i.itemType === 'kappale') {
+        const n = Number(i.maara) || 0;
+        const mitat = i.pituus ? `${luku(i.pituus)} m × ${luku(n)} ${e(i.yksikko)}` : `${luku(n)} ${e(i.yksikko)}`;
+        return `<tr><td><b>${e(i.nimike)}</b>${i.huomio ? `<div class="tl-huom">${e(i.huomio)}</div>` : ''}</td>
+          <td>—</td><td>—</td><td class="tl-mitat"><div>${mitat}</div></td><td class="tl-num">${luku(n)} ${e(i.yksikko)}</td></tr>`;
+      }
+      const yht = itemQty(i);
+      kpl += yht;
+      const mat = [i.material, i.color, i.thickness ? i.thickness + ' mm' : ''].filter(Boolean).join(' · ') || '—';
+      const mitat = (i.rows && i.rows.length)
+        ? i.rows.map(r => `<div>${r.paat > 0 ? `${r.mitta}+${r.paat} = ` : ''}<b>${r.kok} mm</b> × ${r.kpl} kpl${r.huomio ? ` <span class="tl-huom">(${e(r.huomio)})</span>` : ''}</div>`).join('')
+        : `<div>${luku(yht)} kpl</div>`;
+      return `<tr><td><b>${e(i.nimike || i.profileType || '')}</b></td><td>${e(mat)}</td>
+        <td class="tl-num">${i.aihio_width_mm ? e(i.aihio_width_mm) + ' mm' : '—'}</td>
+        <td class="tl-mitat">${mitat}</td><td class="tl-num">${luku(yht)} kpl</td></tr>`;
+    }).join('');
+    // Ryhmän summa = vain pellit; kappaletavarat näkyvät omilla riveillään (ruuveja ja peltejä ei lasketa yhteen)
+    const summa = kpl ? 'Pellit ' + luku(kpl) + ' kpl' : '';
+    h += `<div class="tl-ryhma"><h2>${e(g.name)}<span>${summa}</span></h2>
+      <table><colgroup><col class="k1"><col class="k2"><col class="k3"><col class="k4"><col class="k5"></colgroup><thead><tr><th>Nimike</th><th>Materiaali</th><th class="tl-num">Aihio</th><th>Pituus × kpl</th><th class="tl-num">Yht.</th></tr></thead>
+      <tbody>${rivit}</tbody></table></div>`;
+  });
+  if (!groups.some(g => g.items.length)) h += '<p>Tilauksella ei ole vielä rivejä.</p>';
+
+  h += `<div class="tl-ala"><span>Kalajoen Peltityö Oy</span><span>Tulostettu ${tulostettu}</span></div>`;
+  el.innerHTML = h;
 }
 
 // ── Status ────────────────────────────────────────────────────────
@@ -2264,5 +2375,6 @@ document.addEventListener('click', function() {
   document.getElementById('navDropdown').classList.remove('open');
 });
 </script>
+<div id="tuloste"></div>
 </body>
 </html>
