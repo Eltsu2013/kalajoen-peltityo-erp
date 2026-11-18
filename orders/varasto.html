@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth-guard.js"></script>
+  <script src="../maps/kartta-zoom.js?v=1"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1600,11 +1601,13 @@
       const svg1 = svg.cloneNode(true);
       panel.appendChild(svg1);
       initMapInteractions(panel);
+      if (window.KarttaZoom) KarttaZoom.liita(svg1);
 
       tab.innerHTML = '';
       const svg2 = svg.cloneNode(true);
       tab.appendChild(svg2);
       initMapInteractions(tab);
+      if (window.KarttaZoom) KarttaZoom.liita(svg2);
 
       mapSvgLoaded = true;
     } catch(e) {

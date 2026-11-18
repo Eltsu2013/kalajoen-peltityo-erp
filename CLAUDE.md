@@ -7,7 +7,7 @@ Tämä tiedosto latautuu automaattisesti, kun Claude Code avaa repon. Laajempi p
 ## Rakenne
 
 - `orders/` — kaikki ERP-sivut (vanilla HTML/JS) sekä `auth-guard.js`, `nav.js` ja `logo-valkoinen.png`. GitHub Pages julkaisee `main`-haaran heti.
-- `maps/` — varastokartta (staattinen).
+- `maps/` — varastokartta `verstaspohja_mitoitettu.html` (staattinen) ja sen zoomaus `kartta-zoom.js`. varasto.html lataa kartan SVG:n tästä tiedostosta ja liittää zoomauksen siihen, joten karttamuutokset näkyvät molemmilla sivuilla.
 - `supabase/` — tietokantaan liittyvät tiedostot.
 
 ## Säännöt

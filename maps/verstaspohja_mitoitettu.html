@@ -29,6 +29,8 @@ svg { background:#1a1e24; border:1px solid #2a3038; border-radius:4px; }
 .info-type { font-size:10px; color:#5a6370; }
 .info-empty { font-size:11px; color:#5a6370; font-style:italic; }
 .legend { display:flex; flex-direction:column; gap:6px; }
+/* Koko kartta mahtuu ruudulle myös läppärillä (18.11.2026); yksityiskohdat zoomaamalla */
+.map-wrap .kz-kehys { width:min(100%, 620px, calc((100vh - 110px) * 620 / 870)); }
 .leg { display:flex; align-items:center; gap:7px; font-size:10px; color:#5a6370; }
 .dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
 </style>
@@ -36,7 +38,7 @@ svg { background:#1a1e24; border:1px solid #2a3038; border-radius:4px; }
 <body>
 <div class="map-wrap">
 <h1>VERSTASPOHJA — MITOITETTU</h1>
-<div class="sub">Skaala 1:25 (1px=25mm) · Klikkaa aluetta lisätiedoille</div>
+<div class="sub">Skaala 1:25 (1px=25mm) · Klikkaa aluetta lisätiedoille · Zoomaa napeista, nipistämällä tai Ctrl + rulla</div>
 
 <!--
 MITAT (mm) muunnettu SVG-koordinaateiksi skaalalla 1px = 25mm
@@ -398,10 +400,11 @@ IN-R-02 (vaihtuva rulla):
     </div>
   </div>
   <div style="margin-top:auto;padding-top:10px;border-top:1px solid #2a3038">
-    <p style="font-size:9px;color:#2a3038;line-height:1.6">v9.1 · 16.11.2026<br>1px = 25mm</p>
+    <p style="font-size:9px;color:#2a3038;line-height:1.6">v9.2 · 18.11.2026 (zoomaus)<br>1px = 25mm</p>
   </div>
 </div>
 
+<script src="kartta-zoom.js?v=1"></script>
 <script>
 const locs = {
   'inl06':  {code:'IN-L-06', name:'Päätyseinän piikit — rivi 2', type:'linear · 14kpl × 2 kerrosta', zone:'IN-L'},
@@ -469,6 +472,9 @@ function codeToKey(code) {
     .replace(/ /g, '');
 }
 
+// Zoomaus ja siirto (kartta-zoom.js)
+const kz = window.KarttaZoom ? KarttaZoom.liita(document.querySelector('.map-wrap svg')) : null;
+
 // Korostusfunktio ulkoa kutsuttavaksi
 function highlightLocation(locationCode) {
   // Poista vanha korostus
@@ -494,6 +500,7 @@ function highlightLocation(locationCode) {
       }
     }
   });
+  if (sel && kz) kz.zoomaaElementtiin(sel);
 }
 
 // Kuuntele Retool-viestejä
@@ -522,6 +529,7 @@ document.querySelectorAll('[data-loc]').forEach(el => {
       `<div class="info-code" style="color:${c}">${d.code}</div>
        <div class="info-name">${d.name}</div>
        <div class="info-type">${d.type}</div>${levelsHtml}`;
+    if (kz) kz.zoomaaElementtiin(el);
   });
 });
 </script>
