@@ -592,6 +592,67 @@
     color: var(--text-dim); font-size: 13px;
   }
 
+
+  /* ── TYÖKORTTI (tulostus avoimesta tilauksesta, 18.11.2026) ──────────────
+     Kun tilaus on auki, tulostetaan erillinen mustavalkoinen työkortti (#tyokortti).
+     Tilauslistan tulostus (yhteislista) toimii kuten ennen. */
+  #tyokortti { display: none; }
+  .tk-dialogi-tausta { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 3000; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .tk-dialogi { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; width: 100%; max-width: 360px; font-family: 'IBM Plex Mono', monospace; color: var(--text); }
+  .tk-dialogi h3 { margin: 0 0 12px; font-size: 15px; }
+  .tk-dialogi label { display: flex; align-items: center; gap: 10px; font-size: 14px; padding: 10px 0; cursor: pointer; }
+  .tk-dialogi input[type=checkbox] { width: 22px; height: 22px; }
+  .tk-dialogi .tk-vihje { font-size: 11px; color: var(--text-dim); margin: 0 0 12px 32px; }
+  .tk-dialogi .tk-napit { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+  .tk-dialogi button { font-family: inherit; font-size: 14px; padding: 10px 16px; min-height: 44px; border-radius: 4px; cursor: pointer; border: 1px solid var(--border); background: none; color: var(--text); }
+  .tk-dialogi button.tk-ok { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  @media print {
+    body.tk-tulostus > *:not(#tyokortti) { display: none !important; }
+    body.tk-tulostus { background: #fff !important; }
+    body.tk-tulostus #tyokortti { display: block !important; }
+    #tyokortti { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9.5pt; color: #000; line-height: 1.3; }
+    #tyokortti * { color: #000 !important; background: transparent !important; box-shadow: none !important; }
+    #tyokortti .tk-yla { display: grid; grid-template-columns: auto 1fr auto; gap: 6mm; align-items: start; border-bottom: 2px solid #000; padding-bottom: 3mm; }
+    #tyokortti .tk-yla img.tk-logo { height: 13mm; width: auto; display: block; }
+    #tyokortti .tk-otsikko h1 { margin: 0; font-size: 17pt; letter-spacing: 0.04em; }
+    #tyokortti .tk-otsikko div { font-size: 9pt; }
+    #tyokortti .tk-qr { text-align: center; font-size: 6.5pt; line-height: 1.2; }
+    #tyokortti .tk-qr svg { width: 22mm; height: 22mm; display: block; }
+    #tyokortti .tk-tiedot { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr; gap: 1.5mm 6mm; margin: 3mm 0; }
+    #tyokortti .tk-lab { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.08em; color: #444 !important; }
+    #tyokortti .tk-arvo { font-weight: 600; white-space: pre-line; }
+    #tyokortti .tk-toimitus { font-size: 13pt; font-weight: 700; }
+    #tyokortti .tk-ohjeet { border: 1px solid #000; padding: 1.5mm 3mm; margin-bottom: 3mm; white-space: pre-line; }
+    #tyokortti h2 { font-size: 11pt; margin: 4mm 0 1.5mm; border-bottom: 1px solid #000; padding-bottom: 0.8mm; display: flex; justify-content: space-between; break-after: avoid; }
+    #tyokortti h2 span { font-size: 9pt; }
+    #tyokortti .tk-pelti { border: 1px solid #000; padding: 2.5mm; margin-bottom: 3mm; break-inside: avoid; }
+    /* Merkkausmittojen kanssa laatikko saa jatkua seuraavalle sivulle; kuva ja pituustaulukko pysyvät yhdessä */
+    #tyokortti .tk-pelti.tk-pitka { break-inside: auto; }
+    #tyokortti .tk-paa { display: grid; grid-template-columns: 62mm 1fr; gap: 4mm; break-inside: avoid; }
+    #tyokortti .tk-lev svg, #tyokortti .tk-lev .lev-pituus { break-inside: avoid; break-after: avoid; }
+    #tyokortti .tk-kuva svg { width: 100%; height: auto; max-height: 52mm; display: block; }
+    #tyokortti .tk-kuva svg * { stroke: #000 !important; }
+    #tyokortti .tk-kuva svg text { fill: #000 !important; stroke: none !important; }
+    #tyokortti .tk-kuva svg circle { fill: #000 !important; }
+    #tyokortti .tk-nimike { font-size: 12pt; font-weight: 700; }
+    #tyokortti .tk-mat { margin: 0.5mm 0 1.5mm; }
+    #tyokortti .tk-ll { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 11pt; }
+    #tyokortti table { width: 100%; border-collapse: collapse; margin-top: 1.5mm; table-layout: fixed; }
+    #tyokortti th { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.06em; text-align: left; border-bottom: 1px solid #000; padding: 0.8mm 1.2mm; }
+    #tyokortti td { border-bottom: 0.5px solid #999; padding: 1.2mm; font-family: 'IBM Plex Mono', monospace; font-size: 10pt; vertical-align: top; overflow-wrap: anywhere; }
+    #tyokortti td.tk-teksti { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 8.5pt; }
+    #tyokortti .tk-c { text-align: center; }
+    #tyokortti .tk-ruutu { border: 1.2px solid #000; height: 6mm; }
+    #tyokortti .tk-laatikko { display: inline-block; width: 4mm; height: 4mm; border: 1.2px solid #000; }
+    #tyokortti .tk-lev { border-top: 1px dashed #000; margin-top: 2mm; padding-top: 2mm; font-size: 8.5pt; }
+    #tyokortti .tk-lev svg { max-height: 32mm; }
+    #tyokortti .tk-lev svg * { stroke: #000 !important; }
+    #tyokortti .tk-lev svg text { fill: #000 !important; stroke: none !important; }
+    #tyokortti .tk-lev table td { font-size: 8.5pt; padding: 0.6mm 1mm; }
+    #tyokortti .tk-lev .lev-nappi { display: none; }
+    #tyokortti .tk-ala { margin-top: 5mm; border-top: 1px solid #000; padding-top: 1.5mm; font-size: 7.5pt; display: flex; justify-content: space-between; }
+  }
+
   /* TULOSTUS */
   @media print {
     header, .filter-bar, .nav-menu-wrap, .back-btn,
@@ -655,8 +716,14 @@
     /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
     #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
   </style>
+<script>
+  // Työkortin QR-koodi avaa tilauksen: tuotanto.html?tilaus=<id>. Talteen ennen auth-guardia,
+  // koska kirjautumissivulle ohjaus pudottaa osoitteen parametrit.
+  try { const t = new URLSearchParams(location.search).get('tilaus'); if (t) sessionStorage.setItem('kpt_avaa_tilaus', t); } catch (e) {}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="profiilit.js?v=20261113k"></script>
 </head>
 <body>
@@ -673,7 +740,7 @@
   </div>
   <h1>Tuotanto</h1>
   <div class="header-right">
-    <button class="btn-print" onclick="window.print()"
+    <button class="btn-print" onclick="tulosta()"
       style="background:none;border:1px solid var(--border);color:var(--text-dim);
              font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 12px;
              border-radius:4px;cursor:pointer;"
@@ -1353,6 +1420,7 @@ function openOrder(orderId) {
     if (keys.size === 1) cardFilterKey = [...keys][0];
   }
   toggleAddRow(false);
+  haeTilauksenLisatiedot(o);
   renderTimePanel(o);
   refreshTimeForActive();
   renderCardFilterBar(o);
@@ -1956,17 +2024,23 @@ function vaihdaLevitys(itemId, nappi) {
   if (alue.style.display !== 'none') { alue.style.display = 'none'; return; }
   let item = null;
   allOrders.forEach(o => (o.items || []).forEach(i => { if (String(i.id) === String(itemId)) item = i; }));
+  if (!item || !window.KPT_PROFIILIT) return;
+  alue.style.display = '';
+  const W = Math.max(260, Math.round(alue.getBoundingClientRect().width - 2));
+  alue.innerHTML = levitysSisalto(item, W);
+}
+
+// Levityskuva ja merkkausmitat yhdelle pellille (kaikki eri pituudet). Käytössä ruudulla ja työkortin tulosteessa.
+function levitysSisalto(item, W) {
   const P = window.KPT_PROFIILIT;
-  if (!item || !P) return;
+  if (!P) return '';
   const pd = item.profile_data || {};
   const malli = P.mallit[item.profile_type];
   const luvut = {};
   (malli ? malli.fields : []).forEach(f => { luvut[f.id] = parseFloat((pd.vals || {})[f.id]) || 0; });
   const pituudet = [...new Set((item.order_item_rows || []).map(r => Number(r.kok_mm) || Number(r.mitta_mm) || 0).filter(k => k > 0))].sort((a, b) => b - a);
   if (!pituudet.length) pituudet.push(1000);
-  alue.style.display = '';
-  const W = Math.max(260, Math.round(alue.getBoundingClientRect().width - 2));
-  alue.innerHTML = pituudet.map(L => {
+  return pituudet.map(L => {
     const vb = kourunValsB(item.profile_type, luvut, pd.opts || {}, L) || pd.valsB || {};
     const varo = malli && malli.varoitus ? malli.varoitus(luvut, pd.opts || {}, L) : null;
     const laput = malli && malli.paatylaput ? malli.paatylaput(luvut, pd.opts || {}, L) : [];
@@ -2149,8 +2223,185 @@ document.addEventListener('click', () => {
   document.getElementById('navDropdown').classList.remove('open');
 });
 
+
+// ── TYÖKORTTI: tulostus avoimesta tilauksesta ────────────────────
+// Tulosta-nappi: jos tilaus on auki, kysytään merkkausmitat (oletus ei) ja tulostetaan työkortti.
+// Muuten (tilauslista / yhteislista) tulostus toimii kuten ennen.
+function tilausOnAuki() {
+  return !!activeOrderId && document.getElementById('view-card').style.display === 'block';
+}
+function tulosta() {
+  if (!tilausOnAuki()) { window.print(); return; }
+  const t = document.createElement('div');
+  t.className = 'tk-dialogi-tausta';
+  t.innerHTML = `<div class="tk-dialogi" role="dialog" aria-label="Tulosta työkortti">
+      <h3>🖨 Tulosta työkortti</h3>
+      <label><input type="checkbox" id="tkMerkkaus"> Merkkausmitat mukaan</label>
+      <div class="tk-vihje">Levityskuva ja merkkausmitat jokaiselle pellille. Lisää sivuja.</div>
+      <div class="tk-napit"><button type="button" class="tk-peru">Peruuta</button><button type="button" class="tk-ok">Tulosta</button></div>
+    </div>`;
+  const sulje = () => t.remove();
+  t.addEventListener('click', e => { if (e.target === t) sulje(); });
+  t.querySelector('.tk-peru').onclick = sulje;
+  t.querySelector('.tk-ok').onclick = () => {
+    const merkkaus = t.querySelector('#tkMerkkaus').checked;
+    sulje();
+    rakennaTyokortti({ merkkaus });
+    tkValmisteltu = true;
+    // Pieni viive: selain ehtii piirtää työkortin ennen tulostusikkunaa
+    setTimeout(() => window.print(), 50);
+  };
+  document.body.appendChild(t);
+  t.querySelector('.tk-ok').focus();
+}
+// Selaimen oma tulostus (Ctrl+P) avoimesta tilauksesta: työkortti ilman merkkausmittoja
+let tkValmisteltu = false;
+window.addEventListener('beforeprint', () => {
+  if (!tilausOnAuki()) { document.body.classList.remove('tk-tulostus'); return; }
+  if (!tkValmisteltu) rakennaTyokortti({ merkkaus: false });
+  tkValmisteltu = false;
+  document.body.classList.add('tk-tulostus');
+});
+window.addEventListener('afterprint', () => document.body.classList.remove('tk-tulostus'));
+
+function tkQrSvg(teksti) {
+  if (typeof qrcode !== 'function') return '';
+  try {
+    const qr = qrcode(0, 'M');
+    qr.addData(teksti);
+    qr.make();
+    return qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
+  } catch (e) { console.warn('QR-koodi:', e); return ''; }
+}
+
+function rakennaTyokortti(asetus) {
+  const merkkaus = !!(asetus && asetus.merkkaus);
+  const el = document.getElementById('tyokortti');
+  const o = allOrders.find(x => x.id === activeOrderId);
+  if (!el || !o) return;
+  const e = escT;
+  const pvm = iso => { const [y, m, d] = String(iso || '').slice(0, 10).split('-'); return d ? `${+d}.${+m}.${y}` : ''; };
+  const nyt = new Date();
+  const tulostettu = `${nyt.getDate()}.${nyt.getMonth() + 1}.${nyt.getFullYear()} klo ${String(nyt.getHours()).padStart(2, '0')}.${String(nyt.getMinutes()).padStart(2, '0')}`;
+  const STATUS_FI = { DRAFT: 'Luonnos', IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu', IN_PRODUCTION: 'Työn alla', COMPLETED: 'Valmis', INVOICED: 'Laskutettu' };
+  const numero = o.order_number || '';
+  const linkki = location.origin + location.pathname + '?tilaus=' + encodeURIComponent(o.id);
+  const qr = tkQrSvg(linkki);
+  const tieto = (lab, arvo, luokka) => arvo ? `<div><div class="tk-lab">${lab}</div><div class="${luokka || 'tk-arvo'}">${e(arvo)}</div></div>` : '';
+
+  let h = `
+    <div class="tk-yla">
+      <img class="tk-logo" src="logo-musta.png" alt="Kalajoen Peltityö">
+      <div class="tk-otsikko"><h1>TYÖKORTTI${numero ? ' · TILAUS ' + e(numero) : ''}</h1><div>Tila: ${e(STATUS_FI[o.status] || o.status || '')}</div></div>
+      ${qr ? `<div class="tk-qr">${qr}Avaa tilaus<br>puhelimella</div>` : '<div></div>'}
+    </div>
+    <div class="tk-tiedot">
+      ${tieto('Asiakas', o.customers?.name || '—')}
+      ${tieto('Kohde', o.kohde || '')}
+      ${tieto('Toimitus', pvm(o.delivery_date), 'tk-toimitus')}
+      ${tieto('Työmaan osoite', o.site_address || '')}
+      ${tieto('Tilattu', pvm(o.order_date))}
+    </div>`;
+  if (o.site_instructions) h += `<div class="tk-lab">Ohjeet</div><div class="tk-ohjeet">${e(o.site_instructions)}</div>`;
+
+  // Samat rivit kuin ruudulla (myös työkortin materiaalisuodatin), samassa järjestyksessä
+  const sorted = [...o.items].sort((a, b) => ((a.group_order || 0) - (b.group_order || 0)) || ((a.item_order || 0) - (b.item_order || 0)));
+  const nakyvat = cardFilterKey ? sorted.filter(i => itemGroupKey(i) === cardFilterKey) : sorted;
+  const ryhmat = [];
+  nakyvat.forEach(i => {
+    const n = i.group_name || 'Muut';
+    let g = ryhmat.find(r => r.nimi === n);
+    if (!g) { g = { nimi: n, rivit: [] }; ryhmat.push(g); }
+    g.rivit.push(i);
+  });
+
+  ryhmat.forEach(g => {
+    const pellit = g.rivit.filter(i => !isKappale(i));
+    const tarvikkeet = g.rivit.filter(isKappale);
+    const kpl = pellit.reduce((s, i) => s + (i.order_item_rows || []).reduce((a, r) => a + (Number(r.kpl) || 0), 0), 0);
+    h += `<h2>${e(g.nimi)}<span>${kpl ? 'Pellit ' + kpl + ' kpl' : ''}</span></h2>`;
+
+    pellit.forEach(i => {
+      const pd = i.profile_data || {};
+      const mat = [i.material, i.color, i.thickness_mm ? i.thickness_mm + ' mm' : ''].filter(Boolean).join(' · ');
+      const rows = [...(i.order_item_rows || [])].sort((a, b) => (b.kok_mm || 0) - (a.kok_mm || 0));
+      let kuva = '';
+      if (i.profile_type === 'piippu') {
+        kuva = '<div style="font-size:9pt">Piipun osa — kuvat ja mitat piipun tuotantosivulla.</div>';
+      } else if (i.profile_type) {
+        const pituudet = rows.map(r => Number(r.kok_mm) || Number(r.mitta_mm) || 0).filter(k => k > 0);
+        const pisin = pituudet.length ? Math.max.apply(null, pituudet) : 1000;
+        const kiila = { valsB: kourunValsB(i.profile_type, pd.vals || {}, pd.opts || {}, pisin) || pd.valsB || null, viite: pd.pituusViite };
+        kuva = drawKanttausSVG(i.profile_type, pd.vals || {}, pd.opts || {}, pd.asento, null, kiila) || '';
+      }
+      const rivitHtml = rows.length ? rows.map(r => {
+        const paat = Number(r.paat_mm) || 0;
+        return `<tr><td>${paat ? e(r.mitta_mm) : '—'}</td><td>${paat ? '+' + e(paat) : '—'}</td><td><b>${e(r.kok_mm || r.mitta_mm || '')}</b></td>
+          <td class="tk-c"><b>${e(r.kpl || '')}</b></td><td class="tk-teksti">${e(r.huomio || '')}</td><td><div class="tk-ruutu"></div></td></tr>`;
+      }).join('') : `<tr><td colspan="3">—</td><td class="tk-c"><b>${e(i.quantity || '')}</b></td><td></td><td><div class="tk-ruutu"></div></td></tr>`;
+      let lev = '';
+      if (merkkaus && i.profile_type && i.profile_type !== 'piippu' && i.profile_type !== 'vapaa' && window.KPT_PROFIILIT && window.KPT_PROFIILIT.mallit[i.profile_type]) {
+        const sis = levitysSisalto(i, 640);
+        if (sis) lev = `<div class="tk-lev"><b>Merkkausmitat</b>${sis}</div>`;
+      }
+      h += `<div class="tk-pelti${lev ? ' tk-pitka' : ''}"><div class="tk-paa">
+        <div class="tk-kuva">${kuva}</div>
+        <div>
+          <div class="tk-nimike">${e(i.nimike || i.profile_type || '—')}</div>
+          <div class="tk-mat">${e(mat)}${pd.taitokset ? ' · ' + e(pd.taitokset) + ' taitosta' : ''}</div>
+          ${i.aihio_width_mm ? `<div class="tk-ll">LL = ${e(i.aihio_width_mm)} mm</div>` : ''}
+          <table><colgroup><col style="width:15%"><col style="width:12%"><col style="width:15%"><col style="width:9%"><col><col style="width:16%"></colgroup>
+            <tr><th>Mitta</th><th>Päät</th><th>Kok.</th><th class="tk-c">kpl</th><th>Huomio</th><th>Työvaihe</th></tr>
+            ${rivitHtml}
+          </table>
+        </div>
+      </div>${lev}</div>`;
+    });
+
+    if (tarvikkeet.length) {
+      h += `<table><colgroup><col style="width:38%"><col style="width:18%"><col><col style="width:12%"></colgroup>
+        <tr><th>Tarvikkeet</th><th class="tk-c">Määrä</th><th>Huomio</th><th class="tk-c">Kerätty</th></tr>
+        ${tarvikkeet.map(i => {
+          const pd = i.profile_data || {};
+          return `<tr><td class="tk-teksti"><b>${e(i.nimike || '—')}</b></td><td class="tk-c">${e(fmtNum(kapMaara(i)))} ${e(pd.yksikko || '')}</td>
+            <td class="tk-teksti">${e(pd.huomio || '')}</td><td class="tk-c"><span class="tk-laatikko"></span></td></tr>`;
+        }).join('')}</table>`;
+    }
+  });
+  if (!ryhmat.length) h += '<p>Ei tulostettavia rivejä.</p>';
+  h += `<div class="tk-ala"><span>Kalajoen Peltityö Oy · Työkortti</span><span>Tulostettu ${tulostettu}</span></div>`;
+  el.innerHTML = h;
+}
+
+// Työkorttia varten tilausnumero, työmaan osoite ja ohjeet. Haetaan erikseen select=*:llä,
+// jotta tilauslistan haku ei kaadu, jos jotain saraketta ei (vielä) ole kannassa.
+async function haeTilauksenLisatiedot(o) {
+  if (!o || o._lisatiedot) return;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/orders?id=eq.${o.id}&select=*`, { headers });
+    if (!r.ok) return;
+    const [x] = await r.json();
+    if (x) { o.order_number = x.order_number; o.site_address = x.site_address; o.site_instructions = x.site_instructions; o._lisatiedot = true; }
+  } catch (e) { console.warn('Tilauksen lisätiedot:', e); }
+}
+
+// QR-koodista tai linkistä: tuotanto.html?tilaus=<id> avaa tilauksen suoraan
+function avaaLinkinTilaus() {
+  let id = null;
+  try { id = sessionStorage.getItem('kpt_avaa_tilaus'); sessionStorage.removeItem('kpt_avaa_tilaus'); } catch (e) {}
+  if (!id) return;
+  if (allOrders.some(o => o.id === id)) openOrder(id);
+  else alertTilausEiLoydy(id);
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+}
+function alertTilausEiLoydy() {
+  const g = document.getElementById('ordersGrid');
+  if (g) g.insertAdjacentHTML('afterbegin', '<div class="empty-state" style="grid-column:1/-1;padding:16px">Linkin tilausta ei löytynyt tuotannosta (se voi olla jo laskutettu tai arkistoitu).</div>');
+}
+
 // ── Init ──────────────────────────────────────────────────────────
-loadOrders();
+loadOrders().then(avaaLinkinTilaus);
 </script>
+<div id="tyokortti"></div>
 </body>
 </html>
