@@ -528,8 +528,10 @@ async function haeMateriaalit() {
       o.value = m; o.textContent = m;
       mSel.appendChild(o);
     });
-    // Palauta tallennettu valinta
-    const muistettu = JSON.parse(localStorage.getItem('kpt_piippu_mat') || '{}');
+    // Palauta valinta: muokattavan piipun oma materiaali, muuten viimeksi käytetty
+    const muistettu = (muokattava && muokattava.material)
+      ? { mat: muokattava.material, vari: muokattava.color, pak: muokattava.thickness }
+      : JSON.parse(localStorage.getItem('kpt_piippu_mat') || '{}');
     if (muistettu.mat && materiaalit.includes(muistettu.mat)) {
       mSel.value = muistettu.mat;
       paivitaVarit(muistettu.vari, muistettu.pak);
@@ -592,6 +594,57 @@ haeMateriaalit();
 // Lue groupId URL-parametrista (jos avattu tilaus.html:stä)
 const urlParams = new URLSearchParams(window.location.search);
 const targetGroupId = urlParams.get('groupId') || null;
+
+// Muokkaus tilauksesta (korjattu 20.11.2026): tilaus.html välittää piipun tiedot avaimella kpt_piippu_muokkaa,
+// kun piippu avataan "Muokkaa piippua" -napista. Ennen tätä sivu aukesi oletusmitoilla ja ilman materiaalia,
+// ja "Lisää tilaukseen" olisi korvannut tilauksen piipun oletusarvoilla.
+const MUOKKAUS_AVAIN = 'kpt_piippu_muokkaa';
+let muokattava = null;
+try {
+  const m = JSON.parse(localStorage.getItem(MUOKKAUS_AVAIN) || 'null');
+  if (m && targetGroupId && m.groupId === targetGroupId && m.vals) muokattava = m;
+} catch (e) { /* ei muokattavaa */ }
+
+function palautaMuokattava() {
+  if (!muokattava) return;
+  const v = muokattava.vals;
+  const items = muokattava.items || [];
+  const aseta = (id, x) => { const e = document.getElementById(id); if (e && x !== undefined && x !== null) e.value = x; };
+  LASKENTA_KENTAT.forEach(([nimi, id]) => aseta(id, v[nimi]));
+  aseta('v-harjakulma', v.harjakulma);
+  aseta('v-huomio', v.huomio || '');
+  if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
+  // Osat sen mukaan, mitä tilauksessa on
+  const nimet = items.map(i => i.nimike || '');
+  const on = alku => nimet.some(n => n === alku || n.startsWith(alku + ' '));
+  document.getElementById('chk-juuret').checked = on('Juuri');
+  document.getElementById('chk-huppu').checked = on('Huppu');
+  document.getElementById('chk-kansi').checked = on('Kansi');
+  document.getElementById('chk-hattu').checked = on('Hattu');
+  // Piippujen määrä: tallennettu, tai vanhassa tilauksessa yhden kappaleen osan määrästä
+  let pk = Number(v.piippukpl) || 0;
+  if (!pk) {
+    const yksi = items.find(i => ['Hattu', 'Kansi', 'Huppu etu', 'Juuri etu'].includes(i.nimike) && i.kpl > 0);
+    pk = yksi ? yksi.kpl : 1;
+  }
+  aseta('v-piippukpl', pk);
+  // Jalat ja lisäosat: tilauksessa kpl on kerrottu piippujen määrällä
+  const jalat = items.find(i => i.nimike === 'Piipun jalat');
+  aseta('v-jalat', jalat ? Math.round(jalat.kpl / pk) : 0);
+  const tunnettu = n => /^(Juuri|Huppu)( |$)/.test(n) || ['Kansi', 'Hattu', 'Piipun jalat'].includes(n);
+  lisaosat = items.filter(i => !i.pituus && !tunnettu(i.nimike || '')).map((i, k) => ({ id: Date.now() + k, nimi: i.nimike, kpl: Math.max(1, Math.round(i.kpl / pk)) }));
+  renderLisaosat();
+  saumatyyppi = v.saumatyyppi === 2 ? 2 : 1;
+  takaKpl = [1, 2, 3, 4].includes(v.takaKpl) ? v.takaKpl : 1;
+  setSauma(saumatyyppi);
+  setTakaKpl(takaKpl);
+  setHuppuEtuKpl([1, 2, 3].includes(v.huppuEtuKpl) ? v.huppuEtuKpl : 1);
+  setHuppuSivutKpl([1, 2, 3].includes(v.huppuSivutKpl) ? v.huppuSivutKpl : 1);
+  setHuppuTakaKpl([1, 2, 3].includes(v.huppuTakaKpl) ? v.huppuTakaKpl : 1);
+  const sb = document.querySelector('#sidebar .section');
+  if (sb) sb.insertAdjacentHTML('beforebegin', '<div id="muokkaus-ilmo" style="margin:10px 12px 0;padding:8px 10px;border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text);background:rgba(34,197,94,.08);">'
+    + 'Muokataan tilauksen piippua: mitat, osat ja materiaali haettu tilauksesta.</div>');
+}
 
 async function lisaaTilaukseen() {
   const materiaali = document.getElementById('sel-materiaali').value;
@@ -672,6 +725,12 @@ async function lisaaTilaukseen() {
 
   // Ryhmän id — käytetään lähetyksessä
   const groupId = targetGroupId || ('g_piippu_' + Date.now());
+
+  // Päivitä muokkaustiedot, jotta sivun päivitys (F5) palauttaa juuri lähetetyn piipun eikä vanhaa
+  try {
+    localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, vals: piippuData, material: materiaali, color: vari, thickness: paksuus,
+      items: pellit.map(p => ({ nimike: p.osa, kpl: parseFloat(p.kpl) || 0, pituus: !!parseFloat(p.pit) })) }));
+  } catch (e) { /* ei tallennusta */ }
 
   // Lähetä kaikki kerralla
 
@@ -1024,6 +1083,7 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 }
 
 function r(n) { return Math.round(n); }
+palautaMuokattava();
 laske();
 
 // Sidebar resizer
