@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harjapiippu — Kalajoen Peltityö</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0f1a;
+    --bg2: #111827;
+    --bg3: #1a2332;
+    --bg4: #1e2d3d;
+    --text: #e2eef5;
+    --text2: #6b8fa8;
+    --border: #1e3a4a;
+    --accent: #22c55e;
+    --accent2: #16a34a;
+    --input-bg: #111827;
+    --red: #ef4444;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  /* Navigointipalkki */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  header h1 { font-size: 16px; font-weight: 500; color: var(--text); margin-left: 8px; }
+  .nav-menu-wrap { position: relative; }
+  .nav-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text2);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .nav-btn:hover { background: var(--bg3); }
+  .nav-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    min-width: 200px;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    padding: 4px 0;
+  }
+  .nav-dropdown.open { display: block; }
+  .nav-section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text2);
+    padding: 8px 14px 4px;
+    opacity: 0.6;
+  }
+  .nav-item {
+    display: block;
+    padding: 8px 14px;
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.current { color: var(--accent); font-weight: 600; }
+  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+
+  .main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 74px); overflow: hidden; }
+  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
+  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
+  .content { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  .section { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
+  .section h3 { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+  .section h3.red { color: var(--red); }
+
+  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
+  .field label { font-size: 11px; color: var(--text2); }
+  .field input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 8px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
+  .field input[type=number]:focus { outline: none; border-color: var(--accent); }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sidebar.wide .field-grid { grid-template-columns: 1fr 1fr 1fr; }
+  .sidebar.xwide .field-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .sidebar.wide .field label { font-size: 10px; }
+
+  .checks { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .check-item { display: flex; align-items: center; gap: 8px; }
+  .check-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+  .check-item label { font-size: 13px; cursor: pointer; }
+  .sauma-options { display: flex; gap: 6px; margin-left: 23px; margin-top: 2px; }
+  .sauma-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text2); padding: 3px 10px; font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: border-color 0.15s; }
+  .sauma-btn.active { background: var(--accent2); border-color: var(--accent); color: white; }
+  .kiila-ohje { font-size: 11px; color: var(--text2); line-height: 1.45; margin: 0 0 8px; }
+  .kiila-alaotsikko { font-size: 11px; color: var(--text2); font-weight: 600; margin: 6px 0 4px; }
+  .kiila-valinta { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 6px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
+  .kiila-virhe { color: var(--red); font-size: 12px; margin-top: 6px; }
+  .kiila-virhe:empty { display: none; }
+
+  .vakio-grid { display: grid; grid-template-columns: 1fr 56px; gap: 3px 8px; align-items: center; }
+  .vakio-grid label { font-size: 11px; color: var(--text2); }
+  .vakio-grid input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 3px 5px; font-size: 12px; width: 56px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .vakio-grid input[type=number]:focus { outline: none; border-color: var(--accent); }
+  .vakio-grid input.red-input { border-color: var(--red) !important; }
+
+  .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; }
+  .kuva-card svg { width: 100%; display: block; }
+  .kulmat { display: flex; gap: 40px; padding: 8px 0 2px; border-top: 1px solid var(--border); margin-top: 8px; }
+  .kulma-item { font-size: 12px; color: var(--text2); }
+  .kulma-item span { color: var(--text); font-weight: 600; font-size: 14px; margin-left: 6px; }
+
+  .luettelo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .luettelo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
+  .luettelo-card h3 { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { color: var(--text2); font-weight: 500; text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border); font-size: 11px; }
+  td { padding: 5px 6px; border-bottom: 1px solid #1a2744; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .td-sym { text-align: center; color: var(--text2); font-size: 11px; }
+  .total-row td { border-top: 1px solid var(--border); font-weight: 600; color: var(--accent); padding-top: 7px; }
+  .empty-msg { color: var(--text2); font-size: 12px; text-align: center; padding: 16px 0; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; height: auto; overflow: visible; }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .luettelo-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  /* Puhelin: yläpalkki rivittyy (materiaalivalinnat omalle rivilleen), ettei sivu veny leveämmäksi kuin ruutu */
+  @media (max-width: 700px) {
+    header { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
+    .header-right { margin-left: 0; width: 100%; }
+    .header-right select { flex: 1 1 0; min-width: 0; font-size: 16px !important; padding: 8px !important; }
+    .kulmat { gap: 16px; flex-wrap: wrap; }
+  }
+
+    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
+    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+  
+
+  /* Harjapiippu (vaihe 5, 20.11.2026): piippusivujen välilehdet, puolet rinnakkain ja automaattikentät (mockup v2) */
+  .tyyppi-tabs { display: flex; gap: 4px; margin-left: 8px; }
+  .tyyppi-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); text-decoration: none; font-size: 13px; }
+  .tyyppi-tab:hover { color: var(--text); }
+  .tyyppi-tab.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
+  .puolet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .puoli-otsikko { font-size: 11px; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+  .field input.lukittu { color: var(--text2); border-style: dashed; }
+  .auto-rivi { display: flex; gap: 4px; }
+  .auto-rivi input { flex: 1; min-width: 0; }
+  .auto-kentta.auto input { border-color: #0e7490; color: #67e8f9; }
+  .auto-merkki { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
+  .auto-kentta.auto .auto-merkki { background: #083344; color: #67e8f9; }
+  .auto-kentta.auto .auto-merkki::after { content: 'laskettu'; }
+  .auto-kentta.kasin .auto-merkki { background: #3b2a06; color: #fcd34d; }
+  .auto-kentta.kasin .auto-merkki::after { content: 'oma arvo'; }
+  .palauta { background: var(--bg); border: 1px solid var(--border); color: var(--text2); border-radius: 3px; width: 30px; cursor: pointer; font-size: 14px; }
+  .auto-kentta.auto .palauta { visibility: hidden; }
+  .info-pieni { font-size: 11px; color: var(--text2); margin-top: 6px; line-height: 1.45; }
+  .valinta { display: flex; gap: 6px; margin: 4px 0 8px; }
+  .valinta .sauma-btn { flex: 1; padding: 5px 8px; }
+  .varoitus { background: #3f1212; border: 1px solid var(--red); color: #fecaca; border-radius: 4px; padding: 8px 12px; font-size: 13px; }
+  .varoitus:empty { display: none; }
+  .lisatieto { display: block; font-size: 11px; color: #f59e0b; margin-top: 2px; }
+  .tulossa { font-size: 12px; color: var(--text2); text-align: center; padding: 10px; border: 1px dashed var(--border); border-radius: 4px; }
+  .vakio-grid select { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 3px 4px; font-size: 12px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
+  .vakio-grid.leveampi { grid-template-columns: 1fr 92px; }
+  @media (max-width: 700px) {
+    .tyyppi-tabs { margin-left: 0; order: 3; width: 100%; }
+    .tyyppi-tab { flex: 1; text-align: center; padding: 8px; }
+    .field input[type=number], .vakio-grid input[type=number] { font-size: 16px; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+  <div class="nav-menu-wrap">
+    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
+      <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
+    </div>
+    <script src="nav.js?v=2"></script>
+  </div>
+  <h1>Piippu</h1>
+  <div class="tyyppi-tabs">
+    <a class="tyyppi-tab" href="piippu.html">Lapepiippu</a>
+    <a class="tyyppi-tab active" href="harjapiippu.html">Harjapiippu</a>
+  </div>
+</header>
+
+<div class="main">
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-resizer" id="sidebar-resizer"></div>
+
+  <div class="section">
+    <h3>Piipun osat</h3>
+    <div class="checks">
+      <div class="check-item"><input type="checkbox" id="chk-juuret" checked onchange="laske()"><label for="chk-juuret">Juuret</label></div>
+      <div class="check-item"><input type="checkbox" id="chk-huppu" checked onchange="laske()"><label for="chk-huppu">Huppu</label></div>
+      <div class="check-item"><input type="checkbox" id="chk-kansi" checked onchange="laske()"><label for="chk-kansi">Kansi</label></div>
+      <div class="check-item"><input type="checkbox" id="chk-hattu" checked onchange="laske()"><label for="chk-hattu">Hattu</label></div>
+    </div>
+    <div class="info-pieni">Huppu tehdään aina kahdella etukappaleella (etu 1 ja etu 2).</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+      <label style="margin:0;white-space:nowrap;font-size:12px;">Piippuja</label>
+      <input type="number" id="v-piippukpl" value="1" min="1" style="width:60px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;" oninput="laske()">
+      <span style="font-size:11px;color:var(--text2);">kpl</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Piipun mitat</h3>
+    <div class="puolet"><div class="puoli-otsikko">Puoli 1</div><div class="puoli-otsikko">Puoli 2</div></div>
+    <div class="puolet">
+      <div class="field"><label>Leveys (mm)</label><input type="number" id="lev1" value="400" min="0" oninput="laske()"></div>
+      <div class="field"><label>Leveys (mm)</label><input type="number" id="lev2" value="" placeholder="sama" min="0" oninput="laske()"></div>
+    </div>
+    <div class="field"><label>Kokonaismitta, etureunasta etureunaan (mm)</label><input type="number" id="koko" value="1200" min="0" oninput="laske()"></div>
+    <div class="puolet">
+      <div class="field"><label>Suora mitta harjalle (mm)</label><input type="number" id="suora1" value="450" min="0" oninput="laske()"></div>
+      <div class="field auto-kentta" id="kentta-suora2"><label>Suora mitta harjalle (mm) <span class="auto-merkki"></span></label>
+        <div class="auto-rivi"><input type="number" id="suora2" min="0" oninput="kasinSyotetty('suora2')"><button class="palauta" title="Laske automaattisesti" onclick="palautaAuto('suora2')">↺</button></div></div>
+    </div>
+    <div class="field"><label>Korkeus harjan kohdalla (mm)</label><input type="number" id="korkH" value="550" min="0" oninput="laske()"></div>
+    <div class="puolet">
+      <div class="field"><label>Korkeus etureunassa (mm)</label><input type="number" id="kork1" value="760" min="0" oninput="laske()"></div>
+      <div class="field auto-kentta" id="kentta-kork2"><label>Korkeus etureunassa (mm) <span class="auto-merkki"></span></label>
+        <div class="auto-rivi"><input type="number" id="kork2" min="0" oninput="kasinSyotetty('kork2')"><button class="palauta" title="Laske automaattisesti" onclick="palautaAuto('kork2')">↺</button></div></div>
+    </div>
+    <div class="puolet">
+      <div class="field"><label>Vinomitta harjalle (mm)</label><input type="number" id="vino1" readonly class="lukittu" tabindex="-1"></div>
+      <div class="field auto-kentta" id="kentta-vino2"><label>Vinomitta harjalle (mm) <span class="auto-merkki"></span></label>
+        <div class="auto-rivi"><input type="number" id="vino2" min="0" oninput="kasinSyotetty('vino2')"><button class="palauta" title="Laske automaattisesti" onclick="palautaAuto('vino2')">↺</button></div></div>
+    </div>
+    <div class="info-pieni">Puolen 2 mitat lasketaan automaattisesti: suora mitta kokonaismitasta, korkeus ja vinomitta puolen 1 kaltevuudesta. Kirjoita kenttään oma arvo, jos mitattu on eri. ↺ palauttaa laskennan.</div>
+  </div>
+
+  <div class="section">
+    <h3>Sivumitat: matka ehjän harjan yli</h3>
+    <div class="puolet">
+      <div>
+        <div class="puoli-otsikko">Puoli 1</div>
+        <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit1V" value="150" min="0" oninput="laske()"></div>
+        <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit1O" value="150" min="0" oninput="laske()"></div>
+      </div>
+      <div>
+        <div class="puoli-otsikko">Puoli 2</div>
+        <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit2V" value="150" min="0" oninput="laske()"></div>
+        <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit2O" value="150" min="0" oninput="laske()"></div>
+      </div>
+    </div>
+    <div class="field"><label>Katteen profiili (KP-20 20, tiili 30, huopa 0)</label><input type="number" id="poimu" value="20" min="0" oninput="laske()"></div>
+  </div>
+
+  <div class="section">
+    <h3>Juuri — etuosa</h3>
+    <div class="puolet">
+      <div>
+        <div class="puoli-otsikko">Puoli 1</div>
+        <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_1" value="200" min="0" oninput="laske()"></div>
+        <div class="field"><label>Alas (mm)</label><input type="number" id="j25_1" value="15" min="0" oninput="laske()"></div>
+      </div>
+      <div>
+        <div class="puoli-otsikko">Puoli 2</div>
+        <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_2" value="200" min="0" oninput="laske()"></div>
+        <div class="field"><label>Alas (mm)</label><input type="number" id="j25_2" value="15" min="0" oninput="laske()"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Juuren mitat</h3>
+    <div class="vakio-grid">
+      <label>Tuplat juuriin</label><input type="number" id="v-tupla" value="15" oninput="laske()">
+      <label>Juuri etu lisäys leveyteen</label><input type="number" id="v-etulis" value="40" oninput="laske()">
+      <label>Juuri nousee piipulle</label><input type="number" id="v-nousu" value="200" oninput="laske()">
+      <label>Sivujuurten lisävara</label><input type="number" id="v-sivulisa" value="50" oninput="laske()">
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="red">Hupun mitat ⚠</h3>
+    <div style="font-size:11px;color:var(--text2);">Hupun sivut</div>
+    <div class="valinta">
+      <button class="sauma-btn active" id="sivut-yksi" onclick="setSivut(1)">Yhtenä kappaleena</button>
+      <button class="sauma-btn" id="sivut-jaettu" onclick="setSivut(2)">Poikki harjalta</button>
+    </div>
+    <div class="vakio-grid" id="jako-rivi" style="display:none;margin-bottom:6px;">
+      <label>Jakosauma harjalla (etu 2 -puolelle tuplana)</label><input type="number" id="v-jakosauma" value="20" oninput="laske()">
+    </div>
+    <div class="vakio-grid leveampi">
+      <label>Hupun saumat</label><input type="number" id="v-sauma" value="20" oninput="laske()">
+      <label>Lisää hupun kokoon</label><input type="number" id="v-huplis" value="10" oninput="laske()">
+      <label>Hupun yläreuna ⚠</label><input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
+      <label>Yläreunan taitos</label>
+      <select id="v-ylatyyppi" onchange="laske()"><option value="ulos">Ulos 90°</option><option value="sisaan">Sisään 90°</option><option value="tupla">Tupla 180°</option></select>
+      <label>Hupun alatuplat</label><input type="number" id="v-alatupla" value="20" oninput="laske()">
+      <label>Vähennys korkeudesta</label><input type="number" id="v-vahennys" value="20" oninput="laske()">
+      <label>Sivujen liitosvara (puolet kumpaankin päähän)</label><input type="number" id="v-hsivlisa" value="5" oninput="laske()">
+      <label>Hattu piippua isompi</label><input type="number" id="v-hattulis" value="250" oninput="laske()">
+    </div>
+  </div>
+
+</div>
+
+<div class="content">
+  <div class="varoitus" id="varoitus"></div>
+
+  <div class="kuva-card">
+    <svg id="sivukuva" viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="kulmat">
+      <div class="kulma-item">Puoli 1 etukulma (kanttikoneeseen):<span id="kulma1">—</span>°</div>
+      <div class="kulma-item">Puoli 2 etukulma (kanttikoneeseen):<span id="kulma2">—</span>°</div>
+      <div class="kulma-item">Kaltevuus 1 / 2:<span id="kalt">—</span></div>
+    </div>
+  </div>
+
+  <div class="luettelo-grid">
+    <div class="luettelo-card">
+      <h3>Juuret</h3>
+      <div id="luettelo-juuret"><p class="empty-msg">—</p></div>
+    </div>
+    <div class="luettelo-card">
+      <h3>Huppu / Kansi / Hattu</h3>
+      <div id="luettelo-huppu"><p class="empty-msg">—</p></div>
+    </div>
+  </div>
+  <div class="luettelo-card" id="levitys-card" style="display:none;">
+    <h3>Hupun levityskuvat</h3>
+    <div id="levityskuvat"></div>
+  </div>
+  <div class="tulossa">Tilaukseen lisääminen ja Tuotanto tulevat seuraavassa vaiheessa. Nyt sivulla voi laskea ja tarkistaa harjapiipun.</div>
+</div>
+</div>
+
+<script src="geom.js?v=1"></script>
+<script src="pellit.js?v=2"></script>
+<script src="piippu-laskenta.js?v=4"></script>
+<script src="piippu-levitys.js?v=5"></script>
+<script>
+// Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
+// hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
+// Tallennus tilaukseen ja Tuotanto tulevat vaiheessa 6.
+function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function chk(id) { return document.getElementById(id).checked; }
+const r = n => Math.round(n);
+
+// Puolen 2 automaattikentät: 'auto' = ohjelma laskee, muuten käyttäjän oma arvo.
+// Korkeus ja vinomitta ovat sidottuja: kumpi tahansa syötetään, toinen lasketaan siitä.
+let suora2Tila = 'auto';
+let puoli2Tila = 'auto';   // 'auto' | 'kork' | 'vino'
+let sivutJako = 1;
+
+function kasinSyotetty(id) {
+  if (id === 'suora2') suora2Tila = 'kasin';
+  if (id === 'kork2') puoli2Tila = 'kork';
+  if (id === 'vino2') puoli2Tila = 'vino';
+  laske();
+}
+function palautaAuto(id) {
+  if (id === 'suora2') suora2Tila = 'auto';
+  else puoli2Tila = 'auto';
+  laske();
+}
+function setSivut(n) {
+  sivutJako = n;
+  document.getElementById('sivut-yksi').classList.toggle('active', n === 1);
+  document.getElementById('sivut-jaettu').classList.toggle('active', n === 2);
+  document.getElementById('jako-rivi').style.display = n === 2 ? 'grid' : 'none';
+  laske();
+}
+function asetaKentta(id, arvo, onKasin) {
+  const el = document.getElementById(id);
+  if (!onKasin) el.value = Number.isFinite(arvo) ? Math.round(arvo) : '';
+  const k = document.getElementById('kentta-' + id);
+  k.classList.toggle('auto', !onKasin);
+  k.classList.toggle('kasin', onKasin);
+}
+
+// Syötöt tilausrivin profile_data.vals -muotoon (samat nimet kuin laskeHarjapiippu)
+function keraaVals() {
+  const lev2 = document.getElementById('lev2').value;
+  const v = {
+    lev1: gv('lev1'), lev2: lev2 === '' ? null : gv('lev2'), koko: gv('koko'), suora1: gv('suora1'),
+    kork1: gv('kork1'), korkH: gv('korkH'), poimu: gv('poimu'),
+    ylit1V: gv('ylit1V'), ylit1O: gv('ylit1O'), ylit2V: gv('ylit2V'), ylit2O: gv('ylit2O'),
+    k24_1: gv('k24_1'), j25_1: gv('j25_1'), k24_2: gv('k24_2'), j25_2: gv('j25_2'),
+    tupla: gv('v-tupla'), etulis: gv('v-etulis'), nousu: gv('v-nousu'), sivulisa: gv('v-sivulisa'),
+    sauma: gv('v-sauma'), huplis: gv('v-huplis'), ylareunaV: gv('v-ylareunaV'), ylaTyyppi: document.getElementById('v-ylatyyppi').value,
+    alatupla: gv('v-alatupla'), vahennys: gv('v-vahennys'), hsivlisa: gv('v-hsivlisa'), hattulis: gv('v-hattulis'),
+    sivutJako, jakosauma: gv('v-jakosauma'), suora2Tila, puoli2Tila,
+  };
+  const tila = {
+    suora2: suora2Tila === 'auto' ? 'auto' : gv('suora2'),
+    puoli2: puoli2Tila === 'auto' ? 'auto' : puoli2Tila === 'kork' ? { kork: gv('kork2') } : { vino: gv('vino2') },
+  };
+  const e = KPT_PIIPPU.harjaPuoli2(v, tila);
+  Object.assign(v, { suora2: e.suora2, kork2: e.kork2, vino2: puoli2Tila === 'vino' ? gv('vino2') : null });
+  return { vals: v, ehdotus: e };
+}
+
+function laske() {
+  const { vals, ehdotus } = keraaVals();
+  asetaKentta('suora2', ehdotus.suora2, suora2Tila !== 'auto');
+  asetaKentta('kork2', ehdotus.kork2, puoli2Tila === 'kork');
+  asetaKentta('vino2', ehdotus.vino2, puoli2Tila === 'vino');
+  document.getElementById('vino1').value = Math.round(ehdotus.vino1);
+
+  const piippukpl = Math.max(1, gv('v-piippukpl') || 1);
+  const osat = { juuret: chk('chk-juuret'), huppu: chk('chk-huppu'), kansi: chk('chk-kansi'), hattu: chk('chk-hattu') };
+  let tulos;
+  try { tulos = KPT_PIIPPU_LEVITYS.laskeKaikkiHarja(vals, osat); }
+  catch (e) { console.error('Harjapiipun lista:', e); tulos = KPT_PIIPPU.laskeHarjapiippu(vals, osat); }
+  const varoitukset = ehdotus.varoitukset.concat(tulos.virheet || []);
+  document.getElementById('varoitus').innerHTML = varoitukset.map(t => t.replace(/</g, '&lt;')).join('<br>');
+
+  const g = tulos.geom;
+  document.getElementById('kulma1').textContent = r(g.puoli1.kulmaDeg);
+  document.getElementById('kulma2').textContent = r(g.puoli2.kulmaDeg);
+  document.getElementById('kalt').textContent = ` ${g.puoli1.kaltevuusDeg.toFixed(1).replace('.', ',')}° / ${g.puoli2.kaltevuusDeg.toFixed(1).replace('.', ',')}°`;
+
+  piirraSivukuva(vals);
+  renderTaulu('luettelo-juuret', tulos.juuret, piippukpl);
+  renderTaulu('luettelo-huppu', tulos.muut, piippukpl);
+  piirraLevityskuvat(vals, osat.huppu && !(tulos.virheet || []).length, piippukpl);
+}
+
+// Hupun levityskuvat (yhteinen piippu-levitys.js). Virhe kuvissa ei saa kaataa laskentaa.
+function piirraLevityskuvat(vals, nayta, piippukpl) {
+  const kortti = document.getElementById('levitys-card');
+  const el = document.getElementById('levityskuvat');
+  try {
+    if (!nayta) { kortti.style.display = 'none'; return; }
+    const auki = Array.from(el.querySelectorAll('details')).map(d => d.open);   // näppäily ei sulje avattuja kortteja
+    const L = KPT_PIIPPU_LEVITYS, t = L.harjaHupunPalat(vals);
+    if (!t) { kortti.style.display = 'none'; return; }
+    el.innerHTML = L.SELITE + t.palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl * piippukpl })).join('');
+    el.querySelectorAll('details').forEach((d, i) => { if (auki[i] !== undefined) d.open = auki[i]; });
+    kortti.style.display = '';
+  } catch (e) {
+    console.error('Levityskuvat:', e);
+    el.innerHTML = '<p class="empty-msg">Levityskuvien piirto epäonnistui.</p>';
+    kortti.style.display = '';
+  }
+}
+
+function renderTaulu(elId, pellit, piippukpl) {
+  const el = document.getElementById(elId);
+  if (!pellit.length) { el.innerHTML = '<p class="empty-msg">—</p>'; return; }
+  let tot = 0;
+  const rows = pellit.map(p => {
+    const kplYht = p.kpl * piippukpl;
+    const m2 = p.lev * p.pit * kplYht / 1e6;
+    tot += m2;
+    return `<tr><td>${p.osa}${p.lisa ? `<span class="lisatieto">${p.lisa}</span>` : ''}</td>
+      <td class="td-num">${p.lev}</td><td class="td-sym">×</td><td class="td-num">${p.pit}</td>
+      <td class="td-num">${kplYht}</td><td class="td-num">${m2.toFixed(3)}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<table><thead><tr><th>Osa</th><th class="td-num">Lev</th><th></th><th class="td-num">Pit</th><th class="td-num">Kpl</th><th class="td-num">m²</th></tr></thead>
+    <tbody>${rows}<tr class="total-row"><td colspan="5">Yhteensä</td><td class="td-num">${tot.toFixed(3)} m²</td></tr></tbody></table>`;
+}
+
+// Sivukuva: piippu sivulta, etu 1 vasemmalla, katto molemmin puolin harjaa, vinomitat katon suuntaisesti
+const C1 = '#f1f5f9', C2 = '#64748b', CI = '#38bdf8', CA = '#f59e0b';
+function txt(x, y, t, o = {}) {
+  return `<text x="${x}" y="${y}" fill="${o.c || C1}" font-size="${o.s || 12}" font-family="IBM Plex Mono, monospace" text-anchor="${o.a || 'middle'}">${t}</text>`;
+}
+function mittaH(x1, x2, y, t, c = CI) {
+  return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${c}" stroke-width="1"/>`
+    + `<line x1="${x1}" y1="${y - 5}" x2="${x1}" y2="${y + 5}" stroke="${c}"/><line x1="${x2}" y1="${y - 5}" x2="${x2}" y2="${y + 5}" stroke="${c}"/>` + txt((x1 + x2) / 2, y - 5, t, { c });
+}
+function piirraSivukuva(m) {
+  const svg = document.getElementById('sivukuva');
+  const W = 640, H = 320, mT = 30, mB = 95;
+  const uloke1 = m.k24_1 || 150, uloke2 = m.k24_2 || 150;
+  const kokoLev = uloke1 + m.suora1 + m.suora2 + uloke2;
+  const maxK = Math.max(m.kork1, m.kork2, 1);
+  const s = Math.min((W - 80) / (kokoLev || 1), (H - mT - mB) / maxK);
+  const x1 = 40 + uloke1 * s, xH = x1 + m.suora1 * s, x2 = xH + m.suora2 * s;
+  const yTop = mT, y1 = yTop + m.kork1 * s, yH = yTop + m.korkH * s, y2 = yTop + m.kork2 * s;
+  const k1 = m.suora1 > 0 ? (y1 - yH) / (xH - x1) : 0, k2 = m.suora2 > 0 ? (y2 - yH) / (x2 - xH) : 0;
+  const xa = x1 - uloke1 * s, ya = y1 + k1 * uloke1 * s, xb = x2 + uloke2 * s, yb = y2 + k2 * uloke2 * s;
+  let h = '';
+  h += `<polyline points="${xa},${ya} ${xH},${yH} ${xb},${yb}" fill="none" stroke="${C2}" stroke-width="1.5"/>`;
+  h += `<polyline points="${x1},${y1} ${x1},${yTop} ${x2},${yTop} ${x2},${y2}" fill="none" stroke="${C1}" stroke-width="2"/>`;
+  h += `<line x1="${xH}" y1="${yTop}" x2="${xH}" y2="${yH}" stroke="${C2}" stroke-dasharray="4 3"/>`;
+  h += txt(x1 + 6, (yTop + y1) / 2, r(m.kork1), { a: 'start' });
+  h += txt(xH + 6, (yTop + yH) / 2, r(m.korkH), { a: 'start' });
+  h += txt(x2 - 6, (yTop + y2) / 2, r(m.kork2), { a: 'end' });
+  h += txt(x1, yTop - 10, 'Etu 1', { c: C2, s: 11 }) + txt(xH, yTop - 10, 'Harja', { c: C2, s: 11 }) + txt(x2, yTop - 10, 'Etu 2', { c: C2, s: 11 });
+  const vinoTeksti = (ax, ay, bx, by, arvo) => {
+    const dx = bx - ax, dy = by - ay, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+    const cx = (ax + bx) / 2 + nx * 16, cy = (ay + by) / 2 + ny * 16, kulma = Math.atan2(dy, dx) * 180 / Math.PI;
+    return `<text x="${cx}" y="${cy}" fill="${CA}" font-size="12" font-family="IBM Plex Mono, monospace" text-anchor="middle" dominant-baseline="middle" transform="rotate(${kulma} ${cx} ${cy})">vino ${r(arvo)}</text>`;
+  };
+  h += vinoTeksti(x1, y1, xH, yH, Math.hypot(m.suora1, m.kork1 - m.korkH));
+  h += vinoTeksti(xH, yH, x2, y2, Math.hypot(m.suora2, m.kork2 - m.korkH));
+  const yM = Math.max(ya, yb, y1, y2) + 24;
+  h += mittaH(x1, xH, yM, r(m.suora1)) + mittaH(xH, x2, yM, r(m.suora2)) + mittaH(x1, x2, yM + 30, `koko ${r(m.suora1 + m.suora2)}`);
+  svg.innerHTML = h;
+}
+
+laske();
+
+// Sivupalkin leveyden säätö (sama kuin Piippu-sivulla, oma tallennusavain)
+(function () {
+  const STORAGE_KEY = 'kpt_harjapiippu_sidebar_width', MIN_WIDTH = 260, MAX_WIDTH = 700, WIDE_THRESHOLD = 420, XWIDE_THRESHOLD = 580;
+  const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('sidebar-resizer'), main = document.querySelector('.main');
+  const luokat = w => { sidebar.classList.toggle('wide', w >= WIDE_THRESHOLD); sidebar.classList.toggle('xwide', w >= XWIDE_THRESHOLD); };
+  let saved = null;
+  try { saved = parseInt(localStorage.getItem(STORAGE_KEY)); } catch (e) { /* ei tallennusta */ }
+  if (saved && saved >= MIN_WIDTH) { main.style.gridTemplateColumns = saved + 'px 1fr'; luokat(saved); }
+  let startX, startW;
+  resizer.addEventListener('mousedown', e => {
+    startX = e.clientX; startW = sidebar.offsetWidth;
+    resizer.classList.add('dragging'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+    const onMove = ev => { const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX))); main.style.gridTemplateColumns = w + 'px 1fr'; luokat(w); };
+    const onUp = () => {
+      try { localStorage.setItem(STORAGE_KEY, sidebar.offsetWidth); } catch (e) { /* ei tallennusta */ }
+      resizer.classList.remove('dragging'); document.body.style.cursor = ''; document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+  });
+})();
+
+function toggleNav(e) {
+  e.stopPropagation();
+  document.getElementById('navDropdown').classList.toggle('open');
+}
+document.addEventListener('click', function () { document.getElementById('navDropdown').classList.remove('open'); });
+</script>
+</body>
+</html>

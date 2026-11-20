@@ -156,6 +156,13 @@
     .kulmat { gap: 16px; flex-wrap: wrap; }
   }
 
+  /* Piippusivujen välilehdet Lapepiippu | Harjapiippu (20.11.2026) */
+  .tyyppi-tabs { display: flex; gap: 4px; margin-left: 8px; }
+  .tyyppi-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); text-decoration: none; font-size: 13px; }
+  .tyyppi-tab:hover { color: var(--text); }
+  .tyyppi-tab.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
+  @media (max-width: 700px) { .tyyppi-tabs { margin-left: 0; order: 3; width: 100%; } .tyyppi-tab { flex: 1; text-align: center; padding: 8px; } }
+
     /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
     #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
   </style>
@@ -175,6 +182,10 @@
     <script src="nav.js?v=2"></script>
   </div>
   <h1>Piippu</h1>
+  <div class="tyyppi-tabs">
+    <a class="tyyppi-tab active" href="piippu.html">Lapepiippu</a>
+    <a class="tyyppi-tab" href="harjapiippu.html">Harjapiippu</a>
+  </div>
   <div class="header-right">
     <select id="sel-materiaali" onchange="paivitaVarit()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
       <option value="">Materiaali</option>
