@@ -260,10 +260,10 @@
       <button class="sauma-btn" id="btn-kiila" onclick="setKiila(!kiilaPaalla)">Kiila / mutka</button>
     </div>
     <div id="kiila-kentat" style="display:none;margin-top:8px;">
-      <p class="kiila-ohje">Mitat piipun <b>yläpäästä</b>. Tyhjä kenttä = sama kuin suorassa piipussa. Etuleveys on "Piipun leveys" ja vasen sivu "Piipun suora" yllä.</p>
+      <p class="kiila-ohje">Mitat piipun <b>yläpäästä</b>. Tyhjä kenttä = sama kuin suorassa piipussa. Etuleveys on "Piipun leveys" ja oikea sivu "Suora mitta" yllä (sivukuvassa etu on vasemmalla).</p>
       <div class="field-grid">
         <div class="field"><label>Takaleveys (mm)</label><input type="number" id="k-takaLeveys" oninput="laske()"></div>
-        <div class="field"><label>Oikea sivu (mm)</label><input type="number" id="k-oikeaPituus" oninput="laske()"></div>
+        <div class="field"><label>Vasen sivu (mm)</label><input type="number" id="k-vasenPituus" oninput="laske()"></div>
       </div>
       <div class="field">
         <label>Suora kulma (90°)</label>
@@ -484,7 +484,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=1"></script>
 <script src="piippu-laskenta.js?v=3"></script>
-<script src="piippu-levitys.js?v=2"></script>
+<script src="piippu-levitys.js?v=3"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -496,7 +496,7 @@ function setSauma(n) {
 
 // Kiila / mutkapiippu: nappi avaa lisämitat. Kentät tallennetaan tilaukseen (profile_data.vals) samoilla nimillä.
 let kiilaPaalla = false;
-const KIILA_KENTAT = ['takaLeveys', 'oikeaPituus', 'korkeusEV', 'korkeusEO', 'korkeusTO', 'korkeusTV', 'kiilaVasen', 'kiilaOikea', 'kiilaEtu', 'kiilaTaka'];
+const KIILA_KENTAT = ['takaLeveys', 'vasenPituus', 'korkeusEV', 'korkeusEO', 'korkeusTO', 'korkeusTV', 'kiilaVasen', 'kiilaOikea', 'kiilaEtu', 'kiilaTaka'];
 function setKiila(on) {
   kiilaPaalla = !!on;
   document.getElementById('btn-kiila').classList.toggle('active', kiilaPaalla);
@@ -511,7 +511,7 @@ function kiilaArvot() {
 }
 // Tyhjien kiilakenttien vihjeeksi suoran piipun arvo
 function paivitaKiilaVihjeet(vals) {
-  const vihje = { takaLeveys: vals.leveys, oikeaPituus: vals.suora, korkeusEV: vals.etukork, korkeusEO: vals.etukork, korkeusTO: vals.takakork, korkeusTV: vals.takakork };
+  const vihje = { takaLeveys: vals.leveys, vasenPituus: vals.suora, korkeusEV: vals.etukork, korkeusEO: vals.etukork, korkeusTO: vals.takakork, korkeusTV: vals.takakork };
   Object.keys(vihje).forEach(n => { document.getElementById('k-' + n).placeholder = String(vihje[n] || 0); });
 }
 
@@ -681,6 +681,12 @@ function palautaMuokattava() {
   if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
   KIILA_KENTAT.forEach(n => aseta('k-' + n, v[n] === null || v[n] === undefined ? '' : v[n]));
   aseta('k-suoraKulma', [0, 1, 2, 3].includes(Number(v.suoraKulma)) ? Number(v.suoraKulma) : 0);
+  // Ensimmäisen kiilaversion tilaus (20.11.): suora = vasen sivu, oikeaPituus = oikea sivu. Nyt suora = oikea sivu,
+  // joten vaihdetaan päittäin: sama piippu, kentät uudessa järjestyksessä.
+  if (v.kiilaPaalla && (v.vasenPituus === undefined || v.vasenPituus === null) && v.oikeaPituus !== undefined && v.oikeaPituus !== null && v.oikeaPituus !== '') {
+    aseta('suora', v.oikeaPituus);
+    aseta('k-vasenPituus', v.suora);
+  }
   kiilaPaalla = !!v.kiilaPaalla;
   document.getElementById('btn-kiila').classList.toggle('active', kiilaPaalla);
   document.getElementById('kiila-kentat').style.display = kiilaPaalla ? '' : 'none';
@@ -790,7 +796,7 @@ async function lisaaTilaukseen() {
     saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl,
     piippukpl,   // Tuotanto näyttää piippujen määrän (tallennetaan 20.11.2026 alkaen)
     ylaTyyppi: document.getElementById('v-ylatyyppi').value,   // hupun yläreunan taitos: ulos / sisaan / tupla (levityskuvat)
-    ...kiilaArvot(),   // kiila / mutkapiippu (20.11.2026): kiilaPaalla, suoraKulma, takaLeveys, oikeaPituus, korkeudet kulmissa, kiilat
+    ...kiilaArvot(),   // kiila / mutkapiippu (20.11.2026): kiilaPaalla, suoraKulma, takaLeveys, vasenPituus, korkeudet kulmissa, kiilat
     huomio,
   };
 

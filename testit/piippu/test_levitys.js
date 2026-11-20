@@ -110,7 +110,11 @@ const K = v => Object.assign({}, OLETUS, { kiilaPaalla: true }, v);
 const PI = require('../../orders/piippu-laskenta.js');
 ok(JSON.stringify(L.laskeKaikki(OLETUS)) === JSON.stringify(Object.assign(PI.laskeLapepiippu(OLETUS), { kiila: false })), 'laskeKaikki ilman kiilaa = laskeLapepiippu');
 ok(JSON.stringify(L.laskeKaikki(K({})).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut) && L.laskeKaikki(K({})).kiila === false, 'kiila päällä mutta lisämitat tyhjät = suora piippu (lista ennallaan)');
-ok(JSON.stringify(L.laskeKaikki(K({ takaLeveys: 400, oikeaPituus: 600, korkeusEV: 1000, kiilaEtu: 0 })).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut), 'kiila päällä, lisämitat samat kuin suorassa = suora piippu');
+ok(JSON.stringify(L.laskeKaikki(K({ takaLeveys: 400, vasenPituus: 600, korkeusEV: 1000, kiilaEtu: 0 })).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut), 'kiila päällä, lisämitat samat kuin suorassa = suora piippu');
+
+// Suora mitta = oikea sivu, lisäkenttä vasenPituus = vasen sivu (Tomi 20.11. illalla). Ensimmäisen version tilaus (oikeaPituus) kuten ennen.
+const mU = L.kiilaTiedot(K({ vasenPituus: 640 })).muoto, mV = L.kiilaTiedot(K({ oikeaPituus: 640 })).muoto;
+ok(mU.vasen === 640 && mU.oikea === 600 && mV.vasen === 600 && mV.oikea === 640, 'sivut: vasenPituus = vasen sivu ja suora = oikea; vanha oikeaPituus lasketaan kuten ennen');
 
 // Yläpään muoto: sivut ja suora kulma pitävät jokaisella suoran kulman valinnalla
 const etaisyys = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -143,7 +147,7 @@ ok(sv.ylaKulma < 89.5 && near(so.ylaKulma, 90, 0.05), 'vasen kiila: vasemman siv
 ok(L.taitosRivit(sv).some(r => /^\d+,\d°$/.test(r[2])) && L.taitosRivit(so).every(r => !/,/.test(r[2])), 'taitostaulukko: vino kulma yhdellä desimaalilla, 90° tasan ilman desimaaleja');
 
 // Lista: hupun rivit = todellinen aihio ylöspäin, kansi ja hattu leveimmän ja pisimmän mukaan, juuret pisimmän sivun mukaan
-const mv = K({ takaLeveys: 420, oikeaPituus: 620, korkeusTO: 780 }), mt = L.laskeKaikki(mv), mp = L.hupunPalat(mv);
+const mv = K({ takaLeveys: 420, vasenPituus: 620, korkeusTO: 780 }), mt = L.laskeKaikki(mv), mp = L.hupunPalat(mv);
 ok(mt.kiila === true && mp.palat.every(pa => { const r = mt.muut.find(x => x.osa === pa.nimi), lv = L.levitaPala(pa); return r && r.lev === Math.ceil(lv.p.w - 1e-6) && r.pit === Math.ceil(lv.p.h - 1e-6) && r.kpl === pa.kpl; }), 'mutkapiippu: hupun rivit = levityskuvan aihio ylöspäin');
 const leveinKH = PI.laskeLapepiippu(Object.assign({}, OLETUS, { leveys: 420, suora: 620 })).muut.filter(r => /^(Kansi|Hattu)/.test(r.osa));
 ok(JSON.stringify(mt.muut.filter(r => /^(Kansi|Hattu)/.test(r.osa))) === JSON.stringify(leveinKH), 'mutkapiippu: kansi ja hattu leveimmän (420) ja pisimmän (620) kohdan mukaan');
@@ -160,7 +164,7 @@ for (let i = 0; i < 200; i++) {
   const takakork = Math.round(etukork - rnd() * Math.min(suo * 0.7, etukork - 300));
   const v = Object.assign({}, OLETUS, { leveys: lev, suora: suo, etukork, takakork, kiilaPaalla: true, saumatyyppi: valitse([1, 2]),
     huppuEtuKpl: valitse([1, 2]), huppuSivutKpl: valitse([1, 2]), huppuTakaKpl: valitse([1, 2]), ylaTyyppi: valitse(['ulos', 'sisaan', 'tupla']),
-    takaLeveys: lev + valitse([-20, 0, 15]), oikeaPituus: suo + valitse([-25, 0, 10]), suoraKulma: valitse([0, 1, 2, 3]),
+    takaLeveys: lev + valitse([-20, 0, 15]), vasenPituus: suo + valitse([-25, 0, 10]), suoraKulma: valitse([0, 1, 2, 3]),
     korkeusEV: etukork + valitse([-30, 0, 20]), korkeusTO: takakork + valitse([-20, 0, 25]),
     kiilaVasen: valitse([-30, 0, 20]), kiilaOikea: valitse([-15, 0, 25]), kiilaEtu: valitse([0, 20, -10]), kiilaTaka: valitse([0, -20]) });
   const t = L.hupunPalat(v);

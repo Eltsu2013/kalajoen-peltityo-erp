@@ -52,16 +52,20 @@
   const siisti = poly => poly.filter((q, i) => { const r = poly[(i + 1) % poly.length]; return Math.hypot(q[0] - r[0], q[1] - r[1]) > 1e-9; });
 
   // ---------- Kiilan tiedot tilausrivin syötöistä ----------
-  // Tallennetaan profile_data.vals:iin: kiilaPaalla, takaLeveys, oikeaPituus, suoraKulma (0 etuvasen, 1 etuoikea, 2 takaoikea,
+  // Tallennetaan profile_data.vals:iin: kiilaPaalla, takaLeveys, vasenPituus, suoraKulma (0 etuvasen, 1 etuoikea, 2 takaoikea,
   // 3 takavasen), korkeusEV/EO/TO/TV, kiilaVasen/Oikea/Etu/Taka. Puuttuva tai tyhjä = kuten suorassa piipussa.
+  // "Suora mitta" (vals.suora) on piipun OIKEA sivu, koska Piippu-sivun sivukuvassa etu on vasemmalla (Tomi 20.11.2026 illalla).
+  // Ensimmäisessä versiossa (20.11. päivällä) suora oli vasen sivu ja lisäkenttä oikeaPituus: sellainen tilaus lasketaan kuten ennen.
   function kiilaTiedot(vals) {
     const v = vals || {};
     const lev = Number(v.leveys) || 0, suo = Number(v.suora) || 0, he = Number(v.etukork) || 0, ht = Number(v.takakork) || 0;
     const on = !!v.kiilaPaalla;
     const tai = (x, oletus) => { const n = on ? luku(x) : null; return n === null ? oletus : n; };
+    const vanhaMalli = on && luku(v.vasenPituus) === null && luku(v.oikeaPituus) !== null;
     return {
       paalla: on,
-      muoto: { etu: lev, vasen: suo, taka: tai(v.takaLeveys, lev), oikea: tai(v.oikeaPituus, suo), suora: on && [0, 1, 2, 3].includes(Number(v.suoraKulma)) ? Number(v.suoraKulma) : 0 },
+      muoto: { etu: lev, taka: tai(v.takaLeveys, lev),
+        vasen: vanhaMalli ? suo : tai(v.vasenPituus, suo), oikea: vanhaMalli ? luku(v.oikeaPituus) : suo, suora: on && [0, 1, 2, 3].includes(Number(v.suoraKulma)) ? Number(v.suoraKulma) : 0 },
       korkeudet: [tai(v.korkeusEV, he), tai(v.korkeusEO, he), tai(v.korkeusTO, ht), tai(v.korkeusTV, ht)],
       kiila: { vasen: tai(v.kiilaVasen, 0), oikea: tai(v.kiilaOikea, 0), etu: tai(v.kiilaEtu, 0), taka: tai(v.kiilaTaka, 0) },
     };
