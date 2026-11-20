@@ -34,7 +34,7 @@ Huuvan testit siirrettiin Claude-projektista (`huuva/testit/`) vaiheessa 1 (suun
 
 Tarkempi kuvaus jokaisesta sarjasta: projektin `huuva/testit/LUEMINUT.md`.
 
-## piippu/ (1 sarja, 90 tarkistusta 20.11.2026)
+## piippu/ (2 sarjaa, 116 tarkistusta 20.11.2026)
 
 `test_lapepiippu.js` testaa `orders/piippu-laskenta.js`:ää, jota käyttävät Piippu-sivu ja Tuotannon piippunäkymä (vaihe 2).
 
@@ -43,6 +43,8 @@ Tarkempi kuvaus jokaisesta sarjasta: projektin `huuva/testit/LUEMINUT.md`.
 - **Saumarakenne** (Tomin luonnokset 20.11.): jaetun kappaleen liitokseen 60 mm (3 × sauma), sauma 2:ssa takimmainen sivupala saa 40:n, sauma 2:n etu = taka.
 - Osavalinnat (huppu pois, vain hattu) ja Tuotannon oletus (kaikki osat).
 - Kokeiltu: jos E2-korjaus (18.11.) tai Sauma 2 -korjaus (20.11.) perutaan, testi hälyttää.
+
+`test_levitys.js` (26 tarkistusta) testaa hupun levityskuvia (`orders/piippu-levitys.js`): käsin lasketut etupalan merkintäpisteet, sivupalan 40 mm sauma (20 suoraan + tupla, nurkassa ei taitosta), saumatyypit ja jaetut palat, yläreunan Ulos / Sisään / Tupla, tuplien 45° viisteet ja 300 satunnaista piippua (yksi ääriviiva, aihio mahtuu listan mittoihin, loveukset ei tyhjiä).
 
 ## Tulossa
 
