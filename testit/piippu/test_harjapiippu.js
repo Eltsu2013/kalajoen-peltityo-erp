@@ -167,6 +167,13 @@ ok(hOk, '200 satunnaista harjapiippua, ' + hPaloja + ' palaa: yksi ääriviiva, 
 ok(L.harjaHupunPalat(Object.assign({}, A, { kork2: 500 })) === null && L.laskeKaikkiHarja(Object.assign({}, A, { kork2: 500 })).virheet.length === 1, 'virheelliset korkeudet: ei paloja, virhe välittyy listaan');
 ok(/<svg/.test(L.palaHtml(pala('Huppu sivut'))) && /harja/.test(L.palaHtml(pala('Huppu sivut'))), 'palaHtml piirtää sivukappaleen harjoineen');
 
+// Sivukuva ja kaltevuus suhdelukuna (vaihe 6b: yhteinen harjapiippu-sivulle ja Tuotannolle)
+ok(JSON.stringify(L.harjaSuhde(A)) === JSON.stringify(['1:2.1', '1:1.9']), 'kaltevuus suhdelukuna kuten lapepiipussa: 445 / 210 = 1:2.1, 750 / 390 = 1:1.9');
+ok(L.harjaSuhde(Object.assign({}, A, { kork2: 500 }))[1] === '—', 'kaltevuus: mahdoton puoli = —');
+const sk = L.harjaSivukuva(A), skT = L.harjaSivukuva(A, { todelliset: true });
+ok(/^<svg/.test(sk) && /vino 492/.test(sk) && /vino 845/.test(sk) && /koko 1195/.test(sk) && !/↳/.test(sk), 'sivukuva: vinomitat 492 / 845, koko 1195');
+ok(/↳ 737/.test(skT) && /↳ 525/.test(skT) && /↳ 918/.test(skT), 'Tuotannon sivukuva: todelliset korkeudet 737 / 525 / 918');
+
 // ---- Lapepiippu ennallaan (sama tiedosto)
 const { laskeLapepiippu } = require('../../orders/piippu-laskenta.js');
 ok(typeof laskeLapepiippu === 'function', 'laskeLapepiippu yhä mukana (omat testit: test_lapepiippu.js)');

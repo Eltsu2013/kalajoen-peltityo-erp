@@ -165,7 +165,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=2"></script>
 <script src="piippu-laskenta.js?v=4"></script>
-<script src="piippu-levitys.js?v=5"></script>
+<script src="piippu-levitys.js?v=6"></script>
 <script>
 const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -217,8 +217,14 @@ async function load() {
 // ── Laske peltirivit profile_data:sta ─────────────────────
 // Laskenta on yhteisessä tiedostossa piippu-laskenta.js (sama kuin Piippu-sivulla). Tuotanto laskee aina kaikki osat.
 // Kiilapiipussa (v.kiilaPaalla) hupun palat, kansi, hattu ja juuret tulevat 3D-mallista (piippu-levitys.js, 20.11.2026).
+// Harjapiippu (vaihe 6b, 20.11.2026): tilausrivin vals.tyyppi = 'harjapiippu', laskenta laskeKaikkiHarja.
+const onHarja = v => !!(v && v.tyyppi === 'harjapiippu');
 function laskePellit(v) {
   if (!v) return { juuret: [], muut: [] };
+  if (onHarja(v)) {
+    try { const t = KPT_PIIPPU_LEVITYS.laskeKaikkiHarja(v); return { juuret: t.juuret, muut: t.muut, virhe: (t.virheet || [])[0] }; }
+    catch (e) { console.error('Harjapiippu:', e); const t = KPT_PIIPPU.laskeHarjapiippu(v); return { juuret: t.juuret, muut: t.muut }; }
+  }
   try {
     if (window.KPT_PIIPPU_LEVITYS) { const t = KPT_PIIPPU_LEVITYS.laskeKaikki(v); return { juuret: t.juuret, muut: t.muut, kiila: t.kiila, virhe: t.virhe }; }
   } catch (e) { console.error('Kiilan laskenta:', e); }
@@ -300,6 +306,7 @@ function piippujenMaara(v, osat) {
 // ── Piirrä SVG-kuva ────────────────────────────────────────
 function piirraKuvaSVG(v) {
   if (!v) return '';
+  if (onHarja(v)) { try { return KPT_PIIPPU_LEVITYS.harjaSivukuva(v, { todelliset: true }); } catch (e) { console.error('Harjapiipun kuva:', e); return ''; } }
   const suora=v.suora||0, etukork=v.etukork||0;
   const takakork=v.takakork||0, harjalle=v.harjalle||0;
   const k24=v.k24||0, j25=v.j25||0;
@@ -507,6 +514,31 @@ function mittalista(v) {
   const rivi = (lbl, val, yksikko='mm') =>
     val ? `<div class="mitta-row"><span class="mitta-label">${lbl}</span><span class="mitta-val">${val} ${yksikko}</span></div>` : '';
 
+  if (onHarja(v)) {
+    const puolet = (a, b) => a === b || b === null || b === undefined ? a : a + ' / ' + b;
+    const juuretH = [
+      rivi('Ylitys vasen (puoli 1 / 2)', puolet(v.ylit1V, v.ylit2V)),
+      rivi('Ylitys oikea (puoli 1 / 2)', puolet(v.ylit1O, v.ylit2O)),
+      rivi('Katteen profiili', v.poimu),
+      rivi('Eteen piipusta (puoli 1 / 2)', puolet(v.k24_1, v.k24_2)),
+      rivi('Alas (puoli 1 / 2)', puolet(v.j25_1, v.j25_2)),
+      rivi('Juuri nousee piipulle', v.nousu),
+    ].filter(Boolean).join('');
+    const huppuH = [
+      rivi('Hupun sivut', Number(v.sivutJako) === 2 ? 'poikki harjalta' : 'yhtenä kappaleena', ''),
+      Number(v.sivutJako) === 2 ? rivi('Jakosauma harjalla', v.jakosauma) : '',
+      rivi('Hupun yläreuna', v.ylareunaV),
+      rivi('Hupun alatupla', v.alatupla),
+      rivi('Vähennys korkeudesta', v.vahennys),
+      rivi('Lisää hupun kokoon', v.huplis),
+      rivi('Sivujen liitosvara', v.hsivlisa),
+    ].filter(Boolean).join('');
+    return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
+      <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>${juuretH || '—'}</div>
+      <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>
+    </div>`;
+  }
+
   const juuret = [
     rivi('Vasen ylitys', v.vasen),
     rivi('Oikea ylitys', v.oikea),
@@ -579,7 +611,7 @@ function levityskuvatHtml(v, muut) {
     if (!v || !window.KPT_PIIPPU_LEVITYS) return '';
     const L = window.KPT_PIIPPU_LEVITYS;
     const tilatut = new Map(muut.filter(p => p.osa.startsWith('Huppu')).map(p => [p.osa, p.kpl]));
-    const t = L.hupunPalat(v);
+    const t = onHarja(v) ? L.harjaHupunPalat(v) : L.hupunPalat(v);
     if (!t) return '';
     const palat = t.palat.filter(pa => tilatut.has(pa.nimi));
     if (!palat.length) return '';
@@ -591,6 +623,25 @@ function levityskuvatHtml(v, muut) {
     console.error('Levityskuvat:', e);
     return '';
   }
+}
+
+// Harjapiipun yhteenveto ja kulmat (lapepiipulle tyhjä, joten lapepiipun näkymä ennallaan)
+function harjaYhteenveto(v) {
+  if (!onHarja(v)) return '';
+  const lev = v.lev2 !== null && v.lev2 !== undefined && v.lev2 !== v.lev1 ? v.lev1 + ' / ' + v.lev2 : v.lev1;
+  return `<div class="summary-item">Leveys: <strong>${lev} mm</strong></div>
+    <div class="summary-item">Suorat: <strong>${r(v.suora1)} + ${r(v.suora2)} mm</strong></div>
+    <div class="summary-item">Korkeudet: <strong>${r(v.kork1)} / harja ${r(v.korkH)} / ${r(v.kork2)} mm</strong></div>`;
+}
+function harjaKulmat(v) {
+  if (!onHarja(v)) return '';
+  try {
+    const g = KPT_PIIPPU.laskeHarjapiippu(v, { juuret: false, huppu: false, kansi: false, hattu: false }).geom;
+    const s = KPT_PIIPPU_LEVITYS.harjaSuhde(v);
+    const k = x => `<strong style="font-family:'IBM Plex Mono',monospace">${x}</strong>`;
+    return `<span style="font-weight:400;color:var(--text);">Etukulmat: ${k(r(g.puoli1.kulmaDeg) + '° / ' + r(g.puoli2.kulmaDeg) + '°')}</span>
+      <span style="font-weight:400;color:var(--text);">Kaltevuus: ${k(s.join(' / '))}</span>`;
+  } catch (e) { return ''; }
 }
 
 function render(items, order) {
@@ -637,6 +688,7 @@ function render(items, order) {
 
     <div class="summary-bar">
       <div class="summary-item">Peltejä yhteensä: <strong>${totalM2.toFixed(3)} m²</strong></div>
+      ${harjaYhteenveto(v)}
       ${v?.etukork?`<div class="summary-item">Etu: <strong>${v.etukork} mm</strong></div>`:''}
       ${v?.takakork?`<div class="summary-item">Taka: <strong>${v.takakork} mm</strong></div>`:''}
       ${v?.leveys?`<div class="summary-item">Leveys: <strong>${v.leveys} mm</strong></div>`:''}
@@ -646,7 +698,8 @@ function render(items, order) {
     ${svgHtml?`
     <div class="section-card" style="margin-bottom:16px">
       <h3 style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
-        <span>Piippu — sivukuva</span>
+        <span>${onHarja(v) ? 'Harjapiippu' : 'Piippu'} — sivukuva</span>
+        ${harjaKulmat(v)}
         ${v?.etukork&&v?.takakork&&v?.suora?`
           <span style="font-weight:400;color:var(--text);">
             Etukulma: <strong style="font-family:'IBM Plex Mono',monospace">${Math.round(Math.atan((v.suora||0)/(v.etukork-v.takakork||1))*180/Math.PI)}°</strong>

@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v6: harjapiipun sivukuva ja kaltevuus suhdelukuna (harjaSivukuva, harjaSuhde), yhteinen harjapiippu-sivulle ja Tuotannolle.
 (function () {
   const req = typeof require === 'function' ? require : null;
   const G = globalThis.KPT_GEOM || (req ? req('./geom.js') : null);
@@ -582,6 +583,56 @@
   }
   const levita = pa => pa.ala2d ? levitaTaso(pa) : levitaPala(pa);
 
+  // Harjapiipun sivukuva (SVG): piippu sivulta, etu 1 vasemmalla, katto molemmin puolin harjaa, vinomitat katon
+  // suuntaisesti, suorat mitat ja kokonaismitta. Yhteinen harjapiippu-sivulle ja Tuotannolle (vaihe 6b, 20.11.2026).
+  // opts.todelliset = true: korkeuksien alle hupun todelliset korkeudet ilman taitoksia (Tuotanto: pellissä näkyvä mitta).
+  function harjaSivukuva(vals, opts) {
+    const m = vals || {}, o = opts || {};
+    const n = x => Number(x) || 0;
+    const suora1 = n(m.suora1), suora2 = n(m.suora2), kork1 = n(m.kork1), kork2 = n(m.kork2), korkH = n(m.korkH);
+    const C1 = '#f1f5f9', C2 = '#64748b', CI = '#38bdf8', CA = '#f59e0b', F = 'IBM Plex Mono, monospace';
+    const txt = (x, y, t, a) => '<text x="' + x + '" y="' + y + '" fill="' + ((a && a.c) || C1) + '" font-size="' + ((a && a.s) || 12) + '" font-family="' + F + '" text-anchor="' + ((a && a.a) || 'middle') + '">' + esc(t) + '</text>';
+    const mittaH = (x1, x2, y, t) => '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" stroke="' + CI + '" stroke-width="1"/>'
+      + '<line x1="' + x1 + '" y1="' + (y - 5) + '" x2="' + x1 + '" y2="' + (y + 5) + '" stroke="' + CI + '"/><line x1="' + x2 + '" y1="' + (y - 5) + '" x2="' + x2 + '" y2="' + (y + 5) + '" stroke="' + CI + '"/>' + txt((x1 + x2) / 2, y - 5, t, { c: CI });
+    const W = 640, H = 320, mT = 30, mB = 95;
+    const uloke1 = n(m.k24_1) || 150, uloke2 = n(m.k24_2) || 150;
+    const kokoLev = uloke1 + suora1 + suora2 + uloke2, maxK = Math.max(kork1, kork2, 1);
+    const sc = Math.min((W - 80) / (kokoLev || 1), (H - mT - mB) / maxK);
+    const x1 = 40 + uloke1 * sc, xH = x1 + suora1 * sc, x2 = xH + suora2 * sc;
+    const yTop = mT, y1 = yTop + kork1 * sc, yH = yTop + korkH * sc, y2 = yTop + kork2 * sc;
+    const k1 = suora1 > 0 ? (y1 - yH) / (xH - x1) : 0, k2 = suora2 > 0 ? (y2 - yH) / (x2 - xH) : 0;
+    const xa = x1 - uloke1 * sc, ya = y1 + k1 * uloke1 * sc, xb = x2 + uloke2 * sc, yb = y2 + k2 * uloke2 * sc;
+    let h = '<polyline points="' + xa + ',' + ya + ' ' + xH + ',' + yH + ' ' + xb + ',' + yb + '" fill="none" stroke="' + C2 + '" stroke-width="1.5"/>';
+    h += '<polyline points="' + x1 + ',' + y1 + ' ' + x1 + ',' + yTop + ' ' + x2 + ',' + yTop + ' ' + x2 + ',' + y2 + '" fill="none" stroke="' + C1 + '" stroke-width="2"/>';
+    h += '<line x1="' + xH + '" y1="' + yTop + '" x2="' + xH + '" y2="' + yH + '" stroke="' + C2 + '" stroke-dasharray="4 3"/>';
+    let tod = null;
+    if (o.todelliset) { try { tod = PI.laskeHarjapiippu(m, { juuret: false, kansi: false, hattu: false }).geom; } catch (e) { tod = null; } }
+    const korkeus = (x, yAla, arvo, a, todArvo) => {
+      const yy = (yTop + yAla) / 2;
+      return txt(x, yy, mm(arvo), { a }) + (tod ? txt(x, yy + 15, '↳ ' + mm(todArvo), { a, c: CI, s: 10.5 }) : '');
+    };
+    h += korkeus(x1 + 6, y1, kork1, 'start', tod && tod.hE1Tod) + korkeus(xH + 6, yH, korkH, 'start', tod && tod.hHTod) + korkeus(x2 - 6, y2, kork2, 'end', tod && tod.hE2Tod);
+    h += txt(x1, yTop - 10, 'Etu 1', { c: C2, s: 11 }) + txt(xH, yTop - 10, 'Harja', { c: C2, s: 11 }) + txt(x2, yTop - 10, 'Etu 2', { c: C2, s: 11 });
+    const vino = (ax, ay, bx, by, arvo) => {
+      const dx = bx - ax, dy = by - ay, l = Math.hypot(dx, dy) || 1, nx = -dy / l, ny = dx / l;
+      const cx = (ax + bx) / 2 + nx * 16, cy = (ay + by) / 2 + ny * 16, kulma = Math.atan2(dy, dx) * 180 / Math.PI;
+      return '<text x="' + cx + '" y="' + cy + '" fill="' + CA + '" font-size="12" font-family="' + F + '" text-anchor="middle" dominant-baseline="middle" transform="rotate(' + kulma + ' ' + cx + ' ' + cy + ')">vino ' + mm(arvo) + '</text>';
+    };
+    h += vino(x1, y1, xH, yH, Math.hypot(suora1, kork1 - korkH)) + vino(xH, yH, x2, y2, Math.hypot(suora2, kork2 - korkH));
+    const yM = Math.max(ya, yb, y1, y2) + 24;
+    h += mittaH(x1, xH, yM, mm(suora1)) + mittaH(xH, x2, yM, mm(suora2)) + mittaH(x1, x2, yM + 30, 'koko ' + mm(suora1 + suora2));
+    if (tod) h += txt(W - 6, H - 6, '↳ = hupun todellinen korkeus ilman taitoksia', { a: 'end', c: CI, s: 10 });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;height:auto;display:block">' + h + '</svg>';
+  }
+
+  // Katon kaltevuus suhdelukuna kuten lapepiipussa (1 : suora / korkeusero), kummallekin puolelle (Tomi 20.11.2026)
+  function harjaSuhde(vals) {
+    const n = x => Number(x) || 0, korkH = n(vals.korkH);
+    const suhde = (suora, kork) => kork - korkH > 0 && suora > 0 ? '1:' + (suora / (kork - korkH)).toFixed(1) : '—';
+    return [suhde(n(vals.suora1), n(vals.kork1)), suhde(n(vals.suora2), n(vals.kork2))];
+  }
+
+
   // Harjapiipun peltilista: kuten KPT_PIIPPU.laskeHarjapiippu, mutta hupun rivit todellisen aihion kokoisina
   // (Tomi 20.11.2026: ei varmuusvaraa). Leikkausmitat (lisa) säilyvät.
   function laskeKaikkiHarja(vals, osat) {
@@ -639,7 +690,7 @@
 
   const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
     palaHtml, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
-    harjaHupunPalat, levitaTaso, laskeKaikkiHarja };
+    harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde };
   globalThis.KPT_PIIPPU_LEVITYS = KPT_PIIPPU_LEVITYS;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU_LEVITYS;
 })();
