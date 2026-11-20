@@ -1318,6 +1318,8 @@ async function receiveFromMallisto(data) {
     renderGroups();
     updateSummary();
     setSaveStatus('ok', `Piippu päivitetty — ${data.items?.length || 0} riviä`);
+    // Kuittaus piippusivulle (vaihe 6c): tilaus ja ryhmän lopullinen nimi Tuotannon linkkiä varten
+    try { localStorage.setItem('kpt_piippu_tallennettu', JSON.stringify({ groupId: data.groupId, orderId: currentOrderId, groupName: group.name, aika: Date.now() })); } catch (e) { /* ei tallennusta */ }
     return;
   }
 
@@ -1878,7 +1880,7 @@ function renderGroups() {
   container.innerHTML = groups.map(g => {
     const onPiippu = g.items.some(i => i.profileType === 'piippu');
     const piippuNappi = onPiippu
-      ? `<a href="${piippuSivu(g.id)}?groupId=${g.id}" target="_blank" onclick="piippuMuokkausTiedot('${g.id}')"
+      ? `<a href="${piippuSivu(g.id)}?groupId=${g.id}" target="_blank" data-piippuryhma="${g.id}" onclick="piippuMuokkausTiedot('${g.id}')"
            style="display:inline-flex;align-items:center;padding:3px 8px;font-size:11px;
                   background:none;border:1px solid var(--accent);color:var(--accent);
                   border-radius:4px;text-decoration:none;white-space:nowrap;">
@@ -2327,6 +2329,23 @@ function rakennaTuloste() {
   el.innerHTML = h;
 }
 
+// Tuotannon "Muokkaa piippua" (vaihe 6c, 20.11.2026): Tuotanto avaa tämän tilauksen ja kertoo ryhmän nimen avaimella
+// kpt_avaa_piippu. Piippua ei avata automaattisesti (selain estää uuden välilehden ilman painallusta, ja tallennus kulkee
+// tämän sivun kautta), vaan ryhmän Muokkaa piippua -nappi korostetaan.
+function korostaPiippu() {
+  let nimi = null;
+  try { nimi = localStorage.getItem('kpt_avaa_piippu'); localStorage.removeItem('kpt_avaa_piippu'); } catch (e) { return; }
+  if (!nimi) return;
+  const g = groups.find(x => x.name === nimi);
+  const a = g ? document.querySelector('[data-piippuryhma="' + g.id + '"]') : null;
+  if (!a) { setSaveStatus('err', 'Piippua "' + nimi + '" ei löytynyt tilauksesta'); return; }
+  a.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  a.style.background = 'var(--accent)'; a.style.color = '#000'; a.style.fontWeight = '600';
+  a.style.boxShadow = '0 0 0 3px rgba(34,197,94,.45)';
+  a.textContent = '🏭 Muokkaa piippua tästä →';
+  setSaveStatus('ok', 'Paina korostettua "Muokkaa piippua" -nappia');
+}
+
 // ── Status ────────────────────────────────────────────────────────
 function setSaveStatus(type, msg) {
   const el = document.getElementById('save-status');
@@ -2343,7 +2362,7 @@ const copyOrderId = localStorage.getItem('copyOrderId');
 const copyKeepCustomer = localStorage.getItem('copyKeepCustomer') === 'true';
 if (openOrderId) {
   localStorage.removeItem('openOrderId');
-  loadOrderById(openOrderId);
+  loadOrderById(openOrderId).then(korostaPiippu);
 } else if (copyOrderId) {
   localStorage.removeItem('copyOrderId');
   localStorage.removeItem('copyKeepCustomer');

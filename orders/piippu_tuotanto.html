@@ -40,6 +40,12 @@
 
   .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
   @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  /* Puhelin: yläpalkki rivittyy, napit omalle rivilleen, ettei sivu veny ruutua leveämmäksi (20.11.2026) */
+  @media (max-width: 700px) {
+    header { flex-wrap: wrap; gap: 8px; padding: 6px 12px; height: auto; min-height: 52px; }
+    header h1 { font-size: 14px; }
+    .header-right { margin-left: 0; width: 100%; flex-wrap: wrap; }
+  }
 
   .section-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .section-card h3 { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; background: var(--panel2); border-bottom: 1px solid var(--border); }
@@ -151,6 +157,7 @@
   <h1>Piippu — Tuotanto</h1>
   <div class="header-right">
     <button class="back-btn" onclick="history.back()">← Takaisin</button>
+    <button class="back-btn" onclick="muokkaaPiippua()" title="Avaa tilaus ja muokkaa tätä piippua">✏ Muokkaa</button>
     <button class="back-btn btn-print" onclick="window.print()">🖨 Tulosta</button>
   </div>
 </header>
@@ -728,6 +735,13 @@ function render(items, order) {
       <div style="padding:14px 18px">${mittalista(v)}</div>
     </div>
   `;
+}
+
+// Muokkaa piippua (vaihe 6c, 20.11.2026): avataan tilaus uuteen välilehteen, ja tilaussivu korostaa tämän piipun
+// "Muokkaa piippua" -napin. Piippua ei avata suoraan, koska tallennus kulkee tilaussivun kautta.
+function muokkaaPiippua() {
+  try { localStorage.setItem('openOrderId', orderId); localStorage.setItem('kpt_avaa_piippu', groupName); } catch (e) { /* ei tallennusta */ }
+  window.open('tilaus.html', '_blank');
 }
 
 window._authReady.then(load);

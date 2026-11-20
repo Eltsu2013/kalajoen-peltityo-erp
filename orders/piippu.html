@@ -165,7 +165,12 @@
 
     /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
     #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+  
+  /* Avaa Tuotannossa -nappi (vaihe 6c) */
+  .tuotanto-nappi { display: block; text-align: center; margin-top: 8px; padding: 8px; border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; text-decoration: none; font-size: 13px; }
+  .tuotanto-nappi:hover { background: rgba(34,197,94,.1); }
+  .tuotanto-nappi.ei-kaytossa { opacity: .45; cursor: not-allowed; border-style: dashed; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 </head>
@@ -487,6 +492,8 @@
       Lisää tilaukseen →
     </button>
     <div id="lisays-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:6px;min-height:16px;"></div>
+    <a id="tuotanto-linkki" class="tuotanto-nappi" target="_blank" style="display:none">🏭 Avaa Tuotannossa →</a>
+    <div id="tuotanto-info" style="font-size:11px;color:#f59e0b;text-align:center;margin-top:4px;min-height:14px;"></div>
   </div>
 
 </div>
@@ -824,10 +831,11 @@ async function lisaaTilaukseen() {
 
   // Ryhmän id — käytetään lähetyksessä
   const groupId = targetGroupId || ('g_piippu_' + Date.now());
+  lahetettyGroupId = groupId;
 
   // Päivitä muokkaustiedot, jotta sivun päivitys (F5) palauttaa juuri lähetetyn piipun eikä vanhaa
   try {
-    localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, vals: piippuData, material: materiaali, color: vari, thickness: paksuus,
+    localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, orderId: tuotantoKohde ? tuotantoKohde.orderId : null, groupName: tuotantoKohde ? tuotantoKohde.groupName : null, vals: piippuData, material: materiaali, color: vari, thickness: paksuus,
       items: pellit.map(p => ({ nimike: p.osa, kpl: parseFloat(p.kpl) || 0, pituus: !!parseFloat(p.pit) })) }));
   } catch (e) { /* ei tallennusta */ }
 
@@ -1196,6 +1204,45 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 function r(n) { return Math.round(n); }
 palautaMuokattava();
 laske();
+
+// ── Avaa Tuotannossa (vaihe 6c, 20.11.2026) ───────────────────────────────────
+// Nappi näkyy, kun piipulla on tilaus: avattu tilauksen "Muokkaa piippua" -napista tai tallennettu tilaukseen.
+// Tallennuksen kuittaa tilaussivu (avain kpt_piippu_tallennettu), joten nappi ei väitä tallentaneensa, jos tilaussivu
+// ei ollut auki. Jos mittoja muutetaan tallentamatta, pyydetään ensin "Lisää tilaukseen", ettei Tuotanto näytä vanhaa.
+let tuotantoKohde = (muokattava && muokattava.orderId && muokattava.groupName) ? { orderId: muokattava.orderId, groupName: muokattava.groupName } : null;
+let muutettu = false, lahetettyGroupId = null;
+function paivitaTuotantoLinkki() {
+  const a = document.getElementById('tuotanto-linkki'), info = document.getElementById('tuotanto-info');
+  if (!a || !info) return;
+  if (!tuotantoKohde) { a.style.display = 'none'; info.textContent = ''; return; }
+  a.style.display = '';
+  if (muutettu) {
+    a.removeAttribute('href'); a.classList.add('ei-kaytossa');
+    info.textContent = 'Mittoja on muutettu: paina ensin "Lisää tilaukseen", niin Tuotanto näyttää muutokset.';
+  } else {
+    a.href = 'piippu_tuotanto.html?orderId=' + encodeURIComponent(tuotantoKohde.orderId) + '&groupName=' + encodeURIComponent(tuotantoKohde.groupName);
+    a.classList.remove('ei-kaytossa'); info.textContent = '';
+  }
+}
+const merkitseMuutos = e => { if (e.target && e.target.closest && e.target.closest('#sidebar, .header-right')) { muutettu = true; paivitaTuotantoLinkki(); } };
+document.addEventListener('input', merkitseMuutos, true);
+document.addEventListener('change', merkitseMuutos, true);
+document.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#sidebar button')) merkitseMuutos(e); }, true);
+window.addEventListener('storage', e => {
+  if (e.key !== 'kpt_piippu_tallennettu' || !e.newValue) return;
+  try {
+    const k = JSON.parse(e.newValue);
+    if (!k.orderId || k.groupId !== (targetGroupId || lahetettyGroupId)) return;
+    tuotantoKohde = { orderId: k.orderId, groupName: k.groupName };
+    muutettu = false;
+    paivitaTuotantoLinkki();
+    // muokkaustietoihin talteen, jotta sivun päivitys (F5) säilyttää linkin
+    const m = JSON.parse(localStorage.getItem(MUOKKAUS_AVAIN) || 'null');
+    if (m && m.groupId === k.groupId) { m.orderId = k.orderId; m.groupName = k.groupName; localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify(m)); }
+  } catch (err) { /* ei kuittausta */ }
+});
+paivitaTuotantoLinkki();
+
 
 // Sidebar resizer
 (function() {
