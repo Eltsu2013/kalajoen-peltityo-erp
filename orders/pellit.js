@@ -10,7 +10,8 @@
 // (alareunan pisteiden omat korkeudet, viisikulmainen harjasivu) tehdään vaiheissa 3–4,
 // ja testit vahtivat, ettei huuvan laskenta muutu.
 //
-// Vaatii geom.js:n:  <script src="geom.js?v=1"></script>  <script src="pellit.js?v=1"></script>
+// Vaatii geom.js:n:  <script src="geom.js?v=1"></script>  <script src="pellit.js?v=2"></script>
+// v2 (20.11.2026): p.paneeli valinnainen paneelin ääriviiva (harjapiipun viisikulmainen sivu), muuten ennallaan.
 // Nodessa:           const P = require('../orders/pellit.js');   (lataa geom.js:n itse)
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
 (function () {
@@ -532,8 +533,9 @@
   // Aihion leikkauspisteet numeroituina, koordinaatit aihion vasemmasta alakulmasta. Piste 1 on ääriviivan alin (ja siitä vasemmanpuoleisin) kulma,
   // numerointi jatkuu vastapäivään (kuvassa: oikealle alareunaa pitkin, sitten ylös oikeaa reunaa).
   // peili = true: pelti merkataan sisäpinnalta, jolloin kuva on peilikuva (x käännetään aihion leveyden yli, numerointi alkaa uudestaan).
+  // p.paneeli (valinnainen, 20.11.2026): paneelin ääriviiva, jos se ei ole nelikulmio A2–B2–C2–D2 (harjapiipun viisikulmainen sivu).
   function aihioPisteet(p, peili) {
-    const polys = [[p.A2, p.B2, p.C2, p.D2]].concat(p.flanges.map(f => f.poly));
+    const polys = [p.paneeli || [p.A2, p.B2, p.C2, p.D2]].concat(p.flanges.map(f => f.poly));
     const loops = yhdistaMonikulmiot(polys);
     if (!loops.length) return { pisteet: [], silmukoita: 0 };
     let ring = loops[0];
@@ -570,7 +572,7 @@
     c += '<text x="' + (X(p.w) + 4) + '" y="' + (Y(0) - 4) + '" font-size="9" font-family="' + FONT + '" fill="' + T.mitta + '">x →</text>';
     // sisäsaumat: paneelin reunat ja alareunan taitosviivat (katkoviiva)
     const lx = x => peili ? p.w - x : x;   // paikallinen x (peilikuvassa käännetty)
-    const quad = [p.A2, p.B2, p.C2, p.D2].map(q => X(lx(q[0] - p.minX)) + ',' + Y(q[1] - p.minY)).join(' ');
+    const quad = (p.paneeli || [p.A2, p.B2, p.C2, p.D2]).map(q => X(lx(q[0] - p.minX)) + ',' + Y(q[1] - p.minY)).join(' ');
     c += '<polygon points="' + quad + '" fill="none" stroke="' + T.himmea + '" stroke-width="0.8" stroke-dasharray="5,3"/>';
     p.flanges.forEach(f => (f.foldLines || []).forEach(fl => {
       c += '<line x1="' + X(lx(fl.p[0] - p.minX)) + '" y1="' + Y(fl.p[1] - p.minY) + '" x2="' + X(lx(fl.q[0] - p.minX)) + '" y2="' + Y(fl.q[1] - p.minY) + '" stroke="' + T.himmea + '" stroke-width="0.8" stroke-dasharray="5,3"/>';
