@@ -1603,6 +1603,24 @@ async function saveKappaleToSupabase(item, groupId) {
   }
 }
 
+// Piipun muokkaus: välitetään piipun nykyiset tiedot Piippu-sivulle (mitat, materiaali, tilatut osat, jalat ja lisäosat),
+// jotta muokkaus alkaa tilauksen piipusta eikä oletusarvoista (korjattu 20.11.2026). Piippu-sivu lukee avaimen kpt_piippu_muokkaa.
+function piippuMuokkausTiedot(groupId) {
+  try {
+    const group = groups.find(g => g.id === groupId);
+    const pi = group ? group.items.filter(i => i.profileType === 'piippu') : [];
+    const eka = pi.find(i => i.profile_data && i.profile_data.vals);
+    if (!eka) { localStorage.removeItem('kpt_piippu_muokkaa'); return; }
+    const rivienKpl = i => (i.rows || []).reduce((s, r) => s + (Number(r.kpl) || 0), 0);
+    localStorage.setItem('kpt_piippu_muokkaa', JSON.stringify({
+      groupId,
+      vals: eka.profile_data.vals,
+      material: eka.material || null, color: eka.color || null, thickness: eka.thickness || null,
+      items: pi.map(i => ({ nimike: i.nimike, kpl: rivienKpl(i) || Number(i.kpl) || 0, pituus: (i.rows || []).length > 0 })),
+    }));
+  } catch (e) { console.warn('Piipun muokkaustietojen välitys epäonnistui', e); }
+}
+
 function avaapiippu() {
   let groupId = document.getElementById('group-select').value;
 
@@ -1618,6 +1636,7 @@ function avaapiippu() {
     }
     return;
   }
+  piippuMuokkausTiedot(groupId);
   window.open(`piippu.html?groupId=${groupId}`, '_blank');
 }
 
@@ -1833,7 +1852,7 @@ function renderGroups() {
   container.innerHTML = groups.map(g => {
     const onPiippu = g.items.some(i => i.profileType === 'piippu');
     const piippuNappi = onPiippu
-      ? `<a href="piippu.html?groupId=${g.id}" target="_blank"
+      ? `<a href="piippu.html?groupId=${g.id}" target="_blank" onclick="piippuMuokkausTiedot('${g.id}')"
            style="display:inline-flex;align-items:center;padding:3px 8px;font-size:11px;
                   background:none;border:1px solid var(--accent);color:var(--accent);
                   border-radius:4px;text-decoration:none;white-space:nowrap;">
