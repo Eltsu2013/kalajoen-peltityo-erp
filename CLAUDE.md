@@ -30,7 +30,8 @@ Sama malli kuin `nav.js` ja `profiilit.js`: kaava ja piirto yhdessä tiedostossa
 - **Tulosteet:** mustavalkoiset, logo + päiväys. Mallit: tilaus.html:n `#tuloste` ja tuotanto.html:n työkortti `#tyokortti` (rakennetaan ennen tulostusta / `beforeprint`-tapahtumassa, `@media print` näyttää vain sen). Työkortin QR-koodi avaa `tuotanto.html?tilaus=<id>`.
 - **Kirjautuminen:** jokaisella suojatulla sivulla `supabase-js` + `auth-guard.js`. Lataa data mieluiten `window._authReady.then(...)`. Älä poista auth-guard.js:n `await window._authReady` -riviä (korjaa tyhjän sivun, kun kirjautuminen vanhenee).
 - **Oikea tietoturva on RLS:ssä**, ei auth-guardissa. Uusi taulu: RLS päälle ja säännöt vain `authenticated`-roolille.
-- **Pienet muutokset suoraan `main`-haaraan, isot omaan haaraan ja pull requestiin** (Tomi hyväksyy).
+- **Muutokset suoraan `main`-haaraan** (Tomi 20.11.2026: Claude julkaisee itse, ettei Tomin tarvitse käydä GitHubissa). Ennen pushia testit ja selaintarkistukset (alla), ja pushin jälkeen Tomille selkokielinen kuvaus siitä, mitä muuttui ja mitä hänen kannattaa testata. Jos jokin menee rikki, korjaa tai peru (`git revert`) heti.
+- **Kysy Tomilta ennen** muutoksia, joita ei saa helposti peruttua: tietokannan rakenne, RLS-säännöt, tietojen poisto tai massamuutos. Pull request vain, jos Tomi haluaa katsoa muutoksen ennen julkaisua.
 - Tarkista ennen pushia: inline-skriptit `node --check`, ja muuttuneet sivut selaimessa (Playwright, Supabase mockattuna) myös 360 px leveydellä.
 - Commitin tekijäksi Tomin GitHub-tunnus `Eltsu2013` (sama nimi ja sähköposti kuin repon aiemmissa commiteissa).
 - Tomi ei ole koodari: selitä muutokset selkokielellä ja perustele valinnat. Väitä vastaan, jos olet eri mieltä.
