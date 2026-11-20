@@ -20,7 +20,8 @@
 //    leveimmän ja pisimmän kohdan mukaan, juuret pisimmän sivun mukaan (muotoillaan ja mitataan erikseen).
 //
 // Versiot: v1 levityskuvat (vaihe 3), v2 3D-malli, kiila ja mutkapiippu (vaihe 4). Suoralla piipulla v2 antaa
-// täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js).
+// täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
+// (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 (function () {
   const req = typeof require === 'function' ? require : null;
   const G = globalThis.KPT_GEOM || (req ? req('./geom.js') : null);
@@ -422,7 +423,23 @@
     const v = vals || {}, o = osat || {};
     const perus = PI.laskeLapepiippu(v, o);
     const k = kiilaTiedot(v);
-    if (!k.paalla || onSuora(v, k)) return Object.assign(perus, { kiila: false });
+    if (!k.paalla || onSuora(v, k)) {
+      // Suora piippu: hupun rivit todellisen aihion kokoisina (Tomi 20.11.2026 illalla: ei varmuusvaraa, ylimääräinen korkeus pois).
+      // Vain sivujen korkeus muuttuu (kaava lisää alatuplan koko leveyden, vaikka tupla on katon kaltevuudessa ja viistetty);
+      // leveydet sekä etu- ja takapalat ovat samat kuin laskeLapepiippu. Mahdottomilla syötöillä jää kaavan luku.
+      if (o.huppu !== false) {
+        let t = null;
+        try { t = hupunPalat(Object.assign({}, v, { kiilaPaalla: false })); } catch (e) { t = null; }
+        if (t) perus.muut = perus.muut.map(r => {
+          if (!/^Huppu/.test(r.osa)) return r;
+          const pa = t.palat.find(x => x.nimi === r.osa && x.kpl === r.kpl);
+          if (!pa) return r;
+          const lv = levitaPala(pa);
+          return Object.assign({}, r, { lev: ylos(lv.p.w), pit: ylos(lv.p.h) });
+        });
+      }
+      return Object.assign(perus, { kiila: false });
+    }
     const t = hupunPalat(v);
     if (!t) return Object.assign(perus, { kiila: true, virhe: 'Yläpään mitat eivät sovi yhteen: tarkista sivujen pituudet ja suoran kulman valinta.' });
     const as = t.malli.alaSivut, km = k.muoto;

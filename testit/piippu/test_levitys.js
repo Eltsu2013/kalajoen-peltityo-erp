@@ -108,9 +108,25 @@ ok(!v1ero && v1palat > 150, 'suora piippu: ' + v1palat + ' palaa täsmälleen ku
 // ---- 8) Kiila ja mutkapiippu
 const K = v => Object.assign({}, OLETUS, { kiilaPaalla: true }, v);
 const PI = require('../../orders/piippu-laskenta.js');
-ok(JSON.stringify(L.laskeKaikki(OLETUS)) === JSON.stringify(Object.assign(PI.laskeLapepiippu(OLETUS), { kiila: false })), 'laskeKaikki ilman kiilaa = laskeLapepiippu');
-ok(JSON.stringify(L.laskeKaikki(K({})).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut) && L.laskeKaikki(K({})).kiila === false, 'kiila päällä mutta lisämitat tyhjät = suora piippu (lista ennallaan)');
-ok(JSON.stringify(L.laskeKaikki(K({ takaLeveys: 400, vasenPituus: 600, korkeusEV: 1000, kiilaEtu: 0 })).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut), 'kiila päällä, lisämitat samat kuin suorassa = suora piippu');
+// Suora piippu (Tomi 20.11. illalla: ei varmuusvaraa): hupun rivit = todellinen aihio ylöspäin, muuten kuten laskeLapepiippu
+const suoraKaikki = L.laskeKaikki(OLETUS), suoraKaava = PI.laskeLapepiippu(OLETUS);
+const aihioRivi = (v, r) => { const pa = L.hupunPalat(v).palat.find(x => x.nimi === r.osa), lv = L.levitaPala(pa); return Object.assign({}, r, { lev: Math.ceil(lv.p.w - 1e-6), pit: Math.ceil(lv.p.h - 1e-6) }); };
+ok(JSON.stringify(suoraKaikki.juuret) === JSON.stringify(suoraKaava.juuret) && suoraKaikki.kiila === false
+  && JSON.stringify(suoraKaikki.muut) === JSON.stringify(suoraKaava.muut.map(r => /^Huppu/.test(r.osa) ? aihioRivi(OLETUS, r) : r)), 'suora piippu: juuret, kansi ja hattu kuten laskeLapepiippu, hupun rivit = todellinen aihio');
+const sivuK = suoraKaikki.muut.find(r => r.osa === 'Huppu sivut'), sivuL = suoraKaava.muut.find(r => r.osa === 'Huppu sivut');
+ok(sivuK.lev === 670 && sivuL.lev === 670 && sivuK.pit === 1015 && sivuL.pit === 1022
+  && JSON.stringify(suoraKaikki.muut.filter(r => /etu|taka/.test(r.osa))) === JSON.stringify(suoraKaava.muut.filter(r => /etu|taka/.test(r.osa))),
+  'suora piippu: hupun sivut 670 × 1015 (kaava 1022, ylimääräinen korkeus pois), etu ja taka ennallaan');
+let suoraIsompi = 0;
+for (let i = 0; i < 300; i++) {
+  const v = Object.assign({}, OLETUS, { leveys: 300 + Math.round(rnd() * 600), suora: 300 + Math.round(rnd() * 900), saumatyyppi: valitse([1, 2]),
+    huppuEtuKpl: valitse([1, 2, 3]), huppuSivutKpl: valitse([1, 2, 3]), huppuTakaKpl: valitse([1, 2, 3]), ylaTyyppi: valitse(['ulos', 'sisaan', 'tupla']) });
+  const a = L.laskeKaikki(v).muut, b = PI.laskeLapepiippu(v).muut;
+  if (a.length !== b.length || a.some((r, k) => r.osa !== b[k].osa || r.kpl !== b[k].kpl || r.lev !== b[k].lev || r.pit > b[k].pit)) suoraIsompi++;
+}
+ok(suoraIsompi === 0, '300 satunnaista suoraa piippua: samat rivit ja leveydet, korkeus ei koskaan kasva kaavasta');
+ok(JSON.stringify(L.laskeKaikki(K({})).muut) === JSON.stringify(suoraKaikki.muut) && L.laskeKaikki(K({})).kiila === false, 'kiila päällä mutta lisämitat tyhjät = suora piippu (lista sama)');
+ok(JSON.stringify(L.laskeKaikki(K({ takaLeveys: 400, vasenPituus: 600, korkeusEV: 1000, kiilaEtu: 0 })).muut) === JSON.stringify(suoraKaikki.muut), 'kiila päällä, lisämitat samat kuin suorassa = suora piippu');
 
 // Suora mitta = oikea sivu, lisäkenttä vasenPituus = vasen sivu (Tomi 20.11. illalla). Ensimmäisen version tilaus (oikeaPituus) kuten ennen.
 const mU = L.kiilaTiedot(K({ vasenPituus: 640 })).muoto, mV = L.kiilaTiedot(K({ oikeaPituus: 640 })).muoto;
