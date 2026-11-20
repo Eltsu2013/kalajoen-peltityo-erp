@@ -292,6 +292,10 @@
   }
   .back-btn:hover { border-color: var(--accent); color: var(--accent); }
   .card-view-title { font-size: 16px; font-weight: 600; }
+  .card-yhteys { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .card-yhteys:empty { display: none; }
+  .card-yhteys a { color: var(--accent); text-decoration: none; overflow-wrap: anywhere; }
+  .card-yhteys a:hover { text-decoration: underline; }
   .card-view-meta {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     color: var(--text-dim); display: flex; gap: 16px; flex-wrap: wrap;
@@ -621,6 +625,9 @@
     #tyokortti .tk-tiedot { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr; gap: 1.5mm 6mm; margin: 3mm 0; }
     #tyokortti .tk-lab { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.08em; color: #444 !important; }
     #tyokortti .tk-arvo { font-weight: 600; white-space: pre-line; }
+    /* Pinnan kolmio mustaksi paperilla (ruudulla punainen) */
+    #tyokortti .tk-kuva svg path[fill="#c0392b"] { fill: #000 !important; }
+    #tyokortti .tk-yht { font-family: 'IBM Plex Mono', monospace; font-size: 9pt; margin-top: 0.5mm; overflow-wrap: anywhere; }
     #tyokortti .tk-toimitus { font-size: 13pt; font-weight: 700; }
     #tyokortti .tk-ohjeet { border: 1px solid #000; padding: 1.5mm 3mm; margin-bottom: 3mm; white-space: pre-line; }
     #tyokortti h2 { font-size: 11pt; margin: 4mm 0 1.5mm; border-bottom: 1px solid #000; padding-bottom: 0.8mm; display: flex; justify-content: space-between; break-after: avoid; }
@@ -804,6 +811,7 @@
     <div>
       <div class="card-view-title" id="cardTitle">—</div>
       <div style="font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-top:2px" id="cardKohde"></div>
+      <div id="cardYhteys" class="card-yhteys"></div>
     </div>
     <div class="card-view-meta">
       <span id="cardDate"></span>
@@ -910,7 +918,7 @@ async function loadOrders() {
   const r = await fetch(
     `${SUPABASE_URL}/rest/v1/orders?status=in.(${statuses.join(',')})` +
     `&order=order_date.asc` +
-    `&select=id,order_date,delivery_date,status,kohde,notes,customer_id,customers(name,customer_number)`,
+    `&select=id,order_date,delivery_date,status,kohde,notes,customer_id,customers(name,customer_number,phone,email)`,
     { headers }
   );
   const orders = await r.json();
@@ -1395,6 +1403,11 @@ function openOrder(orderId) {
 
   document.getElementById('cardTitle').textContent = o.customers?.name || '— ei asiakasta —';
   document.getElementById('cardKohde').textContent = o.kohde || o.notes || '';
+  const puh = (o.customers?.phone || '').trim(), sposti = (o.customers?.email || '').trim();
+  document.getElementById('cardYhteys').innerHTML = [
+    puh ? `<a href="tel:${escT(puh.replace(/\s+/g, ''))}">📞 ${escT(puh)}</a>` : '',
+    sposti ? `<a href="mailto:${escT(sposti)}">✉ ${escT(sposti)}</a>` : ''
+  ].filter(Boolean).join('');
   document.getElementById('cardDate').textContent = 'Tilaus: ' + (o.order_date || '').slice(0,10).split('-').reverse().join('.');
   document.getElementById('cardDelivery').textContent = o.delivery_date
     ? 'Toimitus: ' + o.delivery_date.slice(0,10).split('-').reverse().join('.') : '';
@@ -2077,8 +2090,9 @@ function drawKanttausSVG(profileType, vals, opts, asento, vari, kiila) {
     try {
       const luvut = {};
       malli.fields.forEach(f => { luvut[f.id] = parseFloat(vals[f.id]) || 0; });
-      let merkinta = 'raita';
-      try { if (localStorage.getItem('kpt_pinta_merkinta') === 'kolmio') merkinta = 'kolmio'; } catch (e) { console.warn('pintaMerkinta:', e); }
+      // Tuotannossa pinta merkitään aina kolmiolla (sama merkki kuin Mallistossa), ei väriraidalla:
+      // kolmio näkyy myös mustavalkoisessa tulosteessa (Tomi 20.11.2026).
+      const merkinta = 'kolmio';
       const KW = 280, KH = 190;
       // Kiilapelti: mitat muodossa "150–200" ja pää B katkoviivalla
       let tulos = malli.build(luvut, opts || {}), haamu = [];
@@ -2296,7 +2310,8 @@ function rakennaTyokortti(asetus) {
       ${qr ? `<div class="tk-qr">${qr}Avaa tilaus<br>puhelimella</div>` : '<div></div>'}
     </div>
     <div class="tk-tiedot">
-      ${tieto('Asiakas', o.customers?.name || '—')}
+      <div><div class="tk-lab">Asiakas</div><div class="tk-arvo">${e(o.customers?.name || '—')}</div>${
+        [o.customers?.phone, o.customers?.email].map(v => (v || '').trim()).filter(Boolean).map(v => `<div class="tk-yht">${e(v)}</div>`).join('')}</div>
       ${tieto('Kohde', o.kohde || '')}
       ${tieto('Toimitus', pvm(o.delivery_date), 'tk-toimitus')}
       ${tieto('Työmaan osoite', o.site_address || '')}
