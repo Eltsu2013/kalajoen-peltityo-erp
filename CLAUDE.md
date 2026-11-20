@@ -18,6 +18,7 @@ Sama malli kuin `nav.js` ja `profiilit.js`: kaava ja piirto yhdessä tiedostossa
 - `orders/profiilit.js` → `KPT_PROFIILIT` — kanttausprofiilit (Mallisto, Tuotanto, Vakiomallit).
 - `orders/geom.js` → `KPT_GEOM` — vektorit, monikulmiot, ääriviivojen yhdistäminen, kupera kuori, leikkaus suoralla, mm-muotoilu.
 - `orders/pellit.js` → `KPT_PELLIT` — pelti-osat: 3D-sivun avaus tasoksi, taitokset ja kanttausluvut, jiirit ja loveukset, merkintäpisteet, samanlaisten yhdistäminen, levityskuva. Vaatii geom.js:n (lataa ensin). Siirretty Huuvasta vaiheessa 1, joten nimet ovat vielä huuvan (Etu/Oikea/Taka/Vasen).
+- `orders/piippu-laskenta.js` → `KPT_PIIPPU.laskeLapepiippu(vals, osat)` — lapepiipun peltien mitat. Käyttäjät: `piippu.html` ja `piippu_tuotanto.html` (vals = tilausrivin `profile_data.vals`). Ei enää kopioita sivuilla.
 - Kun yhteistä tiedostoa muutetaan: **aja `node testit/aja_kaikki.js` ennen pushia** ja nosta `?v=`-numeroa kaikilla sivuilla, jotka lataavat tiedoston.
 
 ## Säännöt

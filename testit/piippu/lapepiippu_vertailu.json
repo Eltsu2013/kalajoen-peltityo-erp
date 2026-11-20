@@ -1,0 +1,2783 @@
+[
+ {
+  "v": {
+   "leveys": 400,
+   "suora": 600,
+   "etukork": 1000,
+   "takakork": 800,
+   "harjalle": 1050,
+   "vasen": 150,
+   "oikea": 100,
+   "poimu": 20,
+   "k24": 200,
+   "j25": 15,
+   "tupla": 15,
+   "etulis": 40,
+   "takalis": 10,
+   "nousu": 200,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 0,
+   "taka2mitta": 0,
+   "taka3mitta": 0,
+   "sauma": 20,
+   "huplis": 10,
+   "ylareunaV": 20,
+   "alatupla": 20,
+   "vahennys": 20,
+   "huptakalis": 5,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 1,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 440,
+    "pit": 450,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 335,
+    "pit": 979,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 385,
+    "pit": 979,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 730,
+    "pit": 1270,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 450,
+    "pit": 1022,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut",
+    "lev": 670,
+    "pit": 1022,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 495,
+    "pit": 818,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 500,
+    "pit": 700,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 650,
+    "pit": 850,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 756,
+   "suora": 1379,
+   "etukork": 1559,
+   "takakork": 831,
+   "harjalle": 577,
+   "vasen": 174,
+   "oikea": 70,
+   "poimu": 0,
+   "k24": 315,
+   "j25": 20,
+   "tupla": 20,
+   "etulis": 0,
+   "takalis": 10,
+   "nousu": 200,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 265,
+   "taka2mitta": 151,
+   "taka3mitta": 48,
+   "sauma": 20,
+   "huplis": 20,
+   "ylareunaV": 10,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 5,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 4,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 3
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 756,
+    "pit": 575,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 290,
+    "pit": 2070,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 394,
+    "pit": 2070,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1050,
+    "pit": 505,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1050,
+    "pit": 211,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 1050,
+    "pit": 108,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 4",
+    "lev": 1050,
+    "pit": 153,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 816,
+    "pit": 1574,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 760,
+    "pit": 1574,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 760,
+    "pit": 1205,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 321,
+    "pit": 836,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 319,
+    "pit": 836,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 3",
+    "lev": 341,
+    "pit": 836,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 826,
+    "pit": 1449,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 956,
+    "pit": 1579,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 911,
+   "suora": 835,
+   "etukork": 1380,
+   "takakork": 975,
+   "harjalle": 2073,
+   "vasen": 120,
+   "oikea": 210,
+   "poimu": 15,
+   "k24": 153,
+   "j25": 10,
+   "tupla": 15,
+   "etulis": 40,
+   "takalis": 10,
+   "nousu": 100,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 25,
+   "taka1mitta": 6,
+   "taka2mitta": 178,
+   "taka3mitta": 116,
+   "sauma": 20,
+   "huplis": 5,
+   "ylareunaV": 40,
+   "alatupla": 15,
+   "vahennys": 10,
+   "huptakalis": 10,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 3,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 951,
+    "pit": 293,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 340,
+    "pit": 1205,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 250,
+    "pit": 1205,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1311,
+    "pit": 151,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1311,
+    "pit": 253,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 1311,
+    "pit": 1939,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 498,
+    "pit": 1426,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 518,
+    "pit": 1426,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 480,
+    "pit": 1426,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 480,
+    "pit": 1223,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 523,
+    "pit": 1019,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 543,
+    "pit": 1019,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 1086,
+    "pit": 1010,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 1111,
+    "pit": 1035,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 438,
+   "suora": 1358,
+   "etukork": 1127,
+   "takakork": 1177,
+   "harjalle": 1919,
+   "vasen": 195,
+   "oikea": 120,
+   "poimu": 25,
+   "k24": 274,
+   "j25": 10,
+   "tupla": 20,
+   "etulis": 40,
+   "takalis": 10,
+   "nousu": 100,
+   "takareuna": 30,
+   "harjaylitys": 100,
+   "juurisauma": 25,
+   "taka1mitta": 549,
+   "taka2mitta": 399,
+   "taka3mitta": 33,
+   "sauma": 25,
+   "huplis": 0,
+   "ylareunaV": 10,
+   "alatupla": 15,
+   "vahennys": 20,
+   "huptakalis": 0,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 2,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 1
+  },
+  "osat": {
+   "juuret": false,
+   "huppu": false,
+   "kansi": false,
+   "hattu": false
+  },
+  "juuret": [],
+  "muut": []
+ },
+ {
+  "v": {
+   "leveys": 632,
+   "suora": 500,
+   "etukork": 756,
+   "takakork": 564,
+   "harjalle": 2016,
+   "vasen": 146,
+   "oikea": 197,
+   "poimu": 25,
+   "k24": 273,
+   "j25": 0,
+   "tupla": 15,
+   "etulis": 0,
+   "takalis": 20,
+   "nousu": 150,
+   "takareuna": 0,
+   "harjaylitys": 100,
+   "juurisauma": 20,
+   "taka1mitta": 379,
+   "taka2mitta": 149,
+   "taka3mitta": 134,
+   "sauma": 15,
+   "huplis": 10,
+   "ylareunaV": 40,
+   "alatupla": 20,
+   "vahennys": 10,
+   "huptakalis": 10,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 2,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 632,
+    "pit": 458,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 387,
+    "pit": 931,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 336,
+    "pit": 931,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1075,
+    "pit": 569,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1075,
+    "pit": 1792,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 672,
+    "pit": 808,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 215,
+    "pit": 808,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 215,
+    "pit": 743,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 215,
+    "pit": 677,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 371,
+    "pit": 612,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 386,
+    "pit": 612,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 812,
+    "pit": 680,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 882,
+    "pit": 750,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 323,
+   "suora": 604,
+   "etukork": 583,
+   "takakork": 225,
+   "harjalle": 2131,
+   "vasen": 211,
+   "oikea": 106,
+   "poimu": 0,
+   "k24": 188,
+   "j25": 20,
+   "tupla": 10,
+   "etulis": 0,
+   "takalis": 20,
+   "nousu": 150,
+   "takareuna": 50,
+   "harjaylitys": 0,
+   "juurisauma": 15,
+   "taka1mitta": 620,
+   "taka2mitta": 623,
+   "taka3mitta": 108,
+   "sauma": 25,
+   "huplis": 5,
+   "ylareunaV": 40,
+   "alatupla": 0,
+   "vahennys": 10,
+   "huptakalis": 10,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 2,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 323,
+    "pit": 398,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 266,
+    "pit": 1059,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 371,
+    "pit": 1059,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 680,
+    "pit": 805,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 680,
+    "pit": 1591,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 378,
+    "pit": 614,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 281,
+    "pit": 614,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 281,
+    "pit": 494,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 306,
+    "pit": 374,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 378,
+    "pit": 254,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 498,
+    "pit": 779,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 523,
+    "pit": 804,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 418,
+   "suora": 615,
+   "etukork": 1378,
+   "takakork": 962,
+   "harjalle": 1301,
+   "vasen": 130,
+   "oikea": 177,
+   "poimu": 15,
+   "k24": 373,
+   "j25": 20,
+   "tupla": 15,
+   "etulis": 20,
+   "takalis": 20,
+   "nousu": 150,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 610,
+   "taka2mitta": 381,
+   "taka3mitta": 8,
+   "sauma": 20,
+   "huplis": 5,
+   "ylareunaV": 10,
+   "alatupla": 20,
+   "vahennys": 0,
+   "huptakalis": 10,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 2,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 438,
+    "pit": 583,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 357,
+    "pit": 1302,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 310,
+    "pit": 1302,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 805,
+    "pit": 800,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 805,
+    "pit": 731,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 181,
+    "pit": 1410,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 201,
+    "pit": 1410,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 201,
+    "pit": 1410,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 270,
+    "pit": 1410,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 270,
+    "pit": 1270,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 290,
+    "pit": 1130,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 463,
+    "pit": 990,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 473,
+    "pit": 670,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 668,
+    "pit": 865,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 922,
+   "suora": 823,
+   "etukork": 520,
+   "takakork": 570,
+   "harjalle": 1969,
+   "vasen": 86,
+   "oikea": 247,
+   "poimu": 20,
+   "k24": 380,
+   "j25": 15,
+   "tupla": 20,
+   "etulis": 0,
+   "takalis": 0,
+   "nousu": 100,
+   "takareuna": 50,
+   "harjaylitys": 150,
+   "juurisauma": 15,
+   "taka1mitta": 318,
+   "taka2mitta": 507,
+   "taka3mitta": 305,
+   "sauma": 25,
+   "huplis": 15,
+   "ylareunaV": 10,
+   "alatupla": 20,
+   "vahennys": 20,
+   "huptakalis": 10,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 1,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 922,
+    "pit": 530,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 387,
+    "pit": 1290,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 226,
+    "pit": 1290,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 1335,
+    "pit": 2324,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 519,
+    "pit": 530,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 544,
+    "pit": 530,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 494,
+    "pit": 530,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 494,
+    "pit": 555,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 549,
+    "pit": 580,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 574,
+    "pit": 580,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 987,
+    "pit": 888,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 1072,
+    "pit": 973,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 312,
+   "suora": 837,
+   "etukork": 661,
+   "takakork": 661,
+   "harjalle": 2343,
+   "vasen": 150,
+   "oikea": 191,
+   "poimu": 20,
+   "k24": 46,
+   "j25": 20,
+   "tupla": 15,
+   "etulis": 20,
+   "takalis": 10,
+   "nousu": 150,
+   "takareuna": 0,
+   "harjaylitys": 100,
+   "juurisauma": 20,
+   "taka1mitta": 909,
+   "taka2mitta": 297,
+   "taka3mitta": 20,
+   "sauma": 25,
+   "huplis": 15,
+   "ylareunaV": 40,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 10,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 4,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 3
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 332,
+    "pit": 256,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 376,
+    "pit": 968,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 335,
+    "pit": 968,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 733,
+    "pit": 1099,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 733,
+    "pit": 357,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 733,
+    "pit": 80,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 4",
+    "lev": 733,
+    "pit": 1292,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 159,
+    "pit": 701,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 184,
+    "pit": 701,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 184,
+    "pit": 701,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 501,
+    "pit": 701,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 501,
+    "pit": 701,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 189,
+    "pit": 701,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 184,
+    "pit": 701,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 3",
+    "lev": 214,
+    "pit": 701,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 497,
+    "pit": 1022,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 562,
+    "pit": 1087,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 619,
+   "suora": 1029,
+   "etukork": 802,
+   "takakork": 268,
+   "harjalle": 2560,
+   "vasen": 148,
+   "oikea": 98,
+   "poimu": 0,
+   "k24": 41,
+   "j25": 20,
+   "tupla": 20,
+   "etulis": 20,
+   "takalis": 20,
+   "nousu": 250,
+   "takareuna": 30,
+   "harjaylitys": 150,
+   "juurisauma": 25,
+   "taka1mitta": 830,
+   "taka2mitta": 514,
+   "taka3mitta": 68,
+   "sauma": 25,
+   "huplis": 5,
+   "ylareunaV": 40,
+   "alatupla": 15,
+   "vahennys": 20,
+   "huptakalis": 5,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 1,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 639,
+    "pit": 351,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 368,
+    "pit": 1420,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 418,
+    "pit": 1420,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 925,
+    "pit": 3050,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 258,
+    "pit": 838,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 283,
+    "pit": 838,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 283,
+    "pit": 838,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 592,
+    "pit": 838,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 592,
+    "pit": 570,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 390,
+    "pit": 302,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 415,
+    "pit": 302,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 794,
+    "pit": 1204,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 769,
+    "pit": 1179,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 334,
+   "suora": 626,
+   "etukork": 1774,
+   "takakork": 1483,
+   "harjalle": 661,
+   "vasen": 217,
+   "oikea": 17,
+   "poimu": 0,
+   "k24": 337,
+   "j25": 10,
+   "tupla": 20,
+   "etulis": 20,
+   "takalis": 0,
+   "nousu": 100,
+   "takareuna": 0,
+   "harjaylitys": 100,
+   "juurisauma": 20,
+   "taka1mitta": 218,
+   "taka2mitta": 16,
+   "taka3mitta": 37,
+   "sauma": 15,
+   "huplis": 0,
+   "ylareunaV": 10,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 10,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 1,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 2
+  },
+  "osat": {
+   "juuret": true,
+   "huppu": true,
+   "kansi": true,
+   "hattu": false
+  },
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 354,
+    "pit": 477,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 137,
+    "pit": 1154,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 337,
+    "pit": 1154,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 608,
+    "pit": 911,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 141,
+    "pit": 1784,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 156,
+    "pit": 1784,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 156,
+    "pit": 1784,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 257,
+    "pit": 1784,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 257,
+    "pit": 1687,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 272,
+    "pit": 1590,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 197,
+    "pit": 1493,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 212,
+    "pit": 1493,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 384,
+    "pit": 676,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 924,
+   "suora": 520,
+   "etukork": 723,
+   "takakork": 225,
+   "harjalle": 937,
+   "vasen": 115,
+   "oikea": 127,
+   "poimu": 15,
+   "k24": 31,
+   "j25": 0,
+   "tupla": 20,
+   "etulis": 0,
+   "takalis": 10,
+   "nousu": 250,
+   "takareuna": 50,
+   "harjaylitys": 0,
+   "juurisauma": 15,
+   "taka1mitta": 106,
+   "taka2mitta": 259,
+   "taka3mitta": 147,
+   "sauma": 20,
+   "huplis": 20,
+   "ylareunaV": 10,
+   "alatupla": 0,
+   "vahennys": 10,
+   "huptakalis": 5,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 3,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 924,
+    "pit": 321,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 412,
+    "pit": 1060,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 400,
+    "pit": 1060,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1246,
+    "pit": 391,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1246,
+    "pit": 304,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 1246,
+    "pit": 652,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 512,
+    "pit": 733,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 532,
+    "pit": 733,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut",
+    "lev": 600,
+    "pit": 733,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 535,
+    "pit": 215,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 555,
+    "pit": 215,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 994,
+    "pit": 590,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 1124,
+    "pit": 720,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 1228,
+   "suora": 1365,
+   "etukork": 1071,
+   "takakork": 723,
+   "harjalle": 1414,
+   "vasen": 242,
+   "oikea": 145,
+   "poimu": 15,
+   "k24": 328,
+   "j25": 20,
+   "tupla": 15,
+   "etulis": 20,
+   "takalis": 10,
+   "nousu": 250,
+   "takareuna": 30,
+   "harjaylitys": 150,
+   "juurisauma": 25,
+   "taka1mitta": 680,
+   "taka2mitta": 53,
+   "taka3mitta": 168,
+   "sauma": 25,
+   "huplis": 5,
+   "ylareunaV": 20,
+   "alatupla": 0,
+   "vahennys": 20,
+   "huptakalis": 0,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 1,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 1248,
+    "pit": 638,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 425,
+    "pit": 1885,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 522,
+    "pit": 1885,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 1685,
+    "pit": 1899,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 1283,
+    "pit": 1072,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 532,
+    "pit": 1072,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 532,
+    "pit": 955,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 557,
+    "pit": 839,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 1283,
+    "pit": 722,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 1323,
+    "pit": 1460,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 1378,
+    "pit": 1515,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 1208,
+   "suora": 1366,
+   "etukork": 712,
+   "takakork": 315,
+   "harjalle": 2155,
+   "vasen": 143,
+   "oikea": 222,
+   "poimu": 20,
+   "k24": 279,
+   "j25": 20,
+   "tupla": 20,
+   "etulis": 0,
+   "takalis": 20,
+   "nousu": 100,
+   "takareuna": 30,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 34,
+   "taka2mitta": 620,
+   "taka3mitta": 220,
+   "sauma": 25,
+   "huplis": 20,
+   "ylareunaV": 20,
+   "alatupla": 20,
+   "vahennys": 10,
+   "huptakalis": 0,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 2,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 1208,
+    "pit": 439,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 362,
+    "pit": 1821,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 283,
+    "pit": 1821,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1673,
+    "pit": 174,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1673,
+    "pit": 2191,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 664,
+    "pit": 745,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 689,
+    "pit": 745,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut",
+    "lev": 1461,
+    "pit": 745,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 689,
+    "pit": 342,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 714,
+    "pit": 342,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 1318,
+    "pit": 1476,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 1458,
+    "pit": 1616,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 521,
+   "suora": 1022,
+   "etukork": 408,
+   "takakork": 128,
+   "harjalle": 77,
+   "vasen": 108,
+   "oikea": 101,
+   "poimu": 0,
+   "k24": 55,
+   "j25": 10,
+   "tupla": 20,
+   "etulis": 20,
+   "takalis": 20,
+   "nousu": 150,
+   "takareuna": 50,
+   "harjaylitys": 0,
+   "juurisauma": 25,
+   "taka1mitta": 17,
+   "taka2mitta": 10,
+   "taka3mitta": 5,
+   "sauma": 25,
+   "huplis": 20,
+   "ylareunaV": 10,
+   "alatupla": 15,
+   "vahennys": 0,
+   "huptakalis": 5,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 2,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 541,
+    "pit": 245,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 271,
+    "pit": 1236,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 278,
+    "pit": 1236,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 790,
+    "pit": 212,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 790,
+    "pit": 160,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 591,
+    "pit": 436,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 422,
+    "pit": 436,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 422,
+    "pit": 341,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 422,
+    "pit": 245,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 646,
+    "pit": 150,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 591,
+    "pit": 1092,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 721,
+    "pit": 1222,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 421,
+   "suora": 1034,
+   "etukork": 1286,
+   "takakork": 517,
+   "harjalle": 315,
+   "vasen": 199,
+   "oikea": 237,
+   "poimu": 0,
+   "k24": 228,
+   "j25": 10,
+   "tupla": 20,
+   "etulis": 20,
+   "takalis": 0,
+   "nousu": 250,
+   "takareuna": 0,
+   "harjaylitys": 150,
+   "juurisauma": 20,
+   "taka1mitta": 134,
+   "taka2mitta": 70,
+   "taka3mitta": 1,
+   "sauma": 25,
+   "huplis": 20,
+   "ylareunaV": 40,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 0,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 2,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 441,
+    "pit": 518,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 507,
+    "pit": 1783,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 469,
+    "pit": 1783,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 897,
+    "pit": 424,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 897,
+    "pit": 401,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 197,
+    "pit": 1333,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 222,
+    "pit": 1333,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 222,
+    "pit": 1333,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut",
+    "lev": 1154,
+    "pit": 1333,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 491,
+    "pit": 550,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 611,
+    "pit": 1224,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 571,
+    "pit": 1184,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 772,
+   "suora": 618,
+   "etukork": 978,
+   "takakork": 467,
+   "harjalle": 2170,
+   "vasen": 99,
+   "oikea": 36,
+   "poimu": 20,
+   "k24": 331,
+   "j25": 10,
+   "tupla": 20,
+   "etulis": 0,
+   "takalis": 0,
+   "nousu": 150,
+   "takareuna": 50,
+   "harjaylitys": 150,
+   "juurisauma": 25,
+   "taka1mitta": 188,
+   "taka2mitta": 435,
+   "taka3mitta": 203,
+   "sauma": 20,
+   "huplis": 20,
+   "ylareunaV": 40,
+   "alatupla": 20,
+   "vahennys": 0,
+   "huptakalis": 10,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 4,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 772,
+    "pit": 521,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 226,
+    "pit": 1337,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 289,
+    "pit": 1337,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 987,
+    "pit": 383,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 987,
+    "pit": 510,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 987,
+    "pit": 278,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 4",
+    "lev": 987,
+    "pit": 1624,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 436,
+    "pit": 1046,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 456,
+    "pit": 1046,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 384,
+    "pit": 1046,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 404,
+    "pit": 783,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 832,
+    "pit": 519,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 962,
+    "pit": 808,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 922,
+    "pit": 768,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 1224,
+   "suora": 1030,
+   "etukork": 686,
+   "takakork": 537,
+   "harjalle": 1879,
+   "vasen": 118,
+   "oikea": 129,
+   "poimu": 25,
+   "k24": 359,
+   "j25": 15,
+   "tupla": 15,
+   "etulis": 0,
+   "takalis": 20,
+   "nousu": 200,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 15,
+   "taka1mitta": 634,
+   "taka2mitta": 513,
+   "taka3mitta": 344,
+   "sauma": 15,
+   "huplis": 15,
+   "ylareunaV": 40,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 5,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 3,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 1
+  },
+  "osat": {
+   "juuret": false,
+   "huppu": false,
+   "kansi": true,
+   "hattu": false
+  },
+  "juuret": [],
+  "muut": [
+   {
+    "osa": "Kansi",
+    "lev": 1409,
+    "pit": 1215,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 904,
+   "suora": 838,
+   "etukork": 1472,
+   "takakork": 768,
+   "harjalle": 1164,
+   "vasen": 107,
+   "oikea": 127,
+   "poimu": 25,
+   "k24": 46,
+   "j25": 20,
+   "tupla": 10,
+   "etulis": 40,
+   "takalis": 20,
+   "nousu": 200,
+   "takareuna": 50,
+   "harjaylitys": 100,
+   "juurisauma": 25,
+   "taka1mitta": 515,
+   "taka2mitta": 130,
+   "taka3mitta": 56,
+   "sauma": 15,
+   "huplis": 0,
+   "ylareunaV": 10,
+   "alatupla": 20,
+   "vahennys": 0,
+   "huptakalis": 10,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 3,
+   "huppuEtuKpl": 2,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 944,
+    "pit": 306,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 362,
+    "pit": 1388,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 342,
+    "pit": 1388,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1228,
+    "pit": 760,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1228,
+    "pit": 205,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 1228,
+    "pit": 749,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 482,
+    "pit": 1502,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 497,
+    "pit": 1502,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 324,
+    "pit": 1502,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 324,
+    "pit": 1267,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 324,
+    "pit": 1033,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 974,
+    "pit": 798,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 954,
+    "pit": 888,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 1104,
+    "pit": 1038,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 768,
+   "suora": 501,
+   "etukork": 1757,
+   "takakork": 1492,
+   "harjalle": 2741,
+   "vasen": 252,
+   "oikea": 263,
+   "poimu": 20,
+   "k24": 211,
+   "j25": 20,
+   "tupla": 20,
+   "etulis": 40,
+   "takalis": 20,
+   "nousu": 100,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 54,
+   "taka2mitta": 449,
+   "taka3mitta": 126,
+   "sauma": 15,
+   "huplis": 15,
+   "ylareunaV": 10,
+   "alatupla": 20,
+   "vahennys": 0,
+   "huptakalis": 5,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 3,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 808,
+    "pit": 371,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 403,
+    "pit": 921,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 392,
+    "pit": 921,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 1383,
+    "pit": 194,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 1383,
+    "pit": 509,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 1383,
+    "pit": 2278,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 813,
+    "pit": 1791,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut",
+    "lev": 561,
+    "pit": 1791,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 439,
+    "pit": 1518,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 454,
+    "pit": 1518,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 833,
+    "pit": 566,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 968,
+    "pit": 701,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 439,
+   "suora": 1022,
+   "etukork": 646,
+   "takakork": 457,
+   "harjalle": 1460,
+   "vasen": 95,
+   "oikea": 82,
+   "poimu": 15,
+   "k24": 236,
+   "j25": 20,
+   "tupla": 10,
+   "etulis": 20,
+   "takalis": 20,
+   "nousu": 200,
+   "takareuna": 30,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 25,
+   "taka2mitta": 401,
+   "taka3mitta": 22,
+   "sauma": 15,
+   "huplis": 0,
+   "ylareunaV": 40,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 10,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 1,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 459,
+    "pit": 496,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 307,
+    "pit": 1392,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 320,
+    "pit": 1392,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 686,
+    "pit": 1710,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 176,
+    "pit": 686,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 191,
+    "pit": 686,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 191,
+    "pit": 686,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 389,
+    "pit": 686,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 389,
+    "pit": 623,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 404,
+    "pit": 560,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 469,
+    "pit": 497,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 609,
+    "pit": 1192,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 589,
+    "pit": 1172,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 522,
+   "suora": 424,
+   "etukork": 1111,
+   "takakork": 891,
+   "harjalle": 146,
+   "vasen": 103,
+   "oikea": 253,
+   "poimu": 0,
+   "k24": 227,
+   "j25": 15,
+   "tupla": 20,
+   "etulis": 20,
+   "takalis": 20,
+   "nousu": 250,
+   "takareuna": 30,
+   "harjaylitys": 0,
+   "juurisauma": 20,
+   "taka1mitta": 9,
+   "taka2mitta": 1,
+   "taka3mitta": 3,
+   "sauma": 20,
+   "huplis": 5,
+   "ylareunaV": 40,
+   "alatupla": 0,
+   "vahennys": 0,
+   "huptakalis": 0,
+   "hattulis": 150,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 3,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 2,
+   "huppuTakaKpl": 3
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 542,
+    "pit": 527,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 523,
+    "pit": 919,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 373,
+    "pit": 919,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 938,
+    "pit": 299,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 938,
+    "pit": 61,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 3",
+    "lev": 938,
+    "pit": 206,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 216,
+    "pit": 1152,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 236,
+    "pit": 1152,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 236,
+    "pit": 1152,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 275,
+    "pit": 1152,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 275,
+    "pit": 1041,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 236,
+    "pit": 930,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 236,
+    "pit": 930,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 3",
+    "lev": 256,
+    "pit": 930,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 697,
+    "pit": 599,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 672,
+    "pit": 574,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 403,
+   "suora": 1007,
+   "etukork": 822,
+   "takakork": 699,
+   "harjalle": 816,
+   "vasen": 22,
+   "oikea": 7,
+   "poimu": 15,
+   "k24": 358,
+   "j25": 10,
+   "tupla": 10,
+   "etulis": 20,
+   "takalis": 10,
+   "nousu": 250,
+   "takareuna": 0,
+   "harjaylitys": 150,
+   "juurisauma": 20,
+   "taka1mitta": 224,
+   "taka2mitta": 67,
+   "taka3mitta": 24,
+   "sauma": 20,
+   "huplis": 10,
+   "ylareunaV": 10,
+   "alatupla": 20,
+   "vahennys": 20,
+   "huptakalis": 0,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 2,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 1,
+   "huppuTakaKpl": 2
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 423,
+    "pit": 648,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 282,
+    "pit": 1473,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 297,
+    "pit": 1473,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 1",
+    "lev": 492,
+    "pit": 514,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka 2",
+    "lev": 492,
+    "pit": 802,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu 1",
+    "lev": 178,
+    "pit": 833,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 2",
+    "lev": 198,
+    "pit": 833,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu etu 3",
+    "lev": 198,
+    "pit": 833,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut",
+    "lev": 1077,
+    "pit": 833,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka 1",
+    "lev": 267,
+    "pit": 708,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu taka 2",
+    "lev": 287,
+    "pit": 708,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 463,
+    "pit": 1067,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 603,
+    "pit": 1207,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 524,
+   "suora": 527,
+   "etukork": 1599,
+   "takakork": 672,
+   "harjalle": 1374,
+   "vasen": 91,
+   "oikea": 281,
+   "poimu": 25,
+   "k24": 368,
+   "j25": 10,
+   "tupla": 10,
+   "etulis": 0,
+   "takalis": 20,
+   "nousu": 250,
+   "takareuna": 50,
+   "harjaylitys": 100,
+   "juurisauma": 15,
+   "taka1mitta": 452,
+   "taka2mitta": 186,
+   "taka3mitta": 205,
+   "sauma": 25,
+   "huplis": 0,
+   "ylareunaV": 20,
+   "alatupla": 20,
+   "vahennys": 10,
+   "huptakalis": 5,
+   "hattulis": 250,
+   "harjakulma": 90,
+   "saumatyyppi": 1,
+   "takaKpl": 1,
+   "huppuEtuKpl": 1,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 1
+  },
+  "osat": {},
+  "juuret": [
+   {
+    "osa": "Juuri etu",
+    "lev": 524,
+    "pit": 658,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri oikea",
+    "lev": 566,
+    "pit": 1944,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri vasen",
+    "lev": 376,
+    "pit": 1944,
+    "kpl": 1
+   },
+   {
+    "osa": "Juuri taka",
+    "lev": 986,
+    "pit": 1814,
+    "kpl": 1
+   }
+  ],
+  "muut": [
+   {
+    "osa": "Huppu etu",
+    "lev": 574,
+    "pit": 1629,
+    "kpl": 1
+   },
+   {
+    "osa": "Huppu sivut 1",
+    "lev": 251,
+    "pit": 1629,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 2",
+    "lev": 251,
+    "pit": 1320,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu sivut 3",
+    "lev": 251,
+    "pit": 1011,
+    "kpl": 2
+   },
+   {
+    "osa": "Huppu taka",
+    "lev": 629,
+    "pit": 702,
+    "kpl": 1
+   },
+   {
+    "osa": "Kansi",
+    "lev": 614,
+    "pit": 617,
+    "kpl": 1
+   },
+   {
+    "osa": "Hattu",
+    "lev": 774,
+    "pit": 777,
+    "kpl": 1
+   }
+  ]
+ },
+ {
+  "v": {
+   "leveys": 924,
+   "suora": 1375,
+   "etukork": 959,
+   "takakork": 959,
+   "harjalle": 535,
+   "vasen": 53,
+   "oikea": 35,
+   "poimu": 20,
+   "k24": 165,
+   "j25": 10,
+   "tupla": 20,
+   "etulis": 0,
+   "takalis": 10,
+   "nousu": 200,
+   "takareuna": 0,
+   "harjaylitys": 0,
+   "juurisauma": 15,
+   "taka1mitta": 136,
+   "taka2mitta": 12,
+   "taka3mitta": 94,
+   "sauma": 15,
+   "huplis": 20,
+   "ylareunaV": 10,
+   "alatupla": 0,
+   "vahennys": 20,
+   "huptakalis": 5,
+   "hattulis": 200,
+   "harjakulma": 90,
+   "saumatyyppi": 2,
+   "takaKpl": 4,
+   "huppuEtuKpl": 3,
+   "huppuSivutKpl": 3,
+   "huppuTakaKpl": 2
+  },
+  "osat": {
+   "juuret": false,
+   "huppu": false,
+   "kansi": false,
+   "hattu": false
+  },
+  "juuret": [],
+  "muut": []
+ }
+]
