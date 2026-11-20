@@ -162,7 +162,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="piippu-laskenta.js?v=1"></script>
+<script src="piippu-laskenta.js?v=2"></script>
 <script>
 const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -193,7 +193,7 @@ async function load() {
 
   const res = await fetch(
     `${SUPA_URL}/rest/v1/order_items?order_id=eq.${orderId}&group_name=eq.${encodeURIComponent(groupName)}&profile_type=eq.piippu`+
-    `&select=id,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,profile_data,`+
+    `&select=id,nimike,profile_type,aihio_width_mm,material,color,thickness_mm,profile_data,quantity,production_status,`+
     `order_item_rows(id,mitta_mm,paat_mm,kok_mm,kpl,huomio,row_order,production_status,done_qty)`+
     `&order=item_order`,
     { headers }
@@ -219,6 +219,53 @@ function laskePellit(v) {
   return { juuret, muut };
 }
 
+// ── Tilauksen osat ────────────────────────────────────────
+// Tuotanto näyttää ne osat, jotka ovat tilauksessa (korjattu 20.11.2026):
+//  - lasketuista riveistä vain ne, joiden nimike löytyy tilauksesta (esim. kansi ja hattu pois, jos niitä ei tilattu)
+//  - kpl tilauksesta, joten piippujen määrä on mukana
+//  - perään tilauksen muut piippurivit, joita laskenta ei tunne (piipun jalat, käsin lisätyt osat)
+// Mitat (lev, pit) lasketaan edelleen uudelleen syötöistä.
+function kplTilauksesta(item) {
+  const rivit = item.order_item_rows || [];
+  if (rivit.length) return rivit.reduce((s, x) => s + (Number(x.kpl) || 0), 0);
+  return Number(item.quantity) || 0;
+}
+
+function tilauksenOsat(v, items) {
+  const laskettu = laskePellit(v);
+  const loydetyt = new Set();
+  const valitse = lista => lista.flatMap(p => {
+    const item = items.find(i => i.nimike === p.osa && !loydetyt.has(i.id));
+    if (!item) return [];
+    loydetyt.add(item.id);
+    return [Object.assign({}, p, { kpl: kplTilauksesta(item) || p.kpl, kplPiippua: p.kpl, item })];
+  });
+  const juuret = valitse(laskettu.juuret);
+  const muut = valitse(laskettu.muut);
+  // Varmistus: jos lasketut nimikkeet eivät täsmää tilaukseen lainkaan (hyvin vanha tilaus), näytetään laskettu lista kuten ennen
+  if (!loydetyt.size && (laskettu.juuret.length || laskettu.muut.length)) return { juuret: laskettu.juuret, muut: laskettu.muut };
+  items.forEach(item => {
+    if (loydetyt.has(item.id)) return;
+    const rivi = (item.order_item_rows || [])[0];
+    const pit = rivi ? (Number(rivi.kok_mm) || Number(rivi.mitta_mm) || 0) : 0;
+    muut.push({
+      osa: item.nimike || '—',
+      lev: pit && Number(item.aihio_width_mm) ? Number(item.aihio_width_mm) : '—',
+      pit: pit || '—',
+      kpl: kplTilauksesta(item),
+      item,
+    });
+  });
+  return { juuret, muut };
+}
+
+// Piippujen määrä: tallennettu arvo, tai vanhoissa tilauksissa päätelty (tilauksen kpl / yhden piipun kpl)
+function piippujenMaara(v, osat) {
+  if (v && Number(v.piippukpl) > 0) return Number(v.piippukpl);
+  const p = [...osat.juuret, ...osat.muut].find(x => x.item && x.kplPiippua > 0 && x.kpl > 0);
+  return p ? Math.max(1, Math.round(p.kpl / p.kplPiippua)) : 1;
+}
+
 // ── Piirrä SVG-kuva ────────────────────────────────────────
 function piirraKuvaSVG(v) {
   if (!v) return '';
@@ -230,7 +277,8 @@ function piirraKuvaSVG(v) {
   // Mitat yhteisestä laskennasta (piippu-laskenta.js)
   const g = KPT_PIIPPU.laskeLapepiippu(v).geom;
   const korkeuserot=g.korkeuserot, kattokulma_rad=g.kattokulma_rad;
-  const hEtuKork=g.hEtuKork, hTakaKork=g.hTakaKork, vinomitta=g.vinomitta;
+  // Hupun todellinen korkeus ilman taitoksia (Tomi 20.11.2026: pellissä näkyy se mitta, joka siitä pitää tulla)
+  const hEtuKork=g.hEtuTodellinen, hTakaKork=g.hTakaTodellinen, vinomitta=g.vinomitta;
   const hSivEtenemä=g.hSivEtenema;
 
   const W=900,H=380,mL=110,mR=160,mT=30,mB=30;
@@ -333,18 +381,18 @@ function piirraKuvaSVG(v) {
 }
 
 // ── Renderöi taulu statusnapeilla ─────────────────────────
-function renderTauluStatus(pellit, items, label) {
+function renderTauluStatus(pellit, label) {
   let tot=0;
   const rows = pellit.map(p => {
     const m2 = typeof p.lev==='number'&&typeof p.pit==='number' ? p.lev*p.pit*p.kpl/1000000 : null;
     if (m2!==null) tot+=m2;
 
-    // Etsi vastaava Supabase-rivi nimikkeen perusteella
-    const item = items.find(i => i.nimike===p.osa);
+    // Tilauksen rivi (tilauksenOsat liitti sen). Osilla ilman pituutta (jalat) tila tallennetaan pelkkään order_itemiin.
+    const item = p.item;
     const supaRow = item?.order_item_rows?.[0];
-    const rowId = supaRow?.id;
-    const itemId = item?.id;
-    const status = supaRow?.production_status||'WAITING';
+    const rowId = supaRow?.id || '';
+    const itemId = item?.id || '';
+    const status = supaRow?.production_status||item?.production_status||'WAITING';
     const rsIdx = STEP_KEYS.indexOf(status);
     const isDone = status==='DONE';
 
@@ -352,7 +400,7 @@ function renderTauluStatus(pellit, items, label) {
       const cls = si===rsIdx?' active':si<rsIdx?' passed':'';
       return `<button class="step-btn${cls}" data-key="${key}"
         onclick="setStatus('${rowId}','${key}','${itemId}',this)"
-        ${!rowId?'disabled title="ei dataa"':''}>${STEPS[si]}</button>`;
+        ${!itemId?'disabled title="ei dataa"':''}>${STEPS[si]}</button>`;
     }).join('');
 
     // Mobiili: yksi nappi joka siirtää seuraavaan vaiheeseen
@@ -361,12 +409,12 @@ function renderTauluStatus(pellit, items, label) {
     const mobileLabel = isDone ? '✓ Valmis' : `${STEPS[rsIdx]} → ${STEPS[nextIdx]}`;
     const mobileBtnHtml = `<button class="step-btn-mobile status-${status}"
       onclick="setStatusMobile('${rowId}','${nextKey}','${itemId}',${rsIdx},this)"
-      ${!rowId?'disabled':''}>${mobileLabel}</button>`;
+      ${!itemId?'disabled':''}>${mobileLabel}</button>`;
 
     return `<tr class="${isDone?'row-done':''}">
       <td class="td-osa">${p.osa}</td>
       <td class="td-num">${p.lev}</td>
-      <td style="color:var(--text-dim)">×</td>
+      <td style="color:var(--text-dim)">${typeof p.lev==='number'?'×':''}</td>
       <td class="td-num">${typeof p.pit==='number'?p.pit:''}</td>
       <td class="td-num">${p.kpl}</td>
       <td><div class="step-btns">${stepBtns}</div>${mobileBtnHtml}</td>
@@ -391,7 +439,7 @@ function renderTauluStatus(pellit, items, label) {
 
 // ── Päivitä status Supabaseen ──────────────────────────────
 async function setStatus(rowId, key, itemId, btn) {
-  if (!rowId) return;
+  if (!rowId && !itemId) return;
   const tr = btn.closest('tr');
   const allBtns = tr.querySelectorAll('.step-btn');
   const newIdx = STEP_KEYS.indexOf(key);
@@ -405,7 +453,7 @@ async function setStatus(rowId, key, itemId, btn) {
   tr.classList.toggle('row-done', key==='DONE');
 
   // Tallenna Supabaseen
-  await fetch(`${SUPA_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
+  if (rowId) await fetch(`${SUPA_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
     method: 'PATCH',
     headers: { ...headers, 'Prefer': 'return=minimal' },
     body: JSON.stringify({ production_status: key })
@@ -459,7 +507,7 @@ function mittalista(v) {
 
 // ── Mobiili: siirry seuraavaan vaiheeseen ─────────────────
 async function setStatusMobile(rowId, nextKey, itemId, currentIdx, btn) {
-  if (!rowId) return;
+  if (!rowId && !itemId) return;
   // Jos jo DONE, kierrä takaisin WAITING:iin
   const key = currentIdx >= STEP_KEYS.length-1 ? 'WAITING' : nextKey;
   const newIdx = STEP_KEYS.indexOf(key);
@@ -480,7 +528,7 @@ async function setStatusMobile(rowId, nextKey, itemId, currentIdx, btn) {
   });
 
   // Tallenna
-  await fetch(`${SUPA_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
+  if (rowId) await fetch(`${SUPA_URL}/rest/v1/order_item_rows?id=eq.${rowId}`, {
     method: 'PATCH',
     headers: { ...headers, 'Prefer': 'return=minimal' },
     body: JSON.stringify({ production_status: key })
@@ -507,15 +555,16 @@ function render(items, order) {
   const firstWithData = items.find(i => i.profile_data?.vals);
   const v = firstWithData?.profile_data?.vals || null;
   const huomio = v?.huomio || '';
-  const piippukpl = v?.piippukpl || 1;
 
   // Materiaali ensimmäisestä rivistä
   const mat = [items[0].material, items[0].color, items[0].thickness_mm?items[0].thickness_mm+'mm':''].filter(Boolean).join(' · ');
 
-  // Laske peltirivit uudelleen (luotettavampi kuin Supabase-rivien nimet)
-  const { juuret, muut } = laskePellit(v);
+  // Tilauksen osat: mitat lasketaan uudelleen syötöistä, osat ja kpl tilauksesta
+  const osat = tilauksenOsat(v, items);
+  const { juuret, muut } = osat;
+  const piippukpl = piippujenMaara(v, osat);
 
-  // Yhteensä m²
+  // Yhteensä m² (kpl sisältää jo piippujen määrän)
   let totalM2 = 0;
   [...juuret,...muut].forEach(p => {
     if (typeof p.lev==='number'&&typeof p.pit==='number') totalM2+=p.lev*p.pit*p.kpl/1000000;
@@ -535,7 +584,7 @@ function render(items, order) {
     ${huomio?`<div class="huomio-box">⚠ ${huomio}</div>`:''}
 
     <div class="summary-bar">
-      <div class="summary-item">Peltejä yhteensä: <strong>${(totalM2*piippukpl).toFixed(3)} m²</strong></div>
+      <div class="summary-item">Peltejä yhteensä: <strong>${totalM2.toFixed(3)} m²</strong></div>
       ${v?.etukork?`<div class="summary-item">Etu: <strong>${v.etukork} mm</strong></div>`:''}
       ${v?.takakork?`<div class="summary-item">Taka: <strong>${v.takakork} mm</strong></div>`:''}
       ${v?.leveys?`<div class="summary-item">Leveys: <strong>${v.leveys} mm</strong></div>`:''}
@@ -561,8 +610,8 @@ function render(items, order) {
     </div>`:''}
 
     <div class="two-col" style="margin-bottom:16px">
-      ${renderTauluStatus(juuret, items, 'Juuret')}
-      ${renderTauluStatus(muut, items, 'Huppu / Kansi / Hattu')}
+      ${juuret.length ? renderTauluStatus(juuret, 'Juuret') : ''}
+      ${muut.length ? renderTauluStatus(muut, 'Huppu / Kansi / Hattu / Muut') : ''}
     </div>
 
     <div class="section-card">

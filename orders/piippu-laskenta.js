@@ -7,6 +7,7 @@
 // Käyttö sivulla:   <script src="piippu-laskenta.js?v=1"></script>
 //                   const tulos = KPT_PIIPPU.laskeLapepiippu(vals, { juuret: true, huppu: true, kansi: true, hattu: true });
 // Käyttö Nodessa:   const P = require('../orders/piippu-laskenta.js');
+// Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -225,6 +226,11 @@
     const hEtuKorkMerkinta  = etukork + ylareunaV + kaltkorj - vahennys;
     const hTakaKorkMerkinta = takakork + ylareunaV - kaltkorj - vahennys;
 
+    // Hupun todellinen korkeus asennettuna, ilman taitoksia (ei alatuplaa eikä yläreunan taitosta). Tuotannon kuva näyttää
+    // tämän: pellissä näkyy se mitta, joka siitä pitää tulla (Tomi 20.11.2026). Esim. etu 1000, vähennys 20, lisää 10 → 982.
+    const hEtuTodellinen  = etukork + kaltkorj - vahennys;
+    const hTakaTodellinen = takakork - kaltkorj - vahennys;
+
     // Etenemä = sivupalan hyötyleveys (lev - sauma×3), lasketaan vain jos sivuja on useampi
     let hSivEtenema = 0;
     if (hasHuppu && huppuSivutKpl >= 2) {
@@ -236,7 +242,7 @@
       muut,
       geom: {
         korkeuserot, vinomitta, kattokulma_rad, kattokulma_deg, etukulma, takakulma, p10, q9, kaltkorj,
-        hEtuKork, hTakaKork, hEtuKorkMerkinta, hTakaKorkMerkinta, hSivEtenema,
+        hEtuKork, hTakaKork, hEtuKorkMerkinta, hTakaKorkMerkinta, hEtuTodellinen, hTakaTodellinen, hSivEtenema,
       },
     };
   }

@@ -429,7 +429,7 @@
 </div>
 </div>
 
-<script src="piippu-laskenta.js?v=1"></script>
+<script src="piippu-laskenta.js?v=2"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -654,6 +654,7 @@ async function lisaaTilaukseen() {
     huptakalis:  parseFloat(document.getElementById('v-huptakalis').value) || 0,
     hattulis:    parseFloat(document.getElementById('v-hattulis').value) || 0,
     saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl,
+    piippukpl,   // Tuotanto näyttää piippujen määrän (tallennetaan 20.11.2026 alkaen)
     huomio,
   };
 
