@@ -213,6 +213,17 @@
     <a class="tyyppi-tab" href="piippu.html">Lapepiippu</a>
     <a class="tyyppi-tab active" href="harjapiippu.html">Harjapiippu</a>
   </div>
+  <div class="header-right">
+    <select id="sel-materiaali" onchange="paivitaVarit()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+      <option value="">Materiaali</option>
+    </select>
+    <select id="sel-vari" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+      <option value="">Väri</option>
+    </select>
+    <select id="sel-paksuus" onchange="tallennaMateriaali()" style="background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
+      <option value="">Paksuus</option>
+    </select>
+  </div>
 </header>
 
 <div class="main">
@@ -232,6 +243,10 @@
       <label style="margin:0;white-space:nowrap;font-size:12px;">Piippuja</label>
       <input type="number" id="v-piippukpl" value="1" min="1" style="width:60px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;" oninput="laske()">
       <span style="font-size:11px;color:var(--text2);">kpl</span>
+    </div>
+    <div style="margin-top:8px;">
+      <label style="display:block;margin-bottom:4px;font-size:12px;">Huomio</label>
+      <textarea id="v-huomio" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;resize:vertical;" placeholder="Esim. piipussa lunssi, kootaan paikan päällä..."></textarea>
     </div>
   </div>
 
@@ -326,6 +341,17 @@
       <label>Sivujen liitosvara (puolet kumpaankin päähän)</label><input type="number" id="v-hsivlisa" value="5" oninput="laske()">
       <label>Hattu piippua isompi</label><input type="number" id="v-hattulis" value="250" oninput="laske()">
     </div>
+
+    <div style="margin-top:10px;">
+      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;">Lisäosat</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <label style="margin:0;white-space:nowrap;font-size:12px;">Piipun jalat</label>
+        <input type="number" id="v-jalat" value="0" min="0" style="width:60px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;" oninput="laske()">
+        <span style="font-size:11px;color:var(--text2);">kpl</span>
+      </div>
+      <div id="lisaosat-container"></div>
+      <button onclick="lisaaLisaosa()" style="margin-top:4px;padding:3px 10px;font-size:11px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer;">+ Lisää osa</button>
+    </div>
   </div>
 
 </div>
@@ -356,7 +382,12 @@
     <h3>Hupun levityskuvat</h3>
     <div id="levityskuvat"></div>
   </div>
-  <div class="tulossa">Tilaukseen lisääminen ja Tuotanto tulevat seuraavassa vaiheessa. Nyt sivulla voi laskea ja tarkistaa harjapiipun.</div>
+  <div style="padding:12px;border-top:1px solid var(--border);">
+    <button onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
+      Lisää tilaukseen →
+    </button>
+    <div id="lisays-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:6px;min-height:16px;"></div>
+  </div>
 </div>
 </div>
 
@@ -367,10 +398,12 @@
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
-// Tallennus tilaukseen ja Tuotanto tulevat vaiheessa 6.
+// Tallennus tilaukseen (vaihe 6a): sama reitti kuin Piippu-sivulla (localStorage kpt_add_to_order → avoin tilaussivu tallentaa).
 function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
 function chk(id) { return document.getElementById(id).checked; }
 const r = n => Math.round(n);
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+let viimeisin = null;   // viimeisin laskenta (vals, tulos, piippukpl) tilaukseen lähettämistä varten
 
 // Puolen 2 automaattikentät: 'auto' = ohjelma laskee, muuten käyttäjän oma arvo.
 // Korkeus ja vinomitta ovat sidottuja: kumpi tahansa syötetään, toinen lasketaan siitä.
@@ -441,6 +474,12 @@ function laske() {
   const varoitukset = ehdotus.varoitukset.concat(tulos.virheet || []);
   document.getElementById('varoitus').innerHTML = varoitukset.map(t => t.replace(/</g, '&lt;')).join('<br>');
 
+  // Jalat ja lisäosat (kuten Piippu-sivulla)
+  const jalat = gv('v-jalat');
+  if (jalat > 0) tulos.muut.push({ osa: 'Piipun jalat', lev: '—', pit: '—', kpl: jalat });
+  lisaosat.forEach(x => { if (x.nimi && x.kpl > 0) tulos.muut.push({ osa: x.nimi, lev: '—', pit: '—', kpl: x.kpl }); });
+  viimeisin = { vals, tulos, piippukpl };
+
   const g = tulos.geom;
   document.getElementById('kulma1').textContent = r(g.puoli1.kulmaDeg);
   document.getElementById('kulma2').textContent = r(g.puoli2.kulmaDeg);
@@ -477,11 +516,12 @@ function renderTaulu(elId, pellit, piippukpl) {
   let tot = 0;
   const rows = pellit.map(p => {
     const kplYht = p.kpl * piippukpl;
-    const m2 = p.lev * p.pit * kplYht / 1e6;
+    const onMitat = typeof p.lev === 'number' && typeof p.pit === 'number';
+    const m2 = onMitat ? p.lev * p.pit * kplYht / 1e6 : 0;
     tot += m2;
-    return `<tr><td>${p.osa}${p.lisa ? `<span class="lisatieto">${p.lisa}</span>` : ''}</td>
-      <td class="td-num">${p.lev}</td><td class="td-sym">×</td><td class="td-num">${p.pit}</td>
-      <td class="td-num">${kplYht}</td><td class="td-num">${m2.toFixed(3)}</td></tr>`;
+    return `<tr><td>${esc(p.osa)}${p.lisa ? `<span class="lisatieto">${esc(p.lisa)}</span>` : ''}</td>
+      <td class="td-num">${p.lev}</td><td class="td-sym">${onMitat ? '×' : ''}</td><td class="td-num">${onMitat ? p.pit : ''}</td>
+      <td class="td-num">${kplYht}</td><td class="td-num">${onMitat ? m2.toFixed(3) : ''}</td></tr>`;
   }).join('');
   el.innerHTML = `<table><thead><tr><th>Osa</th><th class="td-num">Lev</th><th></th><th class="td-num">Pit</th><th class="td-num">Kpl</th><th class="td-num">m²</th></tr></thead>
     <tbody>${rows}<tr class="total-row"><td colspan="5">Yhteensä</td><td class="td-num">${tot.toFixed(3)} m²</td></tr></tbody></table>`;
@@ -526,6 +566,170 @@ function piirraSivukuva(m) {
   h += mittaH(x1, xH, yM, r(m.suora1)) + mittaH(xH, x2, yM, r(m.suora2)) + mittaH(x1, x2, yM + 30, `koko ${r(m.suora1 + m.suora2)}`);
   svg.innerHTML = h;
 }
+
+// ── Lisäosat (kuten Piippu-sivulla) ─────────────────────────
+let lisaosat = [];
+function lisaaLisaosa() { lisaosat.push({ id: Date.now(), nimi: '', kpl: 1 }); renderLisaosat(); }
+function poistaLisaosa(id) { lisaosat = lisaosat.filter(x => x.id !== id); renderLisaosat(); laske(); }
+function renderLisaosat() {
+  document.getElementById('lisaosat-container').innerHTML = lisaosat.map(x => `
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+      <input type="text" placeholder="Osan nimi" value="${esc(x.nimi)}" oninput="lisaosat.find(y=>y.id===${x.id}).nimi=this.value;laske()" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;">
+      <input type="number" value="${x.kpl}" min="1" oninput="lisaosat.find(y=>y.id===${x.id}).kpl=+this.value;laske()" style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;">
+      <span style="font-size:11px;color:var(--text2);">kpl</span>
+      <button onclick="poistaLisaosa(${x.id})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:0 2px;">×</button>
+    </div>`).join('');
+}
+
+// ── Materiaalit (kuten Piippu-sivulla, sama muisti kpt_piippu_mat) ─────────────
+const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
+let kaikki_tuotteet = [];
+async function haeMateriaalit() {
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/products?is_active=eq.true&select=material,color,thickness_mm&order=material,color`, {
+      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
+    });
+    kaikki_tuotteet = await res.json();
+    if (!Array.isArray(kaikki_tuotteet)) kaikki_tuotteet = [];
+    const materiaalit = [...new Set(kaikki_tuotteet.map(x => x.material))].sort();
+    const mSel = document.getElementById('sel-materiaali');
+    materiaalit.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; mSel.appendChild(o); });
+    let muistettu = {};
+    try { muistettu = (muokattava && muokattava.material) ? { mat: muokattava.material, vari: muokattava.color, pak: muokattava.thickness } : JSON.parse(localStorage.getItem('kpt_piippu_mat') || '{}'); } catch (e) { /* ei muistia */ }
+    if (muistettu.mat && materiaalit.includes(muistettu.mat)) { mSel.value = muistettu.mat; paivitaVarit(muistettu.vari, muistettu.pak); }
+  } catch (e) { console.error('Tuotteiden haku epäonnistui', e); }
+}
+function tallennaMateriaali() {
+  try {
+    localStorage.setItem('kpt_piippu_mat', JSON.stringify({ mat: document.getElementById('sel-materiaali').value,
+      vari: document.getElementById('sel-vari').value, pak: document.getElementById('sel-paksuus').value }));
+  } catch (e) { /* ei tallennusta */ }
+}
+function paivitaVarit(muistettuVari, muistettuPak) {
+  const mat = document.getElementById('sel-materiaali').value;
+  const varit = [...new Set(kaikki_tuotteet.filter(x => x.material === mat).map(x => x.color))].sort();
+  const vSel = document.getElementById('sel-vari');
+  vSel.innerHTML = '<option value="">Väri</option>';
+  varit.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; vSel.appendChild(o); });
+  if (muistettuVari && varit.includes(muistettuVari)) vSel.value = muistettuVari;
+  paivitaPaksuudet(muistettuPak);
+}
+function paivitaPaksuudet(muistettuPak) {
+  const mat = document.getElementById('sel-materiaali').value, vari = document.getElementById('sel-vari').value;
+  const paksuudet = [...new Set(kaikki_tuotteet.filter(x => x.material === mat && x.color === vari).map(x => x.thickness_mm))].sort((a, b) => a - b);
+  const pSel = document.getElementById('sel-paksuus');
+  pSel.innerHTML = '<option value="">Paksuus</option>';
+  paksuudet.forEach(x => { const o = document.createElement('option'); o.value = x; o.textContent = x + ' mm'; pSel.appendChild(o); });
+  if (muistettuPak && paksuudet.map(String).includes(String(muistettuPak))) pSel.value = muistettuPak;
+  tallennaMateriaali();
+}
+
+// ── Muokkaus tilauksesta ─────────────────────────────────────
+// tilaus.html välittää ryhmän piipun avaimella kpt_piippu_muokkaa (kuten Piippu-sivulle). Harjapiippu palautetaan tänne.
+// Jos ryhmässä on lapepiippu, sitä ei palauteta, vaan näytetään varoitus: tallennus korvaisi sen (Tomi 20.11.2026).
+const MUOKKAUS_AVAIN = 'kpt_piippu_muokkaa';
+const urlParams = new URLSearchParams(window.location.search);
+const targetGroupId = urlParams.get('groupId') || null;
+let muokattava = null, toinenTyyppi = null;
+try {
+  const m = JSON.parse(localStorage.getItem(MUOKKAUS_AVAIN) || 'null');
+  if (m && targetGroupId && m.groupId === targetGroupId && m.vals) {
+    if (m.vals.tyyppi === 'harjapiippu') muokattava = m; else toinenTyyppi = m;
+  }
+} catch (e) { /* ei muokattavaa */ }
+// Välilehdet kuljettavat tilauksen ryhmän mukana, jotta tyypin voi vaihtaa kesken
+if (targetGroupId) document.querySelectorAll('.tyyppi-tab').forEach(a => { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(targetGroupId); });
+
+function ilmoitus(html, vari) {
+  const sb = document.querySelector('#sidebar .section');
+  if (sb) sb.insertAdjacentHTML('beforebegin', '<div class="muokkaus-ilmo" style="margin:0 0 2px;padding:8px 10px;border:1px solid ' + vari + ';border-radius:4px;font-size:12px;color:var(--text);line-height:1.45;background:rgba(34,197,94,.06);">' + html + '</div>');
+}
+
+const HARJA_KENTAT = ['lev1', 'koko', 'suora1', 'kork1', 'korkH', 'poimu', 'ylit1V', 'ylit1O', 'ylit2V', 'ylit2O', 'k24_1', 'j25_1', 'k24_2', 'j25_2'];
+const HARJA_VAKIOT = [['tupla', 'v-tupla'], ['etulis', 'v-etulis'], ['nousu', 'v-nousu'], ['sivulisa', 'v-sivulisa'], ['sauma', 'v-sauma'], ['huplis', 'v-huplis'],
+  ['ylareunaV', 'v-ylareunaV'], ['alatupla', 'v-alatupla'], ['vahennys', 'v-vahennys'], ['hsivlisa', 'v-hsivlisa'], ['hattulis', 'v-hattulis'], ['jakosauma', 'v-jakosauma']];
+function palautaMuokattava() {
+  if (toinenTyyppi) {
+    ilmoitus('<b>Tämän ryhmän piippu on lapepiippu.</b> "Lisää tilaukseen" korvaa sen tällä harjapiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.', 'var(--red)');
+    return;
+  }
+  if (!muokattava) return;
+  const v = muokattava.vals, items = muokattava.items || [];
+  const aseta = (id, x) => { const e = document.getElementById(id); if (e && x !== undefined && x !== null) e.value = x; };
+  HARJA_KENTAT.forEach(id => aseta(id, v[id]));
+  HARJA_VAKIOT.forEach(([n, id]) => aseta(id, v[n]));
+  aseta('lev2', v.lev2 === null || v.lev2 === undefined ? '' : v.lev2);
+  if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
+  aseta('v-huomio', v.huomio || '');
+  suora2Tila = v.suora2Tila === 'kasin' ? 'kasin' : 'auto';
+  puoli2Tila = ['kork', 'vino'].includes(v.puoli2Tila) ? v.puoli2Tila : 'auto';
+  if (suora2Tila === 'kasin') aseta('suora2', v.suora2);
+  if (puoli2Tila === 'kork') aseta('kork2', v.kork2);
+  if (puoli2Tila === 'vino') aseta('vino2', v.vino2);
+  setSivut(Number(v.sivutJako) === 2 ? 2 : 1);
+  const nimet = items.map(i => i.nimike || '');
+  const on = alku => nimet.some(n => n === alku || n.startsWith(alku + ' '));
+  document.getElementById('chk-juuret').checked = on('Juuri');
+  document.getElementById('chk-huppu').checked = on('Huppu');
+  document.getElementById('chk-kansi').checked = on('Kansi');
+  document.getElementById('chk-hattu').checked = on('Hattu');
+  const pk = Number(v.piippukpl) || 1;
+  aseta('v-piippukpl', pk);
+  const jalat = items.find(i => i.nimike === 'Piipun jalat');
+  aseta('v-jalat', jalat ? Math.round(jalat.kpl / pk) : 0);
+  const tunnettu = n => /^(Juuri|Huppu)( |$)/.test(n) || ['Kansi', 'Hattu', 'Piipun jalat'].includes(n);
+  lisaosat = items.filter(i => !i.pituus && !tunnettu(i.nimike || '')).map((i, k) => ({ id: Date.now() + k, nimi: i.nimike, kpl: Math.max(1, Math.round(i.kpl / pk)) }));
+  renderLisaosat();
+  ilmoitus('Muokataan tilauksen harjapiippua: mitat, osat ja materiaali haettu tilauksesta.', 'var(--accent)');
+}
+
+// ── Lisää tilaukseen ─────────────────────────────────────────
+// Sama viesti kuin Piippu-sivulla (REPLACE_PIIPPU): tilaussivu poistaa ryhmän vanhat piippurivit ja tallentaa nämä.
+// Ryhmän nimi annetaan tilaussivulle; se käyttää sitä, jos ryhmällä ei ole omaa nimeä.
+function lisaaTilaukseen() {
+  const status = document.getElementById('lisays-status');
+  const virhe = t => { status.style.color = '#f87171'; status.textContent = t; };
+  laske();
+  if (!viimeisin) return virhe('Laske piippu ensin');
+  const { vals, tulos, piippukpl } = viimeisin;
+  if ((tulos.virheet || []).length) return virhe('Korjaa mitat ensin: ' + tulos.virheet[0]);
+  const materiaali = document.getElementById('sel-materiaali').value, vari = document.getElementById('sel-vari').value, paksuus = document.getElementById('sel-paksuus').value;
+  const pellit = tulos.juuret.concat(tulos.muut);
+  if (!pellit.length) return virhe('Ei peltejä laskettuna — valitse osat');
+  if (!materiaali || !vari || !paksuus) return virhe(`Valitse ${!materiaali ? 'materiaali' : !vari ? 'väri' : 'paksuus'} ensin`);
+  const huomio = document.getElementById('v-huomio').value.trim();
+  const piippuData = Object.assign({ tyyppi: 'harjapiippu' }, vals, { piippukpl, huomio });
+  const leveydet = vals.lev2 !== null && vals.lev2 !== vals.lev1 ? vals.lev1 + '/' + vals.lev2 : String(vals.lev1);
+  const ryhmaNimi = `Harjapiippu ${leveydet}×(${r(vals.suora1)}+${r(vals.suora2)}) ${vari}`;
+  const groupId = targetGroupId || ('g_piippu_' + Date.now());
+  const kaikki = pellit.map((p, i) => {
+    const lev = typeof p.lev === 'number' ? p.lev : 0, pit = typeof p.pit === 'number' ? p.pit : 0, kpl = p.kpl * piippukpl;
+    const rivinHuomio = [i === 0 ? huomio : '', p.lisa || ''].filter(Boolean).join(' · ');
+    return {
+      nimike: p.osa, profileType: 'piippu', aihio_width_mm: lev,
+      profile_data: i === 0 ? { vals: piippuData } : undefined,
+      rows: pit ? [{ mitta: pit, paat: 0, kok: pit, kpl, huomio: rivinHuomio }] : [],
+      kpl: pit ? undefined : kpl,          // osat ilman pituutta (jalat, lisäosat): kappalemäärä erikseen
+      angles: [], totalM2: lev && pit ? lev * pit * kpl / 1e6 : 0,
+      material: materiaali, color: vari, thickness: parseFloat(paksuus), productGroup: 'Piippu', source: 'piippu',
+    };
+  });
+  try {
+    localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, vals: piippuData, material: materiaali, color: vari, thickness: paksuus,
+      items: pellit.map(p => ({ nimike: p.osa, kpl: p.kpl * piippukpl, pituus: typeof p.pit === 'number' })) }));
+    localStorage.setItem('kpt_add_to_order', JSON.stringify({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, items: kaikki }));
+  } catch (e) { return virhe('Tallennus selaimeen epäonnistui'); }
+  muokattava = { groupId, vals: piippuData };
+  toinenTyyppi = null;
+  document.querySelectorAll('.muokkaus-ilmo').forEach(el => el.remove());
+  status.style.color = '#4ade80';
+  status.textContent = `${pellit.length} riviä lähetetty tilaukseen! (tilaussivun pitää olla auki)`;
+  setTimeout(() => { status.textContent = ''; }, 4000);
+}
+
+haeMateriaalit();
+palautaMuokattava();
 
 laske();
 

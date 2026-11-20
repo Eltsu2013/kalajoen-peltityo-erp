@@ -676,12 +676,23 @@ const targetGroupId = urlParams.get('groupId') || null;
 // ja "Lisää tilaukseen" olisi korvannut tilauksen piipun oletusarvoilla.
 const MUOKKAUS_AVAIN = 'kpt_piippu_muokkaa';
 let muokattava = null;
+let toinenTyyppi = null;   // ryhmän piippu on harjapiippu: ei palauteta tänne, näytetään varoitus (20.11.2026)
 try {
   const m = JSON.parse(localStorage.getItem(MUOKKAUS_AVAIN) || 'null');
-  if (m && targetGroupId && m.groupId === targetGroupId && m.vals) muokattava = m;
+  if (m && targetGroupId && m.groupId === targetGroupId && m.vals) {
+    if (m.vals.tyyppi === 'harjapiippu') toinenTyyppi = m; else muokattava = m;
+  }
 } catch (e) { /* ei muokattavaa */ }
+// Välilehdet Lapepiippu | Harjapiippu kuljettavat tilauksen ryhmän mukana, jotta tyypin voi vaihtaa kesken
+if (targetGroupId) document.querySelectorAll('.tyyppi-tab').forEach(a => { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(targetGroupId); });
 
 function palautaMuokattava() {
+  if (toinenTyyppi) {
+    const sb0 = document.querySelector('#sidebar .section');
+    if (sb0) sb0.insertAdjacentHTML('beforebegin', '<div id="muokkaus-ilmo" style="margin:10px 12px 0;padding:8px 10px;border:1px solid var(--red);border-radius:4px;font-size:12px;color:var(--text);line-height:1.45;background:rgba(239,68,68,.08);">'
+      + '<b>Tämän ryhmän piippu on harjapiippu.</b> "Lisää tilaukseen" korvaa sen tällä lapepiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.</div>');
+    return;
+  }
   if (!muokattava) return;
   const v = muokattava.vals;
   const items = muokattava.items || [];
@@ -854,6 +865,9 @@ async function lisaaTilaukseen() {
     items: kaikki,
   }));
 
+  toinenTyyppi = null;
+  const ilmo = document.getElementById('muokkaus-ilmo');
+  if (ilmo) ilmo.remove();
   status.style.color = '#4ade80';
   status.textContent = `${pellit.length} riviä lähetetty tilaukseen!`;
   setTimeout(() => { status.textContent = ''; }, 3000);

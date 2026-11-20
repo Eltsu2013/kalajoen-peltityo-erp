@@ -1140,6 +1140,19 @@ function autoSaveOrder() {
 }
 
 // ── Ryhmät ────────────────────────────────────────────────────────
+// Ryhmien nimet pidetään yksilöllisinä (Tomi 20.11.2026): tilaus tunnistaa ryhmät tietokannassa nimen perusteella
+// (order_items.group_name), joten kaksi samannimistä ryhmää sulautuisi yhdeksi, kun tilaus avataan uudelleen.
+// Varattuun nimeen lisätään perään (2), (3)...
+function uniikkiRyhmanNimi(nimi, ohitaId) {
+  const varattu = n => groups.some(g => g.id !== ohitaId && (g.name || '') === n);
+  if (!varattu(nimi)) return nimi;
+  let k = 2;
+  while (varattu(nimi + ' (' + k + ')')) k++;
+  return nimi + ' (' + k + ')';
+}
+// Nimeämätön ryhmä (oletusnimi "Ryhmä N") saa piipun nimen ensimmäisellä tallennuksella
+const onOletusnimi = nimi => !nimi || /^Ryhmä( \d+)?( \(\d+\))?$/.test(nimi);
+
 function addGroup(name) {
   if (!currentOrderId) { createOrder().then(() => _addGroup(name)); return; }
   _addGroup(name);
@@ -1147,7 +1160,7 @@ function addGroup(name) {
 
 function _addGroup(name) {
   const id = 'g_' + Date.now();
-  const groupName = name || document.getElementById('new-group-name').value || ('Ryhmä ' + (groups.length + 1));
+  const groupName = uniikkiRyhmanNimi(name || document.getElementById('new-group-name').value || ('Ryhmä ' + (groups.length + 1)));
   groups.push({ id, name: groupName, items: [] });
   document.getElementById('new-group-name').value = '';
   updateGroupSelect();
@@ -1168,7 +1181,10 @@ function updateGroupSelect() {
 async function renameGroup(id, name) {
   const g = groups.find(g => g.id === id);
   if (!g) return;
+  const toivottu = String(name || '').trim() || g.name;
+  name = uniikkiRyhmanNimi(toivottu, id);
   g.name = name;
+  if (name !== toivottu) { renderGroups(); setSaveStatus('ok', 'Nimi oli jo käytössä, ryhmä nimettiin: ' + name); }
   updateGroupSelect();
   updateSummary();
 
@@ -1200,7 +1216,7 @@ function copyGroup(id) {
   const newGroupId = 'g_' + Date.now();
   const newG = {
     id: newGroupId,
-    name: g.name + ' (kopio)',
+    name: uniikkiRyhmanNimi(g.name + ' (kopio)'),
     items: g.items.map(i => ({ ...i, id: 'i_' + Date.now() + Math.random(), supabaseId: null }))
   };
   groups.push(newG);
@@ -1257,7 +1273,7 @@ async function receiveFromMallisto(data) {
   if (data.type === 'REPLACE_PIIPPU') {
     let group = groups.find(g => g.id === data.groupId);
     if (!group) {
-      group = { id: data.groupId, name: data.groupName || 'Piippu', items: [] };
+      group = { id: data.groupId, name: uniikkiRyhmanNimi(data.groupName || 'Piippu'), items: [] };
       groups.push(group);
     }
     // Varmista että tilaus on olemassa ennen tallennusta
@@ -1276,6 +1292,9 @@ async function receiveFromMallisto(data) {
       }
     }
     group.items = group.items.filter(i => i.profileType !== 'piippu');
+    // Nimeämätön ryhmä saa piipun nimen (esim. "Harjapiippu 400×(450+750) RR33"). renameGroup päivittää myös ryhmän
+    // muiden, jo tallennettujen rivien nimen. Käyttäjän antamaa nimeä ei muuteta.
+    if (data.groupName && onOletusnimi(group.name)) await renameGroup(group.id, data.groupName);
     // Lisää uudet peräkkäin (ei rinnakkain) jotta ei tule race conditionia
     for (const p of (data.items || [])) {
       const item = {
@@ -1613,12 +1632,19 @@ function piippuMuokkausTiedot(groupId) {
     if (!eka) { localStorage.removeItem('kpt_piippu_muokkaa'); return; }
     const rivienKpl = i => (i.rows || []).reduce((s, r) => s + (Number(r.kpl) || 0), 0);
     localStorage.setItem('kpt_piippu_muokkaa', JSON.stringify({
-      groupId,
+      groupId, orderId: currentOrderId || null, groupName: group ? group.name : null,
       vals: eka.profile_data.vals,
       material: eka.material || null, color: eka.color || null, thickness: eka.thickness || null,
       items: pi.map(i => ({ nimike: i.nimike, kpl: rivienKpl(i) || Number(i.kpl) || 0, pituus: (i.rows || []).length > 0 })),
     }));
   } catch (e) { console.warn('Piipun muokkaustietojen välitys epäonnistui', e); }
+}
+
+// Ryhmän piippusivu: harjapiippu omalle sivulleen, muuten Piippu-sivu (lapepiippu)
+function piippuSivu(groupId) {
+  const group = groups.find(g => g.id === groupId);
+  const pi = group ? group.items.filter(i => i.profileType === 'piippu') : [];
+  return pi.some(i => i.profile_data && i.profile_data.vals && i.profile_data.vals.tyyppi === 'harjapiippu') ? 'harjapiippu.html' : 'piippu.html';
 }
 
 function avaapiippu() {
@@ -1637,7 +1663,7 @@ function avaapiippu() {
     return;
   }
   piippuMuokkausTiedot(groupId);
-  window.open(`piippu.html?groupId=${groupId}`, '_blank');
+  window.open(`${piippuSivu(groupId)}?groupId=${groupId}`, '_blank');
 }
 
 function openMallisto() {
@@ -1852,7 +1878,7 @@ function renderGroups() {
   container.innerHTML = groups.map(g => {
     const onPiippu = g.items.some(i => i.profileType === 'piippu');
     const piippuNappi = onPiippu
-      ? `<a href="piippu.html?groupId=${g.id}" target="_blank" onclick="piippuMuokkausTiedot('${g.id}')"
+      ? `<a href="${piippuSivu(g.id)}?groupId=${g.id}" target="_blank" onclick="piippuMuokkausTiedot('${g.id}')"
            style="display:inline-flex;align-items:center;padding:3px 8px;font-size:11px;
                   background:none;border:1px solid var(--accent);color:var(--accent);
                   border-radius:4px;text-decoration:none;white-space:nowrap;">
