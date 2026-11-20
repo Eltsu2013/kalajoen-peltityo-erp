@@ -9,6 +9,16 @@ Tämä tiedosto latautuu automaattisesti, kun Claude Code avaa repon. Laajempi p
 - `orders/` — kaikki ERP-sivut (vanilla HTML/JS) sekä `auth-guard.js`, `nav.js` ja `logo-valkoinen.png`. GitHub Pages julkaisee `main`-haaran heti.
 - `maps/` — varastokartta `verstaspohja_mitoitettu.html` (staattinen) ja sen zoomaus `kartta-zoom.js`. varasto.html lataa kartan SVG:n tästä tiedostosta ja liittää zoomauksen siihen, joten karttamuutokset näkyvät molemmilla sivuilla.
 - `supabase/` — tietokantaan liittyvät tiedostot.
+- `testit/` — Node-testit laskentakoodille (`node testit/aja_kaikki.js`), ks. `testit/LUEMINUT.md`.
+
+## Yhteiset laskentatiedostot
+
+Sama malli kuin `nav.js` ja `profiilit.js`: kaava ja piirto yhdessä tiedostossa, sivut lukevat sen. Suunnitelma: projektin `claude/yhteiset_tyokalut_suunnitelma.md`.
+
+- `orders/profiilit.js` → `KPT_PROFIILIT` — kanttausprofiilit (Mallisto, Tuotanto, Vakiomallit).
+- `orders/geom.js` → `KPT_GEOM` — vektorit, monikulmiot, ääriviivojen yhdistäminen, kupera kuori, leikkaus suoralla, mm-muotoilu.
+- `orders/pellit.js` → `KPT_PELLIT` — pelti-osat: 3D-sivun avaus tasoksi, taitokset ja kanttausluvut, jiirit ja loveukset, merkintäpisteet, samanlaisten yhdistäminen, levityskuva. Vaatii geom.js:n (lataa ensin). Siirretty Huuvasta vaiheessa 1, joten nimet ovat vielä huuvan (Etu/Oikea/Taka/Vasen).
+- Kun yhteistä tiedostoa muutetaan: **aja `node testit/aja_kaikki.js` ennen pushia** ja nosta `?v=`-numeroa kaikilla sivuilla, jotka lataavat tiedoston.
 
 ## Säännöt
 

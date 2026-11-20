@@ -13,4 +13,5 @@ Korvaa 17 vuotta vanhan Access-järjestelmän.
 
 - `orders/` — järjestelmän sivut (kirjautuminen vaaditaan)
 - `maps/` — varastokartat
+- `testit/` — laskentakoodin testit (`node testit/aja_kaikki.js`)
 - `supabase/functions/` — vanhojen Edge Functionien koodi (ei käytössä)
