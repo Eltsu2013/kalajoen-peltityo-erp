@@ -1,4 +1,4 @@
-// Lapepiipun hupun levityskuvat (orders/piippu-levitys.js), Tomin päätökset 20.11.2026 (mockup v3).
+// Lapepiipun hupun levityskuvat ja kiila (orders/piippu-levitys.js), Tomin päätökset 20.11.2026 (mockupit hupun-levitys v3 ja kiila v2).
 const L = require('../../orders/piippu-levitys.js');
 const PL = require('../../orders/pellit.js');
 
@@ -10,12 +10,13 @@ const OLETUS = { leveys: 400, suora: 600, etukork: 1000, takakork: 800, sauma: 2
   huptakalis: 5, saumatyyppi: 1, huppuEtuKpl: 1, huppuSivutKpl: 1, huppuTakaKpl: 1 };
 const palat = v => L.hupunPalat(Object.assign({}, OLETUS, v)).palat;
 const pala = (v, nimi) => palat(v).find(p => p.nimi === nimi);
+const mitat = pa => L.levitaPala(pa).mitat;
 const pisteet = pa => PL.aihioPisteet(L.levitaPala(pa).p).pisteet.map(q => [Math.round(q.x * 1000) / 1000, Math.round(q.y * 1000) / 1000]);
 
 // ---- 1) Käsin laskettu etupala (sauma 1, yläreuna ulos)
 const etu = pala({}, 'Huppu etu');
-ok(etu.P === 410 && etu.vasen.tyyppi === 't90' && etu.oikea.tyyppi === 't90', 'etu: paneeli 410 (450 − 2 × 20), saumat 20 + 20 (90° ulos)');
-ok(near(etu.hV, 1000 - 20 + 5 * 200 / 600), 'etu: todellinen korkeus 981,7 (ilman taitoksia)');
+ok(near(mitat(etu).yla, 410) && etu.vasen.tyyppi === 't90' && etu.oikea.tyyppi === 't90', 'etu: paneeli 410 (450 − 2 × 20), saumat 20 + 20 (90° ulos)');
+ok(near(mitat(etu).vasen, 1000 - 20 + 5 * 200 / 600), 'etu: todellinen korkeus 981,7 (ilman taitoksia)');
 const ep = pisteet(etu);
 const ODOTETTU = [[40, 0], [410, 0], [430, 20], [450, 20], [450, 1001.667], [430, 1001.667], [430, 1021.667], [20, 1021.667], [20, 1001.667], [0, 1001.667], [0, 20], [20, 20]];
 ok(ep.length === 12, 'etu: 12 merkintäpistettä (saatu ' + ep.length + ')');
@@ -26,12 +27,13 @@ ok(Math.ceil(elv.p.w - 1e-6) === 450 && Math.ceil(elv.p.h - 1e-6) === 1022, 'etu
 // ---- 2) Sivupala: etupäässä 40 (20 suoraan + 20 tupla), takapäässä 20, alareuna katon kaltevuudessa
 const siv = pala({}, 'Huppu sivut');
 ok(siv.vasen.tyyppi === 'k40' && siv.vasen.w === 40 && siv.oikea.tyyppi === 't90', 'sivu (sauma 1): etupää 40 (kiertää), takapää 20');
-ok(siv.P === 610 && near(siv.hV, 981.667, 1e-3) && near(siv.hO, 778.333, 1e-3), 'sivu: paneeli 610, korkeus 981,7 → 778,3');
+ok(near(mitat(siv).yla, 610) && near(mitat(siv).vasen, 981.667, 1e-3) && near(mitat(siv).oikea, 778.333, 1e-3), 'sivu: paneeli 610, korkeus 981,7 → 778,3');
 const slv = L.levitaPala(siv);
 const tuplaViiva = slv.viivat.find(v => v.tupla);
 ok(tuplaViiva && near(tuplaViiva.p[0], -20) && slv.viivat.some(v => v.suunta === 'ei' && near(v.p[0], 0)), 'sivu: tuplan taitosviiva 20 mm nurkasta, nurkassa ei taitosta');
 const vasenSauma = slv.p.flanges[0].poly;
-ok(near(vasenSauma[2][1], vasenSauma[3][1]), 'sivu: 40 mm sauman alapää suora (90° sivureunasta)');
+const saumanAla = vasenSauma.slice().sort((a, b) => a[1] - b[1]);
+ok(near(saumanAla[0][1], saumanAla[1][1]), 'sivu: 40 mm sauman alapää suora (90° sivureunasta)');
 ok(slv.p.w <= siv.listaLev + 1e-6 && slv.p.h <= siv.listaPit + 1e-6, 'sivu: aihio mahtuu listan mittoihin (' + slv.p.w.toFixed(1) + ' × ' + slv.p.h.toFixed(1) + ' ≤ ' + siv.listaLev + ' × ' + siv.listaPit + ')');
 
 // ---- 3) Saumatyyppi 2 ja jaetut palat
@@ -39,7 +41,7 @@ const s2 = palat({ saumatyyppi: 2, huppuSivutKpl: 2, huppuEtuKpl: 3 });
 const s2s1 = s2.find(p => p.nimi === 'Huppu sivut 1'), s2s2 = s2.find(p => p.nimi === 'Huppu sivut 2');
 ok(s2s1.vasen.tyyppi === 'k40' && s2s1.oikea.tyyppi === 't90' && !s2s1.oikea.nurkka, 'sauma 2, sivut 2 osaa: pala 1 etupää 40, liitoksessa 20 (aiempi pala)');
 ok(s2s2.vasen.tyyppi === 'k40' && !s2s2.vasen.nurkka && s2s2.oikea.tyyppi === 'k40', 'sauma 2, sivut 2 osaa: pala 2 liitoksessa 40 (myöhempi pala), takapää 40');
-ok(near(s2s2.hV, s2s1.hO), 'jaettu sivu: palan 2 etukorkeus = palan 1 takakorkeus (jatkuu samassa linjassa)');
+ok(near(mitat(s2s2).vasen, mitat(s2s1).oikea), 'jaettu sivu: palan 2 etukorkeus = palan 1 takakorkeus (jatkuu samassa linjassa)');
 const e3 = s2.filter(p => p.nimi.startsWith('Huppu etu'));
 ok(e3.length === 3 && e3[0].oikea.tyyppi === 't90' && e3[1].vasen.tyyppi === 'k40' && e3[2].oikea.nurkka, 'etu 3 osaa: liitoksissa aiempi pala 20 ja myöhempi 40');
 ok(palat({ saumatyyppi: 2 }).find(p => p.nimi === 'Huppu taka').vasen.tyyppi === 't90', 'sauma 2: taka 20 + 20 kuten etu');
@@ -53,7 +55,7 @@ const ylin = poly => { const ym = Math.max.apply(null, poly.map(q => q[1])); con
 ok(near(ylin(ylaPoly(yla('ulos'))), 410), 'yläreuna ulos: taitos koko paneelin levyinen (410), suorat päät');
 ok(near(ylin(ylaPoly(yla('sisaan'))), 410 - 2 * 20), 'yläreuna sisään: päät 45° nurkissa (ulkoreuna 410 − 2 × 20)');
 ok(near(ylin(ylaPoly(yla('tupla'))), 410 - 2 * 20), 'yläreuna tupla: päät viistetty 45° koko leveydeltä');
-ok(L.levitaPala(pala({ ylaTyyppi: 'tuntematon' }, 'Huppu etu')).viivat.some(v => v.teksti.indexOf('90° ulos') >= 0 && v.p[1] === 0 && v.q[1] === 0), 'tuntematon tai puuttuva yläreunan tyyppi = ulos (vanhat tilaukset)');
+ok(L.levitaPala(pala({ ylaTyyppi: 'tuntematon' }, 'Huppu etu')).viivat.some(v => v.teksti.indexOf('90° ulos') >= 0 && near(v.p[1], 0) && near(v.q[1], 0)), 'tuntematon tai puuttuva yläreunan tyyppi = ulos (vanhat tilaukset)');
 const alaRivi = L.taitosRivit(etu).find(r => r[0] === 'Alareuna');
 ok(alaRivi && alaRivi[2] === '180°' && alaRivi[3] === 'sisään' && /viistetty 45°/.test(alaRivi[4]), 'taitostaulukko: alatupla 180° sisään, päät viistetty 45°');
 
@@ -73,7 +75,7 @@ for (let i = 0; i < 300; i++) {
     const lv = L.levitaPala(pa), r = PL.aihioPisteet(lv.p);
     const pinta = poly => { let a = 0; poly.forEach((q, k) => { const n = poly[(k + 1) % poly.length]; a += q[0] * n[1] - n[0] * q[1]; }); return Math.abs(a) / 2; };
     const virhe = r.silmukoita !== 1 ? 'monta ääriviivaa' : lv.p.w > pa.listaLev + 1e-6 ? 'aihio leveämpi kuin listassa' : lv.p.h > pa.listaPit + 1e-6 ? 'aihio korkeampi kuin listassa'
-      : lv.lovet.some(l => l.length < 3 || pinta(l) <= 0) ? 'tyhjä loveus' : !(pa.P > 0) ? 'paneeli ei positiivinen' : '';
+      : lv.lovet.some(l => l.length < 3 || pinta(l) <= 0) ? 'tyhjä loveus' : !(lv.mitat.yla > 0) ? 'paneeli ei positiivinen' : '';
     if (virhe && ominaisuusOk) { ominaisuusOk = false; viesti = virhe + ' ' + pa.nimi + ' ' + JSON.stringify(v); }
   });
 }
@@ -86,6 +88,93 @@ ok((html.match(/Kulmien lähikuvat/g) || []).length === 1 && /Merkintäpisteet \
 ok((L.palaHtml(etu).match(/(vasen|oikea) (ala|ylä)kulma</g) || []).length === 2 && (html.match(/(vasen|oikea) (ala|ylä)kulma</g) || []).length === 4, 'symmetrisestä etupalasta 2 lähikuvaa, vinosta sivusta 4');
 const idt = (L.palaHtml(etu) + L.palaHtml(etu)).match(/id="(plv\d+[rc])"/g);
 ok(new Set(idt).size === idt.length, 'SVG-tunnisteet yksilöllisiä, vaikka samaa palaa piirretään monta kertaa');
+
+// ---- 7) Suora piippu: v2 (3D-malli) antaa samat palat kuin julkaistu v1 (vertailuarvot levitys_v1_vertailu.json)
+const V1 = require('./levitys_v1_vertailu.json');
+let v1ero = '', v1palat = 0;
+V1.tapaukset.forEach((t, i) => {
+  const uudet = L.hupunPalat(t.vals).palat;
+  if (uudet.length !== t.palat.length) { v1ero = v1ero || 'tapaus ' + i + ': palojen määrä ' + uudet.length + ' ≠ ' + t.palat.length; return; }
+  t.palat.forEach((vanha, k) => {
+    v1palat++;
+    const pa = uudet[k], pp = pisteet(pa);
+    if (pa.nimi !== vanha.nimi || pa.kpl !== vanha.kpl) v1ero = v1ero || 'tapaus ' + i + ': ' + pa.nimi + ' ' + pa.kpl + ' ≠ ' + vanha.nimi + ' ' + vanha.kpl;
+    else if (pp.length !== vanha.pisteet.length || pp.some((q, j) => Math.abs(q[0] - vanha.pisteet[j][0]) > 0.002 || Math.abs(q[1] - vanha.pisteet[j][1]) > 0.002)) v1ero = v1ero || 'tapaus ' + i + ' ' + pa.nimi + ': merkintäpisteet eroavat';
+    else if (JSON.stringify(L.taitosRivit(pa)) !== JSON.stringify(vanha.taitokset)) v1ero = v1ero || 'tapaus ' + i + ' ' + pa.nimi + ': taitostaulukko eroaa';
+  });
+});
+ok(!v1ero && v1palat > 150, 'suora piippu: ' + v1palat + ' palaa täsmälleen kuten v1:ssä (nimet, kpl, merkintäpisteet, taitostaulukko) ' + v1ero);
+
+// ---- 8) Kiila ja mutkapiippu
+const K = v => Object.assign({}, OLETUS, { kiilaPaalla: true }, v);
+const PI = require('../../orders/piippu-laskenta.js');
+ok(JSON.stringify(L.laskeKaikki(OLETUS)) === JSON.stringify(Object.assign(PI.laskeLapepiippu(OLETUS), { kiila: false })), 'laskeKaikki ilman kiilaa = laskeLapepiippu');
+ok(JSON.stringify(L.laskeKaikki(K({})).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut) && L.laskeKaikki(K({})).kiila === false, 'kiila päällä mutta lisämitat tyhjät = suora piippu (lista ennallaan)');
+ok(JSON.stringify(L.laskeKaikki(K({ takaLeveys: 400, oikeaPituus: 600, korkeusEV: 1000, kiilaEtu: 0 })).muut) === JSON.stringify(PI.laskeLapepiippu(OLETUS).muut), 'kiila päällä, lisämitat samat kuin suorassa = suora piippu');
+
+// Yläpään muoto: sivut ja suora kulma pitävät jokaisella suoran kulman valinnalla
+const etaisyys = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const kulmaC = (C, i) => { const a = C[(i + 3) % 4], k = C[i], b = C[(i + 1) % 4], u = [a[0] - k[0], a[1] - k[1]], w = [b[0] - k[0], b[1] - k[1]]; return Math.acos((u[0] * w[0] + u[1] * w[1]) / Math.hypot(u[0], u[1]) / Math.hypot(w[0], w[1])) * 180 / Math.PI; };
+let muotoOk = true;
+[0, 1, 2, 3].forEach(sk => {
+  const m = { etu: 400, oikea: 640, taka: 430, vasen: 600, suora: sk }, C = L.ylapaa(m);
+  const sivut = [etaisyys(C[0], C[1]), etaisyys(C[1], C[2]), etaisyys(C[2], C[3]), etaisyys(C[3], C[0])];
+  if (!C || !near(sivut[0], 400, 1e-6) || !near(sivut[1], 640, 1e-6) || !near(sivut[2], 430, 1e-6) || !near(sivut[3], 600, 1e-6) || !near(kulmaC(C, sk), 90, 1e-6)) muotoOk = false;
+});
+ok(muotoOk, 'yläpää: neljä sivua ja valittu suora kulma pitävät kaikilla neljällä valinnalla');
+ok(L.ylapaa({ etu: 400, oikea: 600, taka: 400, vasen: 600, suora: 0 }).every((q, i) => near(Math.abs(q[0]), 200, 1e-9) && near(q[1], i < 2 ? 0 : 600, 1e-9)), 'yläpää: tavallinen piippu on suorakaide');
+ok(L.ylapaa({ etu: 400, oikea: 600, taka: 2000, vasen: 600, suora: 0 }) === null && /eivät sovi yhteen/.test(L.laskeKaikki(K({ takaLeveys: 2000 })).virhe || ''), 'mahdottomat mitat: ei muotoa, selkeä virheilmoitus');
+
+// Kiila: miinus = kapenee alaspäin, mitattu katon kohdalla sivun korkeimmasta kulmasta
+const mk = L.hupunMalli(K({ kiilaVasen: -30 }));
+ok(near(mk.ala[0][0] - mk.C[0][0], 30, 1e-6) && near(mk.ala[3][0] - mk.C[3][0], 30 * 800 / 1000, 1e-6), 'kiila vasen −30: etuvasen kulma 30 mm sisempänä katolla (korkein kulma), takavasen 24 mm (matalampi)');
+const mkp = L.hupunMalli(K({ kiilaEtu: 20 }));
+ok(near(mkp.C[0][1] - mkp.ala[0][1], 20, 1e-6), 'kiila etu +20: etuseinä levenee alaspäin 20 mm (katon kohdalla)');
+
+// Symmetria ja nimet
+const sym = L.hupunPalat(K({ kiilaEtu: 20 }));
+ok(sym.symmetrinen && sym.palat.some(p => p.nimi === 'Huppu sivut' && p.kpl === 2 && p.peili), 'etukiila: sivut yhä peilikuvat, yksi rivi "Huppu sivut" 2 kpl');
+const asym = L.hupunPalat(K({ kiilaVasen: -30 }));
+const so = asym.palat.find(p => p.nimi === 'Huppu sivut oikea'), sv = asym.palat.find(p => p.nimi === 'Huppu sivut vasen');
+ok(!asym.symmetrinen && so && sv && so.kpl === 1 && sv.kpl === 1, 'vasen kiila: sivut eri, rivit "Huppu sivut oikea" ja "Huppu sivut vasen" 1 kpl kumpikin');
+const ke = asym.palat.find(p => p.nimi === 'Huppu etu');
+ok(mitat(ke).ala < mitat(ke).yla - 20 && near(mitat(so).vasen, mitat(pala({}, 'Huppu sivut')).vasen, 1e-6), 'vasen kiila: hupun etupala kapenee alaspäin (' + Math.round(mitat(ke).yla) + ' → ' + Math.round(mitat(ke).ala) + '), oikea sivu ennallaan');
+ok(sv.ylaKulma < 89.5 && near(so.ylaKulma, 90, 0.05), 'vasen kiila: vasemman sivun yläreunan kanttausluku muuttuu (' + sv.ylaKulma.toFixed(1) + '°), oikea 90°');
+ok(L.taitosRivit(sv).some(r => /^\d+,\d°$/.test(r[2])) && L.taitosRivit(so).every(r => !/,/.test(r[2])), 'taitostaulukko: vino kulma yhdellä desimaalilla, 90° tasan ilman desimaaleja');
+
+// Lista: hupun rivit = todellinen aihio ylöspäin, kansi ja hattu leveimmän ja pisimmän mukaan, juuret pisimmän sivun mukaan
+const mv = K({ takaLeveys: 420, oikeaPituus: 620, korkeusTO: 780 }), mt = L.laskeKaikki(mv), mp = L.hupunPalat(mv);
+ok(mt.kiila === true && mp.palat.every(pa => { const r = mt.muut.find(x => x.osa === pa.nimi), lv = L.levitaPala(pa); return r && r.lev === Math.ceil(lv.p.w - 1e-6) && r.pit === Math.ceil(lv.p.h - 1e-6) && r.kpl === pa.kpl; }), 'mutkapiippu: hupun rivit = levityskuvan aihio ylöspäin');
+const leveinKH = PI.laskeLapepiippu(Object.assign({}, OLETUS, { leveys: 420, suora: 620 })).muut.filter(r => /^(Kansi|Hattu)/.test(r.osa));
+ok(JSON.stringify(mt.muut.filter(r => /^(Kansi|Hattu)/.test(r.osa))) === JSON.stringify(leveinKH), 'mutkapiippu: kansi ja hattu leveimmän (420) ja pisimmän (620) kohdan mukaan');
+const as = mt.malli.alaSivut;
+const juuretOdotus = PI.laskeLapepiippu(Object.assign({}, mv, { leveys: Math.max(as.etu, as.taka), suora: Math.max(as.vasen, as.oikea) })).juuret;
+ok(JSON.stringify(mt.juuret) === JSON.stringify(juuretOdotus) && near(Math.max(as.etu, as.taka), 420, 1e-6), 'mutkapiippu: juuret pisimmän sivun mukaan (katon kohdalla)');
+ok(/<svg/.test(L.kuvaYlhaalta(mv)) && L.kuvaYlhaalta(K({ takaLeveys: 2000 })) === '', 'kuva ylhäältä piirtyy, mahdottomilla mitoilla tyhjä');
+ok(/alhaalla \d+/.test(L.palaHtml(ke)) && !/alhaalla/.test(L.palaHtml(pala({}, 'Huppu etu'))), 'kiilapalan kuvassa myös alareunan pituus, suorassa ei (kuten ennen)');
+
+// Ominaisuustesti: satunnaiset kiila- ja mutkapiiput
+let kiilaOk = true, kiilaViesti = '', kiilaPaloja = 0;
+for (let i = 0; i < 200; i++) {
+  const etukork = 600 + Math.round(rnd() * 1200), lev = 300 + Math.round(rnd() * 600), suo = 400 + Math.round(rnd() * 900);
+  const takakork = Math.round(etukork - rnd() * Math.min(suo * 0.7, etukork - 300));
+  const v = Object.assign({}, OLETUS, { leveys: lev, suora: suo, etukork, takakork, kiilaPaalla: true, saumatyyppi: valitse([1, 2]),
+    huppuEtuKpl: valitse([1, 2]), huppuSivutKpl: valitse([1, 2]), huppuTakaKpl: valitse([1, 2]), ylaTyyppi: valitse(['ulos', 'sisaan', 'tupla']),
+    takaLeveys: lev + valitse([-20, 0, 15]), oikeaPituus: suo + valitse([-25, 0, 10]), suoraKulma: valitse([0, 1, 2, 3]),
+    korkeusEV: etukork + valitse([-30, 0, 20]), korkeusTO: takakork + valitse([-20, 0, 25]),
+    kiilaVasen: valitse([-30, 0, 20]), kiilaOikea: valitse([-15, 0, 25]), kiilaEtu: valitse([0, 20, -10]), kiilaTaka: valitse([0, -20]) });
+  const t = L.hupunPalat(v);
+  if (!t) { kiilaOk = false; kiilaViesti = 'ei muotoa ' + JSON.stringify(v); break; }
+  t.palat.forEach(pa => {
+    kiilaPaloja++;
+    const lv = L.levitaPala(pa), r = PL.aihioPisteet(lv.p);
+    const kulmat = [pa.vasen.kulma, pa.oikea.kulma, pa.ylaKulma].filter(k => k !== 180);
+    const virhe = r.silmukoita !== 1 ? 'monta ääriviivaa' : !(lv.mitat.yla > 0 && lv.mitat.ala > 0) ? 'paneeli ei positiivinen'
+      : kulmat.some(k => k < 75 || k > 105) ? 'outo kanttausluku ' + kulmat.map(k => k.toFixed(1)).join('/') : '';
+    if (virhe && kiilaOk) { kiilaOk = false; kiilaViesti = virhe + ' ' + pa.nimi + ' ' + JSON.stringify(v); }
+  });
+}
+ok(kiilaOk, '200 satunnaista kiila-/mutkapiippua, ' + kiilaPaloja + ' palaa: yksi ääriviiva, järkevät kanttausluvut ' + kiilaViesti);
 
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;

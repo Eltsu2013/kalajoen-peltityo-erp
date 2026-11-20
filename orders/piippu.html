@@ -111,6 +111,11 @@
   .sauma-options { display: flex; gap: 6px; margin-left: 23px; margin-top: 2px; }
   .sauma-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text2); padding: 3px 10px; font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: border-color 0.15s; }
   .sauma-btn.active { background: var(--accent2); border-color: var(--accent); color: white; }
+  .kiila-ohje { font-size: 11px; color: var(--text2); line-height: 1.45; margin: 0 0 8px; }
+  .kiila-alaotsikko { font-size: 11px; color: var(--text2); font-weight: 600; margin: 6px 0 4px; }
+  .kiila-valinta { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 6px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
+  .kiila-virhe { color: var(--red); font-size: 12px; margin-top: 6px; }
+  .kiila-virhe:empty { display: none; }
 
   .vakio-grid { display: grid; grid-template-columns: 1fr 56px; gap: 3px 8px; align-items: center; }
   .vakio-grid label { font-size: 11px; color: var(--text2); }
@@ -245,6 +250,45 @@
         <label>Takareunasta harjalle (mm)</label>
         <input type="number" id="harjalle" value="1050" min="0" oninput="laske()">
       </div>
+    </div>
+  </div>
+
+  <!-- Kiila / mutkapiippu (vaihe 4, Tomi 20.11.2026): vino tai mutkainen piippu. Mitat yläpäästä, tyhjä = kuten suorassa. -->
+  <div class="section" id="kiila-osio">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <h3 style="margin:0;">Kiila / mutkapiippu</h3>
+      <button class="sauma-btn" id="btn-kiila" onclick="setKiila(!kiilaPaalla)">Kiila / mutka</button>
+    </div>
+    <div id="kiila-kentat" style="display:none;margin-top:8px;">
+      <p class="kiila-ohje">Mitat piipun <b>yläpäästä</b>. Tyhjä kenttä = sama kuin suorassa piipussa. Etuleveys on "Piipun leveys" ja vasen sivu "Piipun suora" yllä.</p>
+      <div class="field-grid">
+        <div class="field"><label>Takaleveys (mm)</label><input type="number" id="k-takaLeveys" oninput="laske()"></div>
+        <div class="field"><label>Oikea sivu (mm)</label><input type="number" id="k-oikeaPituus" oninput="laske()"></div>
+      </div>
+      <div class="field">
+        <label>Suora kulma (90°)</label>
+        <select id="k-suoraKulma" onchange="laske()" class="kiila-valinta">
+          <option value="0">Etuvasen</option><option value="1">Etuoikea</option><option value="2">Takaoikea</option><option value="3">Takavasen</option>
+        </select>
+      </div>
+      <div class="kiila-alaotsikko">Korkeus kulmissa (mm), takakulmat ylempänä kuten kuvassa</div>
+      <div class="field-grid">
+        <div class="field"><label>Takavasen</label><input type="number" id="k-korkeusTV" oninput="laske()"></div>
+        <div class="field"><label>Takaoikea</label><input type="number" id="k-korkeusTO" oninput="laske()"></div>
+        <div class="field"><label>Etuvasen</label><input type="number" id="k-korkeusEV" oninput="laske()"></div>
+        <div class="field"><label>Etuoikea</label><input type="number" id="k-korkeusEO" oninput="laske()"></div>
+      </div>
+      <div class="kiila-alaotsikko">Kiila sivuittain (mm katon kohdalla)</div>
+      <p class="kiila-ohje">Plus = levenee alaspäin, miinus = kapenee. Mitataan sivun korkeimmasta kulmasta.</p>
+      <div class="field-grid">
+        <div class="field"><label>Vasen</label><input type="number" id="k-kiilaVasen" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Oikea</label><input type="number" id="k-kiilaOikea" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Etu</label><input type="number" id="k-kiilaEtu" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Taka</label><input type="number" id="k-kiilaTaka" placeholder="0" oninput="laske()"></div>
+      </div>
+      <div id="kiila-virhe" class="kiila-virhe"></div>
+      <div id="kiila-kuva" style="margin-top:8px;"></div>
+      <p class="kiila-ohje" style="margin-top:6px;">Juuret lasketaan pisimmän sivun mukaan (muotoillaan paikan päällä), kansi ja hattu leveimmän ja pisimmän kohdan mukaan.</p>
     </div>
   </div>
 
@@ -440,7 +484,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=1"></script>
 <script src="piippu-laskenta.js?v=3"></script>
-<script src="piippu-levitys.js?v=1"></script>
+<script src="piippu-levitys.js?v=2"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -448,6 +492,27 @@ function setSauma(n) {
   document.getElementById('sauma1').classList.toggle('active', n===1);
   document.getElementById('sauma2').classList.toggle('active', n===2);
   laske();
+}
+
+// Kiila / mutkapiippu: nappi avaa lisämitat. Kentät tallennetaan tilaukseen (profile_data.vals) samoilla nimillä.
+let kiilaPaalla = false;
+const KIILA_KENTAT = ['takaLeveys', 'oikeaPituus', 'korkeusEV', 'korkeusEO', 'korkeusTO', 'korkeusTV', 'kiilaVasen', 'kiilaOikea', 'kiilaEtu', 'kiilaTaka'];
+function setKiila(on) {
+  kiilaPaalla = !!on;
+  document.getElementById('btn-kiila').classList.toggle('active', kiilaPaalla);
+  document.getElementById('kiila-kentat').style.display = kiilaPaalla ? '' : 'none';
+  laske();
+}
+// Kiilan syötöt: tyhjä kenttä = null (laskenta käyttää suoran piipun arvoa)
+function kiilaArvot() {
+  const v = { kiilaPaalla, suoraKulma: Number(document.getElementById('k-suoraKulma').value) || 0 };
+  KIILA_KENTAT.forEach(n => { const x = document.getElementById('k-' + n).value; v[n] = x === '' || isNaN(parseFloat(x)) ? null : parseFloat(x); });
+  return v;
+}
+// Tyhjien kiilakenttien vihjeeksi suoran piipun arvo
+function paivitaKiilaVihjeet(vals) {
+  const vihje = { takaLeveys: vals.leveys, oikeaPituus: vals.suora, korkeusEV: vals.etukork, korkeusEO: vals.etukork, korkeusTO: vals.takakork, korkeusTV: vals.takakork };
+  Object.keys(vihje).forEach(n => { document.getElementById('k-' + n).placeholder = String(vihje[n] || 0); });
 }
 
 let takaKpl = 1;
@@ -614,6 +679,11 @@ function palautaMuokattava() {
   aseta('v-harjakulma', v.harjakulma);
   aseta('v-huomio', v.huomio || '');
   if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
+  KIILA_KENTAT.forEach(n => aseta('k-' + n, v[n] === null || v[n] === undefined ? '' : v[n]));
+  aseta('k-suoraKulma', [0, 1, 2, 3].includes(Number(v.suoraKulma)) ? Number(v.suoraKulma) : 0);
+  kiilaPaalla = !!v.kiilaPaalla;
+  document.getElementById('btn-kiila').classList.toggle('active', kiilaPaalla);
+  document.getElementById('kiila-kentat').style.display = kiilaPaalla ? '' : 'none';
   // Osat sen mukaan, mitä tilauksessa on
   const nimet = items.map(i => i.nimike || '');
   const on = alku => nimet.some(n => n === alku || n.startsWith(alku + ' '));
@@ -720,6 +790,7 @@ async function lisaaTilaukseen() {
     saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl,
     piippukpl,   // Tuotanto näyttää piippujen määrän (tallennetaan 20.11.2026 alkaen)
     ylaTyyppi: document.getElementById('v-ylatyyppi').value,   // hupun yläreunan taitos: ulos / sisaan / tupla (levityskuvat)
+    ...kiilaArvot(),   // kiila / mutkapiippu (20.11.2026): kiilaPaalla, suoraKulma, takaLeveys, oikeaPituus, korkeudet kulmissa, kiilat
     huomio,
   };
 
@@ -789,10 +860,17 @@ function laske() {
   // Peltien mitat lasketaan yhteisessä tiedostossa piippu-laskenta.js (sama laskenta kuin Tuotannon piippunäkymässä)
   const vals = {};
   LASKENTA_KENTAT.forEach(([nimi, id]) => { vals[nimi] = gv(id); });
-  Object.assign(vals, { saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl });
-  const { juuret, muut, geom: g } = KPT_PIIPPU.laskeLapepiippu(vals, {
-    juuret: chk('chk-juuret'), huppu: hasHuppu, kansi: chk('chk-kansi'), hattu: chk('chk-hattu'),
-  });
+  Object.assign(vals, { saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl, ylaTyyppi: document.getElementById('v-ylatyyppi').value }, kiilaArvot());
+  const osat = { juuret: chk('chk-juuret'), huppu: hasHuppu, kansi: chk('chk-kansi'), hattu: chk('chk-hattu') };
+  // Kiilapiipussa hupun palat tulevat 3D-mallista (piippu-levitys.js). Suoralla piipulla tulos on sama kuin laskeLapepiippu.
+  let tulos;
+  try { tulos = window.KPT_PIIPPU_LEVITYS ? KPT_PIIPPU_LEVITYS.laskeKaikki(vals, osat) : KPT_PIIPPU.laskeLapepiippu(vals, osat); }
+  catch (e) { console.error('Kiilan laskenta:', e); tulos = KPT_PIIPPU.laskeLapepiippu(vals, osat); tulos.virhe = 'Kiilan laskenta epäonnistui, lista on laskettu suorana.'; }
+  const { juuret, muut, geom: g } = tulos;
+  paivitaKiilaVihjeet(vals);
+  document.getElementById('kiila-virhe').textContent = kiilaPaalla && tulos.virhe ? tulos.virhe : '';
+  try { document.getElementById('kiila-kuva').innerHTML = kiilaPaalla && window.KPT_PIIPPU_LEVITYS ? KPT_PIIPPU_LEVITYS.kuvaYlhaalta(vals) : ''; }
+  catch (e) { console.error('Kiilan kuva:', e); }
 
   document.getElementById('etukulma-txt').textContent = g.etukulma;
   document.getElementById('takakulma-txt').textContent = g.takakulma;
@@ -833,7 +911,9 @@ function piirraLevityskuvat(vals, hasHuppu, piippukpl) {
     // Muista, mitkä kortit olivat auki, ettei näppäily sulje niitä
     const auki = Array.from(el.querySelectorAll('details')).map(d => d.open);
     const L = window.KPT_PIIPPU_LEVITYS;
-    const { palat } = L.hupunPalat(Object.assign({}, vals, { ylaTyyppi: document.getElementById('v-ylatyyppi').value }));
+    const t = L.hupunPalat(vals);
+    if (!t) { el.innerHTML = '<p class="empty-msg">Kiilapiipun yläpään mitat eivät sovi yhteen, levityskuvia ei voi piirtää.</p>'; kortti.style.display = ''; return; }
+    const palat = t.palat;
     el.innerHTML = L.SELITE + palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl * (piippukpl || 1) })).join('');
     el.querySelectorAll('details').forEach((d, i) => { if (auki[i]) d.open = true; });
     kortti.style.display = '';

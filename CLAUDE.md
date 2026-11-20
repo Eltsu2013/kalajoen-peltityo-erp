@@ -19,7 +19,7 @@ Sama malli kuin `nav.js` ja `profiilit.js`: kaava ja piirto yhdessä tiedostossa
 - `orders/geom.js` → `KPT_GEOM` — vektorit, monikulmiot, ääriviivojen yhdistäminen, kupera kuori, leikkaus suoralla, mm-muotoilu.
 - `orders/pellit.js` → `KPT_PELLIT` — pelti-osat: 3D-sivun avaus tasoksi, taitokset ja kanttausluvut, jiirit ja loveukset, merkintäpisteet, samanlaisten yhdistäminen, levityskuva. Vaatii geom.js:n (lataa ensin). Siirretty Huuvasta vaiheessa 1, joten nimet ovat vielä huuvan (Etu/Oikea/Taka/Vasen).
 - `orders/piippu-laskenta.js` → `KPT_PIIPPU.laskeLapepiippu(vals, osat)` — lapepiipun peltien mitat. Käyttäjät: `piippu.html` ja `piippu_tuotanto.html` (vals = tilausrivin `profile_data.vals`). Ei enää kopioita sivuilla.
-- `orders/piippu-levitys.js` → `KPT_PIIPPU_LEVITYS` — lapepiipun hupun palojen levityskuvat (saumat, tuplat, loveukset, merkintäpisteet, taitostaulukko). Vaatii geom.js, pellit.js ja piippu-laskenta.js (tässä järjestyksessä). Käyttäjät: piippu.html ja piippu_tuotanto.html.
+- `orders/piippu-levitys.js` → `KPT_PIIPPU_LEVITYS` — lapepiipun hupun palojen levityskuvat (saumat, tuplat, loveukset, merkintäpisteet, taitostaulukko) 3D-mallista, joten myös kiila / mutkapiippu (`vals.kiilaPaalla`). `laskeKaikki(vals, osat)` = peltilista kiilan kanssa (suoralla piipulla sama kuin `laskeLapepiippu`). Vaatii geom.js, pellit.js ja piippu-laskenta.js (tässä järjestyksessä). Käyttäjät: piippu.html ja piippu_tuotanto.html.
 - Kun yhteistä tiedostoa muutetaan: **aja `node testit/aja_kaikki.js` ennen pushia** ja nosta `?v=`-numeroa kaikilla sivuilla, jotka lataavat tiedoston.
 
 ## Säännöt
