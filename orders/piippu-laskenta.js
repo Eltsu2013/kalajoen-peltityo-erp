@@ -8,7 +8,7 @@
 //                   const tulos = KPT_PIIPPU.laskeLapepiippu(vals, { juuret: true, huppu: true, kansi: true, hattu: true });
 // Käyttö Nodessa:   const P = require('../orders/piippu-laskenta.js');
 // Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen),
-//          v3 hupun palat pyöristetään ylöspäin.
+//          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -251,7 +251,119 @@
     };
   }
 
-  const KPT_PIIPPU = { laskeLapepiippu };
+
+  // ======================================================================================================
+  // HARJAPIIPPU (vaihe 5, 20.11.2026). Piippu on harjalla: puoli 1 ja puoli 2 laskevat eri lappeille.
+  // Päätökset: claude/harjapiippu_muistiinpanot.md ja mockup v2 (piippu/harjapiippu-mockup.html), Tomi 18.–20.11.2026.
+  //  - kummallekin puolelle oma kattokulma (Excelin S9-bugi korjattu)
+  //  - etujuuren pituus Excelin tavalla: (Alas tai tupla) + Eteen piipusta + Alas + nousu (ei lapepiipun +20:tä)
+  //  - sivujuurten pituus lapepiipun tavalla: tupla + Alas + Eteen piipusta + vinomitta + nousukorjaus + lisävara (50)
+  //  - huppu aina kahdella etukappaleella (etu 1, etu 2), sivut yhtenä tai poikki harjalta (jakosauma)
+  //  - hupun sivujen liitosvara (5) kokonaismittaan, puolet kumpaankin päähän; hupun palat ylöspäin täysiin milleihin
+  //  - kansi ja hattu leveämmän puolen mukaan, aina yhtä osaa
+  //
+  // vals: lev1, lev2 (tyhjä = lev1), suora1, suora2, kork1, korkH, kork2, poimu, ylit1V, ylit1O, ylit2V, ylit2O,
+  //       k24_1, j25_1, k24_2, j25_2 (Eteen piipusta / Alas kummallekin puolelle), tupla, etulis, nousu, sivulisa,
+  //       sauma, huplis, ylareunaV, alatupla, vahennys, hsivlisa, hattulis, sivutJako (1 = yhtenä, 2 = poikki harjalta),
+  //       jakosauma.
+  // Rivit kuten lapepiipussa: { osa, lev, pit, kpl } ja hupun sivuissa lisäksi lisa (leikkausmitat tekstinä).
+  function laskeHarjapiippu(vals, osat) {
+    const v = vals || {};
+    const o = osat || {};
+    const lev1 = luku(v.lev1);
+    const lev2 = (v.lev2 === null || v.lev2 === undefined || v.lev2 === '') ? lev1 : luku(v.lev2);
+    const suora1 = luku(v.suora1), suora2 = luku(v.suora2);
+    const kork1 = luku(v.kork1), korkH = luku(v.korkH), kork2 = luku(v.kork2);
+    const tupla = luku(v.tupla), etulis = luku(v.etulis), nousu = luku(v.nousu), sivulisa = luku(v.sivulisa), poimu = luku(v.poimu);
+    const sauma = luku(v.sauma), huplis = luku(v.huplis), ylareunaV = luku(v.ylareunaV), alatupla = luku(v.alatupla);
+    const vahennys = luku(v.vahennys), hsivlisa = luku(v.hsivlisa), hattulis = luku(v.hattulis), jako = luku(v.jakosauma);
+    const sivutJako = Number(v.sivutJako) === 2 ? 2 : 1;
+
+    // Kummankin puolen geometria omalla kulmallaan
+    const puoli = (suora, kork) => {
+      const ero = kork - korkH;
+      const kulma = ero > 0 ? Math.atan(suora / ero) : Math.PI / 2;   // kulma pystysuorasta (kuten lapepiipun kattokulma)
+      return {
+        ero, kulma, kulmaDeg: kulma * 180 / Math.PI, kaltevuusDeg: 90 - kulma * 180 / Math.PI,
+        vino: Math.sqrt(suora * suora + ero * ero),
+        nousuKomp: Math.tan(kulma) > 0 && ero > 0 ? nousu / Math.tan(kulma) : 0,
+        kaltkorj: suora > 0 ? (huplis / 2) * (ero / suora) : 0,
+      };
+    };
+    const p1 = puoli(suora1, kork1), p2 = puoli(suora2, kork2);
+    const virheet = [];
+    if (!(kork1 > korkH)) virheet.push('Puolen 1 etukorkeuden pitää olla suurempi kuin korkeus harjan kohdalla.');
+    if (!(kork2 > korkH)) virheet.push('Puolen 2 etukorkeuden pitää olla suurempi kuin korkeus harjan kohdalla.');
+
+    const juuret = [], muut = [];
+    if (o.juuret !== false) {
+      [[1, lev1, p1, v.k24_1, v.j25_1, v.ylit1V, v.ylit1O], [2, lev2, p2, v.k24_2, v.j25_2, v.ylit2V, v.ylit2O]].forEach(([n, lev, p, k24x, j25x, vx, ox]) => {
+        const k24 = luku(k24x), j25 = luku(j25x);
+        juuret.push({ osa: 'Juuri etu ' + n, lev: r(lev + etulis), pit: r((j25 > 0 ? j25 : tupla) + k24 + j25 + nousu), kpl: 1 });
+        const sivuPit = tupla + j25 + k24 + p.vino + p.nousuKomp + sivulisa;
+        juuret.push({ osa: 'Juuri vasen ' + n, lev: r(tupla + poimu + luku(vx) + nousu), pit: r(sivuPit), kpl: 1 });
+        juuret.push({ osa: 'Juuri oikea ' + n, lev: r(tupla + poimu + luku(ox) + nousu), pit: r(sivuPit), kpl: 1 });
+      });
+    }
+
+    // Huppu. Korkeus pellille sisältää yläreunan ja alatuplan; harjalla ei kaltevuuskorjausta.
+    const hE1 = kork1 + ylareunaV + alatupla + p1.kaltkorj - vahennys;
+    const hE2 = kork2 + ylareunaV + alatupla + p2.kaltkorj - vahennys;
+    const hH = korkH + ylareunaV + alatupla - vahennys;
+    // Todelliset korkeudet asennettuna, ilman taitoksia (levityskuva ja Tuotannon kuva)
+    const hE1Tod = kork1 + p1.kaltkorj - vahennys, hE2Tod = kork2 + p2.kaltkorj - vahennys, hHTod = korkH - vahennys;
+    const sivuL = suora1 + suora2 + sauma * 4 + huplis + hsivlisa;                 // sivukappale yhtenä
+    const harjaKohta = sauma * 2 + hsivlisa / 2 + huplis / 2 + suora1;             // harjan kohta sivukappaleen etu 1 -päästä
+    const fmt = x => String(ylos(x));
+    const fmt1 = x => String(Math.round(x * 10) / 10).replace('.', ',');
+    if (o.huppu !== false) {
+      muut.push({ osa: 'Huppu etu 1', lev: ylos(lev1 + sauma * 2 + huplis), pit: ylos(hE1), kpl: 1 });
+      muut.push({ osa: 'Huppu etu 2', lev: ylos(lev2 + sauma * 2 + huplis), pit: ylos(hE2), kpl: 1 });
+      if (sivutJako === 1) {
+        muut.push({ osa: 'Huppu sivut', lev: ylos(sivuL), pit: ylos(Math.max(hE1, hE2)), kpl: 2,
+          lisa: 'Leikkaus: ' + fmt(hE1) + ' / harja ' + fmt(hH) + ' kohdassa ' + fmt1(harjaKohta) + ' / ' + fmt(hE2) });
+      } else {
+        // Poikki harjalta: etu 1 -puolelle + jakosauma (90° ulos), etu 2 -puolelle + 2 × jakosauma (kiertää sen)
+        const L1 = harjaKohta + jako, L2 = (sivuL - harjaKohta) + jako * 2;
+        muut.push({ osa: 'Huppu sivu 1', lev: ylos(L1), pit: ylos(hE1), kpl: 2,
+          lisa: 'Etu 1 -puoli. Leikkaus: ' + fmt(hE1) + ' → harja ' + fmt(hH) + ' kohdassa ' + fmt1(harjaKohta) + ', jakosauma ' + jako + ' harjan puolella' });
+        muut.push({ osa: 'Huppu sivu 2', lev: ylos(L2), pit: ylos(hE2), kpl: 2,
+          lisa: 'Etu 2 -puoli. Leikkaus: harja ' + fmt(hH) + ' kohdassa ' + (jako * 2) + ' (sauma ' + (jako * 2) + ') → ' + fmt(hE2) });
+      }
+    }
+    const levMax = Math.max(lev1, lev2), pituus = suora1 + suora2;
+    if (o.kansi !== false) muut.push({ osa: 'Kansi', lev: r(levMax + ylareunaV * 4 + huplis + 10), pit: r(pituus + ylareunaV * 4 + huplis + 10), kpl: 1 });
+    if (o.hattu !== false) muut.push({ osa: 'Hattu', lev: r(levMax + hattulis), pit: r(pituus + hattulis), kpl: 1 });
+
+    return {
+      juuret, muut, virheet,
+      geom: { lev1, lev2, puoli1: p1, puoli2: p2, hE1, hE2, hH, hE1Tod, hE2Tod, hHTod, sivuL, harjaKohta, sivutJako },
+    };
+  }
+
+  // Puolen 2 ehdotukset (mockup v2): suora mitta kokonaismitasta, korkeus ja vinomitta puolen 1 kaltevuudesta.
+  // tila: { suora2: 'auto' | luku, puoli2: 'auto' | { kork: luku } | { vino: luku } }. Palauttaa { suora2, kork2, vino2, vino1, varoitukset }.
+  function harjaPuoli2(vals, tila) {
+    const v = vals || {}, t = tila || {};
+    const suora1 = luku(v.suora1), kork1 = luku(v.kork1), korkH = luku(v.korkH), koko = luku(v.koko);
+    const varoitukset = [];
+    const suora2 = t.suora2 === 'auto' || t.suora2 === undefined ? Math.max(0, koko - suora1) : luku(t.suora2);
+    if (t.suora2 !== 'auto' && t.suora2 !== undefined && koko > 0 && Math.abs(suora1 + suora2 - koko) > 0.5)
+      varoitukset.push('Suorat mitat ' + suora1 + ' + ' + suora2 + ' = ' + (suora1 + suora2) + ' eivät täsmää kokonaismittaan ' + koko + '.');
+    const kalt1 = suora1 > 0 ? (kork1 - korkH) / suora1 : 0;
+    let kork2;
+    const p2 = t.puoli2 || 'auto';
+    if (p2 === 'auto') kork2 = korkH + suora2 * kalt1;
+    else if (p2.kork !== undefined) kork2 = luku(p2.kork);
+    else {
+      const vino = luku(p2.vino);
+      if (!(vino > suora2)) varoitukset.push('Puolen 2 vinomitan pitää olla pidempi kuin suora mitta.');
+      kork2 = korkH + (vino > suora2 ? Math.sqrt(vino * vino - suora2 * suora2) : 0);
+    }
+    return { suora2, kork2, vino2: Math.hypot(suora2, kork2 - korkH), vino1: Math.hypot(suora1, kork1 - korkH), varoitukset };
+  }
+
+  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2 };
   globalThis.KPT_PIIPPU = KPT_PIIPPU;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU;
 })();
