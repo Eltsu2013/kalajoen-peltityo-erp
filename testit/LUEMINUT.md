@@ -34,7 +34,17 @@ Huuvan testit siirrettiin Claude-projektista (`huuva/testit/`) vaiheessa 1 (suun
 
 Tarkempi kuvaus jokaisesta sarjasta: projektin `huuva/testit/LUEMINUT.md`.
 
+## piippu/ (1 sarja, 85 tarkistusta 20.11.2026)
+
+`test_lapepiippu.js` testaa `orders/piippu-laskenta.js`:ää, jota käyttävät Piippu-sivu ja Tuotannon piippunäkymä (vaihe 2).
+
+- **Vertailuluvut** (`lapepiippu_vertailu.json`): 25 piippua peltilistoineen. Tallennettu siirron yhteydessä, kun uusi tiedosto oli todettu täsmälleen samaksi kuin vanhat kaksi kopiota 20 000 mittayhdistelmällä. Jos tämä hälyttää, laskenta on muuttunut.
+- **Käsin lasketut oletusmitat** (Piippu-sivun oletusarvot): hupun palat, kansi, hattu, juuret, kaltevuuskorjaus.
+- **Saumarakenne** (Tomin luonnokset 20.11.): jaetun kappaleen liitokseen 60 mm (3 × sauma), sauma 2:ssa takimmainen sivupala saa 40:n, sauma 2:n etu = taka.
+- Osavalinnat (huppu pois, vain hattu) ja Tuotannon oletus (kaikki osat).
+- Kokeiltu: jos E2-korjaus (18.11.) tai Sauma 2 -korjaus (20.11.) perutaan, testi hälyttää.
+
 ## Tulossa
 
-- `piippu/`: lapepiipun nykyiset luvut (vaihe 2, ennen ja jälkeen -vertailu) ja harjapiipun testipiiput A ja B.
+- `piippu/`: harjapiipun testipiiput A ja B (vaihe 5).
 - Kartion testit (`test_kartio.js`) siirretään, kun Kartio tulee repoon (vaihe 8).
