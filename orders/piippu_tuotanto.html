@@ -289,13 +289,14 @@ function laskePellit(v) {
   } else if (huppuSivutKpl===2) {
     const lev = saumatyyppi===1 ? suora/2+huplis/2+sauma*3 : suora/2+huplis/2+sauma*3+huptakalis/2;
     muut.push({ osa:'Huppu sivut 1', lev:rr(lev), pit:rr(hEtuKork), kpl:2 });
-    muut.push({ osa:'Huppu sivut 2', lev:rr(lev), pit:rr((hEtuKork+hTakaKork)/2), kpl:2 });
+    // Sauma 2: viimeiseen palaan yksi sauma lisää liitosta varten (20 + 40), sama kuin piippu.html (20.11.2026)
+    muut.push({ osa:'Huppu sivut 2', lev:rr(lev+(saumatyyppi===1?0:sauma)), pit:rr((hEtuKork+hTakaKork)/2), kpl:2 });
   } else {
     const lev = saumatyyppi===1 ? suora/3+huplis/3+sauma*3 : suora/3+huplis/3+sauma*3+huptakalis/3;
     const diff = hEtuKork-hTakaKork;
     muut.push({ osa:'Huppu sivut 1', lev:rr(lev), pit:rr(hEtuKork), kpl:2 });
     muut.push({ osa:'Huppu sivut 2', lev:rr(lev), pit:rr(hEtuKork-diff/3), kpl:2 });
-    muut.push({ osa:'Huppu sivut 3', lev:rr(lev), pit:rr(hEtuKork-diff*2/3), kpl:2 });
+    muut.push({ osa:'Huppu sivut 3', lev:rr(lev+(saumatyyppi===1?0:sauma)), pit:rr(hEtuKork-diff*2/3), kpl:2 });
   }
 
   if (saumatyyppi===2) {

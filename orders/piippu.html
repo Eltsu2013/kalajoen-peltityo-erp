@@ -855,8 +855,10 @@ function laske() {
         ? suora/2 + huplis/2 + sauma*3
         : suora/2 + huplis/2 + sauma*3 + huptakalis/2;
       const pit2 = (hEtuKork + hTakaKork) / 2;
+      // Sauma 2: sivun molemmissa päissä 40 mm, joten liitokseen (20 + 40) tarvitaan viimeiseen palaan yksi sauma lisää (Tomi 20.11.2026)
+      const lisaVika = saumatyyppi === 1 ? 0 : sauma;
       muut.push({ osa: 'Huppu sivut 1', lev: r(lev), pit: r(hEtuKork), kpl: 2 });
-      muut.push({ osa: 'Huppu sivut 2', lev: r(lev), pit: r(pit2),     kpl: 2 });
+      muut.push({ osa: 'Huppu sivut 2', lev: r(lev + lisaVika), pit: r(pit2), kpl: 2 });
     } else {
       const lev = saumatyyppi === 1
         ? suora/3 + huplis/3 + sauma*3
@@ -864,9 +866,10 @@ function laske() {
       const diff = hEtuKork - hTakaKork;
       const pit2 = hEtuKork - diff / 3;
       const pit3 = hEtuKork - diff * 2/3;
+      const lisaVika = saumatyyppi === 1 ? 0 : sauma;   // ks. 2 osaa
       muut.push({ osa: 'Huppu sivut 1', lev: r(lev), pit: r(hEtuKork), kpl: 2 });
       muut.push({ osa: 'Huppu sivut 2', lev: r(lev), pit: r(pit2),     kpl: 2 });
-      muut.push({ osa: 'Huppu sivut 3', lev: r(lev), pit: r(pit3),     kpl: 2 });
+      muut.push({ osa: 'Huppu sivut 3', lev: r(lev + lisaVika), pit: r(pit3), kpl: 2 });
     }
 
     // Huppu taka — 1/2/3 osaa
