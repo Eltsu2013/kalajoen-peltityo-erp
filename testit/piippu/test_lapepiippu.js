@@ -40,6 +40,11 @@ ok(osa(o.juuret, 'Juuri taka').lev === 730, 'oletus: juuri taka leveys 150 + 100
 ok(o.geom.q9 === 220, 'oletus: juuri takaa piipulle (hupun kanssa) = nousu + 20 = 220');
 ok(o.geom.etukulma === 72 && o.geom.takakulma === 108, 'oletus: etukulma 72°, takakulma 108°');
 
+// Hupun todellinen korkeus ilman taitoksia (Tuotannon kuva, Tomi 20.11.2026): etu 1000 − 20 + 1,7 = 982, taka 800 − 20 − 1,7 = 778
+ok(Math.round(o.geom.hEtuTodellinen) === 982, 'oletus: hupun todellinen korkeus edessä 982 (ei alatuplaa eikä yläreunan taitosta)');
+ok(Math.round(o.geom.hTakaTodellinen) === 778, 'oletus: hupun todellinen korkeus takana 778');
+ok(Math.round(o.geom.hEtuKorkMerkinta) === 1002, 'oletus: Piippu-sivun kuvan mitta pysyy 1002 (yläreunan taitos mukana)');
+
 // ---- 3) Saumarakenne (kohta 8): jaetun kappaleen liitokseen 20 + 40 = 60 mm eli 3 × sauma
 // Mitat jaollisia kahdella ja kolmella, ettei palojen pyöristys sotke summia (400 / 3 = 133,3 pyöristyy).
 const JAOLLINEN = Object.assign({}, OLETUS, { leveys: 420, suora: 600, huplis: 12, huptakalis: 6 });
