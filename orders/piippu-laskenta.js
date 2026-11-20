@@ -7,7 +7,8 @@
 // Käyttö sivulla:   <script src="piippu-laskenta.js?v=1"></script>
 //                   const tulos = KPT_PIIPPU.laskeLapepiippu(vals, { juuret: true, huppu: true, kansi: true, hattu: true });
 // Käyttö Nodessa:   const P = require('../orders/piippu-laskenta.js');
-// Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen).
+// Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen),
+//          v3 hupun palat pyöristetään ylöspäin.
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -15,6 +16,9 @@
 // oli siitä erillinen kopio (laskePellit), joka poistettiin. Testit: testit/piippu/.
 (function () {
   const r = n => Math.round(n);
+  // Hupun mitat pyöristetään seuraavaan täyteen milliin ylöspäin (Tomi 20.11.2026: mieluummin hieman iso kuin liian pieni).
+  // 1e-9 estää liukulukuvirheen nostamasta tasalukua (esim. 450,0000000001 → 451).
+  const ylos = n => Math.ceil(n - 1e-9);
   const luku = x => Number(x) || 0;
 
   // vals = syötöt samoilla nimillä kuin tilausrivin profile_data.vals (leveys, suora, etukork, takakork, ...).
@@ -149,14 +153,14 @@
     if (hasHuppu) {
       // Huppu etu — 1/2/3 osaa
       if (huppuEtuKpl === 1) {
-        muut.push({ osa: 'Huppu etu', lev: r(leveys + sauma*2 + huplis), pit: r(hEtuKork), kpl: 1 });
+        muut.push({ osa: 'Huppu etu', lev: ylos(leveys + sauma*2 + huplis), pit: ylos(hEtuKork), kpl: 1 });
       } else if (huppuEtuKpl === 2) {
-        muut.push({ osa: 'Huppu etu 1', lev: r(leveys/2 + huplis/2 + sauma*2), pit: r(hEtuKork), kpl: 1 });
-        muut.push({ osa: 'Huppu etu 2', lev: r(leveys/2 + huplis/2 + sauma*3), pit: r(hEtuKork), kpl: 1 });
+        muut.push({ osa: 'Huppu etu 1', lev: ylos(leveys/2 + huplis/2 + sauma*2), pit: ylos(hEtuKork), kpl: 1 });
+        muut.push({ osa: 'Huppu etu 2', lev: ylos(leveys/2 + huplis/2 + sauma*3), pit: ylos(hEtuKork), kpl: 1 });
       } else {
-        muut.push({ osa: 'Huppu etu 1', lev: r(leveys/3 + huplis/3 + sauma*2), pit: r(hEtuKork), kpl: 1 });
-        muut.push({ osa: 'Huppu etu 2', lev: r(leveys/3 + huplis/3 + sauma*3), pit: r(hEtuKork), kpl: 1 });
-        muut.push({ osa: 'Huppu etu 3', lev: r(leveys/3 + huplis/3 + sauma*3), pit: r(hEtuKork), kpl: 1 });
+        muut.push({ osa: 'Huppu etu 1', lev: ylos(leveys/3 + huplis/3 + sauma*2), pit: ylos(hEtuKork), kpl: 1 });
+        muut.push({ osa: 'Huppu etu 2', lev: ylos(leveys/3 + huplis/3 + sauma*3), pit: ylos(hEtuKork), kpl: 1 });
+        muut.push({ osa: 'Huppu etu 3', lev: ylos(leveys/3 + huplis/3 + sauma*3), pit: ylos(hEtuKork), kpl: 1 });
       }
 
       // Sivut
@@ -166,46 +170,46 @@
         const hSivLev = saumatyyppi === 1
           ? suora + sauma*3 + huplis
           : suora + sauma*4 + huplis + huptakalis;
-        muut.push({ osa: 'Huppu sivut', lev: r(hSivLev), pit: r(hEtuKork), kpl: 2 });
+        muut.push({ osa: 'Huppu sivut', lev: ylos(hSivLev), pit: ylos(hEtuKork), kpl: 2 });
       } else if (huppuSivutKpl === 2) {
         const lev = sivuPalaLev(2);
         const pit2 = (hEtuKork + hTakaKork) / 2;
-        muut.push({ osa: 'Huppu sivut 1', lev: r(lev), pit: r(hEtuKork), kpl: 2 });
-        muut.push({ osa: 'Huppu sivut 2', lev: r(lev + lisaVika), pit: r(pit2), kpl: 2 });
+        muut.push({ osa: 'Huppu sivut 1', lev: ylos(lev), pit: ylos(hEtuKork), kpl: 2 });
+        muut.push({ osa: 'Huppu sivut 2', lev: ylos(lev + lisaVika), pit: ylos(pit2), kpl: 2 });
       } else {
         const lev = sivuPalaLev(3);
         const diff = hEtuKork - hTakaKork;
         const pit2 = hEtuKork - diff / 3;
         const pit3 = hEtuKork - diff * 2/3;
-        muut.push({ osa: 'Huppu sivut 1', lev: r(lev), pit: r(hEtuKork), kpl: 2 });
-        muut.push({ osa: 'Huppu sivut 2', lev: r(lev), pit: r(pit2), kpl: 2 });
-        muut.push({ osa: 'Huppu sivut 3', lev: r(lev + lisaVika), pit: r(pit3), kpl: 2 });
+        muut.push({ osa: 'Huppu sivut 1', lev: ylos(lev), pit: ylos(hEtuKork), kpl: 2 });
+        muut.push({ osa: 'Huppu sivut 2', lev: ylos(lev), pit: ylos(pit2), kpl: 2 });
+        muut.push({ osa: 'Huppu sivut 3', lev: ylos(lev + lisaVika), pit: ylos(pit3), kpl: 2 });
       }
 
       // Huppu taka — 1/2/3 osaa
       if (saumatyyppi === 2) {
         // Saumatyyppi 2: taka = sama kuin etu, huptakalis ei vaikuta
         if (huppuTakaKpl === 1) {
-          muut.push({ osa: 'Huppu taka', lev: r(leveys + sauma*2 + huplis), pit: r(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka', lev: ylos(leveys + sauma*2 + huplis), pit: ylos(hTakaKork), kpl: 1 });
         } else if (huppuTakaKpl === 2) {
-          muut.push({ osa: 'Huppu taka 1', lev: r(leveys/2 + huplis/2 + sauma*2), pit: r(hTakaKork), kpl: 1 });
-          muut.push({ osa: 'Huppu taka 2', lev: r(leveys/2 + huplis/2 + sauma*3), pit: r(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 1', lev: ylos(leveys/2 + huplis/2 + sauma*2), pit: ylos(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 2', lev: ylos(leveys/2 + huplis/2 + sauma*3), pit: ylos(hTakaKork), kpl: 1 });
         } else {
-          muut.push({ osa: 'Huppu taka 1', lev: r(leveys/3 + huplis/3 + sauma*2), pit: r(hTakaKork), kpl: 1 });
-          muut.push({ osa: 'Huppu taka 2', lev: r(leveys/3 + huplis/3 + sauma*3), pit: r(hTakaKork), kpl: 1 });
-          muut.push({ osa: 'Huppu taka 3', lev: r(leveys/3 + huplis/3 + sauma*3), pit: r(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 1', lev: ylos(leveys/3 + huplis/3 + sauma*2), pit: ylos(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 2', lev: ylos(leveys/3 + huplis/3 + sauma*3), pit: ylos(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 3', lev: ylos(leveys/3 + huplis/3 + sauma*3), pit: ylos(hTakaKork), kpl: 1 });
         }
       } else {
         // Saumatyyppi 1: huptakalis mukana reunapaloissa
         if (huppuTakaKpl === 1) {
-          muut.push({ osa: 'Huppu taka', lev: r(leveys + sauma*4 + huplis + huptakalis), pit: r(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka', lev: ylos(leveys + sauma*4 + huplis + huptakalis), pit: ylos(hTakaKork), kpl: 1 });
         } else if (huppuTakaKpl === 2) {
-          muut.push({ osa: 'Huppu taka 1', lev: r(leveys/2 + huplis/2 + huptakalis/2 + sauma*3), pit: r(hTakaKork), kpl: 1 });
-          muut.push({ osa: 'Huppu taka 2', lev: r(leveys/2 + huplis/2 + huptakalis/2 + sauma*4), pit: r(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 1', lev: ylos(leveys/2 + huplis/2 + huptakalis/2 + sauma*3), pit: ylos(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 2', lev: ylos(leveys/2 + huplis/2 + huptakalis/2 + sauma*4), pit: ylos(hTakaKork), kpl: 1 });
         } else {
-          muut.push({ osa: 'Huppu taka 1', lev: r(leveys/3 + huplis/3 + huptakalis/2 + sauma*3), pit: r(hTakaKork), kpl: 1 });
-          muut.push({ osa: 'Huppu taka 2', lev: r(leveys/3 + huplis/3 + sauma*3),                pit: r(hTakaKork), kpl: 1 });
-          muut.push({ osa: 'Huppu taka 3', lev: r(leveys/3 + huplis/3 + huptakalis/2 + sauma*4), pit: r(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 1', lev: ylos(leveys/3 + huplis/3 + huptakalis/2 + sauma*3), pit: ylos(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 2', lev: ylos(leveys/3 + huplis/3 + sauma*3),                pit: ylos(hTakaKork), kpl: 1 });
+          muut.push({ osa: 'Huppu taka 3', lev: ylos(leveys/3 + huplis/3 + huptakalis/2 + sauma*4), pit: ylos(hTakaKork), kpl: 1 });
         }
       }
     }

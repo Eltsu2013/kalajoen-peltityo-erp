@@ -78,7 +78,7 @@
    {
     "osa": "Huppu taka",
     "lev": 495,
-    "pit": 818,
+    "pit": 819,
     "kpl": 1
    },
    {
@@ -180,13 +180,13 @@
    {
     "osa": "Huppu etu",
     "lev": 816,
-    "pit": 1574,
+    "pit": 1575,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut 1",
     "lev": 760,
-    "pit": 1574,
+    "pit": 1575,
     "kpl": 2
    },
    {
@@ -197,7 +197,7 @@
    },
    {
     "osa": "Huppu taka 1",
-    "lev": 321,
+    "lev": 322,
     "pit": 836,
     "kpl": 1
    },
@@ -209,7 +209,7 @@
    },
    {
     "osa": "Huppu taka 3",
-    "lev": 341,
+    "lev": 342,
     "pit": 836,
     "kpl": 1
    },
@@ -306,19 +306,19 @@
    {
     "osa": "Huppu etu 1",
     "lev": 498,
-    "pit": 1426,
+    "pit": 1427,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
     "lev": 518,
-    "pit": 1426,
+    "pit": 1427,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut 1",
     "lev": 480,
-    "pit": 1426,
+    "pit": 1427,
     "kpl": 2
    },
    {
@@ -489,19 +489,19 @@
    {
     "osa": "Huppu sivut 3",
     "lev": 215,
-    "pit": 677,
+    "pit": 678,
     "kpl": 2
    },
    {
     "osa": "Huppu taka 1",
     "lev": 371,
-    "pit": 612,
+    "pit": 613,
     "kpl": 1
    },
    {
     "osa": "Huppu taka 2",
     "lev": 386,
-    "pit": 612,
+    "pit": 613,
     "kpl": 1
    },
    {
@@ -591,24 +591,24 @@
    {
     "osa": "Huppu etu",
     "lev": 378,
-    "pit": 614,
+    "pit": 615,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut 1",
-    "lev": 281,
-    "pit": 614,
+    "lev": 282,
+    "pit": 615,
     "kpl": 2
    },
    {
     "osa": "Huppu sivut 2",
-    "lev": 281,
-    "pit": 494,
+    "lev": 282,
+    "pit": 495,
     "kpl": 2
    },
    {
     "osa": "Huppu sivut 3",
-    "lev": 306,
+    "lev": 307,
     "pit": 374,
     "kpl": 2
    },
@@ -735,13 +735,13 @@
    {
     "osa": "Huppu sivut 3",
     "lev": 290,
-    "pit": 1130,
+    "pit": 1131,
     "kpl": 2
    },
    {
     "osa": "Huppu taka",
     "lev": 463,
-    "pit": 990,
+    "pit": 991,
     "kpl": 1
    },
    {
@@ -849,13 +849,13 @@
    {
     "osa": "Huppu taka 1",
     "lev": 549,
-    "pit": 580,
+    "pit": 581,
     "kpl": 1
    },
    {
     "osa": "Huppu taka 2",
     "lev": 574,
-    "pit": 580,
+    "pit": 581,
     "kpl": 1
    },
    {
@@ -1083,25 +1083,25 @@
    {
     "osa": "Huppu etu 1",
     "lev": 258,
-    "pit": 838,
+    "pit": 839,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
     "lev": 283,
-    "pit": 838,
+    "pit": 839,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 3",
     "lev": 283,
-    "pit": 838,
+    "pit": 839,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut 1",
     "lev": 592,
-    "pit": 838,
+    "pit": 839,
     "kpl": 2
    },
    {
@@ -1207,19 +1207,19 @@
   "muut": [
    {
     "osa": "Huppu etu 1",
-    "lev": 141,
+    "lev": 142,
     "pit": 1784,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
-    "lev": 156,
+    "lev": 157,
     "pit": 1784,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 3",
-    "lev": 156,
+    "lev": 157,
     "pit": 1784,
     "kpl": 1
    },
@@ -1358,13 +1358,13 @@
    {
     "osa": "Huppu taka 1",
     "lev": 535,
-    "pit": 215,
+    "pit": 216,
     "kpl": 1
    },
    {
     "osa": "Huppu taka 2",
     "lev": 555,
-    "pit": 215,
+    "pit": 216,
     "kpl": 1
    },
    {
@@ -1460,7 +1460,7 @@
    {
     "osa": "Huppu sivut 2",
     "lev": 532,
-    "pit": 955,
+    "pit": 956,
     "kpl": 2
    },
    {
@@ -1472,7 +1472,7 @@
    {
     "osa": "Huppu taka",
     "lev": 1283,
-    "pit": 722,
+    "pit": 723,
     "kpl": 1
    },
    {
@@ -1580,13 +1580,13 @@
    {
     "osa": "Huppu taka 1",
     "lev": 689,
-    "pit": 342,
+    "pit": 343,
     "kpl": 1
    },
    {
     "osa": "Huppu taka 2",
     "lev": 714,
-    "pit": 342,
+    "pit": 343,
     "kpl": 1
    },
    {
@@ -1681,26 +1681,26 @@
    },
    {
     "osa": "Huppu sivut 1",
-    "lev": 422,
+    "lev": 423,
     "pit": 436,
     "kpl": 2
    },
    {
     "osa": "Huppu sivut 2",
-    "lev": 422,
+    "lev": 423,
     "pit": 341,
     "kpl": 2
    },
    {
     "osa": "Huppu sivut 3",
-    "lev": 422,
-    "pit": 245,
+    "lev": 423,
+    "pit": 246,
     "kpl": 2
    },
    {
     "osa": "Huppu taka",
     "lev": 646,
-    "pit": 150,
+    "pit": 151,
     "kpl": 1
    },
    {
@@ -1790,25 +1790,25 @@
    {
     "osa": "Huppu etu 1",
     "lev": 197,
-    "pit": 1333,
+    "pit": 1334,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
     "lev": 222,
-    "pit": 1333,
+    "pit": 1334,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 3",
     "lev": 222,
-    "pit": 1333,
+    "pit": 1334,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut",
     "lev": 1154,
-    "pit": 1333,
+    "pit": 1334,
     "kpl": 2
    },
    {
@@ -1916,19 +1916,19 @@
    {
     "osa": "Huppu etu 1",
     "lev": 436,
-    "pit": 1046,
+    "pit": 1047,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
     "lev": 456,
-    "pit": 1046,
+    "pit": 1047,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut 1",
     "lev": 384,
-    "pit": 1046,
+    "pit": 1047,
     "kpl": 2
    },
    {
@@ -2099,19 +2099,19 @@
    },
    {
     "osa": "Huppu sivut 1",
-    "lev": 324,
+    "lev": 325,
     "pit": 1502,
     "kpl": 2
    },
    {
     "osa": "Huppu sivut 2",
-    "lev": 324,
-    "pit": 1267,
+    "lev": 325,
+    "pit": 1268,
     "kpl": 2
    },
    {
     "osa": "Huppu sivut 3",
-    "lev": 324,
+    "lev": 325,
     "pit": 1033,
     "kpl": 2
    },
@@ -2226,13 +2226,13 @@
    {
     "osa": "Huppu taka 1",
     "lev": 439,
-    "pit": 1518,
+    "pit": 1519,
     "kpl": 1
    },
    {
     "osa": "Huppu taka 2",
     "lev": 454,
-    "pit": 1518,
+    "pit": 1519,
     "kpl": 1
    },
    {
@@ -2315,19 +2315,19 @@
   "muut": [
    {
     "osa": "Huppu etu 1",
-    "lev": 176,
+    "lev": 177,
     "pit": 686,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
-    "lev": 191,
+    "lev": 192,
     "pit": 686,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 3",
-    "lev": 191,
+    "lev": 192,
     "pit": 686,
     "kpl": 1
    },
@@ -2448,25 +2448,25 @@
    {
     "osa": "Huppu etu 1",
     "lev": 216,
-    "pit": 1152,
+    "pit": 1153,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 2",
     "lev": 236,
-    "pit": 1152,
+    "pit": 1153,
     "kpl": 1
    },
    {
     "osa": "Huppu etu 3",
     "lev": 236,
-    "pit": 1152,
+    "pit": 1153,
     "kpl": 1
    },
    {
     "osa": "Huppu sivut 1",
     "lev": 275,
-    "pit": 1152,
+    "pit": 1153,
     "kpl": 2
    },
    {
@@ -2604,13 +2604,13 @@
    {
     "osa": "Huppu taka 1",
     "lev": 267,
-    "pit": 708,
+    "pit": 709,
     "kpl": 1
    },
    {
     "osa": "Huppu taka 2",
     "lev": 287,
-    "pit": 708,
+    "pit": 709,
     "kpl": 1
    },
    {

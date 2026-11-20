@@ -34,11 +34,11 @@ Huuvan testit siirrettiin Claude-projektista (`huuva/testit/`) vaiheessa 1 (suun
 
 Tarkempi kuvaus jokaisesta sarjasta: projektin `huuva/testit/LUEMINUT.md`.
 
-## piippu/ (1 sarja, 88 tarkistusta 20.11.2026)
+## piippu/ (1 sarja, 90 tarkistusta 20.11.2026)
 
 `test_lapepiippu.js` testaa `orders/piippu-laskenta.js`:ää, jota käyttävät Piippu-sivu ja Tuotannon piippunäkymä (vaihe 2).
 
-- **Vertailuluvut** (`lapepiippu_vertailu.json`): 25 piippua peltilistoineen. Tallennettu siirron yhteydessä, kun uusi tiedosto oli todettu täsmälleen samaksi kuin vanhat kaksi kopiota 20 000 mittayhdistelmällä. Jos tämä hälyttää, laskenta on muuttunut.
+- **Vertailuluvut** (`lapepiippu_vertailu.json`): 25 piippua peltilistoineen. Tallennettu siirron yhteydessä, kun uusi tiedosto oli todettu täsmälleen samaksi kuin vanhat kaksi kopiota 20 000 mittayhdistelmällä. Jos tämä hälyttää, laskenta on muuttunut. Päivitetty tarkoituksella 20.11. (hupun palat pyöristetään ylöspäin).
 - **Käsin lasketut oletusmitat** (Piippu-sivun oletusarvot): hupun palat, kansi, hattu, juuret, kaltevuuskorjaus, hupun todellinen korkeus (982 / 778).
 - **Saumarakenne** (Tomin luonnokset 20.11.): jaetun kappaleen liitokseen 60 mm (3 × sauma), sauma 2:ssa takimmainen sivupala saa 40:n, sauma 2:n etu = taka.
 - Osavalinnat (huppu pois, vain hattu) ja Tuotannon oletus (kaikki osat).
