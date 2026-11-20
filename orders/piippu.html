@@ -340,6 +340,10 @@
       <input type="number" id="v-huplis" value="10" oninput="laske()">
       <label>Hupun yläreuna ⚠</label>
       <input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
+      <label>Yläreunan taitos</label>
+      <select id="v-ylatyyppi" onchange="laske()" style="background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);padding:5px 6px;font-size:13px;width:100%;font-family:'IBM Plex Mono',monospace;">
+        <option value="ulos">Ulos 90°</option><option value="sisaan">Sisään 90°</option><option value="tupla">Tupla 180°</option>
+      </select>
       <label>Hupun alatuplat</label>
       <input type="number" id="v-alatupla" value="20" oninput="laske()">
       <label>Vähennys korkeudesta</label>
@@ -419,6 +423,10 @@
       <div id="luettelo-huppu"><p class="empty-msg">—</p></div>
     </div>
   </div>
+  <div class="luettelo-card" id="levitys-card" style="margin-top:12px;display:none;">
+    <h3>Hupun levityskuvat</h3>
+    <div id="levityskuvat"></div>
+  </div>
   <div style="padding:12px;border-top:1px solid var(--border);margin-top:8px;">
     <button onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
       Lisää tilaukseen →
@@ -429,7 +437,10 @@
 </div>
 </div>
 
+<script src="geom.js?v=1"></script>
+<script src="pellit.js?v=1"></script>
 <script src="piippu-laskenta.js?v=3"></script>
+<script src="piippu-levitys.js?v=1"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -655,6 +666,7 @@ async function lisaaTilaukseen() {
     hattulis:    parseFloat(document.getElementById('v-hattulis').value) || 0,
     saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl,
     piippukpl,   // Tuotanto näyttää piippujen määrän (tallennetaan 20.11.2026 alkaen)
+    ylaTyyppi: document.getElementById('v-ylatyyppi').value,   // hupun yläreunan taitos: ulos / sisaan / tupla (levityskuvat)
     huomio,
   };
 
@@ -750,6 +762,26 @@ function laske() {
     g.hEtuKorkMerkinta, g.hTakaKorkMerkinta, hasHuppu, g.q9, vals.harjaylitys, g.hSivEtenema);
   renderTaulu('luettelo-juuret', juuret, piippukpl);
   renderTaulu('luettelo-huppu', muut, piippukpl);
+  piirraLevityskuvat(vals, hasHuppu, piippukpl);
+}
+
+// Hupun levityskuvat (yhteinen piippu-levitys.js, sama kuin Tuotannossa). Virhe kuvissa ei saa kaataa laskentaa.
+function piirraLevityskuvat(vals, hasHuppu, piippukpl) {
+  const kortti = document.getElementById('levitys-card');
+  const el = document.getElementById('levityskuvat');
+  try {
+    if (!hasHuppu || !window.KPT_PIIPPU_LEVITYS) { kortti.style.display = 'none'; return; }
+    // Muista, mitkä kortit olivat auki, ettei näppäily sulje niitä
+    const auki = Array.from(el.querySelectorAll('details')).map(d => d.open);
+    const L = window.KPT_PIIPPU_LEVITYS;
+    const { palat } = L.hupunPalat(Object.assign({}, vals, { ylaTyyppi: document.getElementById('v-ylatyyppi').value }));
+    el.innerHTML = L.SELITE + palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl * (piippukpl || 1) })).join('');
+    el.querySelectorAll('details').forEach((d, i) => { if (auki[i]) d.open = true; });
+    kortti.style.display = '';
+  } catch (e) {
+    console.error('Levityskuvat:', e);
+    el.innerHTML = '<p class="empty-msg">Levityskuvien piirto epäonnistui.</p>';
+  }
 }
 
 function renderTaulu(elId, pellit, piippukpl) {
