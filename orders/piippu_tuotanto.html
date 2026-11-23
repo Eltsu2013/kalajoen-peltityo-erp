@@ -175,6 +175,7 @@
 <script src="pellit.js?v=3"></script>
 <script src="piippu-laskenta.js?v=8"></script>
 <script src="piippu-levitys.js?v=13"></script>
+<script src="kansi.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=4"></script>
 <script>
@@ -233,14 +234,14 @@ const onHarja = v => !!(v && v.tyyppi === 'harjapiippu');
 function laskePellit(v) {
   if (!v) return { juuret: [], muut: [] };
   if (onHarja(v)) {
-    try { const t = KPT_PIIPPU_LEVITYS.laskeKaikkiHarja(v); return { juuret: t.juuret, muut: t.muut, virhe: (t.virheet || [])[0] }; }
-    catch (e) { console.error('Harjapiippu:', e); const t = KPT_PIIPPU.laskeHarjapiippu(v); return { juuret: t.juuret, muut: t.muut }; }
+    try { const t = KPT_PIIPPU_LEVITYS.laskeKaikkiHarja(v); return { juuret: t.juuret, muut: t.muut, kansi: t.kansi, virhe: (t.virheet || [])[0] }; }
+    catch (e) { console.error('Harjapiippu:', e); const t = KPT_PIIPPU.laskeHarjapiippu(v); return { juuret: t.juuret, muut: t.muut, kansi: t.kansi }; }
   }
   try {
-    if (window.KPT_PIIPPU_LEVITYS) { const t = KPT_PIIPPU_LEVITYS.laskeKaikki(v); return { juuret: t.juuret, muut: t.muut, kiila: t.kiila, virhe: t.virhe }; }
+    if (window.KPT_PIIPPU_LEVITYS) { const t = KPT_PIIPPU_LEVITYS.laskeKaikki(v); return { juuret: t.juuret, muut: t.muut, kansi: t.kansi, kiila: t.kiila, virhe: t.virhe }; }
   } catch (e) { console.error('Kiilan laskenta:', e); }
-  const { juuret, muut } = KPT_PIIPPU.laskeLapepiippu(v);
-  return { juuret, muut };
+  const { juuret, muut, kansi } = KPT_PIIPPU.laskeLapepiippu(v);
+  return { juuret, muut, kansi };
 }
 
 // Kiila / mutkapiippu: kuva ylhäältä ja muistutus juurista
@@ -291,7 +292,7 @@ function tilauksenOsat(v, items) {
   const juuret = valitse(laskettu.juuret);
   const muut = valitse(laskettu.muut);
   // Varmistus: jos lasketut nimikkeet eivät täsmää tilaukseen lainkaan (hyvin vanha tilaus), näytetään laskettu lista kuten ennen
-  if (!loydetyt.size && (laskettu.juuret.length || laskettu.muut.length)) return { juuret: laskettu.juuret, muut: laskettu.muut };
+  if (!loydetyt.size && (laskettu.juuret.length || laskettu.muut.length)) return { juuret: laskettu.juuret, muut: laskettu.muut, kansi: laskettu.kansi };
   items.forEach(item => {
     if (loydetyt.has(item.id)) return;
     const rivi = (item.order_item_rows || [])[0];
@@ -304,7 +305,7 @@ function tilauksenOsat(v, items) {
       item,
     });
   });
-  return { juuret, muut };
+  return { juuret, muut, kansi: laskettu.kansi };
 }
 
 // Piippujen määrä: tallennettu arvo, tai vanhoissa tilauksissa päätelty (tilauksen kpl / yhden piipun kpl)
@@ -700,7 +701,8 @@ function render(items, order) {
   });
 
   const svgHtml = piirraKuvaSVG(v);
-  tkData = { v, items, order, juuret, muut, piippukpl, mat, totalM2, huomio };
+  const kansi = muut.some(p => p.osa === 'Kansi' && p.item) && osat.kansi ? osat.kansi : null;   // vain tilattu kansi
+  tkData = { v, items, order, juuret, muut, piippukpl, mat, totalM2, huomio, kansi, dataItem: firstWithData || null };
 
   el.innerHTML = `
     <div class="piippu-header">
@@ -750,11 +752,67 @@ function render(items, order) {
 
     ${levityskuvatHtml(v, muut)}
 
+    ${kansi ? `<div class="section-card" style="margin-bottom:16px"><h3>Kansi ja reiät</h3><div id="kansi-tuotanto" style="padding:12px 14px"></div></div>` : ''}
+
     <div class="section-card">
       <h3>Mitat</h3>
       <div style="padding:14px 18px">${mittalista(v)}</div>
     </div>
   `;
+  piirraKansiTuotanto();
+}
+
+// ── Kansi ja reiät (vaihe 7b, 23.11.2026) ─────────────────
+// Kuva ja reikien mitat kannen reunasta (kansi.js). Kun piipun pellit on liitetty, piipun ulkomitan voi mitata yläreunoista
+// ja tallentaa: kansi ja reikien paikat lasketaan sen jälkeen siitä (tallennus vals.kansi.mitattu tilausriville).
+let kansiMista = (() => { try { return localStorage.getItem('kpt_kansi_mista') === 'taitettu' ? 'taitettu' : 'leikkuu'; } catch (e) { return 'leikkuu'; } })();
+function piirraKansiTuotanto() {
+  const el = document.getElementById('kansi-tuotanto');
+  if (!el || !tkData || !tkData.kansi || !window.KPT_KANSI) return;
+  const k = tkData.kansi, mit = k.as.mitattu, onMit = !!(mit.lev || mit.syv);
+  const tieto = KPT_KANSI.tiedot(k).map(([a, b]) => `<div><span style="color:var(--text-dim)">${a}:</span> <b>${b}</b></div>`).join('');
+  const syotto = (id, arvo, laskettu) => `<input type="number" id="${id}" value="${arvo || ''}" placeholder="${Math.round(laskettu * 10) / 10}" style="width:84px;padding:5px 6px;background:var(--bg,#0a0f1a);color:var(--text);border:1px solid ${arvo ? '#f59e0b' : 'var(--border)'};border-radius:3px;font-size:13px">`;
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13px;margin-bottom:10px">${tieto}</div>
+    <div style="border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:10px;font-size:13px">
+      <div style="margin-bottom:6px"><b>Piippu ulkoreunasta, mitattu</b> <span style="color:var(--text-dim)">(yläreunojen ulkomitta, kun pellit on liitetty)</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+        <label>Etu–taka ${syotto('kansi-mit-syv', mit.syv, k.S.laskettu)}</label>
+        <label>Vasen–oikea ${syotto('kansi-mit-lev', mit.lev, k.L.laskettu)}</label>
+        <button type="button" class="kpk-nappi" onclick="tallennaKansiMitattu(false)">Tallenna</button>
+        ${onMit ? `<button type="button" class="kpk-nappi" onclick="tallennaKansiMitattu(true)">Poista mitattu</button>` : ''}
+        <span id="kansi-mit-tila" style="color:var(--text-dim);font-size:12px">${onMit ? 'Kansi lasketaan mitatusta (laskettu ' + Math.round(k.S.laskettu) + ' × ' + Math.round(k.L.laskettu) + ').' : 'Tyhjä = laskettu mitta (harmaa luku).'}</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px">Mitat
+      <select onchange="kansiMista=this.value;try{localStorage.setItem('kpt_kansi_mista',kansiMista)}catch(e){};piirraKansiTuotanto()" style="padding:4px 6px;background:var(--bg,#0a0f1a);color:var(--text);border:1px solid var(--border);border-radius:3px">
+        <option value="leikkuu"${kansiMista === 'leikkuu' ? ' selected' : ''}>tasoaihion leikkuureunasta</option>
+        <option value="taitettu"${kansiMista === 'taitettu' ? ' selected' : ''}>taitetun kannen reunasta</option>
+      </select></div>
+    <div class="kpk-kuva" style="max-width:820px">${KPT_KANSI.kuva(k, { mista: kansiMista })}<div class="kpk-alle">${KPT_KANSI.alateksti({ mista: kansiMista })}</div></div>
+    ${k.varoitukset.map(t => `<div class="kpk-varoitus">⚠ ${t}</div>`).join('')}
+    ${KPT_KANSI.reikaTaulu(k, { mista: kansiMista })}`;
+}
+async function tallennaKansiMitattu(poista) {
+  const tila = document.getElementById('kansi-mit-tila');
+  const it = tkData && tkData.dataItem;
+  if (!it || !it.profile_data || !it.profile_data.vals) { if (tila) tila.textContent = 'Piipun tietoja ei löytynyt, tallennus ei onnistu.'; return; }
+  const luku = id => { const x = parseFloat(document.getElementById(id).value); return x > 0 ? x : null; };
+  const mitattu = poista ? null : { lev: luku('kansi-mit-lev'), syv: luku('kansi-mit-syv') };
+  const vals = Object.assign({}, it.profile_data.vals);
+  vals.kansi = Object.assign({}, vals.kansi || {});
+  if (mitattu && (mitattu.lev || mitattu.syv)) vals.kansi.mitattu = mitattu; else delete vals.kansi.mitattu;
+  const pd = Object.assign({}, it.profile_data, { vals });
+  if (tila) tila.textContent = 'Tallennetaan…';
+  try {
+    const res = await fetch(`${SUPA_URL}/rest/v1/order_items?id=eq.${it.id}`, {
+      method: 'PATCH', headers: { ...headers, 'Prefer': 'return=minimal' }, body: JSON.stringify({ profile_data: pd }) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    it.profile_data = pd;
+    render(tkData.items, tkData.order);   // kansirivi, kuva ja reiät mitatun mukaan
+  } catch (e) {
+    console.error('Kannen mitan tallennus:', e);
+    if (tila) tila.textContent = 'Tallennus epäonnistui. Tarkista yhteys ja yritä uudelleen.';
+  }
 }
 
 // ── Työkortti (vaihe 7.1, 23.11.2026) ─────────────────────
@@ -776,10 +834,10 @@ function kulmatTeksti(v) {
   return '';
 }
 function rakennaPiipunTyokortti(valinnat) {
-  const val = Object.assign({ merkinta: true, lahikuvat: true }, valinnat || {});
+  const val = Object.assign({ merkinta: true, lahikuvat: true, kansi: true }, valinnat || {});
   const T = window.KPT_TYOKORTTI;
   if (!T || !tkData) return '';
-  const { v, order, juuret, muut, piippukpl, mat, totalM2, huomio } = tkData;
+  const { v, order, juuret, muut, piippukpl, mat, totalM2, huomio, kansi } = tkData;
   const e = T.esc;
   const cust = order.customers || {};
   const numero = order.order_number || '';
@@ -821,7 +879,8 @@ function rakennaPiipunTyokortti(valinnat) {
   // Hupun palojen sivut (vaihe 7.2): samat tilatut palat kuin ruudun levityskuvissa
   const palat = tyokorttiPalat(v, muut);
   // Jokaisesta palasta kaksi sivua: taitossivu (levityskuva, taitokset, lähikuvat) ja merkintäsivu (pisteet leikkuuseen)
-  const sivuja = 1 + (val.merkinta ? 2 : 1) * palat.length, otsikko = 'TYÖKORTTI · PIIPPU' + (numero ? ' · TILAUS ' + numero : '');
+  const kansiSivulle = !!(val.kansi && kansi && kansi.reiat.length);   // kansisivu vain, jos kanteen tulee reikiä
+  const sivuja = 1 + (val.merkinta ? 2 : 1) * palat.length + (kansiSivulle ? 1 : 0), otsikko = 'TYÖKORTTI · PIIPPU' + (numero ? ' · TILAUS ' + numero : '');
   h += T.alaosa('Piipun työkortti · sivu 1 / ' + sivuja);
   let html = T.sivu(h);
   let nro = 1;
@@ -830,7 +889,35 @@ function rakennaPiipunTyokortti(valinnat) {
     html += T.sivu(palaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (++nro) + ' / ' + sivuja }, o)));
     if (val.merkinta) html += T.sivu(merkintaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (++nro) + ' / ' + sivuja }, o)));
   });
+  if (kansiSivulle) {
+    const kp = muut.find(p => p.osa === 'Kansi');
+    html += T.sivu(kansiSivu(kansi, kp ? kp.kpl : 1, { otsikko, mat, sivu: 'sivu ' + (++nro) + ' / ' + sivuja }));
+  }
   return html;
+}
+
+// Kannen sivu (vaihe 7b): levityskuva reikineen ja reikien mitat kannen reunasta (paperiväreinä)
+function kansiSivu(k, kpl, o) {
+  const T = window.KPT_TYOKORTTI, e = T.esc;
+  const mm = x => (Math.round(x * 10) / 10).toLocaleString('fi-FI', { maximumFractionDigits: 1 });
+  let h = T.ylaosaPieni({ otsikko: o.otsikko, alaotsikko: groupName, sivu: o.sivu });
+  h += `<h1 class="tkk-pala">Kansi ${T.kpl(kpl)}</h1>`;
+  h += `<div class="tkk-rivi">${KPT_KANSI.tiedot(k).slice(0, 3).map(([a, b]) => `<span>${e(a)} <b>${e(b)}</b></span>`).join('')}${o.mat ? `<span>${e(o.mat)}</span>` : ''}</div>`;
+  if (k.as.mitattu.lev || k.as.mitattu.syv) h += `<div class="tkk-rivi"><span><b>Laskettu mitatusta ulkomitasta</b> ${e(KPT_KANSI.tiedot(k)[3][1])}</span></div>`;
+  h += `<div class="tkk-levitys">${T.paperille(T.rajaa(KPT_KANSI.kuva(k, { mista: kansiMista })))}</div><div class="tkk-selite">${e(KPT_KANSI.alateksti({ mista: kansiMista }))} Katkoviiva reiän sisällä = leikkausviiva, reuna karvataan ylös.</div>`;
+  const sN = k.as.syva === 'etu' ? (k.harja ? 'Etu 1:stä' : 'Edestä') : (k.harja ? 'Etu 2:sta' : 'Takaa'), vN = k.as.vaaka === 'vasen' ? 'Vasemmasta' : 'Oikeasta';
+  h += `<h2>Reiät<span>mm ${kansiMista === 'taitettu' ? 'taitetun kannen reunasta' : 'tasoaihion leikkuureunasta'}</span></h2>
+    <table><tr><th>Reikä</th><th>Koko</th><th class="tkk-r">${sN} alku</th><th class="tkk-r">keski</th><th class="tkk-r">loppu</th><th class="tkk-r">${vN} alku</th><th class="tkk-r">keski</th><th class="tkk-r">loppu</th><th>Karvaus</th><th class="tkk-c">Tehty</th></tr>
+    ${k.reiat.map(r => {
+      const m = KPT_PIIPPU.kansiReianMitat(r, k, kansiMista), pyo = r.muoto === 'pyorea';
+      const koko = pyo ? 'Ø' + mm(r.dw) : mm(r.du) + ' × ' + mm(r.dw);
+      const karv = r.karvaus ? mm(r.karvaus) + ' mm, leikataan ' + (pyo ? 'Ø' + mm(r.leikDw) : mm(r.leikDu) + ' × ' + mm(r.leikDw)) : 'ei';
+      return `<tr><td><b>${r.nro}</b></td><td>${koko}</td><td class="tkk-r">${mm(m.sAlku)}</td><td class="tkk-r">${mm(m.sKeski)}</td><td class="tkk-r">${mm(m.sLoppu)}</td>
+        <td class="tkk-r">${mm(m.vAlku)}</td><td class="tkk-r">${mm(m.vKeski)}</td><td class="tkk-r">${mm(m.vLoppu)}</td><td class="tkk-teksti">${karv}</td><td class="tkk-c">${T.ruutu()}</td></tr>`;
+    }).join('')}</table>`;
+  h += `<h2>Muistiinpanot</h2><div class="tkk-viivat"></div>`;
+  h += T.alaosa('Piipun työkortti · ' + o.sivu);
+  return h;
 }
 
 // Tilatut hupun palat työkorttiin (kpl kuten osat-taulukossa)
@@ -892,6 +979,7 @@ function muokkaaPiippua() {
 if (window.KPT_TYOKORTTI) KPT_TYOKORTTI.asenna(rakennaPiipunTyokortti, { avain: 'kpt_tyokortti_piippu', valinnat: [
   { id: 'merkinta', teksti: 'Merkintäsivut (pisteet leikkuuseen)', oletus: true },
   { id: 'lahikuvat', teksti: 'Kulmien lähikuvat', oletus: true },
+  { id: 'kansi', teksti: 'Kannen sivu (jos kanteen tulee reikiä)', oletus: true },
 ] });   // myös Ctrl+P tulostaa työkortin
 window._authReady.then(load);
 </script>
