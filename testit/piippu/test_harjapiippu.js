@@ -42,7 +42,7 @@ ok(mitat(osa(a.muut, 'Huppu etu 1')) === '440 × 793', 'hupun etu 1: 440 × 793 
 ok(mitat(osa(a.muut, 'Huppu etu 2')) === '440 × 973', 'hupun etu 2: 440 × 973');
 const sivut = osa(a.muut, 'Huppu sivut');
 ok(mitat(sivut) === '1290 × 973 (2 kpl)', 'hupun sivut 1290 × 973, 2 kpl (445 + 750 + 4 × 20 + 10 + liitosvara 5)');
-ok(near(a.geom.harjaKohta, 492.5) && /harja 580 kohdassa 492,5/.test(sivut.lisa) && /^Leikkaus: 793 /.test(sivut.lisa), 'harjan kohta 492,5 etu 1 -päästä, harjalla 580 (ilman kaltevuuskorjausta): ' + sivut.lisa);
+ok(near(a.geom.harjaKohta, 492.5) && !sivut.lisa, 'harjan kohta 492,5 etu 1 -päästä; sivuilla ei leikkausmittoja (pois 23.11.2026): ' + sivut.lisa);
 ok(near(a.geom.hE1Tod, 760 + 5 * 210 / 445 - 25) && near(a.geom.hHTod, 525) && near(a.geom.hE2Tod, 940 + 5 * 390 / 750 - 25), 'todelliset korkeudet ilman taitoksia: 737,4 / 525 / 917,6');
 
 // ---- Kansi ja hattu leveämmän puolen mukaan

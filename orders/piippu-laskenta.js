@@ -8,7 +8,8 @@
 //                   const tulos = KPT_PIIPPU.laskeLapepiippu(vals, { juuret: true, huppu: true, kansi: true, hattu: true });
 // Käyttö Nodessa:   const P = require('../orders/piippu-laskenta.js');
 // Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen),
-//          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2).
+//          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2),
+//          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -314,21 +315,20 @@
     const hE1Tod = kork1 + p1.kaltkorj - vahennys, hE2Tod = kork2 + p2.kaltkorj - vahennys, hHTod = korkH - vahennys;
     const sivuL = suora1 + suora2 + sauma * 4 + huplis + hsivlisa;                 // sivukappale yhtenä
     const harjaKohta = sauma * 2 + hsivlisa / 2 + huplis / 2 + suora1;             // harjan kohta sivukappaleen etu 1 -päästä
-    const fmt = x => String(ylos(x));
-    const fmt1 = x => String(Math.round(x * 10) / 10).replace('.', ',');
     if (o.huppu !== false) {
       muut.push({ osa: 'Huppu etu 1', lev: ylos(lev1 + sauma * 2 + huplis), pit: ylos(hE1), kpl: 1 });
       muut.push({ osa: 'Huppu etu 2', lev: ylos(lev2 + sauma * 2 + huplis), pit: ylos(hE2), kpl: 1 });
       if (sivutJako === 1) {
-        muut.push({ osa: 'Huppu sivut', lev: ylos(sivuL), pit: ylos(Math.max(hE1, hE2)), kpl: 2,
-          lisa: 'Leikkaus: ' + fmt(hE1) + ' / harja ' + fmt(hH) + ' kohdassa ' + fmt1(harjaKohta) + ' / ' + fmt(hE2) });
+        // Leikkausmitat (kaava, taitokset täysinä) poistettu 23.11.2026 (Tomi): ne olivat 10–20 mm todellista suurempia.
+        // Leikkuu tehdään aihion ja levityskuvan merkintäpisteiden mukaan.
+        muut.push({ osa: 'Huppu sivut', lev: ylos(sivuL), pit: ylos(Math.max(hE1, hE2)), kpl: 2 });
       } else {
         // Poikki harjalta: etu 1 -puolelle + jakosauma (90° ulos), etu 2 -puolelle + 2 × jakosauma (kiertää sen)
         const L1 = harjaKohta + jako, L2 = (sivuL - harjaKohta) + jako * 2;
         muut.push({ osa: 'Huppu sivu 1', lev: ylos(L1), pit: ylos(hE1), kpl: 2,
-          lisa: 'Etu 1 -puoli. Leikkaus: ' + fmt(hE1) + ' → harja ' + fmt(hH) + ' kohdassa ' + fmt1(harjaKohta) + ', jakosauma ' + jako + ' harjan puolella' });
+          lisa: 'Etu 1 -puoli, jakosauma ' + jako + ' harjan puolella' });
         muut.push({ osa: 'Huppu sivu 2', lev: ylos(L2), pit: ylos(hE2), kpl: 2,
-          lisa: 'Etu 2 -puoli. Leikkaus: harja ' + fmt(hH) + ' kohdassa ' + (jako * 2) + ' (sauma ' + (jako * 2) + ') → ' + fmt(hE2) });
+          lisa: 'Etu 2 -puoli, jakosauma ' + (jako * 2) + ' (tupla) harjan puolella' });
       }
     }
     const levMax = Math.max(lev1, lev2), pituus = suora1 + suora2;
