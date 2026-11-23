@@ -262,7 +262,7 @@
       <div class="field"><label>Leveys (mm)</label><input type="number" id="lev1" value="400" min="0" oninput="laske()"></div>
       <div class="field"><label>Leveys (mm)</label><input type="number" id="lev2" value="" placeholder="sama" min="0" oninput="laske()"></div>
     </div>
-    <div class="field"><label>Kokonaismitta, etureunasta etureunaan (mm)</label><input type="number" id="koko" value="1200" min="0" oninput="laske()"></div>
+    <div class="field"><label>Kokonaismitta etu 1 ↔ etu 2 (mm)</label><input type="number" id="koko" value="1200" min="0" oninput="laske()"></div>
     <div class="puolet">
       <div class="field"><label>Suora mitta harjalle (mm)</label><input type="number" id="suora1" value="450" min="0" oninput="laske()"></div>
       <div class="field auto-kentta" id="kentta-suora2"><label>Suora mitta harjalle (mm) <span class="auto-merkki"></span></label>
@@ -282,46 +282,42 @@
     <div class="info-pieni">Puolen 2 mitat lasketaan automaattisesti: suora mitta kokonaismitasta, korkeus ja vinomitta puolen 1 kaltevuudesta. Kirjoita kenttään oma arvo, jos mitattu on eri. ↺ palauttaa laskennan.</div>
   </div>
 
-  <div class="section">
-    <h3>Sivumitat: matka ehjän harjan yli</h3>
-    <div class="puolet">
-      <div>
-        <div class="puoli-otsikko">Puoli 1</div>
-        <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit1V" value="150" min="0" oninput="laske()"></div>
-        <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit1O" value="150" min="0" oninput="laske()"></div>
-      </div>
-      <div>
-        <div class="puoli-otsikko">Puoli 2</div>
-        <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit2V" value="150" min="0" oninput="laske()"></div>
-        <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit2O" value="150" min="0" oninput="laske()"></div>
-      </div>
-    </div>
-    <div class="field"><label>Katteen profiili (KP-20 20, tiili 30, huopa 0)</label><input type="number" id="poimu" value="20" min="0" oninput="laske()"></div>
-  </div>
-
-  <div class="section">
-    <h3>Juuri — etuosa</h3>
-    <div class="puolet">
-      <div>
-        <div class="puoli-otsikko">Puoli 1</div>
-        <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_1" value="200" min="0" oninput="laske()"></div>
-        <div class="field"><label>Alas (mm)</label><input type="number" id="j25_1" value="15" min="0" oninput="laske()"></div>
-      </div>
-      <div>
-        <div class="puoli-otsikko">Puoli 2</div>
-        <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_2" value="200" min="0" oninput="laske()"></div>
-        <div class="field"><label>Alas (mm)</label><input type="number" id="j25_2" value="15" min="0" oninput="laske()"></div>
-      </div>
-    </div>
-  </div>
-
+  <!-- Juuren mitat (nillityslista 23.11.2026): sama järjestys kuin lapepiipussa. Ennen erilliset osiot
+       Sivumitat ja Juuri — etuosa. Kenttien id:t ennallaan. -->
   <div class="section">
     <h3>Juuren mitat</h3>
+    <div class="puolet"><div class="puoli-otsikko">Puoli 1</div><div class="puoli-otsikko">Puoli 2</div></div>
+    <div class="puolet">
+      <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_1" value="200" min="0" oninput="laske()"></div>
+      <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_2" value="200" min="0" oninput="laske()"></div>
+    </div>
+    <div class="puolet">
+      <div class="field"><label>Alas (mm)</label><input type="number" id="j25_1" value="15" min="0" oninput="laske()"></div>
+      <div class="field"><label>Alas (mm)</label><input type="number" id="j25_2" value="15" min="0" oninput="laske()"></div>
+    </div>
+    <div class="kiila-alaotsikko">Sivumitat: matka ehjän harjan yli</div>
+    <div class="puolet">
+      <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit1V" value="150" min="0" oninput="laske()"></div>
+      <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit2V" value="150" min="0" oninput="laske()"></div>
+    </div>
+    <div class="puolet">
+      <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit1O" value="150" min="0" oninput="laske()"></div>
+      <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit2O" value="150" min="0" oninput="laske()"></div>
+    </div>
+    <div class="puolet">
+      <div class="field"><label>Uraan (mm)</label><input type="number" id="poimu" value="20" min="0" oninput="laske()"></div>
+      <div class="field"><label>Uraan kulma (°)</label><input type="number" id="v-harjakulma" value="90" min="0" max="180" oninput="laske()"></div>
+    </div>
+    <div class="info-pieni">Uraan ja kulma ovat samat molemmilla puolilla. Uraan = katteen profiili (KP-20 20, tiili 30, huopa 0).</div>
+  </div>
+
+  <div class="section">
+    <h3>Juuren vakiot</h3>
     <div class="vakio-grid">
-      <label>Tuplat juuriin</label><input type="number" id="v-tupla" value="15" oninput="laske()">
-      <label>Juuri etu lisäys leveyteen</label><input type="number" id="v-etulis" value="40" oninput="laske()">
-      <label>Juuri nousee piipulle</label><input type="number" id="v-nousu" value="200" oninput="laske()">
-      <label>Sivujuurten lisävara</label><input type="number" id="v-sivulisa" value="50" oninput="laske()">
+      <label>Tuplat juuriin (mm)</label><input type="number" id="v-tupla" value="15" oninput="laske()">
+      <label>Juuri etu lisäys leveyteen (mm)</label><input type="number" id="v-etulis" value="40" oninput="laske()">
+      <label>Juuri nousee piipulle (mm)</label><input type="number" id="v-nousu" value="200" oninput="laske()">
+      <label>Sivujuurten lisävara (mm)</label><input type="number" id="v-sivulisa" value="50" oninput="laske()">
     </div>
   </div>
 
@@ -333,18 +329,18 @@
       <button class="sauma-btn" id="sivut-jaettu" onclick="setSivut(2)">Poikki harjalta</button>
     </div>
     <div class="vakio-grid" id="jako-rivi" style="display:none;margin-bottom:6px;">
-      <label>Jakosauma harjalla (etu 2 -puolelle tuplana)</label><input type="number" id="v-jakosauma" value="20" oninput="laske()">
+      <label>Jakosauma harjalla, mm (etu 2 -puolelle tuplana)</label><input type="number" id="v-jakosauma" value="20" oninput="laske()">
     </div>
     <div class="vakio-grid leveampi">
-      <label>Hupun saumat</label><input type="number" id="v-sauma" value="20" oninput="laske()">
-      <label>Lisää hupun kokoon</label><input type="number" id="v-huplis" value="10" oninput="laske()">
-      <label>Hupun yläreuna ⚠</label><input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
+      <label>Hupun saumat (mm)</label><input type="number" id="v-sauma" value="20" oninput="laske()">
+      <label>Lisää hupun kokoon (mm)</label><input type="number" id="v-huplis" value="10" oninput="laske()">
+      <label>Hupun yläreuna (mm) ⚠</label><input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
       <label>Yläreunan taitos</label>
       <select id="v-ylatyyppi" onchange="laske()"><option value="ulos">Ulos 90°</option><option value="sisaan">Sisään 90°</option><option value="tupla">Tupla 180°</option></select>
-      <label>Hupun alatuplat</label><input type="number" id="v-alatupla" value="20" oninput="laske()">
-      <label>Vähennys korkeudesta</label><input type="number" id="v-vahennys" value="20" oninput="laske()">
-      <label>Sivujen liitosvara (puolet kumpaankin päähän)</label><input type="number" id="v-hsivlisa" value="5" oninput="laske()">
-      <label>Hattu piippua isompi</label><input type="number" id="v-hattulis" value="250" oninput="laske()">
+      <label>Hupun alatuplat (mm)</label><input type="number" id="v-alatupla" value="20" oninput="laske()">
+      <label>Vähennys korkeudesta (mm)</label><input type="number" id="v-vahennys" value="20" oninput="laske()">
+      <label>Sivujen liitosvara, mm (puolet kumpaankin päähän)</label><input type="number" id="v-hsivlisa" value="5" oninput="laske()">
+      <label>Hattu piippua isompi (mm)</label><input type="number" id="v-hattulis" value="250" oninput="laske()">
     </div>
 
     <div style="margin-top:10px;">
@@ -389,7 +385,7 @@
     <div id="levityskuvat"></div>
   </div>
   <div style="padding:12px;border-top:1px solid var(--border);">
-    <button onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
+    <button id="btn-lisaa" onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
       Lisää tilaukseen →
     </button>
     <div id="lisays-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:6px;min-height:16px;"></div>
@@ -402,7 +398,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=2"></script>
 <script src="piippu-laskenta.js?v=4"></script>
-<script src="piippu-levitys.js?v=6"></script>
+<script src="piippu-levitys.js?v=7"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
@@ -450,7 +446,7 @@ function keraaVals() {
   const lev2 = document.getElementById('lev2').value;
   const v = {
     lev1: gv('lev1'), lev2: lev2 === '' ? null : gv('lev2'), koko: gv('koko'), suora1: gv('suora1'),
-    kork1: gv('kork1'), korkH: gv('korkH'), poimu: gv('poimu'),
+    kork1: gv('kork1'), korkH: gv('korkH'), poimu: gv('poimu'), harjakulma: gv('v-harjakulma'),
     ylit1V: gv('ylit1V'), ylit1O: gv('ylit1O'), ylit2V: gv('ylit2V'), ylit2O: gv('ylit2O'),
     k24_1: gv('k24_1'), j25_1: gv('j25_1'), k24_2: gv('k24_2'), j25_2: gv('j25_2'),
     tupla: gv('v-tupla'), etulis: gv('v-etulis'), nousu: gv('v-nousu'), sivulisa: gv('v-sivulisa'),
@@ -618,10 +614,10 @@ function ilmoitus(html, vari) {
 
 const HARJA_KENTAT = ['lev1', 'koko', 'suora1', 'kork1', 'korkH', 'poimu', 'ylit1V', 'ylit1O', 'ylit2V', 'ylit2O', 'k24_1', 'j25_1', 'k24_2', 'j25_2'];
 const HARJA_VAKIOT = [['tupla', 'v-tupla'], ['etulis', 'v-etulis'], ['nousu', 'v-nousu'], ['sivulisa', 'v-sivulisa'], ['sauma', 'v-sauma'], ['huplis', 'v-huplis'],
-  ['ylareunaV', 'v-ylareunaV'], ['alatupla', 'v-alatupla'], ['vahennys', 'v-vahennys'], ['hsivlisa', 'v-hsivlisa'], ['hattulis', 'v-hattulis'], ['jakosauma', 'v-jakosauma']];
+  ['ylareunaV', 'v-ylareunaV'], ['alatupla', 'v-alatupla'], ['vahennys', 'v-vahennys'], ['hsivlisa', 'v-hsivlisa'], ['hattulis', 'v-hattulis'], ['jakosauma', 'v-jakosauma'], ['harjakulma', 'v-harjakulma']];
 function palautaMuokattava() {
   if (toinenTyyppi) {
-    ilmoitus('<b>Tämän ryhmän piippu on lapepiippu.</b> "Lisää tilaukseen" korvaa sen tällä harjapiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.', 'var(--red)');
+    ilmoitus('<b>Tämän ryhmän piippu on lapepiippu.</b> Tallennus korvaa sen tällä harjapiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.', 'var(--red)');
     return;
   }
   if (!muokattava) return;
@@ -651,13 +647,14 @@ function palautaMuokattava() {
   const tunnettu = n => /^(Juuri|Huppu)( |$)/.test(n) || ['Kansi', 'Hattu', 'Piipun jalat'].includes(n);
   lisaosat = items.filter(i => !i.pituus && !tunnettu(i.nimike || '')).map((i, k) => ({ id: Date.now() + k, nimi: i.nimike, kpl: Math.max(1, Math.round(i.kpl / pk)) }));
   renderLisaosat();
-  ilmoitus('Muokataan tilauksen harjapiippua: mitat, osat ja materiaali haettu tilauksesta.', 'var(--accent)');
+  ilmoitus('Muokataan tilauksen harjapiippua: mitat, osat ja materiaali haettu tilauksesta. Tallennus korvaa tilauksen piipun.', 'var(--accent)');
 }
 
 // ── Lisää tilaukseen ─────────────────────────────────────────
 // Sama viesti kuin Piippu-sivulla (REPLACE_PIIPPU): tilaussivu poistaa ryhmän vanhat piippurivit ja tallentaa nämä.
 // Ryhmän nimi annetaan tilaussivulle; se käyttää sitä, jos ryhmällä ei ole omaa nimeä.
 function lisaaTilaukseen() {
+  const korvaa = lisaysNapinTeksti() !== 'Lisää tilaukseen';
   const status = document.getElementById('lisays-status');
   const virhe = t => { status.style.color = '#f87171'; status.textContent = t; };
   laske();
@@ -695,7 +692,8 @@ function lisaaTilaukseen() {
   toinenTyyppi = null;
   document.querySelectorAll('.muokkaus-ilmo').forEach(el => el.remove());
   status.style.color = '#4ade80';
-  status.textContent = `${pellit.length} riviä lähetetty tilaukseen! (tilaussivun pitää olla auki)`;
+  status.textContent = (korvaa ? `Muutokset lähetetty tilaukseen (${pellit.length} riviä).` : `${pellit.length} riviä lähetetty tilaukseen!`) + ' (tilaussivun pitää olla auki)';
+  paivitaLisaysNappi();
   setTimeout(() => { status.textContent = ''; }, 4000);
 }
 
@@ -715,7 +713,7 @@ function paivitaTuotantoLinkki() {
   a.style.display = '';
   if (muutettu) {
     a.removeAttribute('href'); a.classList.add('ei-kaytossa');
-    info.textContent = 'Mittoja on muutettu: paina ensin "Lisää tilaukseen", niin Tuotanto näyttää muutokset.';
+    info.textContent = 'Mittoja on muutettu: paina ensin "' + lisaysNapinTeksti() + '", niin Tuotanto näyttää muutokset.';
   } else {
     a.href = 'piippu_tuotanto.html?orderId=' + encodeURIComponent(tuotantoKohde.orderId) + '&groupName=' + encodeURIComponent(tuotantoKohde.groupName);
     a.classList.remove('ei-kaytossa'); info.textContent = '';
@@ -739,6 +737,20 @@ window.addEventListener('storage', e => {
   } catch (err) { /* ei kuittausta */ }
 });
 paivitaTuotantoLinkki();
+
+// Lisäysnapin teksti (23.11.2026, Tomi): kun ryhmässä on jo piippu, tallennus korvaa sen, joten "Lisää tilaukseen"
+// antaisi kuvan, että entisten lisäksi tulee uusi piippu. Ilman ryhmää (sivu avattu suoraan) jokainen painallus lisää uuden.
+function lisaysNapinTeksti() {
+  if (!targetGroupId) return 'Lisää tilaukseen';
+  if (toinenTyyppi) return 'Korvaa ryhmän piippu';
+  if (muokattava || lahetettyGroupId) return 'Tallenna muutokset tilaukseen';
+  return 'Lisää tilaukseen';
+}
+function paivitaLisaysNappi() {
+  const b = document.getElementById('btn-lisaa');
+  if (b) b.textContent = lisaysNapinTeksti() + ' →';
+}
+paivitaLisaysNappi();
 
 
 laske();

@@ -97,7 +97,7 @@
   /* Tilauslista */
   .order-group { background: #34343f; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; }
   .group-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); background: #44444f; border-radius: 6px 6px 0 0; }
-  .group-header input { background: transparent; border: none; color: var(--accent); font-size: 13px; font-weight: 600; width: 180px; padding: 2px 4px; }
+  .group-header input { background: transparent; border: none; color: var(--accent); font-size: 13px; font-weight: 600; width: auto; min-width: 180px; max-width: 100%; padding: 2px 4px; }  /* leveys nimen mukaan (size), nillityslista 23.11.2026 */
   .group-header input:focus { border-bottom: 1px solid var(--accent); }
   .group-items { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
   .order-item { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
@@ -194,8 +194,8 @@
     .order-item { flex-wrap: wrap; }
     .item-actions { margin-left: 0; width: 100%; justify-content: flex-end; }
 
-    /* Ryhmän nimikenttä ei tarvitse kiinteää 180px-leveyttä kapealla näytöllä */
-    .group-header input { width: auto; flex: 1; min-width: 0; }
+    /* Ryhmän nimikenttä omalle rivilleen kapealla näytöllä, jotta pitkä nimi näkyy kokonaan (nillityslista 23.11.2026) */
+    .group-header input { width: 100%; flex: 1 1 100%; min-width: 0; }
     .group-header { flex-wrap: wrap; }
   }
 
@@ -1890,7 +1890,7 @@ function renderGroups() {
     return `
     <div class="order-group">
       <div class="group-header">
-        <input type="text" value="${g.name}" onchange="renameGroup('${g.id}', this.value)" title="Klikkaa nimetäksesi uudelleen">
+        <input type="text" value="${String(g.name).replace(/"/g, '&quot;')}" size="${Math.max(14, String(g.name).length + 2)}" oninput="this.size = Math.max(14, this.value.length + 2)" onchange="renameGroup('${g.id}', this.value)" title="Klikkaa nimetäksesi uudelleen">
         ${groupQtyTags(g)}
         ${piippuNappi}
         <div style="margin-left:auto;display:flex;gap:6px">

@@ -262,10 +262,6 @@
         <label>Takakorkeus (mm)</label>
         <input type="number" id="takakork" value="800" min="0" oninput="laske()">
       </div>
-      <div class="field">
-        <label>Takareunasta harjalle (mm)</label>
-        <input type="number" id="harjalle" value="1050" min="0" oninput="laske()">
-      </div>
     </div>
   </div>
 
@@ -287,20 +283,20 @@
           <option value="0">Etuvasen</option><option value="1">Etuoikea</option><option value="2">Takaoikea</option><option value="3">Takavasen</option>
         </select>
       </div>
-      <div class="kiila-alaotsikko">Korkeus kulmissa (mm), takakulmat ylempänä kuten kuvassa</div>
+      <div class="kiila-alaotsikko">Korkeus kulmissa, takakulmat ylempänä kuten kuvassa</div>
       <div class="field-grid">
-        <div class="field"><label>Takavasen</label><input type="number" id="k-korkeusTV" oninput="laske()"></div>
-        <div class="field"><label>Takaoikea</label><input type="number" id="k-korkeusTO" oninput="laske()"></div>
-        <div class="field"><label>Etuvasen</label><input type="number" id="k-korkeusEV" oninput="laske()"></div>
-        <div class="field"><label>Etuoikea</label><input type="number" id="k-korkeusEO" oninput="laske()"></div>
+        <div class="field"><label>Takavasen (mm)</label><input type="number" id="k-korkeusTV" oninput="laske()"></div>
+        <div class="field"><label>Takaoikea (mm)</label><input type="number" id="k-korkeusTO" oninput="laske()"></div>
+        <div class="field"><label>Etuvasen (mm)</label><input type="number" id="k-korkeusEV" oninput="laske()"></div>
+        <div class="field"><label>Etuoikea (mm)</label><input type="number" id="k-korkeusEO" oninput="laske()"></div>
       </div>
-      <div class="kiila-alaotsikko">Kiila sivuittain (mm katon kohdalla)</div>
+      <div class="kiila-alaotsikko">Kiila sivuittain (katon kohdalla)</div>
       <p class="kiila-ohje">Plus = levenee alaspäin, miinus = kapenee. Mitataan sivun korkeimmasta kulmasta.</p>
       <div class="field-grid">
-        <div class="field"><label>Vasen</label><input type="number" id="k-kiilaVasen" placeholder="0" oninput="laske()"></div>
-        <div class="field"><label>Oikea</label><input type="number" id="k-kiilaOikea" placeholder="0" oninput="laske()"></div>
-        <div class="field"><label>Etu</label><input type="number" id="k-kiilaEtu" placeholder="0" oninput="laske()"></div>
-        <div class="field"><label>Taka</label><input type="number" id="k-kiilaTaka" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Vasen (mm)</label><input type="number" id="k-kiilaVasen" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Oikea (mm)</label><input type="number" id="k-kiilaOikea" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Etu (mm)</label><input type="number" id="k-kiilaEtu" placeholder="0" oninput="laske()"></div>
+        <div class="field"><label>Taka (mm)</label><input type="number" id="k-kiilaTaka" placeholder="0" oninput="laske()"></div>
       </div>
       <div id="kiila-virhe" class="kiila-virhe"></div>
       <div id="kiila-kuva" style="margin-top:8px;"></div>
@@ -308,30 +304,10 @@
     </div>
   </div>
 
+  <!-- Juuren mitat (nillityslista 23.11.2026): ennen erilliset osiot Sivumitat ja Juuri — etuosa sekä Piipun mitoissa
+       ollut Takareunasta harjalle. Kenttien id:t ennallaan, joten tallennetut tilaukset aukeavat kuten ennen. -->
   <div class="section">
-    <h3>Sivumitat</h3>
-    <div class="field-grid">
-      <div class="field">
-        <label>Vasen harjan ylitys (mm)</label>
-        <input type="number" id="vasen" value="150" min="0" oninput="laske()">
-      </div>
-      <div class="field">
-        <label>Oikea harjan ylitys (mm)</label>
-        <input type="number" id="oikea" value="100" min="0" oninput="laske()">
-      </div>
-      <div class="field">
-        <label>Harjan ylitys vasemmalle (mm)</label>
-        <input type="number" id="poimu" value="20" min="0" oninput="laske()">
-      </div>
-      <div class="field">
-        <label>Harjan ylitys kulma (°)</label>
-        <input type="number" id="v-harjakulma" value="90" min="0" max="180" oninput="laske()">
-      </div>
-    </div>
-  </div>
-
-  <div class="section">
-    <h3>Juuri — etuosa</h3>
+    <h3>Juuren mitat</h3>
     <div class="field-grid">
       <div class="field">
         <label>Eteen piipusta (mm)</label>
@@ -342,22 +318,47 @@
         <input type="number" id="j25" value="15" min="0" oninput="laske()">
       </div>
     </div>
+    <div class="kiila-alaotsikko">Sivumitat</div>
+    <div class="field-grid">
+      <div class="field">
+        <label>Vasen (mm)</label>
+        <input type="number" id="vasen" value="150" min="0" oninput="laske()">
+      </div>
+      <div class="field">
+        <label>Oikea (mm)</label>
+        <input type="number" id="oikea" value="100" min="0" oninput="laske()">
+      </div>
+      <div class="field">
+        <label>Uraan (mm)</label>
+        <input type="number" id="poimu" value="20" min="0" oninput="laske()">
+      </div>
+      <div class="field">
+        <label>Uraan kulma (°)</label>
+        <input type="number" id="v-harjakulma" value="90" min="0" max="180" oninput="laske()">
+      </div>
+    </div>
+    <div class="field-grid" style="margin-top:6px;">
+      <div class="field">
+        <label>Takareunasta harjalle (mm)</label>
+        <input type="number" id="harjalle" value="1050" min="0" oninput="laske()">
+      </div>
+    </div>
   </div>
 
   <div class="section">
-    <h3>Juuren mitat</h3>
+    <h3>Juuren vakiot</h3>
     <div class="vakio-grid">
-      <label>Tuplat juuriin</label>
+      <label>Tuplat juuriin (mm)</label>
       <input type="number" id="v-tupla" value="15" oninput="laske()">
-      <label>Juuri etu lisäys leveyteen</label>
+      <label>Juuri etu lisäys leveyteen (mm)</label>
       <input type="number" id="v-etulis" value="40" oninput="laske()">
-      <label>Juuri taka leveämpi</label>
+      <label>Juuri taka leveämpi (mm)</label>
       <input type="number" id="v-takalis" value="10" oninput="laske()">
-      <label>Juuri nousee piipulle</label>
+      <label>Juuri nousee piipulle (mm)</label>
       <input type="number" id="v-nousu" value="200" oninput="laske()">
-      <label>Juuren takareuna eteenpäin</label>
+      <label>Juuren takareuna eteenpäin (mm)</label>
       <input type="number" id="v-takareuna" value="" placeholder="0" oninput="laske()">
-      <label>Juuren harjaylitys</label>
+      <label>Juuren harjaylitys (mm)</label>
       <input type="number" id="v-harjaylitys" value="" placeholder="0" oninput="laske()">
     </div>
     <div style="margin-top:8px;">
@@ -371,20 +372,20 @@
     </div>
     <div id="taka-extra" style="display:none;margin-top:8px;">
       <div class="vakio-grid">
-        <label>Juuren saumat</label>
+        <label>Juuren saumat (mm)</label>
         <input type="number" id="v-juurisauma" value="20" oninput="laske()">
-        <label>Juuri taka 1 mitta</label>
+        <label>Juuri taka 1 mitta (mm)</label>
         <input type="number" id="v-taka1mitta" value="" placeholder="mm" oninput="laske()">
       </div>
       <div id="taka2-kentat" style="display:none;">
         <div class="vakio-grid" style="margin-top:4px;">
-          <label>Juuri taka 2 mitta</label>
+          <label>Juuri taka 2 mitta (mm)</label>
           <input type="number" id="v-taka2mitta" value="" placeholder="mm" oninput="laske()">
         </div>
       </div>
       <div id="taka3-kentat" style="display:none;">
         <div class="vakio-grid" style="margin-top:4px;">
-          <label>Juuri taka 3 mitta</label>
+          <label>Juuri taka 3 mitta (mm)</label>
           <input type="number" id="v-taka3mitta" value="" placeholder="mm" oninput="laske()">
         </div>
       </div>
@@ -394,23 +395,23 @@
   <div class="section">
     <h3 class="red">Hupun mitat ⚠</h3>
     <div class="vakio-grid">
-      <label>Hupun saumat</label>
+      <label>Hupun saumat (mm)</label>
       <input type="number" id="v-sauma" value="20" oninput="laske()">
-      <label>Lisää hupun kokoon</label>
+      <label>Lisää hupun kokoon (mm)</label>
       <input type="number" id="v-huplis" value="10" oninput="laske()">
-      <label>Hupun yläreuna ⚠</label>
+      <label>Hupun yläreuna (mm) ⚠</label>
       <input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
       <label>Yläreunan taitos</label>
       <select id="v-ylatyyppi" onchange="laske()" style="background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--text);padding:5px 6px;font-size:13px;width:100%;font-family:'IBM Plex Mono',monospace;">
         <option value="ulos">Ulos 90°</option><option value="sisaan">Sisään 90°</option><option value="tupla">Tupla 180°</option>
       </select>
-      <label>Hupun alatuplat</label>
+      <label>Hupun alatuplat (mm)</label>
       <input type="number" id="v-alatupla" value="20" oninput="laske()">
-      <label>Vähennys korkeudesta</label>
+      <label>Vähennys korkeudesta (mm)</label>
       <input type="number" id="v-vahennys" value="20" oninput="laske()">
-      <label>Huppu takaa leveämpi</label>
+      <label>Huppu takaa leveämpi (mm)</label>
       <input type="number" id="v-huptakalis" value="5" oninput="laske()">
-      <label>Hattu piippua isompi</label>
+      <label>Hattu piippua isompi (mm)</label>
       <input type="number" id="v-hattulis" value="250" oninput="laske()">
     </div>
 
@@ -488,7 +489,7 @@
     <div id="levityskuvat"></div>
   </div>
   <div style="padding:12px;border-top:1px solid var(--border);margin-top:8px;">
-    <button onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
+    <button id="btn-lisaa" onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
       Lisää tilaukseen →
     </button>
     <div id="lisays-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:6px;min-height:16px;"></div>
@@ -502,7 +503,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=2"></script>
 <script src="piippu-laskenta.js?v=4"></script>
-<script src="piippu-levitys.js?v=6"></script>
+<script src="piippu-levitys.js?v=7"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -697,7 +698,7 @@ function palautaMuokattava() {
   if (toinenTyyppi) {
     const sb0 = document.querySelector('#sidebar .section');
     if (sb0) sb0.insertAdjacentHTML('beforebegin', '<div id="muokkaus-ilmo" style="margin:10px 12px 0;padding:8px 10px;border:1px solid var(--red);border-radius:4px;font-size:12px;color:var(--text);line-height:1.45;background:rgba(239,68,68,.08);">'
-      + '<b>Tämän ryhmän piippu on harjapiippu.</b> "Lisää tilaukseen" korvaa sen tällä lapepiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.</div>');
+      + '<b>Tämän ryhmän piippu on harjapiippu.</b> Tallennus korvaa sen tällä lapepiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.</div>');
     return;
   }
   if (!muokattava) return;
@@ -748,10 +749,11 @@ function palautaMuokattava() {
   setHuppuTakaKpl([1, 2, 3].includes(v.huppuTakaKpl) ? v.huppuTakaKpl : 1);
   const sb = document.querySelector('#sidebar .section');
   if (sb) sb.insertAdjacentHTML('beforebegin', '<div id="muokkaus-ilmo" style="margin:10px 12px 0;padding:8px 10px;border:1px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text);background:rgba(34,197,94,.08);">'
-    + 'Muokataan tilauksen piippua: mitat, osat ja materiaali haettu tilauksesta.</div>');
+    + 'Muokataan tilauksen piippua: mitat, osat ja materiaali haettu tilauksesta. Tallennus korvaa tilauksen piipun.</div>');
 }
 
 async function lisaaTilaukseen() {
+  const korvaa = lisaysNapinTeksti() !== 'Lisää tilaukseen';
   const materiaali = document.getElementById('sel-materiaali').value;
   const vari = document.getElementById('sel-vari').value;
   const paksuus = document.getElementById('sel-paksuus').value;
@@ -877,7 +879,8 @@ async function lisaaTilaukseen() {
   const ilmo = document.getElementById('muokkaus-ilmo');
   if (ilmo) ilmo.remove();
   status.style.color = '#4ade80';
-  status.textContent = `${pellit.length} riviä lähetetty tilaukseen!`;
+  status.textContent = korvaa ? `Muutokset lähetetty tilaukseen (${pellit.length} riviä).` : `${pellit.length} riviä lähetetty tilaukseen!`;
+  paivitaLisaysNappi();
   setTimeout(() => { status.textContent = ''; }, 3000);
 }
 
@@ -1218,7 +1221,7 @@ function paivitaTuotantoLinkki() {
   a.style.display = '';
   if (muutettu) {
     a.removeAttribute('href'); a.classList.add('ei-kaytossa');
-    info.textContent = 'Mittoja on muutettu: paina ensin "Lisää tilaukseen", niin Tuotanto näyttää muutokset.';
+    info.textContent = 'Mittoja on muutettu: paina ensin "' + lisaysNapinTeksti() + '", niin Tuotanto näyttää muutokset.';
   } else {
     a.href = 'piippu_tuotanto.html?orderId=' + encodeURIComponent(tuotantoKohde.orderId) + '&groupName=' + encodeURIComponent(tuotantoKohde.groupName);
     a.classList.remove('ei-kaytossa'); info.textContent = '';
@@ -1242,6 +1245,20 @@ window.addEventListener('storage', e => {
   } catch (err) { /* ei kuittausta */ }
 });
 paivitaTuotantoLinkki();
+
+// Lisäysnapin teksti (23.11.2026, Tomi): kun ryhmässä on jo piippu, tallennus korvaa sen, joten "Lisää tilaukseen"
+// antaisi kuvan, että entisten lisäksi tulee uusi piippu. Ilman ryhmää (sivu avattu suoraan) jokainen painallus lisää uuden.
+function lisaysNapinTeksti() {
+  if (!targetGroupId) return 'Lisää tilaukseen';
+  if (toinenTyyppi) return 'Korvaa ryhmän piippu';
+  if (muokattava || lahetettyGroupId) return 'Tallenna muutokset tilaukseen';
+  return 'Lisää tilaukseen';
+}
+function paivitaLisaysNappi() {
+  const b = document.getElementById('btn-lisaa');
+  if (b) b.textContent = lisaysNapinTeksti() + ' →';
+}
+paivitaLisaysNappi();
 
 
 // Sidebar resizer

@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v7 (23.11.2026): harjapiipun sivukuvaan juuren etuosa (Eteen piipusta + Alas).
 // v6: harjapiipun sivukuva ja kaltevuus suhdelukuna (harjaSivukuva, harjaSuhde), yhteinen harjapiippu-sivulle ja Tuotannolle.
 (function () {
   const req = typeof require === 'function' ? require : null;
@@ -605,6 +606,19 @@
     let h = '<polyline points="' + xa + ',' + ya + ' ' + xH + ',' + yH + ' ' + xb + ',' + yb + '" fill="none" stroke="' + C2 + '" stroke-width="1.5"/>';
     h += '<polyline points="' + x1 + ',' + y1 + ' ' + x1 + ',' + yTop + ' ' + x2 + ',' + yTop + ' ' + x2 + ',' + y2 + '" fill="none" stroke="' + C1 + '" stroke-width="2"/>';
     h += '<line x1="' + xH + '" y1="' + yTop + '" x2="' + xH + '" y2="' + yH + '" stroke="' + C2 + '" stroke-dasharray="4 3"/>';
+    // Juuren etuosa (nillityslista 23.11.2026): katkoviiva katon suuntaan "Eteen piipusta" ja päästä "Alas" kohtisuoraan
+    // katon alle, kuten lapepiipun kuvassa. Ilman syöttöä (0) ei piirretä.
+    const juuriEtu = (px, py, ex, ey, eteen, alas) => {
+      if (!(eteen > 0)) return { h: '', yAla: py };
+      const dx = px - ex, dy = py - ey, l = Math.hypot(dx, dy) || 1;
+      let nx = -dy / l, ny = dx / l;
+      if (ny < 0) { nx = -nx; ny = -ny; }                     // normaali katon alle (SVG:ssä y kasvaa alas)
+      const ax = ex + nx * alas * sc, ay = ey + ny * alas * sc;
+      const viiva = (a, b, c, d) => '<line x1="' + a + '" y1="' + b + '" x2="' + c + '" y2="' + d + '" stroke="' + C1 + '" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round"/>';
+      return { h: viiva(px, py, ex, ey) + (alas > 0 ? viiva(ex, ey, ax, ay) : ''), yAla: Math.max(py, ey, ay) };
+    };
+    const je1 = juuriEtu(x1, y1, xa, ya, n(m.k24_1), n(m.j25_1)), je2 = juuriEtu(x2, y2, xb, yb, n(m.k24_2), n(m.j25_2));
+    h += je1.h + je2.h;
     let tod = null;
     if (o.todelliset) { try { tod = PI.laskeHarjapiippu(m, { juuret: false, kansi: false, hattu: false }).geom; } catch (e) { tod = null; } }
     const korkeus = (x, yAla, arvo, a, todArvo) => {
@@ -619,7 +633,7 @@
       return '<text x="' + cx + '" y="' + cy + '" fill="' + CA + '" font-size="12" font-family="' + F + '" text-anchor="middle" dominant-baseline="middle" transform="rotate(' + kulma + ' ' + cx + ' ' + cy + ')">vino ' + mm(arvo) + '</text>';
     };
     h += vino(x1, y1, xH, yH, Math.hypot(suora1, kork1 - korkH)) + vino(xH, yH, x2, y2, Math.hypot(suora2, kork2 - korkH));
-    const yM = Math.max(ya, yb, y1, y2) + 24;
+    const yM = Math.max(ya, yb, y1, y2, je1.yAla, je2.yAla) + 24;
     h += mittaH(x1, xH, yM, mm(suora1)) + mittaH(xH, x2, yM, mm(suora2)) + mittaH(x1, x2, yM + 30, 'koko ' + mm(suora1 + suora2));
     if (tod) h += txt(W - 6, H - 6, '↳ = hupun todellinen korkeus ilman taitoksia', { a: 'end', c: CI, s: 10 });
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;height:auto;display:block">' + h + '</svg>';
