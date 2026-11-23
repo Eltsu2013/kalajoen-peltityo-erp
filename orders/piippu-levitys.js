@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v9 (23.11.2026): harjapiipun etukuvassa etu 2 -puoli peilikuvana ja puolet nimetty Etu 1 / Etu 2.
 // v8 (23.11.2026): etukuva(vals) Tomin Excelin mallin mukaan (lapepiippu ja harjapiippu).
 // v7 (23.11.2026): harjapiipun sivukuvaan juuren etuosa (Eteen piipusta + Alas).
 // v6: harjapiipun sivukuva ja kaltevuus suhdelukuna (harjaSivukuva, harjaSuhde), yhteinen harjapiippu-sivulle ja Tuotannolle.
@@ -706,8 +707,8 @@
 
   // ---------- Etukuva (v8, 23.11.2026, Tomin Excelin malli) ----------
   // Piippu edestä: leveys ylhäällä, juuren pohjaviiva, ylitys vasen ja oikea alla, päissä Uraan-taitos (kulma: 90 = suoraan alas),
-  // juuri nousee piipulle katkoviivalla. Harjapiippu etu 1:n puolelta; puoli 2:n ylitykset yläreunassa (vasen ja oikea etu 1:n
-  // suunnasta katsottuna, Tomi 23.11.2026). Piipun korkeus on kuvassa vain viitteellinen (korkeudet sivukuvassa).
+  // juuri nousee piipulle katkoviivalla. Harjapiippu etu 1:n puolelta; etu 2 -puolen ylitykset yläreunassa PEILIKUVANA: ne mitataan
+  // etu 2:n edestä, joten etu 2:n vasen näkyy tässä kuvassa oikealla (Tomi 23.11.2026). Piipun korkeus on vain viitteellinen.
   function etukuva(vals) {
     const m = vals || {}, n = x => Number(x) || 0;
     const harja = m.tyyppi === 'harjapiippu';
@@ -745,13 +746,14 @@
       const yN = yBase - Math.min(nousu * sc, (yBase - yTop) * 0.45);
       h += l(xL, yN, xR, yN, CA, 1, '4 3') + t(cx, yN - 5, 'juuri nousee ' + mm(nousu), { s: 10, c: CA });
     }
-    h += t(cx, H - 8, (ur > 0 ? 'Uraan ' + mm(ur) + ' · kulma ' + mm(kul) + '°' : 'Ei uraanta') + (harja ? ' · puoli 1 (etu 1)' : ''), { s: 10.5, c: CA });
+    h += t(cx, H - 8, ur > 0 ? 'Uraan ' + mm(ur) + ' · kulma ' + mm(kul) + '°' : 'Ei uraanta', { s: 10.5, c: CA });
     if (harja) {
-      // puoli 2 (harjan takana) yläreunassa samoin päin kuin etu 1:stä katsottuna
+      // Etu 2 -puoli (harjan takana) yläreunassa peilikuvana: etu 2:n oikea on tässä kuvassa vasemmalla ja vasen oikealla
       const yH = 48, xL2 = cx - lev2 * sc / 2, xR2 = cx + lev2 * sc / 2;
-      h += t(6, 16, 'Puoli 2 (harjan takana, etu 1:stä katsottuna)', { s: 10, c: C2, a: 'start' });
-      if (v2 > 0) h += l(xL2 - v2 * sc, yH, xL2, yH, CA, 1.6, '6 3') + t(xL2 - v2 * sc / 2, yH - 6, 'vasen ' + mm(v2), { s: 11, b: true });
-      if (o2 > 0) h += l(xR2, yH, xR2 + o2 * sc, yH, CA, 1.6, '6 3') + t(xR2 + o2 * sc / 2, yH - 6, 'oikea ' + mm(o2), { s: 11, b: true });
+      h += t(6, 16, 'ETU 2 -PUOLI', { s: 11, b: true, a: 'start' }) + t(100, 16, '(harjan takana, peilikuvana)', { s: 10, c: C2, a: 'start' });
+      h += t(6, yTop + 12, 'ETU 1 -PUOLI', { s: 11, b: true, a: 'start' }) + t(6, yTop + 26, '(kuva edestä)', { s: 10, c: C2, a: 'start' });
+      if (o2 > 0) h += l(xL2 - o2 * sc, yH, xL2, yH, CA, 1.6, '6 3') + t(xL2 - o2 * sc / 2, yH - 6, 'oikea ' + mm(o2), { s: 11, b: true });
+      if (v2 > 0) h += l(xR2, yH, xR2 + v2 * sc, yH, CA, 1.6, '6 3') + t(xR2 + v2 * sc / 2, yH - 6, 'vasen ' + mm(v2), { s: 11, b: true });
       h += l(xL2, yH - 5, xL2, yH + 5, C2) + l(xR2, yH - 5, xR2, yH + 5, C2);
       if (Math.abs(lev2 - lev1) > 0.5) h += t(cx, yH + 4, 'leveys ' + mm(lev2), { s: 10, c: C2 });
     } else h += t(6, 16, 'Edestä', { s: 10, c: C2, a: 'start' });
