@@ -9,7 +9,8 @@
 // Käyttö Nodessa:   const P = require('../orders/piippu-laskenta.js');
 // Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen),
 //          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2),
-//          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026), v6 jakosauma seuraa hupun saumaa (harjaJakosauma).
+//          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026), v6 jakosauma seuraa hupun saumaa (harjaJakosauma),
+//          v7 harjapiipun etukappaleet 1–3 osana kummallekin puolelle (harjaEtuJako, 23.11.2026).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -266,7 +267,7 @@
   // vals: lev1, lev2 (tyhjä = lev1), suora1, suora2, kork1, korkH, kork2, poimu, ylit1V, ylit1O, ylit2V, ylit2O,
   //       k24_1, j25_1, k24_2, j25_2 (Eteen piipusta / Alas kummallekin puolelle), tupla, etulis, nousu, sivulisa,
   //       sauma, huplis, ylareunaV, alatupla, vahennys, hsivlisa, hattulis, sivutJako (1 = yhtenä, 2 = poikki harjalta),
-  //       jakosauma.
+  //       jakosauma, etuJako1, etuJako2 (etukappaleet 1–3 osana; etuJako2 tyhjä = sama kuin etu 1).
   // Rivit kuten lapepiipussa: { osa, lev, pit, kpl } ja hupun sivuissa lisäksi lisa (leikkausmitat tekstinä).
   function laskeHarjapiippu(vals, osat) {
     const v = vals || {};
@@ -279,6 +280,7 @@
     const sauma = luku(v.sauma), huplis = luku(v.huplis), ylareunaV = luku(v.ylareunaV), alatupla = luku(v.alatupla);
     const vahennys = luku(v.vahennys), hsivlisa = luku(v.hsivlisa), hattulis = luku(v.hattulis), jako = harjaJakosauma(v);
     const sivutJako = Number(v.sivutJako) === 2 ? 2 : 1;
+    const { jako1, jako2 } = harjaEtuJako(v);
 
     // Kummankin puolen geometria omalla kulmallaan
     const puoli = (suora, kork) => {
@@ -316,8 +318,12 @@
     const sivuL = suora1 + suora2 + sauma * 4 + huplis + hsivlisa;                 // sivukappale yhtenä
     const harjaKohta = sauma * 2 + hsivlisa / 2 + huplis / 2 + suora1;             // harjan kohta sivukappaleen etu 1 -päästä
     if (o.huppu !== false) {
-      muut.push({ osa: 'Huppu etu 1', lev: ylos(lev1 + sauma * 2 + huplis), pit: ylos(hE1), kpl: 1 });
-      muut.push({ osa: 'Huppu etu 2', lev: ylos(lev2 + sauma * 2 + huplis), pit: ylos(hE2), kpl: 1 });
+      // Etukappaleet yhtenä tai 2–3 osana kuten lapepiipussa (Tomi 23.11.2026): ensimmäinen osa + 2 × sauma, seuraavat + 3 × sauma
+      // (liitokseen sauma + 2 × sauma). Puolilla voi olla eri jako, esim. korkeampi kahtena ja matalampi yhtenä.
+      [[1, lev1, hE1, jako1], [2, lev2, hE2, jako2]].forEach(([n, lev, hE, k]) => {
+        if (k === 1) { muut.push({ osa: 'Huppu etu ' + n, lev: ylos(lev + sauma * 2 + huplis), pit: ylos(hE), kpl: 1 }); return; }
+        for (let i = 1; i <= k; i++) muut.push({ osa: 'Huppu etu ' + n + ' osa ' + i, lev: ylos(lev / k + huplis / k + sauma * (i === 1 ? 2 : 3)), pit: ylos(hE), kpl: 1 });
+      });
       if (sivutJako === 1) {
         // Leikkausmitat (kaava, taitokset täysinä) poistettu 23.11.2026 (Tomi): ne olivat 10–20 mm todellista suurempia.
         // Leikkuu tehdään aihion ja levityskuvan merkintäpisteiden mukaan.
@@ -337,7 +343,7 @@
 
     return {
       juuret, muut, virheet,
-      geom: { lev1, lev2, puoli1: p1, puoli2: p2, hE1, hE2, hH, hE1Tod, hE2Tod, hHTod, sivuL, harjaKohta, sivutJako },
+      geom: { lev1, lev2, puoli1: p1, puoli2: p2, hE1, hE2, hH, hE1Tod, hE2Tod, hHTod, sivuL, harjaKohta, sivutJako, etuJako1: jako1, etuJako2: jako2 },
     };
   }
 
@@ -363,6 +369,14 @@
     return { suora2, kork2, vino2: Math.hypot(suora2, kork2 - korkH), vino1: Math.hypot(suora1, kork1 - korkH), varoitukset };
   }
 
+  // Harjapiipun etukappaleiden jako (1–3 osaa): etuJako1, etuJako2 (tyhjä = sama kuin etu 1). Vanhat tilaukset: 1.
+  function harjaEtuJako(v) {
+    const k = x => [1, 2, 3].includes(Number(x)) ? Number(x) : 1;
+    const jako1 = k(v && v.etuJako1);
+    const j2 = v ? v.etuJako2 : null;
+    return { jako1, jako2: j2 === null || j2 === undefined || j2 === '' ? jako1 : k(j2) };
+  }
+
   // Harjapiipun jakosauma (poikki harjalta): tyhjä = sama kuin hupun saumat, jotta saumasäätö muuttaa kaikki saumat
   // (Tomi 23.11.2026). Oma arvo on mahdollinen, jos jonkin piipun harjan liitos tehdään eri tavalla.
   function harjaJakosauma(v) {
@@ -370,7 +384,7 @@
     return j === null || j === undefined || j === '' ? luku(v && v.sauma) : luku(j);
   }
 
-  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2, harjaJakosauma };
+  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2, harjaJakosauma, harjaEtuJako };
   globalThis.KPT_PIIPPU = KPT_PIIPPU;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU;
 })();

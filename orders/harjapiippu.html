@@ -330,6 +330,24 @@
 
   <div class="section">
     <h3 class="red">Hupun mitat ⚠</h3>
+    <!-- Etukappaleet 1–3 osana (23.11.2026): oletuksena sama jako molemmille, tarvittaessa etu 2:lle oma -->
+    <div style="font-size:11px;color:var(--text2);">Hupun etu <span id="etu1-otsikko"></span></div>
+    <div class="valinta">
+      <button class="sauma-btn active" id="etu1-1" onclick="setEtuJako(1, 1)">Yhtenä</button>
+      <button class="sauma-btn" id="etu1-2" onclick="setEtuJako(1, 2)">2 osaa</button>
+      <button class="sauma-btn" id="etu1-3" onclick="setEtuJako(1, 3)">3 osaa</button>
+    </div>
+    <label style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text2);margin:-2px 0 6px;cursor:pointer;">
+      <input type="checkbox" id="etu2-eri" onchange="setEtu2Eri(this.checked)"> Eri jako etu 2 -puolelle
+    </label>
+    <div id="etu2-rivi" style="display:none">
+      <div style="font-size:11px;color:var(--text2);">Hupun etu (etu 2 -puoli)</div>
+      <div class="valinta">
+        <button class="sauma-btn active" id="etu2-1" onclick="setEtuJako(2, 1)">Yhtenä</button>
+        <button class="sauma-btn" id="etu2-2" onclick="setEtuJako(2, 2)">2 osaa</button>
+        <button class="sauma-btn" id="etu2-3" onclick="setEtuJako(2, 3)">3 osaa</button>
+      </div>
+    </div>
     <div style="font-size:11px;color:var(--text2);">Hupun sivut</div>
     <div class="valinta">
       <button class="sauma-btn active" id="sivut-yksi" onclick="setSivut(1)">Yhtenä kappaleena</button>
@@ -409,8 +427,8 @@
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
-<script src="piippu-laskenta.js?v=6"></script>
-<script src="piippu-levitys.js?v=11"></script>
+<script src="piippu-laskenta.js?v=7"></script>
+<script src="piippu-levitys.js?v=12"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
@@ -436,6 +454,28 @@ function kasinSyotetty(id) {
 function palautaAuto(id) {
   if (id === 'suora2') suora2Tila = 'auto';
   else puoli2Tila = 'auto';
+  laske();
+}
+// Etukappaleiden jako (1–3 osaa). etuJako2 = null: sama kuin etu 1.
+let etuJako1 = 1, etuJako2 = null;
+function paivitaEtuNapit() {
+  [1, 2, 3].forEach(k => {
+    document.getElementById('etu1-' + k).classList.toggle('active', etuJako1 === k);
+    document.getElementById('etu2-' + k).classList.toggle('active', (etuJako2 || etuJako1) === k);
+  });
+  const eri = etuJako2 !== null;
+  document.getElementById('etu2-eri').checked = eri;
+  document.getElementById('etu2-rivi').style.display = eri ? '' : 'none';
+  document.getElementById('etu1-otsikko').textContent = eri ? '(etu 1 -puoli)' : '(molemmat puolet)';
+}
+function setEtuJako(puoli, k, eiLaskea) {
+  if (puoli === 1) etuJako1 = k; else etuJako2 = k;
+  paivitaEtuNapit();
+  if (!eiLaskea) laske();
+}
+function setEtu2Eri(eri) {
+  etuJako2 = eri ? etuJako1 : null;
+  paivitaEtuNapit();
   laske();
 }
 function setSivut(n) {
@@ -464,7 +504,7 @@ function keraaVals() {
     tupla: gv('v-tupla'), etulis: gv('v-etulis'), nousu: gv('v-nousu'), sivulisa: gv('v-sivulisa'),
     sauma: gv('v-sauma'), huplis: gv('v-huplis'), ylareunaV: gv('v-ylareunaV'), ylaTyyppi: document.getElementById('v-ylatyyppi').value,
     alatupla: gv('v-alatupla'), vahennys: gv('v-vahennys'), hsivlisa: gv('v-hsivlisa'), hattulis: gv('v-hattulis'),
-    sivutJako, jakosauma: document.getElementById('v-jakosauma').value === '' ? null : gv('v-jakosauma'), suora2Tila, puoli2Tila,
+    sivutJako, etuJako1, etuJako2, jakosauma: document.getElementById('v-jakosauma').value === '' ? null : gv('v-jakosauma'), suora2Tila, puoli2Tila,
   };
   const tila = {
     suora2: suora2Tila === 'auto' ? 'auto' : gv('suora2'),
@@ -660,6 +700,9 @@ function palautaMuokattava() {
   if (suora2Tila === 'kasin') aseta('suora2', v.suora2);
   if (puoli2Tila === 'kork') aseta('kork2', v.kork2);
   if (puoli2Tila === 'vino') aseta('vino2', v.vino2);
+  etuJako1 = [1, 2, 3].includes(Number(v.etuJako1)) ? Number(v.etuJako1) : 1;
+  etuJako2 = [1, 2, 3].includes(Number(v.etuJako2)) ? Number(v.etuJako2) : null;
+  paivitaEtuNapit();
   setSivut(Number(v.sivutJako) === 2 ? 2 : 1);
   const nimet = items.map(i => i.nimike || '');
   const on = alku => nimet.some(n => n === alku || n.startsWith(alku + ' '));

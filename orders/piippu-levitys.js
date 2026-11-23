@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v12 (23.11.2026): harjapiipun etukappaleet 1–3 osana (etuJako1 / etuJako2).
 // v11 (23.11.2026): jakosauma seuraa hupun saumaa (KPT_PIIPPU.harjaJakosauma).
 // v10 (23.11.2026): palaTiedot(pa) ja levita(pa) julki (työkortin palasivut); palaHtml käyttää samaa, ruutu ennallaan.
 // v9 (23.11.2026): harjapiipun etukuvassa etu 2 -puoli peilikuvana ja puolet nimetty Etu 1 / Etu 2.
@@ -500,10 +501,15 @@
     const reuna = (tyyppi, nurkka, leveys) => ({ tyyppi, nurkka, s: leveys, w: tyyppi === 'k40' ? 2 * leveys : leveys, kulma: 90 });
     const rivi = nimi => t.muut.find(r => r.osa === nimi) || {};
     const palat = [];
-    [[1, g.lev1, g.hE1Tod], [2, g.lev2, g.hE2Tod]].forEach(([n, lev, h]) => {
-      const P = lev + huplis;
-      palat.push(Object.assign({ nimi: 'Huppu etu ' + n, kpl: 1, osa: 'etu', P, ala2d: [[0, -h], [P, -h]],
-        vasen: reuna('t90', true, s), oikea: reuna('t90', true, s), paat: ['', ''], alaNimet: [''], listaLev: rivi('Huppu etu ' + n).lev, listaPit: rivi('Huppu etu ' + n).pit }, yht));
+    // Etukappaleet yhtenä tai 2–3 osana (kuten lapepiipun Sauma 2:n etu): aiempi pala jakosauma 90° ulos, seuraava kiertää sen tuplalla
+    [[1, g.lev1, g.hE1Tod, g.etuJako1 || 1], [2, g.lev2, g.hE2Tod, g.etuJako2 || 1]].forEach(([n, lev, h, k]) => {
+      const P = (lev + huplis) / k;
+      for (let i = 1; i <= k; i++) {
+        const nimi = 'Huppu etu ' + n + (k > 1 ? ' osa ' + i : '');
+        palat.push(Object.assign({ nimi, kpl: 1, osa: 'etu', P, ala2d: [[0, -h], [P, -h]],
+          vasen: i === 1 ? reuna('t90', true, s) : reuna('k40', false, s), oikea: i === k ? reuna('t90', true, s) : reuna('t90', false, s),
+          paat: ['', ''], alaNimet: [''], listaLev: rivi(nimi).lev, listaPit: rivi(nimi).pit }, yht));
+      }
     });
     const P = Number(v.suora1) + Number(v.suora2) + huplis + liitos;                 // sivun paneeli (sivuL − 2 × 40)
     const xH = liitos / 2 + huplis / 2 + Number(v.suora1);                           // harjan kohta paneelin etu 1 -reunasta

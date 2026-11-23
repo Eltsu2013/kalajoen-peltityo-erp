@@ -184,5 +184,29 @@ ok(PI.harjaJakosauma({ sauma: 15, jakosauma: null }) === 15 && PI.harjaJakosauma
   'tyhjä jakosauma = hupun saumat (15)');
 ok(PI.harjaJakosauma({ sauma: 15, jakosauma: 20 }) === 20, 'oma jakosauma säilyy (20)');
 
+// Etukappaleet osina (23.11.2026): kuten lapepiippu, ensimmäinen osa + 2 × sauma, seuraavat + 3 × sauma; puolilla oma jako
+{
+  const B = Object.assign({}, A, { etuJako1: 2, etuJako2: null });
+  const t = laskeHarjapiippu(B);
+  const etu = t.muut.filter(r => r.osa.startsWith('Huppu etu'));
+  ok(etu.map(r => r.osa).join('|') === 'Huppu etu 1 osa 1|Huppu etu 1 osa 2|Huppu etu 2 osa 1|Huppu etu 2 osa 2', 'etuJako1 = 2, etu 2 sama: neljä etuosaa ' + etu.map(r => r.osa).join(', '));
+  const s = A.sauma, h = A.huplis;
+  ok(etu[0].lev === Math.ceil(A.lev1 / 2 + h / 2 + 2 * s - 1e-9) && etu[1].lev === Math.ceil(A.lev1 / 2 + h / 2 + 3 * s - 1e-9),
+    'osien leveydet: ' + etu[0].lev + ' ja ' + etu[1].lev + ' (ero yksi sauma, liitokseen sauma + 2 × sauma)');
+  const C = Object.assign({}, A, { etuJako1: 1, etuJako2: 3 });
+  const nimetC = laskeHarjapiippu(C).muut.filter(r => r.osa.startsWith('Huppu etu')).map(r => r.osa);
+  ok(nimetC.join('|') === 'Huppu etu 1|Huppu etu 2 osa 1|Huppu etu 2 osa 2|Huppu etu 2 osa 3', 'eri jako puolille: etu 1 yhtenä, etu 2 kolmena');
+  const D = Object.assign({}, A, { etuJako1: 2, etuJako2: 1, sauma: 15 });
+  const pal = L.harjaHupunPalat(D).palat.filter(p => p.osa === 'etu');
+  const os = pal.filter(p => p.nimi.startsWith('Huppu etu 1 osa'));
+  ok(os.length === 2 && os[0].oikea.tyyppi === 't90' && os[0].oikea.w === 15 && !os[0].oikea.nurkka && os[1].vasen.tyyppi === 'k40' && os[1].vasen.w === 30 && os[1].oikea.nurkka,
+    'levitys saumalla 15: osa 1 jakosauma 15 ulos, osa 2 kiertää 15 + 15, ulkonurkat nurkkasaumoja');
+  ok(Math.abs(os[0].P + os[1].P - (A.lev1 + A.huplis)) < 1e-9, 'osien paneelit yhteensä = leveys + lisä hupun kokoon');
+  const lista = L.laskeKaikkiHarja(D).muut.filter(r => r.osa.startsWith('Huppu etu'));
+  const kaava = laskeHarjapiippu(D).muut.filter(r => r.osa.startsWith('Huppu etu'));
+  ok(lista.length === 3 && lista.every((r, i) => r.lev === kaava[i].lev), 'listan etuosien leveydet levityksestä = kaava (' + lista.map(r => r.osa + ' ' + r.lev).join(', ') + ')');
+  ok(laskeHarjapiippu(A).muut.filter(r => r.osa.startsWith('Huppu etu')).length === 2, 'vanhat tilaukset (ei etuJakoa): etu 1 ja etu 2 yhtenä');
+}
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;
