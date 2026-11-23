@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v8 (23.11.2026): etukuva(vals) Tomin Excelin mallin mukaan (lapepiippu ja harjapiippu).
 // v7 (23.11.2026): harjapiipun sivukuvaan juuren etuosa (Eteen piipusta + Alas).
 // v6: harjapiipun sivukuva ja kaltevuus suhdelukuna (harjaSivukuva, harjaSuhde), yhteinen harjapiippu-sivulle ja Tuotannolle.
 (function () {
@@ -648,7 +649,7 @@
 
 
   // Harjapiipun peltilista: kuten KPT_PIIPPU.laskeHarjapiippu, mutta hupun rivit todellisen aihion kokoisina
-  // (Tomi 20.11.2026: ei varmuusvaraa). Leikkausmitat (lisa) säilyvät.
+  // (Tomi 20.11.2026: ei varmuusvaraa). Leikkausmitat poistettu 23.11.2026 (piippu-laskenta.js v5).
   function laskeKaikkiHarja(vals, osat) {
     const o = osat || {};
     const perus = PI.laskeHarjapiippu(vals, o);
@@ -702,9 +703,64 @@
       + '<text x="6" y="' + (H - 7) + '" font-size="9" font-family="' + F + '" fill="#6b8fa8">⌐ = suora kulma · katkoviiva = katon kohta</text></svg>';
   }
 
+
+  // ---------- Etukuva (v8, 23.11.2026, Tomin Excelin malli) ----------
+  // Piippu edestä: leveys ylhäällä, juuren pohjaviiva, ylitys vasen ja oikea alla, päissä Uraan-taitos (kulma: 90 = suoraan alas),
+  // juuri nousee piipulle katkoviivalla. Harjapiippu etu 1:n puolelta; puoli 2:n ylitykset yläreunassa (vasen ja oikea etu 1:n
+  // suunnasta katsottuna, Tomi 23.11.2026). Piipun korkeus on kuvassa vain viitteellinen (korkeudet sivukuvassa).
+  function etukuva(vals) {
+    const m = vals || {}, n = x => Number(x) || 0;
+    const harja = m.tyyppi === 'harjapiippu';
+    const lev1 = harja ? n(m.lev1) : n(m.leveys);
+    if (!(lev1 > 0)) return '';
+    const lev2 = harja ? (m.lev2 === null || m.lev2 === undefined || m.lev2 === '' ? lev1 : n(m.lev2)) : 0;
+    const v1 = harja ? n(m.ylit1V) : n(m.vasen), o1 = harja ? n(m.ylit1O) : n(m.oikea);
+    const v2 = n(m.ylit2V), o2 = n(m.ylit2O);
+    const ur = n(m.poimu), kul = m.harjakulma === null || m.harjakulma === undefined || m.harjakulma === '' ? 90 : n(m.harjakulma);
+    const nousu = n(m.nousu);
+    const C1 = '#f1f5f9', C2 = '#64748b', CI = '#38bdf8', CA = '#f59e0b', F = 'IBM Plex Mono, monospace';
+    const W = 400, H = 260, cx = W / 2;
+    const kokoL = Math.max(v1 + lev1 + o1, harja ? v2 + lev2 + o2 : 0, 1);
+    const sc = (W - 90) / kokoL;
+    const yTop = harja ? 95 : 62, yBase = harja ? 186 : 190;
+    const xL = cx - lev1 * sc / 2, xR = cx + lev1 * sc / 2, xa = xL - v1 * sc, xb = xR + o1 * sc;
+    const t = (x, y, s, a) => '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" fill="' + ((a && a.c) || C1) + '" font-size="' + ((a && a.s) || 12) + '" font-family="' + F + '" text-anchor="' + ((a && a.a) || 'middle') + '"' + (a && a.b ? ' font-weight="700"' : '') + '>' + esc(s) + '</text>';
+    const l = (x1, y1, x2, y2, c, w, d) => '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '" stroke="' + c + '" stroke-width="' + (w || 1) + '"' + (d ? ' stroke-dasharray="' + d + '"' : '') + '/>';
+    const mitta = (x1, x2, y, s, c) => x2 - x1 < 1 ? '' : l(x1, y, x2, y, c || CI) + l(x1, y - 4, x1, y + 4, c || CI) + l(x2, y - 4, x2, y + 4, c || CI) + t((x1 + x2) / 2, y + (y > yTop ? 14 : -5), s, { b: true, s: 12 });
+    // piippu (pohja on juuren viiva) ja leveys
+    let h = '<polyline points="' + [[xL, yBase], [xL, yTop], [xR, yTop], [xR, yBase]].map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ') + '" fill="none" stroke="' + C1 + '" stroke-width="2"/>';
+    h += mitta(xL, xR, yTop - 12, mm(lev1));
+    // juuri: pohjaviiva ja Uraan-taitokset päissä
+    h += l(xa, yBase, xb, yBase, CA, 2.2);
+    const L = Math.max(12, Math.min(40, ur * sc)), r = kul * Math.PI / 180;
+    if (ur > 0) {
+      h += l(xa, yBase, xa - Math.cos(r) * L, yBase + Math.sin(r) * L, CA, 2.2);
+      h += l(xb, yBase, xb + Math.cos(r) * L, yBase + Math.sin(r) * L, CA, 2.2);
+    }
+    if (v1 > 0) h += t(xL - 4, yBase - 6, 'Vasen', { s: 10, c: C2, a: 'end' });
+    if (o1 > 0) h += t(xR + 4, yBase - 6, 'Oikea', { s: 10, c: C2, a: 'start' });
+    h += mitta(xa, xL, yBase + 26, mm(v1)) + mitta(xR, xb, yBase + 26, mm(o1));
+    // juuri nousee piipulle: katkoviiva piipun yli
+    if (nousu > 0) {
+      const yN = yBase - Math.min(nousu * sc, (yBase - yTop) * 0.45);
+      h += l(xL, yN, xR, yN, CA, 1, '4 3') + t(cx, yN - 5, 'juuri nousee ' + mm(nousu), { s: 10, c: CA });
+    }
+    h += t(cx, H - 8, (ur > 0 ? 'Uraan ' + mm(ur) + ' · kulma ' + mm(kul) + '°' : 'Ei uraanta') + (harja ? ' · puoli 1 (etu 1)' : ''), { s: 10.5, c: CA });
+    if (harja) {
+      // puoli 2 (harjan takana) yläreunassa samoin päin kuin etu 1:stä katsottuna
+      const yH = 48, xL2 = cx - lev2 * sc / 2, xR2 = cx + lev2 * sc / 2;
+      h += t(6, 16, 'Puoli 2 (harjan takana, etu 1:stä katsottuna)', { s: 10, c: C2, a: 'start' });
+      if (v2 > 0) h += l(xL2 - v2 * sc, yH, xL2, yH, CA, 1.6, '6 3') + t(xL2 - v2 * sc / 2, yH - 6, 'vasen ' + mm(v2), { s: 11, b: true });
+      if (o2 > 0) h += l(xR2, yH, xR2 + o2 * sc, yH, CA, 1.6, '6 3') + t(xR2 + o2 * sc / 2, yH - 6, 'oikea ' + mm(o2), { s: 11, b: true });
+      h += l(xL2, yH - 5, xL2, yH + 5, C2) + l(xR2, yH - 5, xR2, yH + 5, C2);
+      if (Math.abs(lev2 - lev1) > 0.5) h += t(cx, yH + 4, 'leveys ' + mm(lev2), { s: 10, c: C2 });
+    } else h += t(6, 16, 'Edestä', { s: 10, c: C2, a: 'start' });
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' + h + '</svg>';
+  }
+
   const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
     palaHtml, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
-    harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde };
+    harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva };
   globalThis.KPT_PIIPPU_LEVITYS = KPT_PIIPPU_LEVITYS;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU_LEVITYS;
 })();

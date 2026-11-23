@@ -15,7 +15,7 @@
 //   html = T.sivu(T.ylaosa({...}) + T.tiedot({...}) + ... + T.alaosa())
 //
 // MUISTA: kun tätä tiedostoa muutetaan, nosta tyokortti.js?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
-// Versiot: v1 (23.11.2026) pohja ja piipun etusivu.
+// Versiot: v1 (23.11.2026) pohja ja piipun etusivu. v2 (23.11.2026) rajaa() ja kuvat rinnakkain (.tkk-kuvat).
 (function () {
   'use strict';
   const ID = 'tkk';
@@ -58,6 +58,8 @@
   #${ID} h2 { font-size: 11pt; margin: 2.5mm 0 1mm; border-bottom: 1px solid #000; padding-bottom: 0.8mm; display: flex; justify-content: space-between; gap: 4mm; break-after: avoid; }
   #${ID} h2 span { font-size: 9pt; font-weight: 400; }
   #${ID} .tkk-kuva svg { width: 100%; height: auto; max-height: 50mm; display: block; }
+  #${ID} .tkk-kuvat { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); gap: 5mm; align-items: center; }
+  #${ID} .tkk-kuvat .tkk-kuva svg { max-height: 56mm; margin: 0 auto; }
   #${ID} .tkk-kaksi { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
   #${ID} .tkk-rivi { display: flex; flex-wrap: wrap; gap: 1mm 6mm; font-size: 9.5pt; margin: 1mm 0; }
   #${ID} .tkk-rivi b { font-family: 'IBM Plex Mono', monospace; }
@@ -147,6 +149,27 @@
       .replace(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/g, (m, r, g, b, a) => `rgba(0,0,0,${Math.min(0.12, Number(a)).toFixed(2)})`);
   }
 
+  // Rajaa SVG:n tyhjät reunat pois (viewBox sisällön mukaan), jotta kuva ja tekstit ovat paperilla isompia.
+  // Toimii vain selaimessa (mittaa piirretyn sisällön); muuten ja virheessä palauttaa kuvan ennallaan.
+  function rajaa(svg, vara) {
+    if (typeof document === 'undefined' || !svg) return svg;
+    const v = vara === undefined ? 8 : vara;
+    const apu = document.createElement('div');
+    apu.style.cssText = 'position:absolute;left:-10000px;top:0;width:900px;visibility:hidden;';
+    try {
+      apu.innerHTML = svg;
+      document.body.appendChild(apu);
+      const el = apu.querySelector('svg');
+      if (!el || !el.getBBox) return svg;
+      const b = el.getBBox();
+      if (!(b.width > 0 && b.height > 0)) return svg;
+      el.setAttribute('viewBox', [b.x - v, b.y - v, b.width + 2 * v, b.height + 2 * v].map(x => Math.round(x * 10) / 10).join(' '));
+      el.removeAttribute('width'); el.removeAttribute('height');
+      return el.outerHTML;
+    } catch (e) { console.warn('Rajaus:', e); return svg; }
+    finally { if (apu.parentNode) apu.parentNode.removeChild(apu); }
+  }
+
   // ---------- Tulostus ----------
   let rakentaja = null, valmisteltu = false;
   function rakenna() {
@@ -179,7 +202,7 @@
     setTimeout(() => window.print(), 80);
   }
 
-  const KPT_TYOKORTTI = { VERSIO: 1, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, asenna, tulosta, rakenna, CSS };
+  const KPT_TYOKORTTI = { VERSIO: 2, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, rakenna, CSS };
   if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
   if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
 })();

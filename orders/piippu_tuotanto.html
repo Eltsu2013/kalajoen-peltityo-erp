@@ -88,6 +88,8 @@
   /* SVG-kuva */
   .svg-wrap { padding: 12px; background: var(--panel2); }
   .svg-wrap svg { display: block; width: 100%; height: auto; }
+  .kuvat-rinn { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); gap: 16px; align-items: center; }   /* sivukuva + etukuva (23.11.2026) */
+  @media (max-width: 900px) { .kuvat-rinn { grid-template-columns: minmax(0,1fr); } }
 
   /* Mitat-lista */
   .mitat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; padding: 12px 14px; }
@@ -172,9 +174,9 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=2"></script>
 <script src="piippu-laskenta.js?v=5"></script>
-<script src="piippu-levitys.js?v=7"></script>
+<script src="piippu-levitys.js?v=8"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="tyokortti.js?v=1"></script>
+<script src="tyokortti.js?v=2"></script>
 <script>
 const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -313,8 +315,15 @@ function piippujenMaara(v, osat) {
 }
 
 // ── Piirrä SVG-kuva ────────────────────────────────────────
-function piirraKuvaSVG(v) {
+// Etukuva (yhteinen piippu-levitys.js v8, Tomin Excelin malli): leveys, ylitykset, uraan ja kulma, juuren nousu
+function etukuvaSvg(v) {
+  if (!v || !window.KPT_PIIPPU_LEVITYS || !KPT_PIIPPU_LEVITYS.etukuva) return '';
+  try { return KPT_PIIPPU_LEVITYS.etukuva(v); } catch (e) { console.error('Etukuva:', e); return ''; }
+}
+// opts.tuloste (työkortti): tekstit 1,5-kertaisiksi ja kaltevuus pois kuvasta (se on otsikossa), jotta kuva on paperilla luettava
+function piirraKuvaSVG(v, opts) {
   if (!v) return '';
+  const tuloste = !!(opts && opts.tuloste);
   if (onHarja(v)) { try { return KPT_PIIPPU_LEVITYS.harjaSivukuva(v, { todelliset: true }); } catch (e) { console.error('Harjapiipun kuva:', e); return ''; } }
   const suora=v.suora||0, etukork=v.etukork||0;
   const takakork=v.takakork||0, harjalle=v.harjalle||0;
@@ -422,7 +431,8 @@ function piirraKuvaSVG(v) {
   // Suhde
   const kattokulma_deg=kattokulma_rad*180/Math.PI;
   const suhde=korkeuserot>0?(suora/korkeuserot).toFixed(1):'—';
-  h+=`<text x="${W-10}" y="20" text-anchor="end" font-size="11" fill="${c2}" font-family="system-ui">1:${suhde}</text>`;
+  if (!tuloste) h+=`<text x="${W-10}" y="20" text-anchor="end" font-size="11" fill="${c2}" font-family="system-ui">1:${suhde}</text>`;
+  if (tuloste) h = h.replace(/font-size="([\d.]+)"/g, (m, x) => `font-size="${(Number(x) * 1.5).toFixed(1)}"`);
 
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${h}</svg>`;
 }
@@ -517,22 +527,24 @@ async function setStatus(rowId, key, itemId, btn) {
 }
 
 // ── Rakenna mitat-lista kahdessa kategoriassa ─────────────
-function mittalista(v) {
+// opts.kuvissa = true: jätetään pois juuren mitat, jotka näkyvät sivu- ja etukuvassa (työkortti, Tomi 23.11.2026)
+function mittalista(v, opts) {
   if (!v) return '';
+  const kuvissa = !!(opts && opts.kuvissa);
 
-  const rivi = (lbl, val, yksikko='mm') =>
-    val ? `<div class="mitta-row"><span class="mitta-label">${lbl}</span><span class="mitta-val">${val} ${yksikko}</span></div>` : '';
+  const rivi = (lbl, val, yksikko='mm', kuvassa=false) =>
+    val && !(kuvissa && kuvassa) ? `<div class="mitta-row"><span class="mitta-label">${lbl}</span><span class="mitta-val">${val} ${yksikko}</span></div>` : '';
 
   if (onHarja(v)) {
     const puolet = (a, b) => a === b || b === null || b === undefined ? a : a + ' / ' + b;
     const juuretH = [
-      rivi('Ylitys vasen (puoli 1 / 2)', puolet(v.ylit1V, v.ylit2V)),
-      rivi('Ylitys oikea (puoli 1 / 2)', puolet(v.ylit1O, v.ylit2O)),
-      rivi('Uraan', v.poimu),
-      rivi('Uraan kulma', v.harjakulma, '°'),
-      rivi('Eteen piipusta (puoli 1 / 2)', puolet(v.k24_1, v.k24_2)),
-      rivi('Alas (puoli 1 / 2)', puolet(v.j25_1, v.j25_2)),
-      rivi('Juuri nousee piipulle', v.nousu),
+      rivi('Ylitys vasen (puoli 1 / 2)', puolet(v.ylit1V, v.ylit2V), 'mm', true),
+      rivi('Ylitys oikea (puoli 1 / 2)', puolet(v.ylit1O, v.ylit2O), 'mm', true),
+      rivi('Uraan', v.poimu, 'mm', true),
+      rivi('Uraan kulma', v.harjakulma, '°', true),
+      rivi('Eteen piipusta (puoli 1 / 2)', puolet(v.k24_1, v.k24_2), 'mm', true),
+      rivi('Alas (puoli 1 / 2)', puolet(v.j25_1, v.j25_2), 'mm', true),
+      rivi('Juuri nousee piipulle', v.nousu, 'mm', true),
     ].filter(Boolean).join('');
     const huppuH = [
       rivi('Hupun sivut', Number(v.sivutJako) === 2 ? 'poikki harjalta' : 'yhtenä kappaleena', ''),
@@ -543,6 +555,7 @@ function mittalista(v) {
       rivi('Lisää hupun kokoon', v.huplis),
       rivi('Sivujen liitosvara', v.hsivlisa),
     ].filter(Boolean).join('');
+    if (kuvissa && !juuretH) return `<div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>`;
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
       <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>${juuretH || '—'}</div>
       <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>
@@ -550,10 +563,10 @@ function mittalista(v) {
   }
 
   const juuret = [
-    rivi('Vasen ylitys', v.vasen),
-    rivi('Oikea ylitys', v.oikea),
-    rivi('Uraan', v.poimu),
-    rivi('Uraan kulma', v.harjakulma, '°'),
+    rivi('Vasen ylitys', v.vasen, 'mm', true),
+    rivi('Oikea ylitys', v.oikea, 'mm', true),
+    rivi('Uraan', v.poimu, 'mm', true),
+    rivi('Uraan kulma', v.harjakulma, '°', true),
     rivi('Juuri sauma', v.juurisauma),
   ].filter(Boolean).join('');
 
@@ -565,6 +578,7 @@ function mittalista(v) {
     rivi('Huppu takaa leveämpi', v.huptakalis),
   ].filter(Boolean).join('');
 
+  if (kuvissa && !juuret) return `<div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppu || '—'}</div>`;
   return `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
       <div>
@@ -722,7 +736,7 @@ function render(items, order) {
             Kaltevuus: <strong style="font-family:'IBM Plex Mono',monospace">1:${((v.suora||0)/(v.etukork-v.takakork||1)).toFixed(1)}</strong>
           </span>`:''}
       </h3>
-      <div class="svg-wrap" style="padding:16px">${svgHtml}</div>
+      <div class="svg-wrap kuvat-rinn" style="padding:16px"><div>${svgHtml}</div><div>${etukuvaSvg(v)}</div></div>
     </div>`:''}
 
     ${kiilaHtml(v)}
@@ -777,8 +791,9 @@ function rakennaPiipunTyokortti() {
   h += T.huomio(huomio);
   h += `<div class="tkk-rivi"><span>Materiaali <b>${e(mat || '—')}</b></span>${piippukpl > 1 ? `<span>Piippuja ${T.kpl(piippukpl)}</span>` : ''}<span>Peltiä <b>${totalM2.toFixed(2).replace('.', ',')} m²</b></span></div>`;
 
-  const kuva = piirraKuvaSVG(v);
-  if (kuva) h += `<h2>${onHarja(v) ? 'Harjapiippu' : 'Piippu'} sivulta<span>${e(kulmatTeksti(v))}</span></h2><div class="tkk-kuva">${T.paperille(kuva)}</div>`;
+  const kuva = piirraKuvaSVG(v, { tuloste: true }), etu = etukuvaSvg(v);
+  if (kuva || etu) h += `<h2>${onHarja(v) ? 'Harjapiippu' : 'Piippu'} sivulta ja edestä<span>${e(kulmatTeksti(v))}</span></h2>
+    <div class="tkk-kuvat"><div class="tkk-kuva">${kuva ? T.paperille(T.rajaa(kuva)) : ''}</div><div class="tkk-kuva">${etu ? T.paperille(etu) : ''}</div></div>`;
   if (v && v.kiilaPaalla && window.KPT_PIIPPU_LEVITYS) {
     try {
       const ylh = KPT_PIIPPU_LEVITYS.kuvaYlhaalta(v);
@@ -798,8 +813,8 @@ function rakennaPiipunTyokortti() {
       ${juuret.map(rivi).join('')}${muut.map(rivi).join('')}
     </table>
     <div style="font-size:7.5pt;margin-top:1mm">Hupun palat aihion kokoisina (taitokset mukana). Levityskuvat ja merkintäpisteet piipun Tuotanto-sivulla (QR).</div>`;
-  const mitat = mittalista(v);
-  if (mitat) h += `<h2>Mitat</h2><div class="tkk-mitat">${mitat}</div>`;
+  const mitat = mittalista(v, { kuvissa: true });
+  if (mitat) h += `<h2>Muut mitat</h2><div class="tkk-mitat">${mitat}</div>`;
   h += T.alaosa('Piipun työkortti');
   return T.sivu(h);
 }

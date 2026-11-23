@@ -125,6 +125,13 @@
 
   .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; }
   .kuva-card svg { width: 100%; display: block; }
+  /* Etukuva (23.11.2026): avattava kortti, tila muistetaan (localStorage kpt_etukuva_auki) */
+  .etukuva-kortti { margin-top: 12px; }
+  .etukuva-kortti > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; list-style: none; }
+  .etukuva-kortti > summary::-webkit-details-marker { display: none; }
+  .etukuva-kortti > summary::before { content: "▸ "; }
+  .etukuva-kortti[open] > summary::before { content: "▾ "; }
+  #etukuva svg { width: 100%; max-width: 560px; margin: 8px auto 0; display: block; }
   .kulmat { display: flex; gap: 40px; padding: 8px 0 2px; border-top: 1px solid var(--border); margin-top: 8px; }
   .kulma-item { font-size: 12px; color: var(--text2); }
   .kulma-item span { color: var(--text); font-weight: 600; font-size: 14px; margin-left: 6px; }
@@ -370,6 +377,11 @@
     </div>
   </div>
 
+  <details class="kuva-card etukuva-kortti" id="etukuva-kortti" open>
+    <summary>Piippu edestä · juuren mitat</summary>
+    <div id="etukuva"></div>
+  </details>
+
   <div class="luettelo-grid">
     <div class="luettelo-card">
       <h3>Juuret</h3>
@@ -398,7 +410,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=2"></script>
 <script src="piippu-laskenta.js?v=5"></script>
-<script src="piippu-levitys.js?v=7"></script>
+<script src="piippu-levitys.js?v=8"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
@@ -463,6 +475,19 @@ function keraaVals() {
   return { vals: v, ehdotus: e };
 }
 
+// Etukuva (yhteinen KPT_PIIPPU_LEVITYS.etukuva, 23.11.2026). Kortin auki/kiinni-tila muistetaan.
+function piirraEtukuva(v) {
+  const el = document.getElementById('etukuva');
+  if (!el || !window.KPT_PIIPPU_LEVITYS) return;
+  try { el.innerHTML = KPT_PIIPPU_LEVITYS.etukuva(v); } catch (e) { console.error('Etukuva:', e); el.innerHTML = ''; }
+}
+(function () {
+  const k = document.getElementById('etukuva-kortti');
+  if (!k) return;
+  try { if (localStorage.getItem('kpt_etukuva_auki') === '0') k.open = false; } catch (e) {}
+  k.addEventListener('toggle', () => { try { localStorage.setItem('kpt_etukuva_auki', k.open ? '1' : '0'); } catch (e) {} });
+})();
+
 function laske() {
   const { vals, ehdotus } = keraaVals();
   asetaKentta('suora2', ehdotus.suora2, suora2Tila !== 'auto');
@@ -491,6 +516,7 @@ function laske() {
 
   document.getElementById('kalt-suhde').textContent = ' ' + KPT_PIIPPU_LEVITYS.harjaSuhde(vals).join(' / ');
   document.getElementById('sivukuva').innerHTML = KPT_PIIPPU_LEVITYS.harjaSivukuva(vals);
+  piirraEtukuva(Object.assign({ tyyppi: 'harjapiippu' }, vals));
   renderTaulu('luettelo-juuret', tulos.juuret, piippukpl);
   renderTaulu('luettelo-huppu', tulos.muut, piippukpl);
   piirraLevityskuvat(vals, osat.huppu && !(tulos.virheet || []).length, piippukpl);

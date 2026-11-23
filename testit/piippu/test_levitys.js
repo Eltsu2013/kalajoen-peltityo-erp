@@ -196,5 +196,16 @@ for (let i = 0; i < 200; i++) {
 }
 ok(kiilaOk, '200 satunnaista kiila-/mutkapiippua, ' + kiilaPaloja + ' palaa: yksi ääriviiva, järkevät kanttausluvut ' + kiilaViesti);
 
+// --- Etukuva (v8, 23.11.2026) ---
+{
+  const e1 = L.etukuva({ tyyppi: 'lapepiippu', leveys: 450, vasen: 150, oikea: 200, poimu: 20, harjakulma: 90, nousu: 200 });
+  ok(/^<svg /.test(e1) && />450</.test(e1) && />150</.test(e1) && />200</.test(e1) && /Uraan 20 · kulma 90°/.test(e1) && /juuri nousee 200/.test(e1),
+    'etukuva lapepiippu: leveys, ylitykset, uraan + kulma ja juuren nousu');
+  const e2 = L.etukuva({ tyyppi: 'harjapiippu', lev1: 400, lev2: null, ylit1V: 150, ylit1O: 160, ylit2V: 250, ylit2O: 120, poimu: 30, nousu: 200 });
+  ok(/>400</.test(e2) && /vasen 250/.test(e2) && /oikea 120/.test(e2) && /Puoli 2/.test(e2) && /kulma 90°/.test(e2),
+    'etukuva harjapiippu: puoli 2:n ylitykset yläreunassa, uraan kulma oletuksena 90');
+  ok(L.etukuva({ leveys: 0 }) === '' && L.etukuva(null) === '', 'etukuva ilman leveyttä on tyhjä');
+}
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;
