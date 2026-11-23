@@ -512,8 +512,12 @@
     .card-filter-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }
     .all-done-banner { margin: 12px 24px 0; }
     /* Puhelimella yläpalkki ei saa levittää sivua (Tulosta-nappi pois, väli tiiviimmäksi) */
-    header { padding: 8px 12px; gap: 8px; }
+    header { padding: 8px 12px; gap: 8px; flex-wrap: wrap; }
     .btn-print { display: none; }
+    /* Käyttäjän sähköposti ja Kirjaudu ulos rivittyvät tarvittaessa omalle rivilleen (23.11.2026) */
+    .header-right { min-width: 0; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
+    #auth-user-info { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+    #auth-user-info > span { max-width: 160px !important; }
   }
 
   /* Työaika (ajanseurannasta) */
