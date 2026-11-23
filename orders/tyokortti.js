@@ -15,7 +15,7 @@
 //   html = T.sivu(T.ylaosa({...}) + T.tiedot({...}) + ... + T.alaosa())
 //
 // MUISTA: kun tätä tiedostoa muutetaan, nosta tyokortti.js?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
-// Versiot: v1 (23.11.2026) pohja ja piipun etusivu. v2 (23.11.2026) rajaa() ja kuvat rinnakkain (.tkk-kuvat).
+// Versiot: v1 (23.11.2026) pohja ja piipun etusivu. v2 (23.11.2026) rajaa() ja kuvat rinnakkain (.tkk-kuvat). v3: ylaosaPieni() ja palasivujen tyylit.
 (function () {
   'use strict';
   const ID = 'tkk';
@@ -60,6 +60,18 @@
   #${ID} .tkk-kuva svg { width: 100%; height: auto; max-height: 50mm; display: block; }
   #${ID} .tkk-kuvat { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); gap: 5mm; align-items: center; }
   #${ID} .tkk-kuvat .tkk-kuva svg { max-height: 56mm; margin: 0 auto; }
+  #${ID} .tkk-yla-pieni { display: grid; grid-template-columns: auto 1fr auto; gap: 4mm; align-items: center; border-bottom: 1.5px solid #000; padding-bottom: 1.5mm; margin-bottom: 2mm; font-size: 9pt; }
+  #${ID} .tkk-yla-pieni img.tkk-logo { height: 7mm; width: auto; display: block; }
+  #${ID} h1.tkk-pala { font-size: 17pt; margin: 1mm 0 1mm; display: flex; align-items: center; gap: 4mm; }
+  #${ID} h1.tkk-pala .tkk-kpl { font-size: 15pt; }
+  #${ID} .tkk-levitys svg { width: 100%; height: auto; max-height: 92mm; display: block; }
+  #${ID} .tkk-selite { font-size: 7.5pt; margin: 0.5mm 0 1mm; }
+  #${ID} .tkk-lahi { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2mm; }
+  #${ID} .tkk-lahi svg { width: 100%; height: auto; display: block; border: 0.5px solid #999; }
+  #${ID} .tkk-merk-iso svg { width: 100%; height: auto; max-height: 140mm; display: block; margin: 2mm 0; }
+  #${ID} .tkk-pisteet .pt-wrap { display: flex; gap: 6mm; align-items: flex-start; }
+  #${ID} .tkk-pisteet table { width: auto; min-width: 45mm; margin: 0; }
+  #${ID} .tkk-pisteet td, #${ID} .tkk-pisteet th { padding: 0.6mm 3mm; font-size: 10.5pt; text-align: right; }
   #${ID} .tkk-kaksi { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
   #${ID} .tkk-rivi { display: flex; flex-wrap: wrap; gap: 1mm 6mm; font-size: 9.5pt; margin: 1mm 0; }
   #${ID} .tkk-rivi b { font-family: 'IBM Plex Mono', monospace; }
@@ -111,6 +123,11 @@
       <div class="tkk-otsikko"><h1>${esc(o.otsikko || 'TYÖKORTTI')}</h1>${o.alaotsikko ? `<div class="tkk-ala">${esc(o.alaotsikko)}</div>` : ''}${o.pieni ? `<div class="tkk-pieni">${esc(o.pieni)}</div>` : ''}</div>
       ${qr ? `<div class="tkk-qr">${qr}${esc(o.qrTeksti || 'Avaa puhelimella')}</div>` : '<div></div>'}
     </div>`;
+  }
+
+  // Jatkosivun ohut yläosa: logo, otsikko ja sivunumero (o = { otsikko, alaotsikko, sivu })
+  function ylaosaPieni(o) {
+    return `<div class="tkk-yla-pieni"><img class="tkk-logo" src="logo-musta.png" alt="Kalajoen Peltityö"><div><b>${esc(o.otsikko || 'TYÖKORTTI')}</b>${o.alaotsikko ? ' · ' + esc(o.alaotsikko) : ''}</div><div class="tkk-r">${esc(o.sivu || '')}</div></div>`;
   }
 
   // t = { asiakas, puhelin, email, kohde, toimitus (ISO), osoite, tilattu (ISO), ohjeet }
@@ -202,7 +219,7 @@
     setTimeout(() => window.print(), 80);
   }
 
-  const KPT_TYOKORTTI = { VERSIO: 2, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, rakenna, CSS };
+  const KPT_TYOKORTTI = { VERSIO: 3, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, rakenna, CSS };
   if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
   if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
 })();

@@ -174,9 +174,9 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=2"></script>
 <script src="piippu-laskenta.js?v=5"></script>
-<script src="piippu-levitys.js?v=9"></script>
+<script src="piippu-levitys.js?v=10"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="tyokortti.js?v=2"></script>
+<script src="tyokortti.js?v=3"></script>
 <script>
 const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -756,7 +756,7 @@ function render(items, order) {
 }
 
 // ── Työkortti (vaihe 7.1, 23.11.2026) ─────────────────────
-// Yhteinen pohja tyokortti.js. Sivu 1: tilauksen tiedot, sivukuva, osat ja mitat. Hupun palojen sivut tulevat vaiheessa 7.2.
+// Yhteinen pohja tyokortti.js. Sivu 1: tilauksen tiedot, sivu- ja etukuva, osat ja mitat. Sivut 2–: hupun palat (7.2).
 let tkData = null;
 // Kulmat ja kaltevuus tekstinä (sama laskenta kuin sivukuvan otsikossa)
 function kulmatTeksti(v) {
@@ -815,8 +815,67 @@ function rakennaPiipunTyokortti() {
     <div style="font-size:7.5pt;margin-top:1mm">Hupun palat aihion kokoisina (taitokset mukana). Levityskuvat ja merkintäpisteet piipun Tuotanto-sivulla (QR).</div>`;
   const mitat = mittalista(v, { kuvissa: true });
   if (mitat) h += `<h2>Muut mitat</h2><div class="tkk-mitat">${mitat}</div>`;
-  h += T.alaosa('Piipun työkortti');
-  return T.sivu(h);
+  // Hupun palojen sivut (vaihe 7.2): samat tilatut palat kuin ruudun levityskuvissa
+  const palat = tyokorttiPalat(v, muut);
+  // Jokaisesta palasta kaksi sivua: taitossivu (levityskuva, taitokset, lähikuvat) ja merkintäsivu (pisteet leikkuuseen)
+  const sivuja = 1 + 2 * palat.length, otsikko = 'TYÖKORTTI · PIIPPU' + (numero ? ' · TILAUS ' + numero : '');
+  h += T.alaosa('Piipun työkortti · sivu 1 / ' + sivuja);
+  let html = T.sivu(h);
+  palat.forEach((x, i) => {
+    const o = { otsikko, mat };
+    html += T.sivu(palaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (2 + 2 * i) + ' / ' + sivuja }, o)));
+    html += T.sivu(merkintaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (3 + 2 * i) + ' / ' + sivuja }, o)));
+  });
+  return html;
+}
+
+// Tilatut hupun palat työkorttiin (kpl kuten osat-taulukossa)
+function tyokorttiPalat(v, muut) {
+  try {
+    const L = window.KPT_PIIPPU_LEVITYS;
+    if (!v || !L || !L.palaTiedot) return [];
+    const tilatut = new Map(muut.filter(p => p.osa.startsWith('Huppu')).map(p => [p.osa, p.kpl]));
+    const t = onHarja(v) ? L.harjaHupunPalat(v) : L.hupunPalat(v);
+    if (!t) return [];
+    return t.palat.filter(pa => tilatut.has(pa.nimi)).map(pa => ({ pa, kpl: tilatut.get(pa.nimi) || pa.kpl }));
+  } catch (e) { console.error('Työkortin palat:', e); return []; }
+}
+
+// Yksi hupun pala omalle sivulleen: levityskuva, taitokset, lähikuvat ja merkintäpisteet (paperiväreinä)
+const PALA_SELITE = 'Kuva ulkopuolelta katsottuna. Paksu viiva = paneeli (näkyvä pinta), ohut = taitos / sauma, '
+  + '- - - taitto ulos, -·-· taitto sisään, ···· nurkka (ei taitosta), vinoviivoitus = loveus, leikataan pois ennen taittoa.';
+function palaSivu(pa, kpl, o) {
+  const T = window.KPT_TYOKORTTI, L = window.KPT_PIIPPU_LEVITYS, P = window.KPT_PELLIT, e = T.esc;
+  const t = L.palaTiedot(pa), lv = t.lv;
+  let h = T.ylaosaPieni({ otsikko: o.otsikko, alaotsikko: groupName, sivu: o.sivu });
+  h += `<h1 class="tkk-pala">${e(pa.nimi)} ${T.kpl(kpl)}</h1>`;
+  h += `<div class="tkk-rivi"><span>Aihio <b>${t.aw} × ${t.ah} mm</b></span><span>Korkeus <b>${e(t.korkeus)}</b></span>${o.mat ? `<span>${e(o.mat)}</span>` : ''}${pa.peili ? '<span><b>Toinen sivu peilikuva</b></span>' : ''}</div>`;
+  h += `<div class="tkk-levitys">${T.paperille(L.piirraPala(pa, lv))}</div><div class="tkk-selite">${e(PALA_SELITE)}</div>`;
+  h += `<h2>Taitokset</h2><table><colgroup><col style="width:22%"><col style="width:14%"><col style="width:14%"><col style="width:11%"><col><col style="width:9%"></colgroup>
+    <tr><th>Reuna</th><th>Mitta</th><th>Kanttaus</th><th>Taitto</th><th>Huom.</th><th class="tkk-c">Tehty</th></tr>
+    ${t.taitokset.map(r => `<tr>${r.map((x, i) => `<td${i === 0 || i === 4 ? ' class="tkk-teksti"' : ''}>${e(x)}</td>`).join('')}<td class="tkk-c">${T.ruutu()}</td></tr>`).join('')}</table>`;
+  h += `<h2>${lv.harja ? 'Harjan kohta ja kulmat' : 'Kulmat'} lähikuvina<span>${t.symm ? 'oikeat kulmat ovat vasempien peilikuvat' : ''}</span></h2>
+    <div class="tkk-lahi">${t.kulmat.map(k => T.paperille(k)).join('')}</div>`;
+  h += `<div class="tkk-selite" style="margin-top:2mm">Merkintäpisteet seuraavalla sivulla.</div>`;
+  h += `<h2>Muistiinpanot</h2><div class="tkk-viivat"></div>`;
+  h += T.alaosa('Piipun työkortti · ' + o.sivu);
+  return h;
+}
+
+// Palan merkintäsivu: ääriviiva numeroiduin pistein ja pistetaulukko (kuten Huuvassa)
+function merkintaSivu(pa, kpl, o) {
+  const T = window.KPT_TYOKORTTI, L = window.KPT_PIIPPU_LEVITYS, P = window.KPT_PELLIT, e = T.esc;
+  const t = L.palaTiedot(pa), lv = t.lv;
+  let h = T.ylaosaPieni({ otsikko: o.otsikko, alaotsikko: groupName, sivu: o.sivu });
+  h += `<h1 class="tkk-pala">${e(pa.nimi)} · merkintä ${T.kpl(kpl)}</h1>`;
+  h += `<div class="tkk-rivi"><span>Aihio <b>${t.aw} × ${t.ah} mm</b></span><span>${t.pisteita} pistettä</span><span>x ja y aihion vasemmasta alakulmasta (mm)</span></div>`;
+  h += `<div class="tkk-merk-iso"><svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">${P.merkintaSvgSisalto(lv.p, 520, 380, P.TEEMA_PAPERI, false, null)}</svg></div>`;
+  h += `<div class="tkk-pisteet">${P.pisteTaulu(lv.p, 'tkk-pt', false)}</div>`;
+  h += `<div class="tkk-selite">1. Leikkaa aihio ${t.aw} × ${t.ah} mm. 2. Merkitse pisteet mittaamalla vasemmasta alakulmasta (x oikealle, y ylös). `
+    + `3. Leikkaa ääriviiva pisteestä pisteeseen järjestyksessä 1 → 2 → … → 1. 4. Vedä taitosviivat vasta leikkauksen jälkeen (taitossivu). `
+    + `Katkoviivat kuvassa ovat paneelin reunat ja taitosviivat, eivät pisteitä.</div>`;
+  h += T.alaosa('Piipun työkortti · ' + o.sivu);
+  return h;
 }
 
 // Muokkaa piippua (vaihe 6c, 20.11.2026): avataan tilaus uuteen välilehteen, ja tilaussivu korostaa tämän piipun

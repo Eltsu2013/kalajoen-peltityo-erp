@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v10 (23.11.2026): palaTiedot(pa) ja levita(pa) julki (työkortin palasivut); palaHtml käyttää samaa, ruutu ennallaan.
 // v9 (23.11.2026): harjapiipun etukuvassa etu 2 -puoli peilikuvana ja puolet nimetty Etu 1 / Etu 2.
 // v8 (23.11.2026): etukuva(vals) Tomin Excelin mallin mukaan (lapepiippu ja harjapiippu).
 // v7 (23.11.2026): harjapiipun sivukuvaan juuren etuosa (Eteen piipusta + Alas).
@@ -396,29 +397,34 @@
     document.head.appendChild(st);
   }
 
-  // Yhden palan HTML: avattava kortti (oletuksena kiinni), sisällä kuva, taitostaulukko, lähikuvat ja merkintäpisteet napin takana.
-  function palaHtml(pa, opts) {
-    const o = opts || {};
-    lisaaTyylit();
+  // Palan tiedot ruudulle ja työkorttiin (v10, 23.11.2026): levitys, aihio, korkeusteksti, lähikuvat (SVG-lista),
+  // taitosrivit ja merkintäpisteiden määrä. Yksi paikka, jotta Tuotannon ruutu ja paperi näyttävät samat asiat.
+  function palaTiedot(pa) {
     const lv = levita(pa), m = lv.mitat;
-    const aw = ylos(lv.p.w), ah = ylos(lv.p.h);
     const lahi = (nimi, x0, y0) => piirraPala(pa, lv, { nimi, minX: x0, minY: y0, w: 90, h: 90 });
     const A = lv.p.A2, D = lv.p.D2, B = lv.p.B2, C = lv.p.C2;
     const symm = pa.vasen.tyyppi === pa.oikea.tyyppi && pa.vasen.nurkka === pa.oikea.nurkka && Math.abs(m.vasen - m.oikea) < 0.01
       && Math.abs(pa.vasen.kulma - pa.oikea.kulma) < 0.05 && Math.abs(m.ala - m.yla) < 0.01;
-    let kulmat = lahi('vasen alakulma', A[0] - pa.vasen.w - 15, A[1] - pa.ala - 25) + lahi('vasen yläkulma', D[0] - pa.vasen.w - 15, D[1] - 60);
-    if (!symm) kulmat += lahi('oikea alakulma', B[0] - 75 + pa.oikea.w, B[1] - pa.ala - 25) + lahi('oikea yläkulma', C[0] - 75 + pa.oikea.w, C[1] - 60);
-    if (lv.harja) kulmat = piirraPala(pa, lv, { nimi: 'harjan kohta (loveus 45°)', minX: lv.harja.x - 60, minY: -lv.harja.h - 80, w: 120, h: 120 }) + kulmat;
-    const pisteita = PL.aihioPisteet(lv.p).pisteet.length;
-    const taulu = '<table class="plv-taulu"><tr><th>Reuna</th><th>Mitta</th><th>Kanttaus</th><th>Taitto</th><th>Huom.</th></tr>'
-      + taitosRivit(pa).map(r => '<tr>' + r.map(x => '<td>' + esc(x) + '</td>').join('') + '</tr>').join('') + '</table>';
+    const kulmat = [lahi('vasen alakulma', A[0] - pa.vasen.w - 15, A[1] - pa.ala - 25), lahi('vasen yläkulma', D[0] - pa.vasen.w - 15, D[1] - 60)];
+    if (!symm) kulmat.push(lahi('oikea alakulma', B[0] - 75 + pa.oikea.w, B[1] - pa.ala - 25), lahi('oikea yläkulma', C[0] - 75 + pa.oikea.w, C[1] - 60));
+    if (lv.harja) kulmat.unshift(piirraPala(pa, lv, { nimi: 'harjan kohta (loveus 45°)', minX: lv.harja.x - 60, minY: -lv.harja.h - 80, w: 120, h: 120 }));
     const korkeus = lv.harja ? mm(m.vasen) + ' / harja ' + mm(lv.harja.h) + ' / ' + mm(m.oikea) : mm(m.vasen) + (Math.abs(m.vasen - m.oikea) > 0.5 ? ' → ' + mm(m.oikea) : '');
+    return { lv, aw: ylos(lv.p.w), ah: ylos(lv.p.h), korkeus, symm, kulmat, taitokset: taitosRivit(pa), pisteita: PL.aihioPisteet(lv.p).pisteet.length };
+  }
+
+  // Yhden palan HTML: avattava kortti (oletuksena kiinni), sisällä kuva, taitostaulukko, lähikuvat ja merkintäpisteet napin takana.
+  function palaHtml(pa, opts) {
+    const o = opts || {};
+    lisaaTyylit();
+    const t = palaTiedot(pa), lv = t.lv;
+    const taulu = '<table class="plv-taulu"><tr><th>Reuna</th><th>Mitta</th><th>Kanttaus</th><th>Taitto</th><th>Huom.</th></tr>'
+      + t.taitokset.map(r => '<tr>' + r.map(x => '<td>' + esc(x) + '</td>').join('') + '</tr>').join('') + '</table>';
     return '<details class="plv-pala"' + (o.auki ? ' open' : '') + '><summary><span class="plv-nimi">' + esc(pa.nimi) + ' · ' + (o.kpl || pa.kpl) + ' kpl</span>'
-      + '<span class="plv-meta">aihio ' + aw + ' × ' + ah + '</span><span class="plv-meta">korkeus ' + korkeus + '</span>'
+      + '<span class="plv-meta">aihio ' + t.aw + ' × ' + t.ah + '</span><span class="plv-meta">korkeus ' + t.korkeus + '</span>'
       + (pa.peili ? '<span class="plv-meta">toinen sivu peilikuva</span>' : '') + '</summary>'
       + '<div class="plv-sisus"><div>' + piirraPala(pa, lv) + taulu + '</div><div>'
-      + '<details class="plv-lisa"' + (lv.harja ? ' open' : '') + '><summary>' + (lv.harja ? 'Harjan kohta ja kulmien lähikuvat' : 'Kulmien lähikuvat') + (symm ? ' (oikeat kulmat ovat peilikuvat)' : '') + '</summary><div class="plv-kulmat">' + kulmat + '</div></details>'
-      + '<details class="plv-lisa"><summary>Merkintäpisteet (' + pisteita + ' pistettä, aihion vasemmasta alakulmasta)</summary>'
+      + '<details class="plv-lisa"' + (lv.harja ? ' open' : '') + '><summary>' + (lv.harja ? 'Harjan kohta ja kulmien lähikuvat' : 'Kulmien lähikuvat') + (t.symm ? ' (oikeat kulmat ovat peilikuvat)' : '') + '</summary><div class="plv-kulmat">' + t.kulmat.join('') + '</div></details>'
+      + '<details class="plv-lisa"><summary>Merkintäpisteet (' + t.pisteita + ' pistettä, aihion vasemmasta alakulmasta)</summary>'
       + '<svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">' + PL.merkintaSvgSisalto(lv.p, 520, 380, PL.TEEMA_RUUTU, false, null) + '</svg>'
       + PL.pisteTaulu(lv.p, 'pt-table', false) + '</details></div></div></details>';
   }
@@ -761,7 +767,7 @@
   }
 
   const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
-    palaHtml, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
+    palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
     harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva };
   globalThis.KPT_PIIPPU_LEVITYS = KPT_PIIPPU_LEVITYS;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU_LEVITYS;
