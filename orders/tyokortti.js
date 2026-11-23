@@ -1,0 +1,185 @@
+// tyokortti.js — yhteinen työkortin pohja (vaihe 7, 23.11.2026). window.KPT_TYOKORTTI
+//
+// Mustavalkoinen pysty-A4: logo (logo-musta.png), otsikko, QR-koodi, tilauksen tiedot, huomio, sivunvaihdot,
+// ruudut ja kpl-laatikot, tulostusaika. Sivu rakentaa kortin sisällön itse (HTML-merkkijono) ja antaa sen tälle
+// tiedostolle; tämä hoitaa tyylit, tulostuksen ja sen, että paperille tulee VAIN työkortti.
+// Käyttäjät: piippu_tuotanto.html (7.1). Myöhemmin tuotanto.html, Huuva ja Kartio (suunnitelma claude/tyokortti_suunnitelma.md).
+//
+// QR-koodi tarvitsee kirjaston qrcode-generator (sama kuin tuotanto.html):
+//   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+// Ilman sitä kortti tulostuu ilman QR:ää.
+//
+// Käyttö:
+//   KPT_TYOKORTTI.asenna(() => html);        // Ctrl+P ja tulosta() käyttävät tätä
+//   KPT_TYOKORTTI.tulosta();                 // "Tulosta"-nappi
+//   html = T.sivu(T.ylaosa({...}) + T.tiedot({...}) + ... + T.alaosa())
+//
+// MUISTA: kun tätä tiedostoa muutetaan, nosta tyokortti.js?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
+// Versiot: v1 (23.11.2026) pohja ja piipun etusivu.
+(function () {
+  'use strict';
+  const ID = 'tkk';
+
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const pvm = iso => { const [y, m, d] = String(iso || '').slice(0, 10).split('-'); return d ? `${+d}.${+m}.${y}` : ''; };
+  function nytTeksti() {
+    const n = new Date();
+    return `${n.getDate()}.${n.getMonth() + 1}.${n.getFullYear()} klo ${String(n.getHours()).padStart(2, '0')}.${String(n.getMinutes()).padStart(2, '0')}`;
+  }
+  const STATUS_FI = { DRAFT: 'Luonnos', IN_PROGRESS: 'Kesken', QUOTED: 'Tarjottu', ORDERED: 'Tilattu', IN_PRODUCTION: 'Työn alla', COMPLETED: 'Valmis', INVOICED: 'Laskutettu', ARCHIVED: 'Arkistoitu' };
+
+  // ---------- Tyylit ----------
+  // Ruudulla kortti on piilossa. Tulostettaessa body saa luokan tkk-tulostus, ja silloin näkyy vain kortti.
+  const CSS = `
+#${ID} { display: none; }
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  body.tkk-tulostus { background: #fff !important; }
+  body.tkk-tulostus > *:not(#${ID}) { display: none !important; }
+  body.tkk-tulostus #${ID} { display: block !important; }
+  #${ID} { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9.5pt; color: #000; line-height: 1.3; }
+  #${ID} * { color: #000 !important; background: transparent !important; box-shadow: none !important; }
+  #${ID} .tkk-sivu { break-after: page; page-break-after: always; }
+  #${ID} .tkk-sivu:last-child { break-after: auto; page-break-after: auto; }
+  #${ID} .tkk-yla { display: grid; grid-template-columns: auto 1fr auto; gap: 6mm; align-items: start; border-bottom: 2px solid #000; padding-bottom: 3mm; }
+  #${ID} .tkk-yla img.tkk-logo { height: 13mm; width: auto; display: block; }
+  #${ID} .tkk-otsikko h1 { margin: 0; font-size: 16pt; letter-spacing: 0.04em; }
+  #${ID} .tkk-otsikko .tkk-ala { font-size: 12pt; font-weight: 700; margin-top: 1mm; }
+  #${ID} .tkk-otsikko .tkk-pieni { font-size: 9pt; }
+  #${ID} .tkk-qr { text-align: center; font-size: 6.5pt; line-height: 1.2; }
+  #${ID} .tkk-qr svg { width: 22mm; height: 22mm; display: block; margin: 0 auto 0.5mm; }
+  #${ID} .tkk-tiedot { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr; gap: 1.2mm 6mm; margin: 2.5mm 0; }
+  #${ID} .tkk-lab { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.08em; color: #444 !important; }
+  #${ID} .tkk-arvo { font-weight: 600; white-space: pre-line; }
+  #${ID} .tkk-yht { font-family: 'IBM Plex Mono', monospace; font-size: 9pt; margin-top: 0.5mm; overflow-wrap: anywhere; }
+  #${ID} .tkk-iso { font-size: 13pt; font-weight: 700; }
+  #${ID} .tkk-laatikko { border: 1px solid #000; padding: 1.5mm 3mm; margin: 0 0 3mm; white-space: pre-line; }
+  #${ID} .tkk-huomio { border: 2px solid #000; padding: 1.5mm 3mm; margin: 0 0 3mm; font-weight: 700; white-space: pre-line; }
+  #${ID} h2 { font-size: 11pt; margin: 2.5mm 0 1mm; border-bottom: 1px solid #000; padding-bottom: 0.8mm; display: flex; justify-content: space-between; gap: 4mm; break-after: avoid; }
+  #${ID} h2 span { font-size: 9pt; font-weight: 400; }
+  #${ID} .tkk-kuva svg { width: 100%; height: auto; max-height: 50mm; display: block; }
+  #${ID} .tkk-kaksi { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; align-items: start; }
+  #${ID} .tkk-rivi { display: flex; flex-wrap: wrap; gap: 1mm 6mm; font-size: 9.5pt; margin: 1mm 0; }
+  #${ID} .tkk-rivi b { font-family: 'IBM Plex Mono', monospace; }
+  #${ID} table { width: 100%; border-collapse: collapse; margin-top: 1.5mm; table-layout: fixed; break-inside: auto; }
+  #${ID} tr { break-inside: avoid; }
+  #${ID} th { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.06em; text-align: left; border-bottom: 1px solid #000; padding: 0.8mm 1.2mm; }
+  #${ID} td { border-bottom: 0.5px solid #999; padding: 0.5mm 1.2mm; font-family: 'IBM Plex Mono', monospace; font-size: 9.5pt; vertical-align: top; overflow-wrap: anywhere; }
+  #${ID} td.tkk-teksti { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9.5pt; }
+  #${ID} td .tkk-lisa { display: block; font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 7.5pt; }
+  #${ID} .tkk-c { text-align: center; }
+  #${ID} .tkk-r { text-align: right; }
+  #${ID} .tkk-ruutu { display: inline-block; width: 4mm; height: 4mm; border: 1.2px solid #000; vertical-align: middle; }
+  #${ID} .tkk-kpl { display: inline-block; border: 2px solid #000; border-radius: 2mm; padding: 0 2.5mm; font-weight: 700; white-space: nowrap; }
+  #${ID} .tkk-mitat { columns: 2; column-gap: 8mm; font-size: 8pt; line-height: 1.2; }
+  #${ID} .tkk-mitat .mitta-row { display: flex; justify-content: space-between; gap: 3mm; break-inside: avoid; font-family: 'IBM Plex Mono', monospace; }
+  #${ID} .tkk-mitat > div { display: block !important; }
+    #${ID} .tkk-viivat { height: 13mm; background: repeating-linear-gradient(transparent, transparent 6.5mm, #999 6.5mm, #999 6.8mm) !important; }
+  #${ID} .tkk-alaosa { margin-top: 2.5mm; border-top: 1px solid #000; padding-top: 1.5mm; font-size: 7.5pt; display: flex; justify-content: space-between; }
+}`;
+  function lisaaTyylit() {
+    if (typeof document === 'undefined' || document.getElementById('tkk-tyylit')) return;
+    const st = document.createElement('style');
+    st.id = 'tkk-tyylit';
+    st.textContent = CSS;
+    document.head.appendChild(st);
+  }
+  function elementti() {
+    let el = document.getElementById(ID);
+    if (!el) { el = document.createElement('div'); el.id = ID; document.body.appendChild(el); }
+    return el;
+  }
+
+  // ---------- Palikat ----------
+  function qrSvg(teksti) {
+    if (typeof qrcode !== 'function' || !teksti) return '';
+    try {
+      const qr = qrcode(0, 'M');
+      qr.addData(teksti);
+      qr.make();
+      return qr.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
+    } catch (e) { console.warn('QR-koodi:', e); return ''; }
+  }
+
+  // o = { otsikko, alaotsikko, pieni, qr (linkki), qrTeksti }
+  function ylaosa(o) {
+    const qr = qrSvg(o.qr);
+    return `<div class="tkk-yla">
+      <img class="tkk-logo" src="logo-musta.png" alt="Kalajoen Peltityö">
+      <div class="tkk-otsikko"><h1>${esc(o.otsikko || 'TYÖKORTTI')}</h1>${o.alaotsikko ? `<div class="tkk-ala">${esc(o.alaotsikko)}</div>` : ''}${o.pieni ? `<div class="tkk-pieni">${esc(o.pieni)}</div>` : ''}</div>
+      ${qr ? `<div class="tkk-qr">${qr}${esc(o.qrTeksti || 'Avaa puhelimella')}</div>` : '<div></div>'}
+    </div>`;
+  }
+
+  // t = { asiakas, puhelin, email, kohde, toimitus (ISO), osoite, tilattu (ISO), ohjeet }
+  function tiedot(t) {
+    const tieto = (lab, arvo, luokka) => arvo ? `<div><div class="tkk-lab">${lab}</div><div class="${luokka || 'tkk-arvo'}">${esc(arvo)}</div></div>` : '';
+    const yht = [t.puhelin, t.email].map(v => String(v || '').trim()).filter(Boolean).map(v => `<div class="tkk-yht">${esc(v)}</div>`).join('');
+    let h = `<div class="tkk-tiedot">
+      <div><div class="tkk-lab">Asiakas</div><div class="tkk-arvo">${esc(t.asiakas || '—')}</div>${yht}</div>
+      ${tieto('Kohde', t.kohde)}
+      ${tieto('Toimitus', pvm(t.toimitus), 'tkk-iso')}
+      ${tieto('Työmaan osoite', t.osoite)}
+      ${tieto('Tilattu', pvm(t.tilattu))}
+    </div>`;
+    if (t.ohjeet) h += `<div class="tkk-lab">Ohjeet</div><div class="tkk-laatikko">${esc(t.ohjeet)}</div>`;
+    return h;
+  }
+
+  const huomio = teksti => teksti ? `<div class="tkk-huomio">⚠ ${esc(teksti)}</div>` : '';
+  const ruutu = () => '<span class="tkk-ruutu"></span>';
+  const kpl = n => `<span class="tkk-kpl">${esc(n)} kpl</span>`;
+  const sivu = sisalto => `<section class="tkk-sivu">${sisalto}</section>`;
+  const alaosa = teksti => `<div class="tkk-alaosa"><span>Kalajoen Peltityö Oy · ${esc(teksti || 'Työkortti')}</span><span>Tulostettu ${nytTeksti()}</span></div>`;
+
+  // Ruudun tummat värit paperille: värit vaihdetaan mustaksi / harmaaksi suoraan SVG-merkkijonossa, jolloin kuva on
+  // oikein myös PDF:nä tallennettuna eikä riipu CSS:n ohituksista. Tuntemattomat värit jäävät ennalleen.
+  const PAPERI = {
+    '#f1f5f9': '#000', '#e2eef5': '#000', '#ededf0': '#000',
+    '#22c55e': '#000', '#ef4444': '#000', '#f97316': '#000',
+    '#64748b': '#666', '#6b8fa8': '#666', '#847f72': '#666', '#9595a0': '#666', '#3a5468': '#999',
+    '#38bdf8': '#333', '#f5b942': '#444', '#f59e0b': '#444', '#e8a020': '#444',
+    '#1a2332': 'none', '#111827': 'none', '#0f172a': 'none',
+  };
+  function paperille(svg) {
+    return String(svg || '')
+      .replace(/(fill|stroke)="(#[0-9a-fA-F]{3,6})"/g, (m, a, c) => { const u = PAPERI[c.toLowerCase()]; return u ? `${a}="${u}"` : m; })
+      .replace(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/g, (m, r, g, b, a) => `rgba(0,0,0,${Math.min(0.12, Number(a)).toFixed(2)})`);
+  }
+
+  // ---------- Tulostus ----------
+  let rakentaja = null, valmisteltu = false;
+  function rakenna() {
+    if (!rakentaja) return false;
+    let html = '';
+    try { html = rakentaja() || ''; } catch (e) { console.error('Työkortti:', e); html = ''; }
+    if (!html) return false;
+    lisaaTyylit();
+    elementti().innerHTML = html;
+    return true;
+  }
+  // rakenna = () => HTML. Palauttaa false/tyhjän, jos korttia ei voi tehdä (silloin tulostuu sivu sellaisenaan).
+  function asenna(rakennaFn) {
+    rakentaja = rakennaFn;
+    lisaaTyylit();
+    if (asenna._kuuntelijat) return;
+    asenna._kuuntelijat = true;
+    window.addEventListener('beforeprint', () => {
+      const ok = valmisteltu || rakenna();
+      valmisteltu = false;
+      document.body.classList.toggle('tkk-tulostus', !!ok);
+    });
+    window.addEventListener('afterprint', () => document.body.classList.remove('tkk-tulostus'));
+  }
+  // "Tulosta"-nappi: rakennetaan ensin, pieni viive, jotta selain ehtii piirtää kortin (kuvat, QR) ennen tulostusikkunaa
+  function tulosta() {
+    const ok = rakenna();
+    valmisteltu = ok;
+    document.body.classList.toggle('tkk-tulostus', ok);
+    setTimeout(() => window.print(), 80);
+  }
+
+  const KPT_TYOKORTTI = { VERSIO: 1, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, asenna, tulosta, rakenna, CSS };
+  if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
+  if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
+})();
