@@ -638,6 +638,8 @@
     #tyokortti .tk-paa { display: grid; grid-template-columns: 62mm 1fr; gap: 4mm; break-inside: avoid; }
     #tyokortti .tk-lev svg, #tyokortti .tk-lev .lev-pituus { break-inside: avoid; break-after: avoid; }
     #tyokortti .tk-kuva svg { width: 100%; height: auto; max-height: 52mm; display: block; }
+    #tyokortti .tk-piippu-qr { font-size: 7pt; line-height: 1.25; text-align: center; }
+    #tyokortti .tk-piippu-qr svg { width: 26mm; height: 26mm; display: block; margin: 0 auto 1mm; }
     #tyokortti .tk-kuva svg * { stroke: #000 !important; }
     #tyokortti .tk-kuva svg text { fill: #000 !important; stroke: none !important; }
     #tyokortti .tk-kuva svg circle { fill: #000 !important; }
@@ -2336,14 +2338,44 @@ function rakennaTyokortti(asetus) {
     const kpl = pellit.reduce((s, i) => s + (i.order_item_rows || []).reduce((a, r) => a + (Number(r.kpl) || 0), 0), 0);
     h += `<h2>${e(g.nimi)}<span>${kpl ? 'Pellit ' + kpl + ' kpl' : ''}</span></h2>`;
 
-    pellit.forEach(i => {
+    // Piippu (vaihe 7.4, 23.11.2026): tiivis osat-taulukko ja QR piipun omalle Tuotanto-sivulle, jossa on piipun työkortti
+    // (sivu- ja etukuva, levityskuvat, merkintäpisteet). Ruudut kuten piipun työkortissa: Leikattu ja Kantattu.
+    const piippuOsat = pellit.filter(i => i.profile_type === 'piippu');
+    if (piippuOsat.length) {
+      const i0 = piippuOsat[0];
+      const mat = [i0.material, i0.color, i0.thickness_mm ? i0.thickness_mm + ' mm' : ''].filter(Boolean).join(' · ');
+      const vals = (piippuOsat.find(i => i.profile_data && i.profile_data.vals) || {}).profile_data?.vals || {};
+      const tyyppi = vals.tyyppi === 'harjapiippu' ? 'Harjapiippu' : 'Piippu';
+      const linkkiP = location.origin + location.pathname.replace(/[^/]*$/, 'piippu_tuotanto.html') + '?orderId=' + encodeURIComponent(o.id) + '&groupName=' + encodeURIComponent(g.nimi);
+      const qrP = tkQrSvg(linkkiP);
+      const rivitP = piippuOsat.map(i => {
+        const rr = i.order_item_rows || [];
+        const r0 = rr[0] || {};
+        const kplP = rr.length ? rr.reduce((a, r) => a + (Number(r.kpl) || 0), 0) : (i.quantity || '');
+        const pit = rr.length ? (r0.kok_mm || r0.mitta_mm || '') : '—';
+        return `<tr><td class="tk-teksti"><b>${e(i.nimike || '—')}</b></td><td>${e(i.aihio_width_mm || '—')}</td><td>${e(pit)}</td>
+          <td class="tk-c"><b>${e(kplP)}</b></td><td><div class="tk-ruutu"></div></td><td><div class="tk-ruutu"></div></td></tr>`;
+      }).join('');
+      h += `<div class="tk-pelti"><div class="tk-paa">
+        <div class="tk-piippu-qr">${qrP ? qrP + '<div>Piipun työkortti:<br>avaa puhelimella tai tulosta piipun Tuotanto-sivulta</div>' : ''}</div>
+        <div>
+          <div class="tk-nimike">${e(tyyppi)}</div>
+          <div class="tk-mat">${e(mat)}${vals.piippukpl > 1 ? ' · ' + e(vals.piippukpl) + ' piippua' : ''}</div>
+          <table><colgroup><col><col style="width:12%"><col style="width:12%"><col style="width:9%"><col style="width:13%"><col style="width:13%"></colgroup>
+            <tr><th>Osa</th><th>LL</th><th>Pituus</th><th class="tk-c">kpl</th><th>Leikattu</th><th>Kantattu</th></tr>
+            ${rivitP}
+          </table>
+          <div style="font-size:8.5pt;margin-top:1mm">Levityskuvat, merkintäpisteet sekä piipun kuvat sivulta ja edestä ovat piipun omalla työkortilla (QR).</div>
+        </div>
+      </div></div>`;
+    }
+
+    pellit.filter(i => i.profile_type !== 'piippu').forEach(i => {
       const pd = i.profile_data || {};
       const mat = [i.material, i.color, i.thickness_mm ? i.thickness_mm + ' mm' : ''].filter(Boolean).join(' · ');
       const rows = [...(i.order_item_rows || [])].sort((a, b) => (b.kok_mm || 0) - (a.kok_mm || 0));
       let kuva = '';
-      if (i.profile_type === 'piippu') {
-        kuva = '<div style="font-size:9pt">Piipun osa — kuvat ja mitat piipun tuotantosivulla.</div>';
-      } else if (i.profile_type) {
+      if (i.profile_type) {
         const pituudet = rows.map(r => Number(r.kok_mm) || Number(r.mitta_mm) || 0).filter(k => k > 0);
         const pisin = pituudet.length ? Math.max.apply(null, pituudet) : 1000;
         const kiila = { valsB: kourunValsB(i.profile_type, pd.vals || {}, pd.opts || {}, pisin) || pd.valsB || null, viite: pd.pituusViite };
