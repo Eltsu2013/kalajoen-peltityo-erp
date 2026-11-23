@@ -10,7 +10,8 @@
 // Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen),
 //          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2),
 //          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026), v6 jakosauma seuraa hupun saumaa (harjaJakosauma),
-//          v7 harjapiipun etukappaleet 1–3 osana kummallekin puolelle (harjaEtuJako, 23.11.2026).
+//          v7 harjapiipun etukappaleet 1–3 osana kummallekin puolelle (harjaEtuJako, 23.11.2026),
+//          v8 kansi ja sen reiät (laskeKansi, kansiAsetukset; vaihe 7b, 23.11.2026, mockup piippu/kansi-mockup.html).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -217,10 +218,10 @@
     }
 
     // KANSI
+    let kansi = null;
     if (hasKansi) {
-      const kLev = leveys + ylareunaV*4 + huplis + 10;
-      const kPit = suora  + ylareunaV*4 + huplis + 10;
-      muut.push({ osa: 'Kansi', lev: r(kLev), pit: r(kPit), kpl: 1 });
+      kansi = laskeKansi(leveys, suora, v);
+      muut.push({ osa: 'Kansi', lev: kansi.aihio.lev, pit: kansi.aihio.pit, kpl: 1 });
     }
 
     // HATTU
@@ -246,6 +247,7 @@
     return {
       juuret,
       muut,
+      kansi,
       geom: {
         korkeuserot, vinomitta, kattokulma_rad, kattokulma_deg, etukulma, takakulma, p10, q9, kaltkorj,
         hEtuKork, hTakaKork, hEtuKorkMerkinta, hTakaKorkMerkinta, hEtuTodellinen, hTakaTodellinen, hSivEtenema,
@@ -338,11 +340,15 @@
       }
     }
     const levMax = Math.max(lev1, lev2), pituus = suora1 + suora2;
-    if (o.kansi !== false) muut.push({ osa: 'Kansi', lev: r(levMax + ylareunaV * 4 + huplis + 10), pit: r(pituus + ylareunaV * 4 + huplis + 10), kpl: 1 });
+    let kansi = null;
+    if (o.kansi !== false) {
+      kansi = laskeKansi(levMax, pituus, Object.assign({ harja: true }, v));
+      muut.push({ osa: 'Kansi', lev: kansi.aihio.lev, pit: kansi.aihio.pit, kpl: 1 });
+    }
     if (o.hattu !== false) muut.push({ osa: 'Hattu', lev: r(levMax + hattulis), pit: r(pituus + hattulis), kpl: 1 });
 
     return {
-      juuret, muut, virheet,
+      juuret, muut, virheet, kansi,
       geom: { lev1, lev2, puoli1: p1, puoli2: p2, hE1, hE2, hH, hE1Tod, hE2Tod, hHTod, sivuL, harjaKohta, sivutJako, etuJako1: jako1, etuJako2: jako2 },
     };
   }
@@ -384,7 +390,108 @@
     return j === null || j === undefined || j === '' ? luku(v && v.sauma) : luku(j);
   }
 
-  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2, harjaJakosauma, harjaEtuJako };
+  // ======================================================================================================
+  // KANSI (vaihe 7b, 23.11.2026). Mockup piippu/kansi-mockup.html, Tomin päätökset 23.11.:
+  //  - kannen sisämitta = piipun ulkomitta (muurattu + hupun lisä + 2 × yläreuna, jos yläreuna on käännetty ulos)
+  //    + väljyys 5 mm yhteensä (2,5 mm per puoli, jotta kansi liukuu paikalleen)
+  //  - reunan taitos vie reunasta T (oletus = hupun yläreunan taitos, yleensä 20): tupla (180° yläreunan taitoksen ympäri, oletus) tai 90° alas
+  //  - kulmat: 45° viisto aihion kulmasta T kumpaankin suuntaan (tai suora lovi T × T)
+  //  - Tuotannossa piipun ulkomitan voi korvata mitatulla (kansi.mitattu), jolloin kansi ja reiät lasketaan siitä
+  //  - reiät 1–8: pyöreä (d) tai suorakulmio (l = vasen–oikea, s = etu–taka). Paikka kummallakin akselilla
+  //    'keski' | 'reuna' (reunasta reiän reunaan) | 'keskelle' (reunasta reiän keskelle), mitattuna valitusta reunasta
+  //    (vaaka: vasen/oikea, syva: etu/taka) hupun pellin ulkopinnasta (oletus) tai muuratusta piipusta.
+  //    Piippu oletetaan kannen keskelle. Karvaus (oletus 7 mm): leikkausviiva karvauksen verran reiän sisällä.
+  // vals.kansi = { tyyppi, T, lovi, valjyys, viite, vaaka, syva, reiat: [...], mitattu: { lev, syv } }. Puuttuva = oletus,
+  // joten vanhatkin tilaukset laskevat kannen samalla tavalla (aiempi kaava antoi 5 mm liikaa väljyyttä).
+  const KANSI_REIKIA_MAX = 8, KARVAUS_R = 30;   // KARVAUS_R: kanttisen reiän leikkausviivan pyöristys, vain kuvaan
+  function kansiAsetukset(v) {
+    const k = (v && v.kansi) || {};
+    const num = (x, d) => { const n = Number(x); return x === null || x === undefined || x === '' || !isFinite(n) ? d : n; };
+    const val = (x, sallitut) => sallitut.includes(x) ? x : sallitut[0];
+    const mit = k.mitattu || {};
+    const pos = x => { const n = Number(x); return x !== null && x !== undefined && x !== '' && isFinite(n) && n > 0 ? n : null; };
+    return {
+      tyyppi: val(k.tyyppi, ['tupla', '90']),
+      // taitoksen oletus = hupun yläreunan taitos ulos (yleensä sama 20 mm, Tomi 23.11.), muuten 20
+      T: Math.max(0, num(k.T, (v && (v.ylaTyyppi || 'ulos') === 'ulos' && luku(v.ylareunaV) > 0) ? luku(v.ylareunaV) : 20)),
+      lovi: val(k.lovi, ['45', 'suora']),
+      valjyys: num(k.valjyys, 5),
+      viite: val(k.viite, ['huppu', 'piippu']),
+      vaaka: val(k.vaaka, ['vasen', 'oikea']),
+      syva: val(k.syva, ['etu', 'taka']),
+      reiat: (Array.isArray(k.reiat) ? k.reiat : []).slice(0, KANSI_REIKIA_MAX).map(r => ({
+        muoto: r && r.muoto === 'pyorea' ? 'pyorea' : 'nelio',
+        d: num(r && r.d, 150), l: num(r && r.l, 150), s: num(r && r.s, 150),
+        vTapa: val(r && r.vTapa, ['keski', 'reuna', 'keskelle']), vMm: num(r && r.vMm, 0),
+        sTapa: val(r && r.sTapa, ['keski', 'reuna', 'keskelle']), sMm: num(r && r.sMm, 0),
+        karvaus: !(r && r.karvaus === false), karvMm: Math.max(0, num(r && r.karvMm, 7)),
+      })),
+      mitattu: { lev: pos(mit.lev), syv: pos(mit.syv) },
+    };
+  }
+
+  // pLev = muurattu piippu vasen–oikea, pSyv = etu–taka (harjapiipussa etu 1 ↔ etu 2). v = vals (huplis, ylareunaV, ylaTyyppi, kansi).
+  // Palauttaa { as, L, S, D, yla, aihio: { lev, pit }, reiat, varoitukset }. L ja S: { piippu, laskettu, ulko, huppu, sisa, aihio,
+  // viite, viiteSiirto, piippuSiirto }. Reiän u = keskikohta ETU-leikkuureunasta, w = VASEN-leikkuureunasta (mm, tasoaihiossa).
+  function laskeKansi(pLev, pSyv, vals) {
+    const v = vals || {};
+    const as = kansiAsetukset(v);
+    const huplis = luku(v.huplis);
+    const yla = (v.ylaTyyppi || 'ulos') === 'ulos' ? luku(v.ylareunaV) : 0;
+    const D = as.T;
+    const akseli = (piippu, mitattu) => {
+      const laskettu = piippu + huplis + 2 * yla;
+      const ulko = mitattu !== null ? mitattu : laskettu;
+      const huppu = ulko - 2 * yla;
+      const sisa = ulko + as.valjyys;
+      const aihio = sisa + 2 * D;
+      const viite = as.viite === 'huppu' ? huppu : piippu;
+      return { piippu, laskettu, ulko, huppu, sisa, aihio, viite, viiteSiirto: (sisa - viite) / 2, piippuSiirto: (sisa - piippu) / 2 };
+    };
+    const L = akseli(luku(pLev), as.mitattu.lev), S = akseli(luku(pSyv), as.mitattu.syv);
+    const keskikohta = (tapa, mitta, koko, viite) => tapa === 'keski' ? viite / 2 : tapa === 'reuna' ? mitta + koko / 2 : mitta;
+    const reiat = as.reiat.map((r, i) => {
+      const dw = r.muoto === 'pyorea' ? r.d : r.l, du = r.muoto === 'pyorea' ? r.d : r.s;
+      const cL = L.viiteSiirto + keskikohta(r.vTapa, r.vMm, dw, L.viite);
+      const cS = S.viiteSiirto + keskikohta(r.sTapa, r.sMm, du, S.viite);
+      const k = r.karvaus ? r.karvMm : 0;
+      const leikDw = dw - 2 * k, leikDu = du - 2 * k;
+      const rLeik = r.muoto !== 'pyorea' && k > 0 ? Math.max(0, Math.min(KARVAUS_R, leikDw / 2, leikDu / 2)) : 0;
+      return {
+        nro: i + 1, muoto: r.muoto, dw, du,
+        w: D + (as.vaaka === 'vasen' ? cL : L.sisa - cL),
+        u: D + (as.syva === 'etu' ? cS : S.sisa - cS),
+        karvaus: k, leikDw, leikDu, rLeik, rReika: rLeik > 0 ? rLeik + k : 0,
+      };
+    });
+    const varoitukset = [];
+    const pU0 = D + S.piippuSiirto, pU1 = pU0 + S.piippu, pW0 = D + L.piippuSiirto, pW1 = pW0 + L.piippu;
+    reiat.forEach(r => {
+      const u0 = r.u - r.du / 2, u1 = r.u + r.du / 2, w0 = r.w - r.dw / 2, w1 = r.w + r.dw / 2;
+      if (u0 < D || u1 > D + S.sisa || w0 < D || w1 > D + L.sisa) varoitukset.push('Kannen reikä ' + r.nro + ' menee kannen reunan yli.');
+      else if (u0 < pU0 - 0.01 || u1 > pU1 + 0.01 || w0 < pW0 - 0.01 || w1 > pW1 + 0.01) varoitukset.push('Kannen reikä ' + r.nro + ' ulottuu muuratun piipun reunan ulkopuolelle. Tarkista mitat.');
+      if (r.karvaus && (r.leikDw <= 0 || r.leikDu <= 0)) varoitukset.push('Kannen reikä ' + r.nro + ' on liian pieni karvaukselle.');
+    });
+    for (let i = 0; i < reiat.length; i++) for (let j = i + 1; j < reiat.length; j++) {
+      const p = reiat[i], q = reiat[j];
+      const paalle = p.muoto === 'pyorea' && q.muoto === 'pyorea'
+        ? Math.hypot(p.u - q.u, p.w - q.w) < (p.dw + q.dw) / 2
+        : Math.abs(p.u - q.u) < (p.du + q.du) / 2 && Math.abs(p.w - q.w) < (p.dw + q.dw) / 2;
+      if (paalle) varoitukset.push('Kannen reiät ' + p.nro + ' ja ' + q.nro + ' menevät päällekkäin.');
+    }
+    return { as, L, S, D, yla, harja: !!v.harja, aihio: { lev: ylos(L.aihio), pit: ylos(S.aihio) }, reiat, varoitukset };
+  }
+
+  // Reiän alku, keski ja loppu valitusta reunasta: mista = 'leikkuu' (tasoaihion leikkuureuna) tai 'taitettu' (taitettu reuna).
+  function kansiReianMitat(r, k, mista) {
+    const pois = mista === 'taitettu' ? k.D : 0;
+    const cw = (k.as.vaaka === 'vasen' ? r.w : k.L.aihio - r.w) - pois;
+    const cu = (k.as.syva === 'etu' ? r.u : k.S.aihio - r.u) - pois;
+    return { vAlku: cw - r.dw / 2, vKeski: cw, vLoppu: cw + r.dw / 2, sAlku: cu - r.du / 2, sKeski: cu, sLoppu: cu + r.du / 2 };
+  }
+
+  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2, harjaJakosauma, harjaEtuJako,
+    laskeKansi, kansiAsetukset, kansiReianMitat, KANSI_REIKIA_MAX };
   globalThis.KPT_PIIPPU = KPT_PIIPPU;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU;
 })();

@@ -404,6 +404,11 @@
     <div id="etukuva"></div>
   </details>
 
+  <details class="kuva-card etukuva-kortti" id="kansi-kortti" open>
+    <summary>Kansi ja reiät</summary>
+    <div id="kansi-sisalto"></div>
+  </details>
+
   <div class="luettelo-grid">
     <div class="luettelo-card">
       <h3>Juuret</h3>
@@ -431,8 +436,9 @@
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
-<script src="piippu-laskenta.js?v=7"></script>
-<script src="piippu-levitys.js?v=12"></script>
+<script src="piippu-laskenta.js?v=8"></script>
+<script src="piippu-levitys.js?v=13"></script>
+<script src="kansi.js?v=1"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
@@ -509,6 +515,7 @@ function keraaVals() {
     sauma: gv('v-sauma'), huplis: gv('v-huplis'), ylareunaV: gv('v-ylareunaV'), ylaTyyppi: document.getElementById('v-ylatyyppi').value,
     alatupla: gv('v-alatupla'), vahennys: gv('v-vahennys'), hsivlisa: gv('v-hsivlisa'), hattulis: gv('v-hattulis'),
     sivutJako, etuJako1, etuJako2, jakosauma: document.getElementById('v-jakosauma').value === '' ? null : gv('v-jakosauma'), suora2Tila, puoli2Tila,
+    kansi: kansiArvo(),   // kannen taitos ja reiät (vaihe 7b, 23.11.2026)
   };
   const tila = {
     suora2: suora2Tila === 'auto' ? 'auto' : gv('suora2'),
@@ -531,6 +538,10 @@ function piirraEtukuva(v) {
   try { if (localStorage.getItem('kpt_etukuva_auki') === '0') k.open = false; } catch (e) {}
   k.addEventListener('toggle', () => { try { localStorage.setItem('kpt_etukuva_auki', k.open ? '1' : '0'); } catch (e) {} });
 })();
+
+// Kansi ja reiät (yhteinen kansi.js, laskenta piippu-laskenta.js, vaihe 7b 23.11.2026)
+const kansiKortti = window.KPT_KANSI ? KPT_KANSI.sivuKortti(document.getElementById('kansi-sisalto'), { muutos: () => laske(), kortti: document.getElementById('kansi-kortti') }) : null;
+const kansiArvo = () => kansiKortti ? kansiKortti.arvo() : {};
 
 function laske() {
   document.getElementById('v-jakosauma').placeholder = String(gv('v-sauma'));   // tyhjä jakosauma = hupun saumat
@@ -562,6 +573,7 @@ function laske() {
   document.getElementById('kalt-suhde').textContent = ' ' + KPT_PIIPPU_LEVITYS.harjaSuhde(vals).join(' / ');
   document.getElementById('sivukuva').innerHTML = KPT_PIIPPU_LEVITYS.harjaSivukuva(vals);
   piirraEtukuva(Object.assign({ tyyppi: 'harjapiippu' }, vals));
+  if (kansiKortti) kansiKortti.piirra(tulos.kansi, vals);
   renderTaulu('luettelo-juuret', tulos.juuret, piippukpl);
   renderTaulu('luettelo-huppu', tulos.muut, piippukpl);
   piirraLevityskuvat(vals, osat.huppu && !(tulos.virheet || []).length, piippukpl);
@@ -713,6 +725,7 @@ function palautaMuokattava() {
   document.getElementById('chk-juuret').checked = on('Juuri');
   document.getElementById('chk-huppu').checked = on('Huppu');
   document.getElementById('chk-kansi').checked = on('Kansi');
+  if (kansiKortti) kansiKortti.aseta(v.kansi);
   document.getElementById('chk-hattu').checked = on('Hattu');
   const pk = Number(v.piippukpl) || 1;
   aseta('v-piippukpl', pk);

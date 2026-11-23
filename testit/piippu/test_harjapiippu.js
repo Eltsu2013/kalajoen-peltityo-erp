@@ -47,9 +47,9 @@ ok(near(a.geom.harjaKohta, 492.5) && !sivut.lisa, 'harjan kohta 492,5 etu 1 -pä
 ok(near(a.geom.hE1Tod, 760 + 5 * 210 / 445 - 25) && near(a.geom.hHTod, 525) && near(a.geom.hE2Tod, 940 + 5 * 390 / 750 - 25), 'todelliset korkeudet ilman taitoksia: 737,4 / 525 / 917,6');
 
 // ---- Kansi ja hattu leveämmän puolen mukaan
-ok(mitat(osa(a.muut, 'Kansi')) === '550 × 1355' && mitat(osa(a.muut, 'Hattu')) === '640 × 1445', 'kansi 550 × 1355, hattu 640 × 1445');
+ok(mitat(osa(a.muut, 'Kansi')) === '545 × 1350' && mitat(osa(a.muut, 'Hattu')) === '640 × 1445', 'kansi 545 × 1350 (väljyys 5, v8), hattu 640 × 1445');
 const lev2 = laskeHarjapiippu(Object.assign({}, A, { lev2: 420 }));
-ok(osa(lev2.muut, 'Kansi').lev === 580 && osa(lev2.muut, 'Hattu').lev === 670 && osa(lev2.muut, 'Huppu etu 2').lev === 470 && osa(lev2.juuret, 'Juuri etu 2').lev === 460,
+ok(osa(lev2.muut, 'Kansi').lev === 575 && osa(lev2.muut, 'Hattu').lev === 670 && osa(lev2.muut, 'Huppu etu 2').lev === 470 && osa(lev2.juuret, 'Juuri etu 2').lev === 460,
   'eri leveydet: kansi ja hattu leveämmän (420) mukaan, etu 2 omalla leveydellään');
 
 // ---- Poikki harjalta

@@ -490,6 +490,11 @@
     <div id="etukuva"></div>
   </details>
 
+  <details class="kuva-card etukuva-kortti" id="kansi-kortti" open>
+    <summary>Kansi ja reiät</summary>
+    <div id="kansi-sisalto"></div>
+  </details>
+
   <div class="luettelo-grid">
     <div class="luettelo-card">
       <h3>Juuret</h3>
@@ -518,8 +523,9 @@
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
-<script src="piippu-laskenta.js?v=7"></script>
-<script src="piippu-levitys.js?v=12"></script>
+<script src="piippu-laskenta.js?v=8"></script>
+<script src="piippu-levitys.js?v=13"></script>
+<script src="kansi.js?v=1"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -743,6 +749,7 @@ function palautaMuokattava() {
   document.getElementById('chk-huppu').checked = on('Huppu');
   document.getElementById('chk-kansi').checked = on('Kansi');
   document.getElementById('chk-hattu').checked = on('Hattu');
+  if (kansiKortti) kansiKortti.aseta(v.kansi);
   // Piippujen määrä: tallennettu, tai vanhassa tilauksessa yhden kappaleen osan määrästä
   let pk = Number(v.piippukpl) || 0;
   if (!pk) {
@@ -845,6 +852,7 @@ async function lisaaTilaukseen() {
     ylaTyyppi: document.getElementById('v-ylatyyppi').value,   // hupun yläreunan taitos: ulos / sisaan / tupla (levityskuvat)
     ...kiilaArvot(),   // kiila / mutkapiippu (20.11.2026): kiilaPaalla, suoraKulma, takaLeveys, vasenPituus, korkeudet kulmissa, kiilat
     huomio,
+    kansi: kansiArvo(),   // kannen taitos ja reiät (vaihe 7b, 23.11.2026)
   };
 
   // Ryhmän id — käytetään lähetyksessä
@@ -924,6 +932,11 @@ function piirraEtukuva(v) {
   k.addEventListener('toggle', () => { try { localStorage.setItem('kpt_etukuva_auki', k.open ? '1' : '0'); } catch (e) {} });
 })();
 
+// Kansi ja reiät (yhteinen kansi.js, laskenta piippu-laskenta.js, vaihe 7b 23.11.2026)
+const kansiKortti = window.KPT_KANSI ? KPT_KANSI.sivuKortti(document.getElementById('kansi-sisalto'), { muutos: () => laske(), kortti: document.getElementById('kansi-kortti') }) : null;
+const kansiArvo = () => kansiKortti ? kansiKortti.arvo() : {};
+function piirraKansi(k, vals) { if (kansiKortti) kansiKortti.piirra(k, vals); }
+
 function laske() {
   const piippukpl = Math.max(1, gv('v-piippukpl') || 1);
   const hasHuppu  = chk('chk-huppu');
@@ -932,6 +945,7 @@ function laske() {
   const vals = {};
   LASKENTA_KENTAT.forEach(([nimi, id]) => { vals[nimi] = gv(id); });
   Object.assign(vals, { saumatyyppi, takaKpl, huppuEtuKpl, huppuSivutKpl, huppuTakaKpl, ylaTyyppi: document.getElementById('v-ylatyyppi').value }, kiilaArvot());
+  vals.kansi = kansiArvo();
   const osat = { juuret: chk('chk-juuret'), huppu: hasHuppu, kansi: chk('chk-kansi'), hattu: chk('chk-hattu') };
   // Kiilapiipussa hupun palat tulevat 3D-mallista (piippu-levitys.js). Suoralla piipulla tulos on sama kuin laskeLapepiippu.
   let tulos;
@@ -969,6 +983,7 @@ function laske() {
   piirraKuva(vals.leveys, vals.suora, vals.etukork, vals.takakork, vals.k24, vals.j25, vals.harjalle, g.vinomitta, vals.takareuna,
     g.hEtuKorkMerkinta, g.hTakaKorkMerkinta, hasHuppu, g.q9, vals.harjaylitys, g.hSivEtenema);
   piirraEtukuva(Object.assign({}, vals, { harjakulma: gv('v-harjakulma') }));
+  piirraKansi(tulos.kansi, vals);
   renderTaulu('luettelo-juuret', juuret, piippukpl);
   renderTaulu('luettelo-huppu', muut, piippukpl);
   piirraLevityskuvat(vals, hasHuppu, piippukpl);

@@ -5,6 +5,7 @@
 //    kun uusi tiedosto oli todettu täsmälleen samaksi kuin vanha laskenta (piippu.html ja piippu_tuotanto.html,
 //    20 000 mittayhdistelmää). Jos tämä osa hälyttää, laskenta on muuttunut: tarkista, oliko muutos tarkoituksellinen.
 //    Päivitetty tarkoituksella 20.11.2026 (v3): hupun palat pyöristetään ylöspäin (Tomi). Juuret, kansi ja hattu ennallaan.
+//    Kansi muuttui tarkoituksella 23.11.2026 (v8): odotusarvo lasketaan alla uudella kaavalla.
 // 2) Käsin lasketut oletusmitat ja saumarakenteen säännöt (Tomin luonnokset 20.11.2026).
 const { laskeLapepiippu } = require('../../orders/piippu-laskenta.js');
 const vertailu = require('./lapepiippu_vertailu.json');
@@ -15,10 +16,15 @@ const osa = (lista, nimi) => lista.find(p => p.osa === nimi);
 const summa = (lista, alku) => lista.filter(p => p.osa.startsWith(alku)).reduce((s, p) => s + p.lev, 0);
 
 // ---- 1) Vertailuluvut
+// Kansi muuttui tarkoituksella 23.11.2026 (v8, Tomi): väljyys 5 mm yhteensä (ennen 10) ja pyöristys ylöspäin. Kansirivin odotusarvo
+// lasketaan siksi uudella kaavalla: leveys + hupun lisä + 2 × yläreuna + 5 + 2 × taitos (taitos = yläreuna), ylöspäin.
+const ylosT = n => Math.ceil(n - 1e-9);
 vertailu.forEach((t, i) => {
   const r = laskeLapepiippu(t.v, t.osat);
+  const n = x => Number(x) || 0, lisa = n(t.v.huplis) + 4 * n(t.v.ylareunaV) + 5;
+  const odotus = t.muut.map(p => p.osa === 'Kansi' ? Object.assign({}, p, { lev: ylosT(n(t.v.leveys) + lisa), pit: ylosT(n(t.v.suora) + lisa) }) : p);
   ok(JSON.stringify(r.juuret) === JSON.stringify(t.juuret), 'vertailu ' + i + ': juuret samat (' + t.juuret.length + ' riviä)');
-  ok(JSON.stringify(r.muut) === JSON.stringify(t.muut), 'vertailu ' + i + ': huppu, kansi ja hattu samat (' + t.muut.length + ' riviä)');
+  ok(JSON.stringify(r.muut) === JSON.stringify(odotus), 'vertailu ' + i + ': huppu, kansi ja hattu samat (' + t.muut.length + ' riviä)');
 });
 
 // ---- 2) Oletusmitat (Piippu-sivun oletusarvot), käsin laskettu
@@ -31,11 +37,11 @@ ok(Math.abs(o.geom.kaltkorj - 5 * 200 / 600) < 1e-9, 'oletus: kaltevuuskorjaus 5
 ok(osa(o.muut, 'Huppu etu').lev === 450, 'oletus: huppu etu leveys 400 + 2 × 20 + 10 = 450');
 ok(osa(o.muut, 'Huppu etu').pit === 1022, 'oletus: huppu etu korkeus 1000 + 20 + 20 + 1,67 − 20 = 1021,7 → ylöspäin 1022');
 ok(osa(laskeLapepiippu(Object.assign({}, OLETUS, { huppuEtuKpl: 3 })).muut, 'Huppu etu 1').lev === 177, 'hupun pala ylöspäin: etu 1/3 = 400/3 + 10/3 + 40 = 176,7 → 177');
-ok(osa(o.muut, 'Kansi').lev === 500 && osa(laskeLapepiippu(Object.assign({}, OLETUS, { leveys: 400.4 })).muut, 'Kansi').lev === 500, 'kansi pyöristetään edelleen lähimpään (400,4 + 100 → 500)');
+ok(osa(o.muut, 'Kansi').lev === 495 && osa(laskeLapepiippu(Object.assign({}, OLETUS, { leveys: 400.4 })).muut, 'Kansi').lev === 496, 'kansi pyöristetään ylöspäin (400,4 + 95 → 496, v8)');
 ok(osa(o.muut, 'Huppu sivut').lev === 670 && osa(o.muut, 'Huppu sivut').kpl === 2, 'oletus: huppu sivut 600 + 3 × 20 + 10 = 670, 2 kpl');
 ok(osa(o.muut, 'Huppu taka').lev === 495, 'oletus: huppu taka (sauma 1) 400 + 4 × 20 + 10 + 5 = 495');
 ok(osa(o.muut, 'Huppu taka').pit === 819, 'oletus: huppu taka korkeus 800 + 20 + 20 − 1,67 − 20 = 818,3 → ylöspäin 819');
-ok(osa(o.muut, 'Kansi').lev === 500 && osa(o.muut, 'Kansi').pit === 700, 'oletus: kansi 500 × 700 (+ 4 × 20 + 10 + 10)');
+ok(osa(o.muut, 'Kansi').lev === 495 && osa(o.muut, 'Kansi').pit === 695, 'oletus: kansi 495 × 695 (+ hupun lisä 10 + 2 × yläreuna 20 + väljyys 5 + 2 × taitos 20)');
 ok(osa(o.muut, 'Hattu').lev === 650 && osa(o.muut, 'Hattu').pit === 850, 'oletus: hattu 650 × 850 (+ 250)');
 ok(osa(o.juuret, 'Juuri etu').lev === 440, 'oletus: juuri etu leveys 400 + 40 = 440');
 ok(osa(o.juuret, 'Juuri etu').pit === 450, 'oletus: juuri etu pituus 15 + 200 + 15 + (200 + 20) = 450');

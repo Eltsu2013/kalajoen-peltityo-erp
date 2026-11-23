@@ -474,9 +474,10 @@
     const juuret = o.juuret === false ? [] : PI.laskeLapepiippu(Object.assign({}, v, { leveys: Math.max(as.etu, as.taka), suora: Math.max(as.vasen, as.oikea) }),
       { juuret: true, huppu: o.huppu !== false, kansi: false, hattu: false }).juuret;   // huppu vaikuttaa juuren mittoihin (q9)
     const huppu = o.huppu === false ? [] : t.palat.map(pa => { const lv = levitaPala(pa); return { osa: pa.nimi, lev: ylos(lv.p.w), pit: ylos(lv.p.h), kpl: pa.kpl }; });
-    const kh = PI.laskeLapepiippu(Object.assign({}, v, { leveys: Math.max(km.etu, km.taka), suora: Math.max(km.vasen, km.oikea) }),
-      { juuret: false, huppu: o.huppu !== false, kansi: o.kansi !== false, hattu: o.hattu !== false }).muut.filter(r => !/^Huppu/.test(r.osa));
-    return { juuret, muut: huppu.concat(kh), geom: perus.geom, kiila: true, malli: t.malli, symmetrinen: t.symmetrinen };
+    const khT = PI.laskeLapepiippu(Object.assign({}, v, { leveys: Math.max(km.etu, km.taka), suora: Math.max(km.vasen, km.oikea) }),
+      { juuret: false, huppu: o.huppu !== false, kansi: o.kansi !== false, hattu: o.hattu !== false });
+    const kh = khT.muut.filter(r => !/^Huppu/.test(r.osa));
+    return { juuret, muut: huppu.concat(kh), kansi: khT.kansi, geom: perus.geom, kiila: true, malli: t.malli, symmetrinen: t.symmetrinen };
   }
 
 
