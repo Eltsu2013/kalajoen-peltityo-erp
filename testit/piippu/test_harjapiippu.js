@@ -6,7 +6,8 @@
 //  - puolen 1 sivujuuret 871 (Excel 876): tupla lapepiipun tavalla
 //  - hupun sivut 1290 (Excel 1295): sivun kaava + liitosvara 5
 //  - hupun palat ylöspäin täysiin milleihin (Tomi 20.11.), siksi etu 1 = 793 (mockup v2:ssa 792 pyöristettynä)
-const { laskeHarjapiippu, harjaPuoli2 } = require('../../orders/piippu-laskenta.js');
+const PI = require('../../orders/piippu-laskenta.js');
+const { laskeHarjapiippu, harjaPuoli2 } = PI;
 
 let fails = 0;
 function ok(cond, msg) { if (!cond) { fails++; console.log('FAIL:', msg); } else { console.log('ok  :', msg); } }
@@ -177,6 +178,11 @@ ok(/↳ 737/.test(skT) && /↳ 525/.test(skT) && /↳ 918/.test(skT), 'Tuotannon
 // ---- Lapepiippu ennallaan (sama tiedosto)
 const { laskeLapepiippu } = require('../../orders/piippu-laskenta.js');
 ok(typeof laskeLapepiippu === 'function', 'laskeLapepiippu yhä mukana (omat testit: test_lapepiippu.js)');
+
+// Jakosauma seuraa hupun saumaa, ellei omaa arvoa ole (23.11.2026)
+ok(PI.harjaJakosauma({ sauma: 15, jakosauma: null }) === 15 && PI.harjaJakosauma({ sauma: 15 }) === 15 && PI.harjaJakosauma({ sauma: 15, jakosauma: '' }) === 15,
+  'tyhjä jakosauma = hupun saumat (15)');
+ok(PI.harjaJakosauma({ sauma: 15, jakosauma: 20 }) === 20, 'oma jakosauma säilyy (20)');
 
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;

@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v11 (23.11.2026): jakosauma seuraa hupun saumaa (KPT_PIIPPU.harjaJakosauma).
 // v10 (23.11.2026): palaTiedot(pa) ja levita(pa) julki (työkortin palasivut); palaHtml käyttää samaa, ruutu ennallaan.
 // v9 (23.11.2026): harjapiipun etukuvassa etu 2 -puoli peilikuvana ja puolet nimetty Etu 1 / Etu 2.
 // v8 (23.11.2026): etukuva(vals) Tomin Excelin mallin mukaan (lapepiippu ja harjapiippu).
@@ -492,7 +493,7 @@
     const v = vals || {};
     const t = PI.laskeHarjapiippu(v, { juuret: false, huppu: true, kansi: false, hattu: false });
     if (t.virheet.length) return null;
-    const g = t.geom, s = Number(v.sauma) || 0, jako = Number(v.jakosauma) || 0;
+    const g = t.geom, s = Number(v.sauma) || 0, jako = PI.harjaJakosauma ? PI.harjaJakosauma(v) : (Number(v.jakosauma) || 0);
     const huplis = Number(v.huplis) || 0, liitos = Number(v.hsivlisa) || 0;
     const yla = YLA_TYYPIT[v.ylaTyyppi] ? v.ylaTyyppi : 'ulos';
     const yht = { yla, ylaW: Number(v.ylareunaV) || 0, ylaKulma: yla === 'tupla' ? 180 : 90, ala: Number(v.alatupla) || 0, harja: true };

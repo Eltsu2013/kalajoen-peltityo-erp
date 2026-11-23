@@ -9,7 +9,7 @@
 // Käyttö Nodessa:   const P = require('../orders/piippu-laskenta.js');
 // Versiot: v1 vaihe 2 (20.11.2026), v2 hupun todellinen korkeus (hEtuTodellinen / hTakaTodellinen),
 //          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2),
-//          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026).
+//          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026), v6 jakosauma seuraa hupun saumaa (harjaJakosauma).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -277,7 +277,7 @@
     const kork1 = luku(v.kork1), korkH = luku(v.korkH), kork2 = luku(v.kork2);
     const tupla = luku(v.tupla), etulis = luku(v.etulis), nousu = luku(v.nousu), sivulisa = luku(v.sivulisa), poimu = luku(v.poimu);
     const sauma = luku(v.sauma), huplis = luku(v.huplis), ylareunaV = luku(v.ylareunaV), alatupla = luku(v.alatupla);
-    const vahennys = luku(v.vahennys), hsivlisa = luku(v.hsivlisa), hattulis = luku(v.hattulis), jako = luku(v.jakosauma);
+    const vahennys = luku(v.vahennys), hsivlisa = luku(v.hsivlisa), hattulis = luku(v.hattulis), jako = harjaJakosauma(v);
     const sivutJako = Number(v.sivutJako) === 2 ? 2 : 1;
 
     // Kummankin puolen geometria omalla kulmallaan
@@ -363,7 +363,14 @@
     return { suora2, kork2, vino2: Math.hypot(suora2, kork2 - korkH), vino1: Math.hypot(suora1, kork1 - korkH), varoitukset };
   }
 
-  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2 };
+  // Harjapiipun jakosauma (poikki harjalta): tyhjä = sama kuin hupun saumat, jotta saumasäätö muuttaa kaikki saumat
+  // (Tomi 23.11.2026). Oma arvo on mahdollinen, jos jonkin piipun harjan liitos tehdään eri tavalla.
+  function harjaJakosauma(v) {
+    const j = v ? v.jakosauma : null;
+    return j === null || j === undefined || j === '' ? luku(v && v.sauma) : luku(j);
+  }
+
+  const KPT_PIIPPU = { laskeLapepiippu, laskeHarjapiippu, harjaPuoli2, harjaJakosauma };
   globalThis.KPT_PIIPPU = KPT_PIIPPU;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU;
 })();

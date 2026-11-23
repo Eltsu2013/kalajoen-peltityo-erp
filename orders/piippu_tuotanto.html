@@ -173,8 +173,8 @@
 <script src="auth-guard.js"></script>
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
-<script src="piippu-laskenta.js?v=5"></script>
-<script src="piippu-levitys.js?v=10"></script>
+<script src="piippu-laskenta.js?v=6"></script>
+<script src="piippu-levitys.js?v=11"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=3"></script>
 <script>
@@ -548,7 +548,7 @@ function mittalista(v, opts) {
     ].filter(Boolean).join('');
     const huppuH = [
       rivi('Hupun sivut', Number(v.sivutJako) === 2 ? 'poikki harjalta' : 'yhtenä kappaleena', ''),
-      Number(v.sivutJako) === 2 ? rivi('Jakosauma harjalla', v.jakosauma) : '',
+      Number(v.sivutJako) === 2 ? rivi('Jakosauma harjalla', KPT_PIIPPU.harjaJakosauma(v)) : '',
       rivi('Hupun yläreuna', v.ylareunaV),
       rivi('Hupun alatupla', v.alatupla),
       rivi('Vähennys korkeudesta', v.vahennys),

@@ -336,7 +336,7 @@
       <button class="sauma-btn" id="sivut-jaettu" onclick="setSivut(2)">Poikki harjalta</button>
     </div>
     <div class="vakio-grid" id="jako-rivi" style="display:none;margin-bottom:6px;">
-      <label>Jakosauma harjalla, mm (etu 2 -puolelle tuplana)</label><input type="number" id="v-jakosauma" value="20" oninput="laske()">
+      <label>Jakosauma harjalla, mm (etu 2 -puolelle tuplana; tyhjä = sama kuin hupun saumat)</label><input type="number" id="v-jakosauma" value="" placeholder="20" oninput="laske()">
     </div>
     <div class="vakio-grid leveampi">
       <label>Hupun saumat (mm)</label><input type="number" id="v-sauma" value="20" oninput="laske()">
@@ -409,8 +409,8 @@
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
-<script src="piippu-laskenta.js?v=5"></script>
-<script src="piippu-levitys.js?v=10"></script>
+<script src="piippu-laskenta.js?v=6"></script>
+<script src="piippu-levitys.js?v=11"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
@@ -464,7 +464,7 @@ function keraaVals() {
     tupla: gv('v-tupla'), etulis: gv('v-etulis'), nousu: gv('v-nousu'), sivulisa: gv('v-sivulisa'),
     sauma: gv('v-sauma'), huplis: gv('v-huplis'), ylareunaV: gv('v-ylareunaV'), ylaTyyppi: document.getElementById('v-ylatyyppi').value,
     alatupla: gv('v-alatupla'), vahennys: gv('v-vahennys'), hsivlisa: gv('v-hsivlisa'), hattulis: gv('v-hattulis'),
-    sivutJako, jakosauma: gv('v-jakosauma'), suora2Tila, puoli2Tila,
+    sivutJako, jakosauma: document.getElementById('v-jakosauma').value === '' ? null : gv('v-jakosauma'), suora2Tila, puoli2Tila,
   };
   const tila = {
     suora2: suora2Tila === 'auto' ? 'auto' : gv('suora2'),
@@ -489,6 +489,7 @@ function piirraEtukuva(v) {
 })();
 
 function laske() {
+  document.getElementById('v-jakosauma').placeholder = String(gv('v-sauma'));   // tyhjä jakosauma = hupun saumat
   const { vals, ehdotus } = keraaVals();
   asetaKentta('suora2', ehdotus.suora2, suora2Tila !== 'auto');
   asetaKentta('kork2', ehdotus.kork2, puoli2Tila === 'kork');
