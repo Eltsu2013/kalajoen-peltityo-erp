@@ -130,6 +130,21 @@
       div.appendChild(email);
       div.appendChild(logoutBtn);
       nav.appendChild(div);
+
+      // Puhelimella yläpalkki rivittyy, ettei sähköposti ja Kirjaudu ulos levitä sivua leveämmäksi kuin ruutu
+      // (23.11.2026: 12 sivua vieri sivuttain 360 px:n näytöllä). Vain kapealla näytöllä, isolla ennallaan.
+      if (!document.getElementById('auth-mobiili-css')) {
+        const st = document.createElement('style');
+        st.id = 'auth-mobiili-css';
+        st.textContent = '@media (max-width: 700px) {'
+          + ' header, body > nav { flex-wrap: wrap; }'
+          + ' body > nav { height: auto !important; min-height: 56px; row-gap: 6px; padding-top: 8px; padding-bottom: 8px; }'
+          + ' .header-right, .nav-right { flex-wrap: wrap; min-width: 0; max-width: 100%; justify-content: flex-end; }'
+          + ' #auth-user-info { flex-wrap: wrap; min-width: 0; justify-content: flex-end; gap: 0.5rem !important; }'
+          + ' #auth-user-info > span { max-width: 130px !important; }'
+          + ' }';
+        document.head.appendChild(st);
+      }
     };
 
     if (document.readyState === 'loading') {

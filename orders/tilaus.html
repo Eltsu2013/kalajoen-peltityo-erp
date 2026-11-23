@@ -488,7 +488,7 @@
   <!-- OIKEA PANEELI: Tilauslista -->
   <div class="right-panel">
 
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+    <div style="display:flex;align-items:center;gap:8px 12px;margin-bottom:4px;flex-wrap:wrap">
       <div style="font-family:IBM Plex Mono,monospace;font-size:13px;font-weight:600;color:var(--text)">
         Tilausnro: <span id="order-number-display" style="color:var(--accent)">—</span>
       </div>
@@ -503,7 +503,7 @@
         <option value="INVOICED">LASKUTETTU</option>
         <option value="ARCHIVED">ARKISTO</option>
       </select>
-      <div style="margin-left:auto;display:flex;gap:8px">
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:100%">
         <button type="button" id="desktop-ohjeet-btn" class="btn btn-secondary" onclick="openInstructionsModal()" style="display:none">📋 Ohjeet</button>
         <button class="btn btn-secondary" onclick="addGroup()">+ Luo ryhmä vasemmalta</button>
         <button class="btn btn-primary" onclick="printOrder()">🖨 Tulosta</button>

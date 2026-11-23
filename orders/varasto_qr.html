@@ -25,7 +25,8 @@
     }
     .toolbar img { height: 32px; }
     .toolbar h1 { font-size: 16px; font-weight: 600; margin-right: auto; }
-    .toolbar label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+    .toolbar label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; max-width: 100%; min-width: 0; }
+    .toolbar input[type=text] { min-width: 0; max-width: 100%; flex: 1 1 auto; }
     .toolbar select, .toolbar input[type=text] {
       background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
       padding: 7px 10px; font-family: inherit; font-size: 14px;
