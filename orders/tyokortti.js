@@ -10,12 +10,12 @@
 // Ilman sitä kortti tulostuu ilman QR:ää.
 //
 // Käyttö:
-//   KPT_TYOKORTTI.asenna(() => html);        // Ctrl+P ja tulosta() käyttävät tätä
-//   KPT_TYOKORTTI.tulosta();                 // "Tulosta"-nappi
+//   KPT_TYOKORTTI.asenna(valinnat => html, { valinnat: [{ id, teksti, oletus }], avain });   // Ctrl+P ja tulosta() käyttävät tätä
+//   KPT_TYOKORTTI.tulostaKysyen();           // "Tulosta"-nappi: valintaikkuna, sitten tulostus
 //   html = T.sivu(T.ylaosa({...}) + T.tiedot({...}) + ... + T.alaosa())
 //
 // MUISTA: kun tätä tiedostoa muutetaan, nosta tyokortti.js?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
-// Versiot: v1 (23.11.2026) pohja ja piipun etusivu. v2 (23.11.2026) rajaa() ja kuvat rinnakkain (.tkk-kuvat). v3: ylaosaPieni() ja palasivujen tyylit.
+// Versiot: v1 (23.11.2026) pohja ja piipun etusivu. v2 (23.11.2026) rajaa() ja kuvat rinnakkain (.tkk-kuvat). v3: ylaosaPieni() ja palasivujen tyylit. v4: tulostusikkuna valintoineen (tulostaKysyen).
 (function () {
   'use strict';
   const ID = 'tkk';
@@ -32,6 +32,15 @@
   // Ruudulla kortti on piilossa. Tulostettaessa body saa luokan tkk-tulostus, ja silloin näkyy vain kortti.
   const CSS = `
 #${ID} { display: none; }
+#tkk-ikkuna { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 16px; }
+#tkk-ikkuna .tkk-ikk-laatikko { background: #1f2937; color: #f1f5f9; border: 1px solid #475569; border-radius: 8px; padding: 18px 20px; width: 100%; max-width: 380px; font-family: 'IBM Plex Sans', Arial, sans-serif; }
+#tkk-ikkuna h3 { margin: 0 0 12px; font-size: 16px; }
+#tkk-ikkuna label { display: flex; gap: 10px; align-items: center; padding: 8px 0; font-size: 15px; cursor: pointer; }
+#tkk-ikkuna input[type=checkbox] { width: 20px; height: 20px; }
+#tkk-ikkuna .tkk-ikk-napit { display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px; }
+#tkk-ikkuna button { padding: 9px 16px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: #f1f5f9; font-size: 14px; cursor: pointer; }
+#tkk-ikkuna button.tkk-ikk-ok { background: #f97316; border-color: #f97316; color: #111; font-weight: 700; }
+@media print { #tkk-ikkuna { display: none !important; } }
 @media print {
   @page { size: A4 portrait; margin: 10mm; }
   body.tkk-tulostus { background: #fff !important; }
@@ -188,19 +197,30 @@
   }
 
   // ---------- Tulostus ----------
-  let rakentaja = null, valmisteltu = false;
-  function rakenna() {
+  // Valinnat (7.3): asenna(fn, { valinnat: [{ id, teksti, oletus }], avain }) näyttää Tulosta-napista ikkunan, jossa valinnat
+  // ovat rasteina. Valinnat muistetaan (localStorage), ja Ctrl+P käyttää viimeksi valittuja. fn saa { id: true/false }.
+  let rakentaja = null, valmisteltu = false, maaritys = { valinnat: [], avain: 'kpt_tyokortti_valinnat' };
+  function lueValinnat() {
+    let talletettu = {};
+    try { talletettu = JSON.parse(localStorage.getItem(maaritys.avain) || '{}') || {}; } catch (e) { talletettu = {}; }
+    const v = {};
+    maaritys.valinnat.forEach(x => { v[x.id] = typeof talletettu[x.id] === 'boolean' ? talletettu[x.id] : x.oletus !== false; });
+    return v;
+  }
+  function tallennaValinnat(v) { try { localStorage.setItem(maaritys.avain, JSON.stringify(v)); } catch (e) {} }
+  function rakenna(valinnat) {
     if (!rakentaja) return false;
     let html = '';
-    try { html = rakentaja() || ''; } catch (e) { console.error('Työkortti:', e); html = ''; }
+    try { html = rakentaja(valinnat || lueValinnat()) || ''; } catch (e) { console.error('Työkortti:', e); html = ''; }
     if (!html) return false;
     lisaaTyylit();
     elementti().innerHTML = html;
     return true;
   }
-  // rakenna = () => HTML. Palauttaa false/tyhjän, jos korttia ei voi tehdä (silloin tulostuu sivu sellaisenaan).
-  function asenna(rakennaFn) {
+  // rakenna = (valinnat) => HTML. Palauttaa false/tyhjän, jos korttia ei voi tehdä (silloin tulostuu sivu sellaisenaan).
+  function asenna(rakennaFn, asetukset) {
     rakentaja = rakennaFn;
+    if (asetukset) maaritys = Object.assign({}, maaritys, asetukset);
     lisaaTyylit();
     if (asenna._kuuntelijat) return;
     asenna._kuuntelijat = true;
@@ -211,15 +231,41 @@
     });
     window.addEventListener('afterprint', () => document.body.classList.remove('tkk-tulostus'));
   }
-  // "Tulosta"-nappi: rakennetaan ensin, pieni viive, jotta selain ehtii piirtää kortin (kuvat, QR) ennen tulostusikkunaa
-  function tulosta() {
-    const ok = rakenna();
+  // Tulostus suoraan annetuilla (tai muistetuilla) valinnoilla. Pieni viive, jotta selain ehtii piirtää kortin ennen tulostusikkunaa.
+  function tulosta(valinnat) {
+    const ok = rakenna(valinnat);
     valmisteltu = ok;
     document.body.classList.toggle('tkk-tulostus', ok);
     setTimeout(() => window.print(), 80);
   }
+  // Tulosta-nappi: valintaikkuna, jos valintoja on; muuten suoraan
+  function tulostaKysyen() {
+    if (!maaritys.valinnat.length) { tulosta(); return; }
+    const v = lueValinnat();
+    let ikk = document.getElementById('tkk-ikkuna');
+    if (ikk) ikk.remove();
+    ikk = document.createElement('div');
+    ikk.id = 'tkk-ikkuna';
+    ikk.innerHTML = `<div class="tkk-ikk-laatikko" role="dialog" aria-label="Tulosta työkortti">
+      <h3>Tulosta työkortti</h3>
+      ${maaritys.valinnat.map(x => `<label><input type="checkbox" data-id="${esc(x.id)}"${v[x.id] ? ' checked' : ''}> ${esc(x.teksti)}</label>`).join('')}
+      <div class="tkk-ikk-napit"><button type="button" data-t="peru">Peruuta</button><button type="button" data-t="ok" class="tkk-ikk-ok">🖨 Tulosta</button></div>
+    </div>`;
+    document.body.appendChild(ikk);
+    const sulje = () => ikk.remove();
+    ikk.addEventListener('click', e => { if (e.target === ikk) sulje(); });
+    ikk.querySelector('[data-t="peru"]').onclick = sulje;
+    ikk.querySelector('[data-t="ok"]').onclick = () => {
+      const uusi = {};
+      ikk.querySelectorAll('input[data-id]').forEach(i => { uusi[i.getAttribute('data-id')] = i.checked; });
+      tallennaValinnat(uusi);
+      sulje();
+      tulosta(uusi);
+    };
+    ikk.querySelector('[data-t="ok"]').focus();
+  }
 
-  const KPT_TYOKORTTI = { VERSIO: 3, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, rakenna, CSS };
+  const KPT_TYOKORTTI = { VERSIO: 4, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
   if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
   if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
 })();

@@ -160,7 +160,7 @@
   <div class="header-right">
     <button class="back-btn" onclick="history.back()">← Takaisin</button>
     <button class="back-btn" onclick="muokkaaPiippua()" title="Avaa tilaus ja muokkaa tätä piippua">✏ Muokkaa</button>
-    <button class="back-btn btn-print" onclick="KPT_TYOKORTTI.tulosta()" title="Tulosta piipun työkortti (A4)">🖨 Tulosta</button>
+    <button class="back-btn btn-print" onclick="KPT_TYOKORTTI.tulostaKysyen()" title="Tulosta piipun työkortti (A4)">🖨 Tulosta</button>
   </div>
 </header>
 
@@ -176,7 +176,7 @@
 <script src="piippu-laskenta.js?v=7"></script>
 <script src="piippu-levitys.js?v=12"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="tyokortti.js?v=3"></script>
+<script src="tyokortti.js?v=4"></script>
 <script>
 const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -775,7 +775,8 @@ function kulmatTeksti(v) {
   } catch (e) { console.warn('Kulmat:', e); }
   return '';
 }
-function rakennaPiipunTyokortti() {
+function rakennaPiipunTyokortti(valinnat) {
+  const val = Object.assign({ merkinta: true, lahikuvat: true }, valinnat || {});
   const T = window.KPT_TYOKORTTI;
   if (!T || !tkData) return '';
   const { v, order, juuret, muut, piippukpl, mat, totalM2, huomio } = tkData;
@@ -820,13 +821,14 @@ function rakennaPiipunTyokortti() {
   // Hupun palojen sivut (vaihe 7.2): samat tilatut palat kuin ruudun levityskuvissa
   const palat = tyokorttiPalat(v, muut);
   // Jokaisesta palasta kaksi sivua: taitossivu (levityskuva, taitokset, lähikuvat) ja merkintäsivu (pisteet leikkuuseen)
-  const sivuja = 1 + 2 * palat.length, otsikko = 'TYÖKORTTI · PIIPPU' + (numero ? ' · TILAUS ' + numero : '');
+  const sivuja = 1 + (val.merkinta ? 2 : 1) * palat.length, otsikko = 'TYÖKORTTI · PIIPPU' + (numero ? ' · TILAUS ' + numero : '');
   h += T.alaosa('Piipun työkortti · sivu 1 / ' + sivuja);
   let html = T.sivu(h);
-  palat.forEach((x, i) => {
-    const o = { otsikko, mat };
-    html += T.sivu(palaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (2 + 2 * i) + ' / ' + sivuja }, o)));
-    html += T.sivu(merkintaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (3 + 2 * i) + ' / ' + sivuja }, o)));
+  let nro = 1;
+  palat.forEach(x => {
+    const o = { otsikko, mat, lahikuvat: val.lahikuvat, merkinta: val.merkinta };
+    html += T.sivu(palaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (++nro) + ' / ' + sivuja }, o)));
+    if (val.merkinta) html += T.sivu(merkintaSivu(x.pa, x.kpl, Object.assign({ sivu: 'sivu ' + (++nro) + ' / ' + sivuja }, o)));
   });
   return html;
 }
@@ -856,9 +858,9 @@ function palaSivu(pa, kpl, o) {
   h += `<h2>Taitokset</h2><table><colgroup><col style="width:22%"><col style="width:14%"><col style="width:14%"><col style="width:11%"><col><col style="width:9%"></colgroup>
     <tr><th>Reuna</th><th>Mitta</th><th>Kanttaus</th><th>Taitto</th><th>Huom.</th><th class="tkk-c">Tehty</th></tr>
     ${t.taitokset.map(r => `<tr>${r.map((x, i) => `<td${i === 0 || i === 4 ? ' class="tkk-teksti"' : ''}>${e(x)}</td>`).join('')}<td class="tkk-c">${T.ruutu()}</td></tr>`).join('')}</table>`;
-  h += `<h2>${lv.harja ? 'Harjan kohta ja kulmat' : 'Kulmat'} lähikuvina<span>${t.symm ? 'oikeat kulmat ovat vasempien peilikuvat' : ''}</span></h2>
+  if (o.lahikuvat !== false) h += `<h2>${lv.harja ? 'Harjan kohta ja kulmat' : 'Kulmat'} lähikuvina<span>${t.symm ? 'oikeat kulmat ovat vasempien peilikuvat' : ''}</span></h2>
     <div class="tkk-lahi">${t.kulmat.map(k => T.paperille(k)).join('')}</div>`;
-  h += `<div class="tkk-selite" style="margin-top:2mm">Merkintäpisteet seuraavalla sivulla.</div>`;
+  if (o.merkinta !== false) h += `<div class="tkk-selite" style="margin-top:2mm">Merkintäpisteet seuraavalla sivulla.</div>`;
   h += `<h2>Muistiinpanot</h2><div class="tkk-viivat"></div>`;
   h += T.alaosa('Piipun työkortti · ' + o.sivu);
   return h;
@@ -887,7 +889,10 @@ function muokkaaPiippua() {
   window.open('tilaus.html', '_blank');
 }
 
-if (window.KPT_TYOKORTTI) KPT_TYOKORTTI.asenna(rakennaPiipunTyokortti);   // myös Ctrl+P tulostaa työkortin
+if (window.KPT_TYOKORTTI) KPT_TYOKORTTI.asenna(rakennaPiipunTyokortti, { avain: 'kpt_tyokortti_piippu', valinnat: [
+  { id: 'merkinta', teksti: 'Merkintäsivut (pisteet leikkuuseen)', oletus: true },
+  { id: 'lahikuvat', teksti: 'Kulmien lähikuvat', oletus: true },
+] });   // myös Ctrl+P tulostaa työkortin
 window._authReady.then(load);
 </script>
 </body>
