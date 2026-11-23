@@ -377,9 +377,7 @@
     <script src="nav.js?v=2"></script>
   </div>
   <h1>Hinnasto</h1>
-  <div class="header-right">
-    <button class="btn btn-secondary" id="logoutBtn">Kirjaudu ulos</button>
-  </div>
+  <div class="header-right"></div>
 </header>
 
 <div class="page">
@@ -1239,11 +1237,6 @@ function showToast(msg, error) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function() { t.className = 'toast'; }, 3000);
 }
-
-// ---- LOGOUT ----
-document.getElementById('logoutBtn').addEventListener('click', function() {
-  window.location.href = 'login.html';
-});
 
 
 // ---- MOBIILIKORTTIT ----
