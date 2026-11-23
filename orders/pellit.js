@@ -11,6 +11,7 @@
 // ja testit vahtivat, ettei huuvan laskenta muutu.
 //
 // Vaatii geom.js:n:  <script src="geom.js?v=1"></script>  <script src="pellit.js?v=2"></script>
+// v3 (23.11.2026): aihion koko kuvissa ylöspäin pyöristettynä (aiemmin normaalisti), muuten ennallaan.
 // v2 (20.11.2026): p.paneeli valinnainen paneelin ääriviiva (harjapiipun viisikulmainen sivu), muuten ennallaan.
 // Nodessa:           const P = require('../orders/pellit.js');   (lataa geom.js:n itse)
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
@@ -370,6 +371,8 @@
 
   // Asettelee paneelit joko yhteen tai kahteen riviin (se joka antaa suuremman mittakaavan).
   const TEEMA_RUUTU = { paneeli: '#f97316', taitos: '#e8a020', taitosTaus: 'rgba(232,160,32,0.14)', mitta: '#c9c4b8', himmea: '#847f72', nimi: '#ededf0', halo: '#3d3426' };
+  // Aihion koko kuvissa ylöspäin täyteen milliin, kuten listoissa (Tomi 23.11.2026: mieluummin hieman iso kuin liian pieni)
+  const aihioMm = x => Math.ceil(x - 1e-6);
   const TEEMA_PAPERI = { paneeli: '#000000', taitos: '#444444', taitosTaus: 'rgba(0,0,0,0.07)', mitta: '#000000', himmea: '#555555', nimi: '#000000', halo: '#ffffff' };
 
   // Palauttaa levityskuvan SVG-sisällön annetuille (ryhmitellyille) paneeleille.
@@ -465,7 +468,7 @@
         // Nimi ja aihion koko alle
         const cx = x0 + (curMM + p.w / 2) * scale;
         c += '<text x="' + cx + '" y="' + (rowBottom + 13) + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + T.nimi + '" text-anchor="middle" font-weight="600">' + p.name + (p.kpl > 1 ? ' · ' + p.kpl + ' kpl' : '') + '</text>';
-        c += '<text x="' + cx + '" y="' + (rowBottom + 24) + '" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="' + T.himmea + '" text-anchor="middle">aihio ' + Math.round(p.w) + '×' + Math.round(p.h) + '</text>';
+        c += '<text x="' + cx + '" y="' + (rowBottom + 24) + '" font-size="8.5" font-family="IBM Plex Mono, monospace" fill="' + T.himmea + '" text-anchor="middle">aihio ' + aihioMm(p.w) + '×' + aihioMm(p.h) + '</text>';
         curMM += p.w + gapMM;
       });
       yCursor = rowBottom + labelPx + gapPx;
@@ -563,7 +566,7 @@
     let c = '';
     // aihion kehys ja mitat
     c += '<rect x="' + X(0) + '" y="' + Y(p.h) + '" width="' + (p.w * sc) + '" height="' + (p.h * sc) + '" fill="none" stroke="' + T.himmea + '" stroke-width="0.7" stroke-dasharray="2,3"/>';
-    c += '<text x="' + (X(p.w / 2)) + '" y="' + (Y(0) + 15) + '" font-size="9" font-family="' + FONT + '" fill="' + T.mitta + '" text-anchor="middle">aihio ' + Math.round(p.w) + ' × ' + Math.round(p.h) + ' mm</text>';
+    c += '<text x="' + (X(p.w / 2)) + '" y="' + (Y(0) + 15) + '" font-size="9" font-family="' + FONT + '" fill="' + T.mitta + '" text-anchor="middle">aihio ' + aihioMm(p.w) + ' × ' + aihioMm(p.h) + ' mm</text>';
     if (levy && levy.poly && levy.poly.length >= 3) {
       c += '<polygon points="' + levy.poly.map(q => X(q[0]) + ',' + Y(q[1])).join(' ') + '" fill="none" stroke="' + T.mitta + '" stroke-width="1.1"/>';
       c += '<text x="' + (X(p.w / 2)) + '" y="' + (Y(0) + 26) + '" font-size="9" font-family="' + FONT + '" fill="' + T.mitta + '" text-anchor="middle">' + esc(levy.teksti) + '</text>';
