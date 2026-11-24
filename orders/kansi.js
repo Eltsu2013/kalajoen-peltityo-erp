@@ -15,6 +15,7 @@
 // Kuva: tasoaihio, ETU vasemmalla ja VASEN alhaalla (kuten piippusivuilla; kansi alapuolelta katsottuna, Tomi 23.11.).
 // Versiot: v1 23.11.2026. v2 24.11.2026: karvauksen profiilikuvake ei pieneen reikään (reiän muoto näkyy).
 //          v3 24.11.2026: reikien mitat oletuksena muuratusta piipusta (Tomi), hupun pinta kuvaan omana viivanaan.
+//          v4 24.11.2026: piippusivujen kortti kiinni oletuksena, reikien määrä otsikossa, aukeaa muokattaessa jos reikiä.
 (function () {
   const PI = globalThis.KPT_PIIPPU || (typeof require === 'function' ? require('./piippu-laskenta.js') : null);
   const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -314,10 +315,16 @@
     q('kpk-mitattu-paikka').addEventListener('click', e => { if (e.target.closest('[data-poista-mitattu]')) { mitattu = null; muutos(); } });
     return {
       arvo: () => { const k = lom.arvo(); if (mitattu) k.mitattu = mitattu; return k; },
-      aseta: k => { lom.aseta(k); const m = k && k.mitattu; mitattu = m && (Number(m.lev) > 0 || Number(m.syv) > 0) ? { lev: m.lev || null, syv: m.syv || null } : null; },
+      aseta: k => {
+        lom.aseta(k); const m = k && k.mitattu; mitattu = m && (Number(m.lev) > 0 || Number(m.syv) > 0) ? { lev: m.lev || null, syv: m.syv || null } : null;
+        if (o.kortti && k && ((Array.isArray(k.reiat) && k.reiat.length) || mitattu)) o.kortti.open = true;   // kortti kiinni oletuksena, auki jos reikiä
+      },
       piirra: (k, vals) => {
         if (o.kortti) o.kortti.style.display = k ? '' : 'none';
         if (!k) return;
+        // Reikien määrä otsikkoon, koska kortti on oletuksena kiinni (24.11.2026)
+        const ots = o.kortti && o.kortti.querySelector('summary'), n = k.reiat.length;
+        if (ots) ots.textContent = 'Kansi ja reiät' + (n ? ' · ' + n + (n === 1 ? ' reikä' : ' reikää') : ' · ei reikiä');
         try {
           const v = vals || {};
           lom.oletusT((v.ylaTyyppi || 'ulos') === 'ulos' && Number(v.ylareunaV) > 0 ? Number(v.ylareunaV) : 20);

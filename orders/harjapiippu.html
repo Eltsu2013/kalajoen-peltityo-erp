@@ -128,8 +128,8 @@
 
   .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; }
   .kuva-card svg { width: 100%; display: block; }
-  /* Etukuva (23.11.2026): avattava kortti, tila muistetaan (localStorage kpt_etukuva_auki) */
-  .etukuva-kortti { margin-top: 12px; }
+  /* Etukuva (23.11.2026): avattava kortti, ylimpänä ja auki sivua avattaessa (24.11.2026) */
+  .etukuva-kortti { margin-top: 0; }
   .etukuva-kortti > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; list-style: none; }
   .etukuva-kortti > summary::-webkit-details-marker { display: none; }
   .etukuva-kortti > summary::before { content: "▸ "; }
@@ -432,6 +432,12 @@
 <div class="content">
   <div class="varoitus" id="varoitus"></div>
 
+  <!-- Etukuva ylimpänä ja aina auki sivua avattaessa (Tomi 24.11.2026: juuren mitat täytetään ensin) -->
+  <details class="kuva-card etukuva-kortti" id="etukuva-kortti" open>
+    <summary>Piippu edestä · juuren mitat</summary>
+    <div id="etukuva"></div>
+  </details>
+
   <div class="kuva-card">
     <div id="sivukuva"></div>
     <div class="kulmat">
@@ -442,12 +448,8 @@
     </div>
   </div>
 
-  <details class="kuva-card etukuva-kortti" id="etukuva-kortti" open>
-    <summary>Piippu edestä · juuren mitat</summary>
-    <div id="etukuva"></div>
-  </details>
-
-  <details class="kuva-card etukuva-kortti" id="kansi-kortti" open>
+  <!-- Kansi ja reiät oletuksena kiinni (Tomi 24.11.2026); aukeaa muokattaessa, jos kannessa on reikiä -->
+  <details class="kuva-card etukuva-kortti" id="kansi-kortti">
     <summary>Kansi ja reiät</summary>
     <div id="kansi-sisalto"></div>
   </details>
@@ -481,7 +483,7 @@
 <script src="pellit.js?v=3"></script>
 <script src="piippu-laskenta.js?v=10"></script>
 <script src="piippu-levitys.js?v=16"></script>
-<script src="kansi.js?v=3"></script>
+<script src="kansi.js?v=4"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
@@ -610,8 +612,8 @@ function piirraEtukuva(v) {
 (function () {
   const k = document.getElementById('etukuva-kortti');
   if (!k) return;
-  try { if (localStorage.getItem('kpt_etukuva_auki') === '0') k.open = false; } catch (e) {}
-  k.addEventListener('toggle', () => { try { localStorage.setItem('kpt_etukuva_auki', k.open ? '1' : '0'); } catch (e) {} });
+  // Tomi 24.11.2026: etukuva aina auki sivua avattaessa (ennen kiinni-tila muistettiin, kpt_etukuva_auki)
+  try { localStorage.removeItem('kpt_etukuva_auki'); } catch (e) {}
 })();
 
 // Kansi ja reiät (yhteinen kansi.js, laskenta piippu-laskenta.js, vaihe 7b 23.11.2026)
