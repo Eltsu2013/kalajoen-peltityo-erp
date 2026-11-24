@@ -5,214 +5,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Huuva — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <!-- Huuva ERP-sivuna (vaihe 8.1, 24.11.2026): siirretty testisivulta testit/huuva/savuhuuva-mockup.html (v16) ilman
-     laskennan muutoksia. Kirjautuminen, valikko, yhteinen työkortti (tyokortti.js). Suunnitelma claude/vaihe8_sovitteet_suunnitelma.md. -->
+     laskennan muutoksia. Uusi ulkoasu (ulkoasuremontti R1 osa 2, 24.11.2026) Kartio-sivun mallilla: tyyli.css + teema.js,
+     välilehdet Huuva | Kartio, tulos ylimpänä, kuvat vaalealla paperilla. Testit testit/huuva/ lukevat tämän sivun
+     ENSIMMÄISEN inline-skriptin (ja HTML:n korttirakenteen), joten sivulle ei saa lisätä inline-skriptiä ennen sitä.
+     Suunnitelmat: claude/vaihe8_sovitteet_suunnitelma.md ja claude/ulkoasu_remontti_suunnitelma.md. -->
+<link rel="stylesheet" href="tyyli.css?v=1">
+<script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <style>
-  :root {
-    --bg:         #29231a;
-    --panel:      #332b20;
-    --panel2:     #3d3426;
-    --border:     #56442e;
-    --accent:     #f97316;
-    --accent-dim: #ea6c0a;
-    --amber:      #e8a020;
-    --text:       #ededf0;
-    --text-dim:   #9595a0;
-    --input-bg:   #3a3020;
-    --danger:     #e84040;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-  }
-  /* ── HEADER ja valikko (sama kuin laskin.html) ── */
-  header {
-    background: #1e1810; border-bottom: 2px solid var(--accent); padding: 10px 16px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100;
-  }
-  header h1 { font-size: 16px; font-weight: 500; }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: var(--panel2); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 4px; cursor: pointer; letter-spacing: 0.04em; min-height: 36px;
-  }
-  .nav-btn:hover { background: var(--input-bg); }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,0.5); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px 4px; }
-  .nav-item { display: block; padding: 10px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text); text-decoration: none; transition: background 0.1s; }
-  .nav-item:hover { background: rgba(249,115,22,0.13); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-  @media (max-width: 700px) { .wrap { padding: 16px 12px 48px !important; } }
+  /* Huuvan omat tyylit: vain tyyli.css:n muuttujia (molemmat ulkoasut). Yhteinen pohja tulee tyyli.css:stä. */
+  .valilehti-rivi { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .valilehti-rivi .kpt-tabs { margin: 0; }
+  .k-toolbar { display: flex; gap: 8px; }
+  .oikea { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+  #syotteet { min-width: 0; }
 
-  .wrap { max-width: 1240px; margin: 0 auto; padding: 28px 24px 64px; }
-  .eyebrow {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 4px;
-  }
-  .h1 { font-size: 22px; font-weight: 600; margin-bottom: 20px; }
+  /* Avattavat kortit: yhteenveto näkyy otsikossa vain kiinni olevalla kortilla */
+  details.kpt-kortti > summary .yv { text-transform: none; letter-spacing: 0; font-family: var(--kpt-mono); font-weight: 400; font-size: 12px; color: var(--kpt-teksti); margin-left: 6px; overflow-wrap: anywhere; }
+  details.kpt-kortti[open] > summary .yv { display: none; }
+  .k-sisalto { margin-top: 14px; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(440px, 100%), 1fr)); gap: 20px; align-items: start; }
-
-  .card {
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 8px; padding: 24px;
-  }
-  .card-head {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 16px; gap: 8px;
-  }
-  .name-input {
-    background: none; border: none; color: var(--accent);
-    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600;
-    letter-spacing: 0.05em; text-transform: uppercase; padding: 0; flex: 1;
-  }
-  .delete-btn {
-    background: var(--danger); color: #fff; border: none; border-radius: 6px;
-    padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    cursor: pointer; white-space: nowrap;
-  }
-
-  .field { margin-bottom: 14px; }
-  .field label {
-    display: block; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    color: var(--text-dim); margin-bottom: 6px;
-  }
-  .field input {
-    background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
-    font-family: 'IBM Plex Mono', monospace; font-size: 16px; padding: 0 10px;
-    border-radius: 6px; width: 100%; height: 48px;
-  }
-  .field select, .rt-row select {
-    background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
-    font-family: 'IBM Plex Mono', monospace; font-size: 15px; padding: 0 10px;
-    border-radius: 6px; width: 100%; height: 44px;
-  }
-  .field select:focus, .rt-row select:focus { outline: none; border-color: var(--accent); }
-  .rt-row { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
-  .rt-row.off { opacity: 0.4; }
-  .rt-row .fl-name { padding-bottom: 0; }
-  .field input:focus { outline: none; border-color: var(--accent); }
-  .field input:disabled { opacity: 0.5; }
-
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .field-row .field { margin-bottom: 0; }
-  .field-row.c3 { grid-template-columns: 1fr 1fr 1fr; }
-  .field-row.c4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .mini-label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
-  .field-row.c4 .field input { padding: 0 6px; font-size: 15px; }
-
-  /* Avattavat kortit */
-  details[data-kortti] > summary { list-style: none; cursor: pointer; display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; min-height: 36px; padding: 4px 0; -webkit-tap-highlight-color: transparent; }
-  details[data-kortti] > summary::-webkit-details-marker { display: none; }
-  details[data-kortti] > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-  .k-nuoli::before { content: '▸'; display: inline-block; width: 12px; color: var(--accent); font-size: 12px; }
-  details[open] > summary > .k-nuoli::before { content: '▾'; }
-  .k-otsikko { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); }
-  .k-yhteenveto { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); flex: 1; min-width: 0; overflow-wrap: anywhere; }
-  details[open] > summary > .k-yhteenveto { display: none; }
-  details[open] > summary { margin-bottom: 10px; }
-  details.kortti-osa { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
-  details.kortti-osa:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
-  details.kortti:not([open]) > summary { margin-bottom: 0; }
-  .k-toolbar { display: flex; gap: 8px; margin: -8px 0 16px; }
-  .k-nappi { background: var(--panel); border: 1px solid var(--border); color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
-
-  .section-title {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim);
-    border-top: 1px solid var(--border); padding-top: 14px; margin-bottom: 12px;
-  }
-
-  .seg-group { display: flex; gap: 6px; }
-  .seg-group.multi { flex-wrap: wrap; align-content: flex-start; }
-  .seg-group.multi .seg-btn { flex: 1 1 110px; }
-  .seg-btn {
-    flex: 1; background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 13px;
-    padding: 10px 8px; border-radius: 6px; cursor: pointer; text-align: center; transition: all 0.15s;
-  }
-  .seg-btn.active { background: var(--accent); border-color: var(--accent); color: #1e1810; font-weight: 600; }
-  .seg-btn.disabled { opacity: 0.55; cursor: not-allowed; }
-  .seg-btn.disabled:hover { background: var(--input-bg); }
-
-  .hint {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim);
-    margin: 6px 0 0; line-height: 1.5;
-  }
-
+  .section-title { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kpt-himmea); border-top: 1px solid var(--kpt-reuna); padding-top: 12px; margin: 4px 0 10px; }
+  .section-title.eka { border-top: 0; padding-top: 0; }
+  .hint { font-size: 13px; color: var(--kpt-himmea); line-height: 1.5; margin: 6px 0 12px; }
+  .mini-label { display: block; font-size: 13px; color: var(--kpt-himmea); margin: 4px 0 6px; }
   .sub-fields { display: none; }
   .sub-fields.show { display: grid; }
 
-  /* Sivutaitosten taulukko */
-  .fl-row { display: grid; grid-template-columns: 58px 1fr 1fr; gap: 10px; align-items: end; margin-bottom: 12px; }
-  .fl-row.off { opacity: 0.4; }
-  .fl-name {
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
-    color: var(--accent); padding-bottom: 15px;
-  }
-  .fl-row .field { margin-bottom: 0; min-width: 0; }
-  .fl-row .field label { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Valintanapit (Tyyppi, Sijainti, Paneelit, Loveus) */
+  .seg-group { display: flex; gap: 6px; margin-bottom: 4px; }
+  .seg-group.multi { flex-wrap: wrap; }
+  .seg-group.multi .seg-btn { flex: 1 1 110px; }
+  .seg-btn { flex: 1; min-height: 44px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); color: var(--kpt-himmea); font-family: var(--kpt-fontti); font-size: 14px; padding: 8px; border-radius: 6px; cursor: pointer; }
+  .seg-btn:hover { border-color: var(--kpt-korostus); color: var(--kpt-teksti); }
+  .seg-btn.active { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
+  .seg-btn.disabled, .seg-btn.disabled:hover { opacity: 0.5; cursor: not-allowed; border-color: var(--kpt-reuna2); color: var(--kpt-himmea); }
 
-  .preview-box svg { width: 100%; height: auto; display: block; background: var(--panel2); border-radius: 6px; }
+  /* Kentät neljälle paneelille rinnakkain (kourun lisämitta) */
+  .kentat4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 8px; }
+  .kentat4 .kpt-kentta input { padding-left: 8px; padding-right: 4px; }
 
-  .result-box {
-    background: var(--panel2); border: 2px solid var(--accent); border-radius: 8px; padding: 20px 24px;
-  }
-  .result-title {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px;
-  }
-  .result-row {
-    display: flex; justify-content: space-between; gap: 12px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid rgba(86,68,46,0.5);
-  }
-  .result-row:last-of-type { border-bottom: none; }
-  .result-row span:first-child { color: var(--text-dim); }
+  /* Sivutaitosten, yläreunan ja alareunan taulukot (paneeli per rivi) */
+  .fl-row { display: grid; grid-template-columns: 54px minmax(0, 1fr) minmax(0, 1fr); gap: 0 10px; align-items: end; }
+  .fl-row.off, .rt-row.off { opacity: 0.4; }
+  .fl-name { font-family: var(--kpt-mono); font-size: 13px; font-weight: 600; color: var(--kpt-korostus); padding-bottom: 26px; }
+  .fl-row .kpt-kentta > label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fl-row .kpt-kentta select { margin-top: 4px; }
+  .rt-row { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; align-items: center; margin-bottom: 10px; }
+  .rt-row .fl-name { padding-bottom: 0; }
+  .rt-row select { width: 100%; min-height: 48px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 0 10px; font-family: var(--kpt-fontti); font-size: 16px; }
+  .rt-row select:focus { outline: none; border-color: var(--kpt-korostus); }
+
+  /* Tulos: isot palakoot, tarkemmat rivit, tulostusvalinnat */
+  .kpt-avainluku + .kpt-avainluku { margin-top: 8px; }
+  #result-rows .kpt-avainluku:last-of-type { margin-bottom: 14px; }
+  .result-row { display: flex; justify-content: space-between; gap: 12px; font-family: var(--kpt-mono); font-size: 12.5px; padding: 5px 0; border-bottom: 1px solid var(--kpt-reuna); }
+  .result-row span:first-child { color: var(--kpt-himmea); }
   .result-row span:last-child { text-align: right; }
-  .result-row.sub { padding-left: 14px; font-size: 11.5px; }
-  .result-row.sub span:last-child { color: var(--amber); }
-  .result-divider { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
-  .calc-btn {
-    width: 100%; background: var(--accent); border: none; border-radius: 8px; color: #fff;
-    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; padding: 12px; cursor: pointer;
-  }
-  .calc-btn:hover { background: var(--accent-dim); }
-  .error-msg {
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--danger); padding: 8px 0;
-  }
+  .result-row.sub { padding-left: 14px; font-size: 12px; }
+  .result-row.sub span:last-child { color: var(--kpt-huom); }
+  .error-msg { color: var(--kpt-virhe); font-size: 14px; padding: 8px 0; }
+  .tulostus { border-top: 1px solid var(--kpt-reuna); margin-top: 12px; padding-top: 12px; }
+  .chk-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--kpt-himmea); margin-bottom: 10px; cursor: pointer; }
+  .chk-row input { width: 18px; height: 18px; accent-color: var(--kpt-korostus); flex: none; }
+  .sel-mini { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); color: var(--kpt-teksti); font-family: var(--kpt-fontti); font-size: 14px; padding: 6px 8px; border-radius: 6px; max-width: 100%; }
+  #nappi-tulosta { margin-top: 4px; }
 
-  .right-col { display: flex; flex-direction: column; gap: 20px; }
-
-  .print-btn {
-    width: 100%; background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
-    font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 12px; border-radius: 6px;
-    cursor: pointer; margin-bottom: 10px;
-  }
-  .print-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-  .chk-row { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); margin-bottom: 8px; cursor: pointer; }
-  .chk-row input { margin-right: 6px; }
-  .sel-mini { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 4px 6px; border-radius: 4px; margin-left: 4px; }
-  .mk-ryhma { margin-bottom: 18px; }
-  .kaista-valinta { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); margin: 6px 0 8px; }
-  .mk-nimi { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); margin-bottom: 4px; font-weight: 600; }
+  /* Kuvat ja taulukot korteissa */
+  .kpt-piirros + .hint { margin-top: 8px; }
+  .mk-ryhma { margin-bottom: 18px; overflow-x: auto; }
+  .mk-ryhma .kpt-piirros { margin-bottom: 8px; }
+  .mk-nimi { font-family: var(--kpt-mono); font-size: 13px; font-weight: 600; color: var(--kpt-teksti); margin-bottom: 6px; }
+  .kaista-valinta { font-size: 13px; color: var(--kpt-himmea); margin: 6px 0 10px; }
+  #kaista-sisalto { overflow-x: auto; }
   .pt-wrap { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
-  .pt-table { border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
-  .pt-table th, .pt-table td { border: 1px solid var(--border); padding: 2px 10px; text-align: right; }
-  .pt-table th { color: var(--text-dim); font-weight: 600; }
+  .pt-table { border-collapse: collapse; font-family: var(--kpt-mono); font-size: 12px; margin-bottom: 6px; }
+  .pt-table th, .pt-table td { border: 1px solid var(--kpt-reuna); padding: 3px 10px; text-align: right; }
+  .pt-table th { color: var(--kpt-himmea); font-weight: 600; }
 
   /* Työkortit: pohja tyokortti.js (#tkk), alla Huuvan omat sisältötyylit. Taulukoiden tyylit kumoavat pohjan yleiset table-säännöt. */
   @media print {
@@ -252,47 +124,52 @@
   }
 </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Huuva</h1>
-  <div class="header-right"></div>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Huuva</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
 </header>
 
-<div class="wrap">
-  <div class="k-toolbar"><button type="button" class="k-nappi" onclick="avaaKaikki(true)">Avaa kaikki</button><button type="button" class="k-nappi" onclick="avaaKaikki(false)">Sulje kaikki</button></div>
+<main class="kpt-sisalto">
+  <div class="valilehti-rivi">
+  <div class="kpt-tabs">
+    <a class="kpt-tab aktiivinen" href="huuva.html">Huuva</a>
+    <a class="kpt-tab" href="kartio.html">Kartio</a>
+  </div>
+  <div class="k-toolbar"><button type="button" class="kpt-nappi pieni" onclick="avaaKaikki(true)">Avaa kaikki</button><button type="button" class="kpt-nappi pieni" onclick="avaaKaikki(false)">Sulje kaikki</button></div>
+  </div>
 
-  <div class="grid">
+  <div class="kpt-ruudukko">
 
-    <!-- VASEN: syöttölomake -->
-    <div class="card">
-      <div class="card-head">
-        <input type="text" class="name-input" value="Huuva 1">
-        <button type="button" class="delete-btn">Poista</button>
-      </div>
-
-      <details id="k-perus" data-kortti class="kortti-osa" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Huuvan mitat</span><span class="k-yhteenveto" id="ky-perus"></span></summary>
-      <div class="field">
+    <!-- VASEN: syötteet -->
+    <div id="syotteet">
+      <details id="k-perus" data-kortti class="kpt-kortti" open><summary>Huuvan mitat <span class="yv" id="ky-perus"></span></summary><div class="k-sisalto">
+      <div class="kpt-kentta"><label for="k-nimi">Työn nimi</label><input id="k-nimi" class="name-input" type="text" value="Huuva 1"></div>
+      <div class="kpt-kentta">
         <label>Tyyppi</label>
         <div class="seg-group multi">
           <button type="button" id="btn-vapaa" class="seg-btn active" onclick="setTyyppi('vapaa')">Vapaasti seisova</button>
           <button type="button" id="btn-seina" class="seg-btn" onclick="setTyyppi('seina')">Seinää vasten</button>
           <button type="button" id="btn-nurkka" class="seg-btn" onclick="setTyyppi('nurkka')">Nurkkaan</button>
         </div>
-        <p id="seina-hint" class="hint" style="display:none;">Takareuna pysyy suorana seinää vasten — Y-siirtymä lukitaan automaattisesti. Takapelti on oletuksena pois.</p>
-        <p id="nurkka-hint" class="hint" style="display:none;">Takareuna ja valittu sivu pysyvät suorina seinää vasten — siirtymät lukitaan automaattisesti. Seinää vasten olevat paneelit ovat oletuksena pois.</p>
+        <p id="seina-hint" class="kpt-vihje" style="display:none;">Takareuna pysyy suorana seinää vasten — Y-siirtymä lukitaan automaattisesti. Takapelti on oletuksena pois.</p>
+        <p id="nurkka-hint" class="kpt-vihje" style="display:none;">Takareuna ja valittu sivu pysyvät suorina seinää vasten — siirtymät lukitaan automaattisesti. Seinää vasten olevat paneelit ovat oletuksena pois.</p>
       </div>
 
-      <div id="nurkka-wrap" class="field" style="display:none;">
+      <div id="nurkka-wrap" class="kpt-kentta" style="display:none;">
         <label>Kumpi sivuseinä on nurkassa? (katsottuna edestä)</label>
         <div class="seg-group">
           <button type="button" id="btn-nk-vasen" class="seg-btn" onclick="setNurkka('vasen')">Vasen</button>
@@ -300,7 +177,7 @@
         </div>
       </div>
 
-      <div class="field">
+      <div class="kpt-kentta">
         <label>Muoto</label>
         <div class="seg-group">
           <button type="button" class="seg-btn active">Suorakulmio</button>
@@ -309,160 +186,157 @@
       </div>
 
       <div class="section-title">Alareuna (iso aukko)</div>
-      <div class="field-row">
-        <div class="field"><label>Leveys mm</label><input id="in-wb" type="number" value="800" oninput="renderAll()"></div>
-        <div class="field"><label>Syvyys mm</label><input id="in-db" type="number" value="500" oninput="renderAll()"></div>
+      <div class="kpt-kentat">
+        <div class="kpt-kentta"><label>Leveys mm</label><input id="in-wb" type="number" value="800" oninput="renderAll()"></div>
+        <div class="kpt-kentta"><label>Syvyys mm</label><input id="in-db" type="number" value="500" oninput="renderAll()"></div>
       </div>
 
       <div class="section-title">Yläreuna (kanavaan)</div>
-      <div class="field-row">
-        <div class="field"><label>Leveys mm</label><input id="in-wt" type="number" value="400" oninput="renderAll()"></div>
-        <div class="field"><label>Syvyys mm</label><input id="in-dt" type="number" value="250" oninput="renderAll()"></div>
+      <div class="kpt-kentat">
+        <div class="kpt-kentta"><label>Leveys mm</label><input id="in-wt" type="number" value="400" oninput="renderAll()"></div>
+        <div class="kpt-kentta"><label>Syvyys mm</label><input id="in-dt" type="number" value="250" oninput="renderAll()"></div>
       </div>
 
-      <div class="field-row">
-        <div class="field"><label>Korkeus mm</label><input id="in-h" type="number" value="500" oninput="renderAll()"></div>
-        <div class="field"><label>Huuvia kpl</label><input id="in-huuvia" type="number" value="1" min="1" step="1" oninput="renderAll()"></div>
+      <div class="kpt-kentat">
+        <div class="kpt-kentta"><label>Korkeus mm</label><input id="in-h" type="number" value="500" oninput="renderAll()"></div>
+        <div class="kpt-kentta"><label>Huuvia kpl</label><input id="in-huuvia" type="number" value="1" min="1" step="1" oninput="renderAll()"></div>
       </div>
 
-      <div id="sijainti-wrap" class="field">
+      <div id="sijainti-wrap" class="kpt-kentta">
         <label>Yläreunan sijainti</label>
         <div class="seg-group">
           <button type="button" id="btn-keski" class="seg-btn active" onclick="setSijainti('keski')">Keskitetty</button>
           <button type="button" id="btn-epakeskoinen" class="seg-btn" onclick="setSijainti('epakeskoinen')">Epäkeskoinen</button>
         </div>
       </div>
-      <div id="offset-fields" class="field-row sub-fields" style="margin-top:-4px; margin-bottom: 14px;">
-        <div class="field"><label id="dx-label">Siirtymä X mm</label><input id="in-dx" type="number" value="0" oninput="renderAll()"></div>
-        <div id="dy-field" class="field"><label>Siirtymä Y mm</label><input id="in-dy" type="number" value="0" oninput="renderAll()"></div>
+      <div id="offset-fields" class="kpt-kentat sub-fields">
+        <div class="kpt-kentta"><label id="dx-label">Siirtymä X mm</label><input id="in-dx" type="number" value="0" oninput="renderAll()"></div>
+        <div id="dy-field" class="kpt-kentta"><label>Siirtymä Y mm</label><input id="in-dy" type="number" value="0" oninput="renderAll()"></div>
       </div>
 
-      </details>
+      </div></details>
 
-      <details id="k-paneelit" data-kortti class="kortti-osa" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Valmistettavat paneelit</span><span class="k-yhteenveto" id="ky-paneelit"></span></summary>
-      <div class="field">
+      <details id="k-paneelit" data-kortti class="kpt-kortti" open><summary>Valmistettavat paneelit <span class="yv" id="ky-paneelit"></span></summary><div class="k-sisalto">
+      <div class="kpt-kentta">
         <div class="seg-group" id="paneeli-napit">
           <button type="button" id="pt-Etu" class="seg-btn active" aria-pressed="true" onclick="setPaneeli('Etu')">Etu</button>
           <button type="button" id="pt-Oikea" class="seg-btn active" aria-pressed="true" onclick="setPaneeli('Oikea')">Oikea</button>
           <button type="button" id="pt-Taka" class="seg-btn active" aria-pressed="true" onclick="setPaneeli('Taka')">Taka</button>
           <button type="button" id="pt-Vasen" class="seg-btn active" aria-pressed="true" onclick="setPaneeli('Vasen')">Vasen</button>
         </div>
-        <p class="hint">Napsauta paneeli pois, jos se puuttuu (esim. takapelti seinää vasten). Huuvan muoto lasketaan silti kaikkien neljän sivun mukaan. Oikea/vasen = katsottuna edestä.</p>
+        <p class="kpt-vihje">Napsauta paneeli pois, jos se puuttuu (esim. takapelti seinää vasten). Huuvan muoto lasketaan silti kaikkien neljän sivun mukaan. Oikea/vasen = katsottuna edestä.</p>
       </div>
 
-      </details>
+      </div></details>
 
-      <details id="k-sivut" data-kortti class="kortti-osa" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Sivutaitokset (mm)</span><span class="k-yhteenveto" id="ky-sivut"></span></summary>
+      <details id="k-sivut" data-kortti class="kpt-kortti" open><summary>Sivutaitokset (mm) <span class="yv" id="ky-sivut"></span></summary><div class="k-sisalto">
       <div id="fl-table"></div>
-      <p class="hint">0 = ei taitosta. Vasen/oikea reuna katsottuna huuvan ulkopuolelta (samoin kuin levityskuvassa). Taitos kääntyy naapuripaneelin sisäpintaa vasten — tai seinän suuntaiseksi, jos naapuria ei ole.</p>
+      <p class="kpt-vihje">0 = ei taitosta. Vasen/oikea reuna katsottuna huuvan ulkopuolelta (samoin kuin levityskuvassa). Taitos kääntyy naapuripaneelin sisäpintaa vasten — tai seinän suuntaiseksi, jos naapuria ei ole.</p>
 
-      </details>
+      </div></details>
 
-      <details id="k-yla" data-kortti class="kortti-osa" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Yläreunan taitos</span><span class="k-yhteenveto" id="ky-yla"></span></summary>
+      <details id="k-yla" data-kortti class="kpt-kortti" open><summary>Yläreunan taitos <span class="yv" id="ky-yla"></span></summary><div class="k-sisalto">
       <div id="yt-table"></div>
-      <div class="field" style="margin-top:6px;">
+      <div class="kpt-kentta" style="margin-top:6px">
         <label>Taitoksen leveys mm (sama kaikille)</label>
         <input id="in-yla" type="number" min="0" value="20" oninput="renderAll()">
       </div>
-      <p class="hint">Valitse jokaiselle paneelille yläreunan taitos: vaakasuora sisään (oletus, päälle tuleva pelti kiinnitetään siihen) tai pystysuoraan ylös (esim. putkea varten). Taitos lasketaan, vaikka päälle ei tulisi peltiä. Kanttausluku riippuu paneelin kaltevuudesta.</p>
+      <p class="kpt-vihje">Valitse jokaiselle paneelille yläreunan taitos: vaakasuora sisään (oletus, päälle tuleva pelti kiinnitetään siihen) tai pystysuoraan ylös (esim. putkea varten). Taitos lasketaan, vaikka päälle ei tulisi peltiä. Kanttausluku riippuu paneelin kaltevuudesta.</p>
 
-      <div class="field" style="margin-top:12px;">
+      <div class="kpt-kentta" style="margin-top:12px">
         <label>45° loveus sisäänpäin taitosten kulmissa (ylä- ja alareuna)</label>
         <div class="seg-group">
           <button type="button" id="btn-lov-on" class="seg-btn active" onclick="setLoveus(true)">Päällä</button>
           <button type="button" id="btn-lov-off" class="seg-btn" onclick="setLoveus(false)">Pois</button>
         </div>
-        <p class="hint">Kun viereisellä paneelilla on myös vaakasuora sisäänpäin taitos samassa reunassa, taitosten päät leikataan 45° kulmaan, jotta ne sopivat jiiriin. Muuten pää jää suoraksi.</p>
+        <p class="kpt-vihje">Kun viereisellä paneelilla on myös vaakasuora sisäänpäin taitos samassa reunassa, taitosten päät leikataan 45° kulmaan, jotta ne sopivat jiiriin. Muuten pää jää suoraksi.</p>
       </div>
 
-      </details>
+      </div></details>
 
-      <details id="k-ala" data-kortti class="kortti-osa" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Alareuna — jäykiste reunoittain</span><span class="k-yhteenveto" id="ky-ala"></span></summary>
+      <details id="k-ala" data-kortti class="kpt-kortti" open><summary>Alareuna — jäykiste reunoittain <span class="yv" id="ky-ala"></span></summary><div class="k-sisalto">
       <div id="rt-table"></div>
-      <p class="hint">Valitse jokaiselle paneelille alareunan käsittely. Mitat otetaan pellin reunasta taitokseen. Seinää vasten olevan reunan voi jättää tyhjäksi.</p>
+      <p class="kpt-vihje">Valitse jokaiselle paneelille alareunan käsittely. Mitat otetaan pellin reunasta taitokseen. Seinää vasten olevan reunan voi jättää tyhjäksi.</p>
 
       <div id="grp-kouru" style="margin-top:12px;">
-        <div class="section-title" style="border-top:none; padding-top:0; margin-bottom:8px;">Kouru</div>
-        <div class="field-row c3">
-          <div class="field"><label>Pohja mm</label><input id="in-kp" type="number" min="0" value="30" oninput="renderAll()"></div>
-          <div class="field"><label>Nousu mm</label><input id="in-kn" type="number" min="0" value="20" oninput="renderAll()"></div>
-          <div class="field"><label>Tupla mm</label><input id="in-kt" type="number" min="0" value="15" oninput="renderAll()"></div>
+        <div class="section-title eka">Kouru</div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label>Pohja mm</label><input id="in-kp" type="number" min="0" value="30" oninput="renderAll()"></div>
+          <div class="kpt-kentta"><label>Nousu mm</label><input id="in-kn" type="number" min="0" value="20" oninput="renderAll()"></div>
+          <div class="kpt-kentta"><label>Tupla mm</label><input id="in-kt" type="number" min="0" value="15" oninput="renderAll()"></div>
         </div>
         <div style="margin-top:12px;">
-          <label class="mini-label">Lisämitta mm (jiirin liitosvara), pellille kerrallaan</label>
-          <div class="field-row c4">
-            <div class="field"><label>Etu</label><input id="in-lm-Etu" type="number" min="0" value="0" oninput="renderAll()"></div>
-            <div class="field"><label>Oikea</label><input id="in-lm-Oikea" type="number" min="0" value="0" oninput="renderAll()"></div>
-            <div class="field"><label>Taka</label><input id="in-lm-Taka" type="number" min="0" value="0" oninput="renderAll()"></div>
-            <div class="field"><label>Vasen</label><input id="in-lm-Vasen" type="number" min="0" value="0" oninput="renderAll()"></div>
+          <span class="mini-label">Lisämitta mm (jiirin liitosvara), pellille kerrallaan</span>
+          <div class="kentat4">
+            <div class="kpt-kentta"><label>Etu</label><input id="in-lm-Etu" type="number" min="0" value="0" oninput="renderAll()"></div>
+            <div class="kpt-kentta"><label>Oikea</label><input id="in-lm-Oikea" type="number" min="0" value="0" oninput="renderAll()"></div>
+            <div class="kpt-kentta"><label>Taka</label><input id="in-lm-Taka" type="number" min="0" value="0" oninput="renderAll()"></div>
+            <div class="kpt-kentta"><label>Vasen</label><input id="in-lm-Vasen" type="number" min="0" value="0" oninput="renderAll()"></div>
           </div>
         </div>
-        <p class="hint">Pohja ulospäin vaakasuoraan, nousu pystyyn, tupla (180°) nousun päälle. Kulmassa, jossa viereisellä sivulla on myös kouru, päät leikataan jiiriin ja pidennetään viereisen kourun pohjan leveydellä. Pellin oma lisämitta pidentää sen omia jiiripäitä vielä tämän verran (liitosvara vain sille pellille, jolle se annetaan). Jos viereisellä sivulla ei ole kourua, pää jää suoraksi.</p>
+        <p class="kpt-vihje">Pohja ulospäin vaakasuoraan, nousu pystyyn, tupla (180°) nousun päälle. Kulmassa, jossa viereisellä sivulla on myös kouru, päät leikataan jiiriin ja pidennetään viereisen kourun pohjan leveydellä. Pellin oma lisämitta pidentää sen omia jiiripäitä vielä tämän verran (liitosvara vain sille pellille, jolle se annetaan). Jos viereisellä sivulla ei ole kourua, pää jää suoraksi.</p>
       </div>
 
       <div id="grp-sisaan" style="margin-top:12px;">
-        <div class="section-title" style="border-top:none; padding-top:0; margin-bottom:8px;">Sisäänpäin taitos</div>
-        <div class="field-row">
-          <div class="field"><label>Taitos mm</label><input id="in-sw" type="number" min="0" value="20" oninput="renderAll()"></div>
-          <div class="field"><label>Tupla mm (0 = ei)</label><input id="in-st" type="number" min="0" value="10" oninput="renderAll()"></div>
+        <div class="section-title eka">Sisäänpäin taitos</div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label>Taitos mm</label><input id="in-sw" type="number" min="0" value="20" oninput="renderAll()"></div>
+          <div class="kpt-kentta"><label>Tupla mm (0 = ei)</label><input id="in-st" type="number" min="0" value="10" oninput="renderAll()"></div>
         </div>
-        <p class="hint">Vaakasuora taitos huuvan sisään, päässä tupla (180°), ettei reuna viilla. Kulmissa taitoksen päät leikataan 45° loveuksella (ks. yläreunan taitoksen alla oleva valinta).</p>
+        <p class="kpt-vihje">Vaakasuora taitos huuvan sisään, päässä tupla (180°), ettei reuna viilla. Kulmissa taitoksen päät leikataan 45° loveuksella (ks. yläreunan taitoksen alla oleva valinta).</p>
       </div>
 
       <div id="grp-tuplat" style="margin-top:12px;">
-        <div class="section-title" style="border-top:none; padding-top:0; margin-bottom:8px;">Kaksi tuplaa päällekkäin</div>
-        <div class="field-row">
-          <div class="field"><label>1. tupla mm</label><input id="in-d1" type="number" min="0" value="15" oninput="renderAll()"></div>
-          <div class="field"><label>2. tupla mm</label><input id="in-d2" type="number" min="0" value="15" oninput="renderAll()"></div>
+        <div class="section-title eka">Kaksi tuplaa päällekkäin</div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label>1. tupla mm</label><input id="in-d1" type="number" min="0" value="15" oninput="renderAll()"></div>
+          <div class="kpt-kentta"><label>2. tupla mm</label><input id="in-d2" type="number" min="0" value="15" oninput="renderAll()"></div>
         </div>
-        <p class="hint">Reuna näyttää suoralta mutta on kestävä: kaksi 180° taitosta samaan suuntaan huuvan sisäpuolelle. Litteä lisäys = 1. + 2. tupla.</p>
+        <p class="kpt-vihje">Reuna näyttää suoralta mutta on kestävä: kaksi 180° taitosta samaan suuntaan huuvan sisäpuolelle. Litteä lisäys = 1. + 2. tupla.</p>
       </div>
-      </details>
+      </div></details>
     </div>
 
-    <!-- OIKEA: esikatselut + tulos -->
-    <div class="right-col">
-
-      <details id="k-hahmo" data-kortti class="card preview-box kortti" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Hahmotelma (edestä)</span><span class="k-yhteenveto" id="ky-hahmo"></span></summary>
-        <svg id="svg-hahmotelma" viewBox="0 0 320 220"></svg>
-      </details>
-
-      <details id="k-levitys" data-kortti class="card preview-box kortti" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Levityskuva (laskettu)</span><span class="k-yhteenveto" id="ky-levitys"></span></summary>
-        <svg id="svg-levitys" viewBox="0 0 520 330"></svg>
-        <p class="hint">Oranssi = paneeli, keltainen = taitos (leveys · kanttausluku). Piirretty ulkopuolelta katsottuna.</p>
-      </details>
-
-      <details id="k-merkinta" data-kortti class="card preview-box kortti" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Merkintäpisteet (aihion vasemmasta alakulmasta)</span><span class="k-yhteenveto" id="ky-merkinta"></span></summary>
-        <div id="merkinta-sisalto"></div>
-        <p class="hint">Pisteet ovat aihion ääriviivan kulmat. x = etäisyys aihion vasemmasta reunasta, y = aihion alareunasta (mm). Yhdistä pisteet numerojärjestyksessä. Katkoviiva = paneelin reuna / taitosviiva.</p>
-      </details>
-
-      <details id="k-kaista" data-kortti class="card preview-box kortti" open><summary><span class="k-nuoli"></span><span class="k-otsikko">Kaistat (pelti rullasta)</span><span class="k-yhteenveto" id="ky-kaista"></span></summary>
-        <div class="field-row c3">
-          <div class="field"><label>Pellin paksuus mm</label><input id="in-paksuus" type="number" value="0.6" step="0.1" min="0.1" oninput="renderAll()"></div>
-          <div class="field"><label>Rullan leveys mm</label><input id="in-rulla" type="number" value="1250" oninput="renderAll()"></div>
-          <div class="field"><label>Asettelu</label><select id="sel-asettelu" onchange="renderAll()"><option value="auto">Automaattinen</option><option value="lomitus">Lomitettu</option><option value="suora">Suora</option></select></div>
-        </div>
-        <div class="field"><label>Kaistan enimmäispituus mm (tyhjä = ei rajaa)</label><input id="in-maxpit" type="number" value="5000" step="100" oninput="renderAll()"></div>
-        <div id="kaista-sisalto"></div>
-        <p class="hint">Kaistan leveys = aihion korkeus, pituus = aihiot peräkkäin. Ohut pelti (enintään 0,8 mm) lomitetaan: joka toinen kappale käännetään 180°, ja kappaleet erotetaan yhdellä suoralla (viistolla) giljotiinileikkauksella. Leikkausten kohdat mitataan kaistan vasemmasta päästä, alareunasta ja yläreunasta. Alku ja Loppu ovat kaistan päiden leikkaukset. Harmaa kappale on käännetty. Paksu pelti leikataan suorina aihioina.</p>
-      </details>
-
-      <div class="result-box">
-        <div class="result-title">Peltitarve</div>
+    <!-- OIKEA: tulos ylimpänä (isot palakoot), sitten kuvat -->
+    <div class="oikea">
+      <div class="kpt-kortti" id="tulos-kortti">
+        <div class="kpt-kortti-otsikko">Peltitarve</div>
         <div id="result-rows"></div>
-        <hr class="result-divider">
-        <label class="chk-row"><input type="checkbox" id="chk-pisteet" checked> Merkintäpisteet-sivut mukaan (yksi lisäsivu per pala)</label>
-        <label class="chk-row"><input type="checkbox" id="chk-kaista" checked> Kaistasivu mukaan (rullan menekki, kaistakuva ja leikkausmitat)</label>
-        <label class="chk-row">Merkkaus: <select id="sel-puoli" class="sel-mini" onchange="renderAll()"><option value="ulko">pellin ulkopinnalle (kuten kuva)</option><option value="sisa">pellin sisäpinnalle (peilikuva)</option></select></label>
-        <button type="button" class="print-btn" onclick="tulostaTyokortit()">🖨 Tulosta työkortit</button>
-        <button type="button" class="calc-btn">+ Lisää tilaukseen</button>
+        <div class="tulostus">
+          <button type="button" class="kpt-nappi ensisijainen leve" id="nappi-tulosta" onclick="tulostaTyokortit()">🖨 Tulosta työkortit</button>
+          <label class="chk-row" style="margin-top:12px"><input type="checkbox" id="chk-pisteet" checked> Merkintäpisteet-sivut mukaan (yksi lisäsivu per pala)</label>
+          <label class="chk-row"><input type="checkbox" id="chk-kaista" checked> Kaistasivu mukaan (rullan menekki, kaistakuva ja leikkausmitat)</label>
+          <label class="chk-row" style="margin-bottom:0">Merkkaus: <select id="sel-puoli" class="sel-mini" onchange="renderAll()"><option value="ulko">pellin ulkopinnalle (kuten kuva)</option><option value="sisa">pellin sisäpinnalle (peilikuva)</option></select></label>
+        </div>
       </div>
 
+      <details id="k-hahmo" data-kortti class="kpt-kortti" open><summary>Hahmotelma (edestä) <span class="yv" id="ky-hahmo"></span></summary><div class="k-sisalto">
+        <div class="kpt-piirros paperi"><svg id="svg-hahmotelma" viewBox="0 0 320 220"></svg></div>
+      </div></details>
+
+      <details id="k-levitys" data-kortti class="kpt-kortti" open><summary>Levityskuva (laskettu) <span class="yv" id="ky-levitys"></span></summary><div class="k-sisalto">
+        <div class="kpt-piirros paperi"><svg id="svg-levitys" viewBox="0 0 520 330"></svg></div>
+        <p class="kpt-vihje">Paksu viiva = paneeli, harmaa = taitos (leveys · kanttausluku). Piirretty ulkopuolelta katsottuna.</p>
+      </div></details>
+
+      <details id="k-merkinta" data-kortti class="kpt-kortti" open><summary>Merkintäpisteet (aihion vasemmasta alakulmasta) <span class="yv" id="ky-merkinta"></span></summary><div class="k-sisalto">
+        <div id="merkinta-sisalto"></div>
+        <p class="kpt-vihje">Pisteet ovat aihion ääriviivan kulmat. x = etäisyys aihion vasemmasta reunasta, y = aihion alareunasta (mm). Yhdistä pisteet numerojärjestyksessä. Katkoviiva = paneelin reuna / taitosviiva.</p>
+      </div></details>
+
+      <details id="k-kaista" data-kortti class="kpt-kortti" open><summary>Kaistat (pelti rullasta) <span class="yv" id="ky-kaista"></span></summary><div class="k-sisalto">
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label>Pellin paksuus mm</label><input id="in-paksuus" type="number" value="0.6" step="0.1" min="0.1" oninput="renderAll()"></div>
+          <div class="kpt-kentta"><label>Rullan leveys mm</label><input id="in-rulla" type="number" value="1250" oninput="renderAll()"></div>
+          <div class="kpt-kentta"><label>Asettelu</label><select id="sel-asettelu" onchange="renderAll()"><option value="auto">Automaattinen</option><option value="lomitus">Lomitettu</option><option value="suora">Suora</option></select></div>
+        </div>
+        <div class="kpt-kentta"><label>Kaistan enimmäispituus mm (tyhjä = ei rajaa)</label><input id="in-maxpit" type="number" value="5000" step="100" oninput="renderAll()"></div>
+        <div id="kaista-sisalto"></div>
+        <p class="kpt-vihje">Kaistan leveys = aihion korkeus, pituus = aihiot peräkkäin. Ohut pelti (enintään 0,8 mm) lomitetaan: joka toinen kappale käännetään 180°, ja kappaleet erotetaan yhdellä suoralla (viistolla) giljotiinileikkauksella. Leikkausten kohdat mitataan kaistan vasemmasta päästä, alareunasta ja yläreunasta. Alku ja Loppu ovat kaistan päiden leikkaukset. Harmaa kappale on käännetty. Paksu pelti leikataan suorina aihioina.</p>
+      </div></details>
     </div>
   </div>
-</div>
-
+</main>
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
@@ -618,10 +492,10 @@
     PANEL_NAMES.forEach(n => {
       html += '<div class="fl-row" id="fl-row-' + n + '">'
         + '<div class="fl-name">' + n + '</div>'
-        + '<div class="field"><label id="fl-lbl-' + n + '-L">Vasen reuna</label>'
+        + '<div class="kpt-kentta"><label id="fl-lbl-' + n + '-L">Vasen reuna</label>'
         + '<input id="fl-' + n + '-L" type="number" min="0" value="0" oninput="renderAll()">'
         + '<select id="fl-dir-' + n + '-L" style="display:none;margin-top:4px" onchange="setSeinaSuunta(\'' + n + '\',\'L\',this.value)"><option value="ulos">Seinätaitos ulos</option><option value="sisaan">Seinätaitos sisään (piilossa)</option></select></div>'
-        + '<div class="field"><label id="fl-lbl-' + n + '-R">Oikea reuna</label>'
+        + '<div class="kpt-kentta"><label id="fl-lbl-' + n + '-R">Oikea reuna</label>'
         + '<input id="fl-' + n + '-R" type="number" min="0" value="0" oninput="renderAll()">'
         + '<select id="fl-dir-' + n + '-R" style="display:none;margin-top:4px" onchange="setSeinaSuunta(\'' + n + '\',\'R\',this.value)"><option value="ulos">Seinätaitos ulos</option><option value="sisaan">Seinätaitos sisään (piilossa)</option></select></div>'
         + '</div>';
@@ -709,7 +583,7 @@
   // ---------- Piirto ----------
 
   function dimLabelH(x1, x2, y, text) {
-    return '<text x="' + ((x1+x2)/2) + '" y="' + y + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="#c9c4b8" text-anchor="middle">' + text + '</text>';
+    return '<text x="' + ((x1+x2)/2) + '" y="' + y + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + TEEMA_PAPERI.mitta + '" text-anchor="middle">' + text + '</text>';
   }
 
   function drawHahmotelma(s) {
@@ -727,19 +601,19 @@
     const py = h => baseY - h*scale;
 
     let c = '';
-    c += '<line x1="' + px(0) + '" y1="' + baseY + '" x2="' + px(0) + '" y2="' + py(H) + '" stroke="#56442e" stroke-width="1" stroke-dasharray="3,3"/>';
+    c += '<line x1="' + px(0) + '" y1="' + baseY + '" x2="' + px(0) + '" y2="' + py(H) + '" stroke="' + TEEMA_PAPERI.himmea + '" stroke-width="1" stroke-dasharray="3,3"/>';
     const pts = [[px(-Wb/2), baseY], [px(Wb/2), baseY], [px(dx+Wt/2), py(H)], [px(dx-Wt/2), py(H)]]
       .map(p => p.join(',')).join(' ');
-    c += '<polygon points="' + pts + '" fill="none" stroke="#f97316" stroke-width="1.75"/>';
+    c += '<polygon points="' + pts + '" fill="none" stroke="' + TEEMA_PAPERI.paneeli + '" stroke-width="1.75"/>';
     c += dimLabelH(px(-Wb/2), px(Wb/2), baseY + 14, Math.round(Wb) + ' mm');
     c += dimLabelH(px(dx-Wt/2), px(dx+Wt/2), py(H) - 9, Math.round(Wt) + ' mm');
     const midY = (baseY + py(H)) / 2;
-    c += '<text x="12" y="' + midY + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="#c9c4b8" text-anchor="middle" transform="rotate(-90 12 ' + midY + ')">' + Math.round(H) + ' mm</text>';
+    c += '<text x="12" y="' + midY + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + TEEMA_PAPERI.mitta + '" text-anchor="middle" transform="rotate(-90 12 ' + midY + ')">' + Math.round(H) + ' mm</text>';
     svg.innerHTML = c;
   }
 
   function drawLevityskuva(panels) {
-    document.getElementById('svg-levitys').innerHTML = levitysSvgSisalto(panels, 520, 330, TEEMA_RUUTU);
+    document.getElementById('svg-levitys').innerHTML = levitysSvgSisalto(panels, 520, 330, TEEMA_PAPERI);
   }
 
   // ---------- Pistemerkinnät (v11) ----------
@@ -762,7 +636,7 @@
       const as = palaAsennot(krM, p, peili);
       const nimi = p.name + kplTeksti(p);
       html += '<div class="mk-ryhma"><div class="mk-nimi">' + esc(nimi) + ' · ' + aihioPisteet(p, peili).pisteet.length + ' pistettä' + (peili ? ' · peilikuva (sisäpinta)' : '') + '</div>'
-        + '<svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">' + merkintaSvgSisalto(p, 520, 380, TEEMA_RUUTU, peili, edustavaLevy(as)) + '</svg>'
+        + '<div class="kpt-piirros paperi"><svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">' + merkintaSvgSisalto(p, 520, 380, TEEMA_PAPERI, peili, edustavaLevy(as)) + '</svg></div>'
         + pisteTaulu(p, 'pt-table', peili)
         + (as.length ? '<p class="hint" style="margin:8px 0 4px"><b>Palat kaistalla</b> (mistä nollakohta löytyy pellistä leikkauksen jälkeen):</p>' + asentoTaulu(as, 'pt-table') : '') + '</div>';
     });
@@ -805,6 +679,9 @@
 
   const TEEMA_RUUTU_KAISTA = Object.assign({}, TEEMA_RUUTU, { leikkaus: '#ef4444' });
   const TEEMA_PAPERI_KAISTA = Object.assign({}, TEEMA_PAPERI, { leikkaus: '#000000' });
+  // Ruudun kaistakuva: vaaleassa ulkoasussa paperi (punainen viilto), muuten tumma (teema.js: html[data-teema="vaalea"])
+  function vaaleaUlkoasu() { return typeof document !== 'undefined' && !!document.documentElement && document.documentElement.dataset.teema === 'vaalea'; }
+  function kaistaTeemaRuudulle() { return vaaleaUlkoasu() ? Object.assign({}, TEEMA_PAPERI, { leikkaus: '#dc2626' }) : TEEMA_RUUTU_KAISTA; }
 
 
   // Kaistat-kortin luku ruudun kentistä
@@ -846,7 +723,7 @@
       const vbH = Math.round(Math.min(330, Math.max(110, 520 * k.h / k.pituus + 60)));
       html += '<div class="mk-ryhma"><div class="mk-nimi">' + esc(kaistaOtsikko(k, i + 1)) + '</div>'
         + (k.pituus >= KAISTA_HANKALA_PIT && k.h >= KAISTA_HANKALA_LEV ? '<p class="hint" style="margin:0 0 4px">Pitkä ja leveä kaista on hankala käsitellä. Voit vähentää kappaleita kaistalle tai pienentää enimmäispituutta.</p>' : '')
-        + '<svg viewBox="0 0 520 ' + vbH + '" xmlns="http://www.w3.org/2000/svg">' + kaistaSvgSisalto(k, 520, vbH, TEEMA_RUUTU_KAISTA) + '</svg>'
+        + '<div class="kpt-piirros' + (vaaleaUlkoasu() ? ' paperi' : '') + '"><svg viewBox="0 0 520 ' + vbH + '" xmlns="http://www.w3.org/2000/svg">' + kaistaSvgSisalto(k, 520, vbH, kaistaTeemaRuudulle()) + '</svg></div>'
         + kaistaLeikkausTaulu(k, 'pt-table') + '</div>';
     });
     html += kaistaYhteenveto(kr, 'pt-table');
@@ -949,17 +826,16 @@
   }
   if (TK && typeof window !== 'undefined' && window.addEventListener) TK.asenna(huuvanTyokortti);
 
-  // Valikko (sama kuin muilla sivuilla)
-  function toggleNav(e) {
-    e.stopPropagation();
-    document.getElementById('navDropdown').classList.toggle('open');
-  }
-  if (typeof window !== 'undefined' && window.addEventListener) document.addEventListener('click', () => { const d = document.getElementById('navDropdown'); if (d) d.classList.remove('open'); });
 
   function renderResult(s, panels) {
     const cont = document.getElementById('result-rows');
     let html = '';
     let totalAreaMM2 = 0;
+    // Verstaalla tarvittava luku: aihion koko palaryhmittäin (taitokset mukana)
+    panels.forEach(p => {
+      html += '<div class="kpt-avainluku"><span class="nimi">' + esc(p.name) + ' · ' + p.kpl + ' kpl · aihio (leveys × korkeus)</span>'
+        + '<span class="arvo">' + Math.round(p.w) + ' × ' + Math.round(p.h) + '</span><span class="yks">mm</span></div>';
+    });
     panels.forEach(p => {
       totalAreaMM2 += p.w * p.h * p.kpl;
       html += '<div class="result-row"><span>' + p.name + kplTeksti(p) + '</span><span>'
@@ -1112,6 +988,7 @@
   buildYlaTable();
   asetaEsiasetus();
   alustaKortit();
+  if (typeof window !== 'undefined' && document.addEventListener) document.addEventListener('kpt-teema', renderAll);
   renderAll();
 </script>
 </body>
