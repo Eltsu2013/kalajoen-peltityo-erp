@@ -248,15 +248,20 @@ function laskePellit(v) {
 function kiilaHtml(v) {
   try {
     if (!v || !v.kiilaPaalla || !window.KPT_PIIPPU_LEVITYS) return '';
-    const t = KPT_PIIPPU_LEVITYS.laskeKaikki(v, { juuret: false, kansi: false, hattu: false });
+    const L = KPT_PIIPPU_LEVITYS;
+    // Harjapiippu (vaihe 5b, 24.11.2026): oma laskenta ja kuva; varoitukset (laskettu, kiero lape) näkyviin
+    const harja = onHarja(v);
+    const t = harja ? L.laskeKaikkiHarja(v, { juuret: false, kansi: false, hattu: false }) : L.laskeKaikki(v, { juuret: false, kansi: false, hattu: false });
+    if (harja) t.virhe = (t.virheet || [])[0];
     if (!t.kiila && !t.virhe) return '';
-    const kuva = KPT_PIIPPU_LEVITYS.kuvaYlhaalta(v);
+    const kuva = harja ? L.harjaKuvaYlhaalta(v) : L.kuvaYlhaalta(v);
+    const varoit = (t.varoitukset || []).map(x => `<p style="color:${/^LASKETTU/.test(x) ? 'var(--red,#ef4444);font-weight:600' : '#f59e0b'}">⚠ ${x.replace(/</g, '&lt;')}</p>`).join('');
     return `<div class="section-card" style="margin-bottom:16px">
       <h3>Kiila / mutkapiippu</h3>
       <div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
         ${kuva ? `<div style="flex:0 1 320px;min-width:0;max-width:100%">${kuva}</div>` : ''}
         <div style="flex:1 1 220px;font-size:13px;line-height:1.5">
-          ${t.virhe ? `<p style="color:var(--red,#ef4444)">${t.virhe}</p>` : ''}
+          ${t.virhe ? `<p style="color:var(--red,#ef4444)">${t.virhe}</p>` : ''}${varoit}
           <p>Hupun palat on laskettu piipun todellisesta muodosta. Kansi ja hattu leveimmän ja pisimmän kohdan mukaan.</p>
           <p><b>Juuret</b> on laskettu pisimmän sivun mukaan: muotoile ja mittaa ne piipun mukaan.</p>
         </div>
@@ -857,8 +862,11 @@ function rakennaPiipunTyokortti(valinnat) {
     <div class="tkk-kuvat"><div class="tkk-kuva">${kuva ? T.paperille(T.rajaa(kuva)) : ''}</div><div class="tkk-kuva">${etu ? T.paperille(etu) : ''}</div></div>`;
   if (v && v.kiilaPaalla && window.KPT_PIIPPU_LEVITYS) {
     try {
-      const ylh = KPT_PIIPPU_LEVITYS.kuvaYlhaalta(v);
-      if (ylh) h += `<h2>Kiila / mutkapiippu ylhäältä<span>juuret pisimmän sivun mukaan, muotoile paikan päällä</span></h2><div class="tkk-kuva" style="max-width:90mm">${T.paperille(ylh)}</div>`;
+      const L = KPT_PIIPPU_LEVITYS, harja = onHarja(v);
+      const ylh = harja ? L.harjaKuvaYlhaalta(v) : L.kuvaYlhaalta(v);
+      // harjapiipun lasketut korkeudet myös paperille (Tomi 24.11.2026: selvä varoitus, ettei arvo ole mitattu)
+      const m = harja ? L.harjaMalli(v) : null, lask = m && m.lasketut.length ? `<p><b>LASKETTU, EI MITATTU:</b> ${e(m.lasketut.map(x => x.nimi + ' ' + Math.round(x.arvo) + ' mm').join(', '))} (kuvassa ≈). Tarkista paikan päällä.</p>` : '';
+      if (ylh) h += `<h2>${harja ? 'Harjapiippu' : 'Kiila / mutkapiippu'} ylhäältä<span>juuret pisimmän sivun mukaan, muotoile paikan päällä</span></h2><div class="tkk-kuva" style="max-width:${harja ? 110 : 90}mm">${T.paperille(ylh)}</div>${lask}`;
     } catch (err) { console.warn('Kiilan kuva:', err); }
   }
 
