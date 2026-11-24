@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v16 (24.11.2026): tyhjät vasemman puolen korkeudet lasketaan katon tasosta (varoitus LASKETTU, EI MITATTU).
 // v15 (24.11.2026): harjaKuvaYlhaalta, harjaSivukuva oikeasta sivusta kiilan kanssa.
 // v14 (24.11.2026): harjapiipun kiila / mutka (harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila; vaihe 5b).
 // v12 (23.11.2026): harjapiipun etukappaleet 1–3 osana (etuJako1 / etuJako2).
@@ -710,6 +711,8 @@
       korkeudet: [tai(v.korkE1V, k1), tai(v.korkE1O, k1), tai(v.korkE2O, k2), tai(v.korkE2V, k2)],
       harjaKork: { oikea: tai(v.korkHO, kH), vasen: tai(v.korkHV, kH) },
       kiila: { etu: tai(v.kiilaEtu1, 0), oikea: tai(v.kiilaOikea, 0), taka: tai(v.kiilaEtu2, 0), vasen: tai(v.kiilaVasen, 0) },
+      // Vasemman puolen korkeudet, jotka käyttäjä on syöttänyt. Tyhjät lasketaan katon tasosta (harjaMalli, Tomi 24.11.2026).
+      annettu: { E1V: on && luku(v.korkE1V) !== null, HV: on && luku(v.korkHV) !== null, E2V: on && luku(v.korkE2V) !== null },
     };
   }
   function onSuoraHarja(k) {
@@ -738,7 +741,8 @@
     const C = ylapaa(k.muoto);
     if (!C) return null;
     if (!(k.harja.oikea > 0 && k.harja.oikea < k.muoto.oikea && k.harja.vasen > 0 && k.harja.vasen < k.muoto.vasen)) return null;   // harja sivulle
-    const H = k.korkeudet, h2 = (Number(v.huplis) || 0) / 2, zt = -(Number(v.vahennys) || 0);
+    const H = k.korkeudet.slice(), HK = { oikea: k.harjaKork.oikea, vasen: k.harjaKork.vasen };
+    const h2 = (Number(v.huplis) || 0) / 2, zt = -(Number(v.vahennys) || 0);
     const pit2 = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]);
     const seina = (j, lisa) => {
       const p = C[j], q = C[(j + 1) % 4], l = pit2(p, q);
@@ -746,15 +750,47 @@
       const kal = (k.kiila[SEINAT[j]] || 0) / Hhi;
       return [n[0], n[1], kal, n[0] * p[0] + n[1] * p[1] + lisa];
     };
-    const pS = [0, 1, 2, 3].map(j => seina(j, 0)), hS = [0, 1, 2, 3].map(j => seina(j, h2));
-    const ala = [0, 1, 2, 3].map(i => ratkaise3([pS[(i + 3) % 4], pS[i], [0, 0, 1, -H[i]]]));
+    let pS = [0, 1, 2, 3].map(j => seina(j, 0));
+    const kulma = i => Hh => ratkaise3([pS[(i + 3) % 4], pS[i], [0, 0, 1, -Hh]]);
     // Harjan kohta piipun sivuseinällä: matka etu 1:n kulmasta sivua pitkin (yläpäässä), seinän tasossa korkeudella −H
     const harjaPiste = (j, alku, loppu, matka, Hh) => {
       const P = C[alku], Q = C[loppu], t = matka / (pit2(P, Q) || 1), pl = pS[j];
       const xy = [P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t];
       return [xy[0] + pl[0] * pl[2] * Hh, xy[1] + pl[1] * pl[2] * Hh, -Hh];
     };
-    const hO = harjaPiste(1, 1, 2, k.harja.oikea, k.harjaKork.oikea), hV = harjaPiste(3, 0, 3, k.harja.vasen, k.harjaKork.vasen);
+    const hOF = Hh => harjaPiste(1, 1, 2, k.harja.oikea, Hh), hVF = Hh => harjaPiste(3, 0, 3, k.harja.vasen, Hh);
+    // Tyhjät vasemman puolen korkeudet lasketaan katon tasosta (Tomi 24.11.2026: laskettu ehdotus, selvä varoitus):
+    //  - harja vasen: annetun vasemman kulman lappeesta, muuten harja vaakasuora (sama kuin oikealla)
+    //  - etu 1 vasen / etu 2 vasen: oman lappeen tasosta (oikea kulma + harjan kaksi pistettä)
+    // Kiilan kallistus riippuu seinän korkeimmasta kulmasta, joten lasketaan muutaman kierroksen.
+    const taso3 = (a, b, c) => { const n = vcross(vsub(b, a), vsub(c, a)); return Math.hypot(n[0], n[1], n[2]) < 1e-9 ? null : { n, d: vdot(n, a) }; };
+    const osuma = (F, ts, oletus) => {                  // korkeus, jolla piste F(H) osuu tasolle ts
+      if (!ts) return oletus;
+      const s0 = vdot(ts.n, F(0)) - ts.d, s1 = vdot(ts.n, F(1000)) - ts.d;
+      return Math.abs(s1 - s0) < 1e-12 ? oletus : 1000 * s0 / (s0 - s1);
+    };
+    const ann = k.annettu || { E1V: true, HV: true, E2V: true };
+    if (!(ann.E1V && ann.HV && ann.E2V)) {
+      for (let kierros = 0; kierros < 6; kierros++) {
+        pS = [0, 1, 2, 3].map(j => seina(j, 0));
+        if (!ann.HV) {
+          if (ann.E1V) HK.vasen = osuma(hVF, taso3(kulma(0)(H[0]), kulma(1)(H[1]), hOF(HK.oikea)), HK.oikea);
+          else if (ann.E2V) HK.vasen = osuma(hVF, taso3(kulma(2)(H[2]), kulma(3)(H[3]), hOF(HK.oikea)), HK.oikea);
+          else HK.vasen = HK.oikea;
+        }
+        if (!ann.E1V) H[0] = osuma(kulma(0), taso3(kulma(1)(H[1]), hOF(HK.oikea), hVF(HK.vasen)), H[0]);
+        if (!ann.E2V) H[3] = osuma(kulma(3), taso3(kulma(2)(H[2]), hOF(HK.oikea), hVF(HK.vasen)), H[3]);
+      }
+      pS = [0, 1, 2, 3].map(j => seina(j, 0));
+    }
+    // Lasketut arvot, jotka poikkeavat suoran piipun oletuksesta (näytetään varoituksena ja kuvassa ≈-merkillä)
+    const lasketut = [];
+    [['E1V', 'korkE1V', 'etu 1 vasen', H[0], k.korkeudet[0]], ['HV', 'korkHV', 'harja vasen', HK.vasen, k.harjaKork.vasen], ['E2V', 'korkE2V', 'etu 2 vasen', H[3], k.korkeudet[3]]]
+      .forEach(([a, kentta, nimi, arvo, oletus]) => { if (!ann[a] && isFinite(arvo) && Math.abs(arvo - oletus) > 0.5) lasketut.push({ kentta, nimi, arvo }); });
+    if ([H[0], H[3], HK.vasen].some(x => !isFinite(x) || x <= 0)) return null;
+    const hS = [0, 1, 2, 3].map(j => seina(j, h2));
+    const ala = [0, 1, 2, 3].map(i => kulma(i)(H[i]));
+    const hO = hOF(HK.oikea), hV = hVF(HK.vasen);
     const lape1 = tasoPisteista([ala[0], ala[1], hO, hV]), lape2 = tasoPisteista([ala[2], ala[3], hO, hV]);
     if (!lape1 || !lape2) return null;
     const katto = i => i < 2 ? lape1.rivi : lape2.rivi;
@@ -772,10 +808,12 @@
       return { nimi: SEINAT[j], n, cen: pts.reduce((a, p) => vadd(a, vscale(p, 1 / pts.length)), [0, 0, 0]), Dc: T[j], Cc: T[jj], pts };
     });
     const varoitukset = [];
+    if (lasketut.length) varoitukset.push('LASKETTU, EI MITATTU: ' + lasketut.map(x => x.nimi + ' ' + mm(x.arvo) + ' mm').join(', ')
+      + '. Laskettu katon tasosta muista korkeuksista. Tarkista mittaamalla, tai syötä mitattu arvo.');
     [[lape1, 1], [lape2, 2]].forEach(([l, nro]) => {
       if (l.heitto > 5) varoitukset.push('Puolen ' + nro + ' lape on kiero: korkeudet heittävät noin ' + Math.round(l.heitto) + ' mm (yksi kohta ei osu samaan tasoon muiden kanssa). Tarkista korkeudet; laskenta käyttää keskimääräistä kattoa.');
     });
-    return { kiila: k, C, ala, harjaPiippu: { oikea: hO, vasen: hV }, lape1, lape2, B, T, BH, tahkot, varoitukset };
+    return { kiila: k, C, ala, korkeudet: H, harjaKork: HK, lasketut, harjaPiippu: { oikea: hO, vasen: hV }, lape1, lape2, B, T, BH, tahkot, varoitukset };
   }
 
   // Tasaisen seinän avaus: yläreuna x-akselille (vasen pää origossa, ulkopuolelta katsottuna), paneeli alapuolella.
@@ -896,7 +934,8 @@
     const ala = Math.max(Y(m.C[1]), Y(m.C[2])), yla = Math.min(Y(m.C[0]), Y(m.C[3]));
     // oikea sivu alhaalla, vasen ylhäällä: lähimpänä harjan tiedot, uloimpana sivun pituus
     c += t(X(hp.oikea), ala + 14, 'harja ' + mm(k.harjaKork.oikea) + ' · ' + mm(k.harja.oikea), 'middle', '#f5b942');
-    c += t(X(hp.vasen), yla - 8, 'harja ' + mm(k.harjaKork.vasen) + ' · ' + mm(k.harja.vasen), 'middle', '#f5b942');
+    const laskettu = kentta => m.lasketut.some(x => x.kentta === kentta) ? '≈' : '';
+    c += t(X(hp.vasen), yla - 8, 'harja ' + laskettu('korkHV') + mm(m.harjaKork.vasen) + ' · ' + mm(k.harja.vasen), 'middle', '#f5b942');
     c += t((X(m.C[1]) + X(m.C[2])) / 2, ala + 29, 'oikea ' + mm(k.muoto.oikea) + kk('oikea'));
     c += t((X(m.C[0]) + X(m.C[3])) / 2, yla - 23, 'vasen ' + mm(k.muoto.vasen) + kk('vasen'));
     const etuX = Math.min(X(m.C[0]), X(m.C[1])) - 34, takaX = Math.max(X(m.C[2]), X(m.C[3])) + 34, keskiY = (Y(m.C[0]) + Y(m.C[1])) / 2;
@@ -905,14 +944,15 @@
     // korkeudet kulmissa
     m.C.forEach((p, i) => {
       const vas = i < 2, ylos2 = i === 0 || i === 3;
-      c += t(X(p) + (vas ? -5 : 5), Y(p) + (ylos2 ? -5 : 13), mm(k.korkeudet[i]), vas ? 'end' : 'start', '#f5b942', 9.5);
+      const lk = i === 0 ? laskettu('korkE1V') : i === 3 ? laskettu('korkE2V') : '';
+      c += t(X(p) + (vas ? -5 : 5), Y(p) + (ylos2 ? -5 : 13), lk + mm(m.korkeudet[i]), vas ? 'end' : 'start', lk ? '#ef4444' : '#f5b942', 9.5);
     });
     // suora kulma
     const Kc = m.C[k.muoto.suora], A = m.C[(k.muoto.suora + 1) % 4], Bq = m.C[(k.muoto.suora + 3) % 4], r = 12 / sc;
     const ua = unit(sub(A, Kc)), ub = unit(sub(Bq, Kc));
     c += '<polyline points="' + [add(Kc, mul(ua, r)), add(add(Kc, mul(ua, r)), mul(ub, r)), add(Kc, mul(ub, r))].map(P).join(' ') + '" fill="none" stroke="#f5b942" stroke-width="1.4"/>';
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;background:#1a2332;border-radius:6px">' + c
-      + t(6, H - 18, 'ylhäältä, etu 1 vasemmalla · kulmissa korkeudet', 'start', '#6b8fa8', 9)
+      + t(6, H - 18, 'ylhäältä, etu 1 vasemmalla · kulmissa korkeudet' + (m.lasketut.length ? ' · ≈ = laskettu' : ''), 'start', '#6b8fa8', 9)
       + t(6, H - 7, '⌐ suora kulma · harja: korkeus · matka etu 1:stä', 'start', '#6b8fa8', 9) + '</svg>';
   }
 

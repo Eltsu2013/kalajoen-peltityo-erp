@@ -26,6 +26,8 @@
   .field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 2px; }
   input, select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 6px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
   input::placeholder { color: #3b5568; }
+  input.laskettu::placeholder { color: var(--red); font-weight: 600; }
+  .varoitus.laskettu { font-weight: 600; }
   .valmiit { display: flex; flex-wrap: wrap; gap: 6px; }
   .valmiit button, .nappi { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 5px 9px; border-radius: 3px; font-size: 12px; cursor: pointer; font-family: inherit; }
   .valmiit button:hover, .nappi:hover { border-color: var(--accent); }
@@ -85,7 +87,7 @@
     <div class="kortti">
       <h3 style="display:flex;justify-content:space-between;align-items:center">Kiila / mutka <button class="nappi" id="kiilaNappi" type="button">Kiila / mutka</button></h3>
       <div id="kiilaKentat">
-        <p class="ohje">Oikea sivu = suora 1 + suora 2. Harjan kohta oikealla = suora 1. Etu 1 alhaalla kuvassa ylhäältä tarkoittaa: seiso etu 1:n edessä, oikea on oikealla kädellä.</p>
+        <p class="ohje">Oikea sivu = suora 1 + suora 2. Harjan kohta oikealla = suora 1. Tyhjä vasemman puolen korkeus lasketaan katon tasosta (punainen ≈ laskettu, ei mitattu). Etu 1 alhaalla kuvassa ylhäältä tarkoittaa: seiso etu 1:n edessä, oikea on oikealla kädellä.</p>
         <h4>Yläpään muoto</h4>
         <div class="rivi2">
           <div class="field"><label>Vasen sivu</label><input type="number" id="vasenPituus"></div>
@@ -130,7 +132,7 @@
 <script src="../../orders/geom.js?v=1"></script>
 <script src="../../orders/pellit.js?v=3"></script>
 <script src="../../orders/piippu-laskenta.js?v=10"></script>
-<script src="../../orders/piippu-levitys.js?v=15"></script>
+<script src="../../orders/piippu-levitys.js?v=16"></script>
 <script>
 const L = KPT_PIIPPU_LEVITYS;
 // Harjapiippu-sivun oletukset (orders/harjapiippu.html), joita mockupissa ei muuteta
@@ -140,16 +142,14 @@ const VAKIO = { tyyppi: 'harjapiippu', poimu: 20, ylit1V: 150, ylit1O: 150, ylit
 const PERUS = ['lev1', 'lev2', 'suora1', 'suora2', 'kork1', 'korkH', 'kork2', 'sivutJako', 'etuJako1', 'etuJako2'];
 const KIILA = ['vasenPituus', 'suoraKulma', 'harjaVasen', 'korkE1V', 'korkHV', 'korkE2V', 'korkE1O', 'korkHO', 'korkE2O', 'kiilaEtu1', 'kiilaEtu2', 'kiilaVasen', 'kiilaOikea'];
 const SUORA = { lev1: 400, lev2: '', suora1: 450, suora2: 750, kork1: 760, korkH: 550, kork2: 900, sivutJako: '1', etuJako1: '1', etuJako2: '' };
-// Vino harja: harja vaakasuora, joten harjasta kauempana olevat kulmat matalammalla (lappeiden tasoista laskettuna)
-const vinoA = 100 / 400, vinoE1 = Math.round(760 + vinoA * (210 / 450) * 400), vinoE2 = Math.round(900 - vinoA * (350 / 750) * 400);
 const ESIM = {
   suora: { kiila: false },
   kiila: { kiila: true, kiilaOikea: -20 },
   kapenee: { kiila: true, kiilaEtu1: -15, kiilaEtu2: -15, kiilaVasen: -15, kiilaOikea: -15 },
   mutka: { kiila: true, korkE1V: 790, korkHV: 580, korkE2V: 930 },
-  vino: { kiila: true, harjaVasen: 550, korkE1V: vinoE1, korkE2V: vinoE2 },
-  kiero: { kiila: true, korkE1V: 800 },
-  lyhyt: { kiila: true, vasenPituus: 1170, suoraKulma: '0', sivutJako: '2', korkE2V: 886 },   // etu 2 vasen 30 mm lähempänä harjaa → 14 mm matalampi
+  vino: { kiila: true, harjaVasen: 550 },                     // korkeudet tyhjinä → lasketaan (harja vaakasuora)
+  kiero: { kiila: true, korkE1V: 800, korkHV: 550 },          // lappeen kaikki korkeudet annettu, yksi ei sovi
+  lyhyt: { kiila: true, vasenPituus: 1170, suoraKulma: '0', sivutJako: '2' },   // etu 2 vasen lasketaan (lähempänä harjaa)
 };
 let kiilaPaalla = false;
 const el = id => document.getElementById(id);
@@ -177,11 +177,17 @@ function vals() {
   if (kiilaPaalla) KIILA.forEach(k => { v[k] = num(k); });
   return v;
 }
-// Tyhjien kiilakenttien vihjeeksi suoran piipun arvo
+// Tyhjien kiilakenttien vihjeeksi suoran piipun arvo, vasemman puolen korkeuksiin laskettu arvo (punaisella ≈)
 function vihjeet(v) {
   const k = L.harjaKiilaTiedot(Object.assign({}, v, { kiilaPaalla: false }));
   const vh = { vasenPituus: k.muoto.oikea, harjaVasen: k.harja.oikea, korkE1V: k.korkeudet[0], korkE1O: k.korkeudet[1], korkE2O: k.korkeudet[2], korkE2V: k.korkeudet[3], korkHV: k.harjaKork.vasen, korkHO: k.harjaKork.oikea };
-  Object.keys(vh).forEach(id => { el(id).placeholder = vh[id]; });
+  const m = kiilaPaalla ? L.harjaMalli(v) : null;
+  if (m) { vh.korkE1V = m.korkeudet[0]; vh.korkE2V = m.korkeudet[3]; vh.korkHV = m.harjaKork.vasen; }
+  Object.keys(vh).forEach(id => {
+    const lask = m && m.lasketut.some(x => x.kentta === id);
+    el(id).placeholder = lask ? '≈ ' + Math.round(vh[id]) : Math.round(vh[id]);
+    el(id).classList.toggle('laskettu', !!lask);
+  });
 }
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 function laske() {
@@ -190,7 +196,7 @@ function laske() {
   const t = L.laskeKaikkiHarja(v);
   let viestit = '';
   (t.virheet || []).forEach(x => { viestit += '<div class="virhe">⚠ ' + esc(x) + '</div>'; });
-  (t.varoitukset || []).forEach(x => { viestit += '<div class="varoitus">⚠ ' + esc(x) + '</div>'; });
+  (t.varoitukset || []).forEach(x => { viestit += '<div class="varoitus' + (/^LASKETTU/.test(x) ? ' laskettu' : '') + '">⚠ ' + esc(x) + '</div>'; });
   el('viestit').innerHTML = viestit ? '<div class="kortti">' + viestit + '</div>' : '';
   el('ylhaalta').innerHTML = kiilaPaalla ? L.harjaKuvaYlhaalta(v) || '<p class="ohje">Kuvaa ei voi piirtää: mitat eivät sovi yhteen.</p>' : '<p class="ohje">Kuva ylhäältä näkyy, kun kiila / mutka on päällä.</p>';
   el('sivukuva').innerHTML = L.harjaSivukuva(v);

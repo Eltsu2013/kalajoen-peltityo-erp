@@ -69,11 +69,23 @@ ok(near(lV.mitat.oikea - lO.mitat.vasen, 30, 1) && near(lV.mitat.vasen - lO.mita
 const e1m = L.levitaTaso(pala(tm, 'Huppu etu 1'));
 ok(near(e1m.mitat.vasen - e1m.mitat.oikea, 30, 1), 'mutka: etu 1 vasemmasta reunasta noin 30 mm korkeampi (vino alareuna)');
 
-// ---- 5. Kiero lape: vain yksi kulma korkeampi → varoitus
-const tv = L.harjaKiilaPalat(K({ korkE1V: 790 }));
+// ---- 5. Kiero lape: kaikki lappeen neljä korkeutta annettu, yksi kulma 30 mm korkeampi → varoitus
+const tv = L.harjaKiilaPalat(K({ korkE1V: 790, korkHV: 550 }));
 ok(tv && tv.varoitukset.length === 1 && /Puolen 1 lape on kiero: korkeudet heittävät noin 30 mm/.test(tv.varoitukset[0]),
-  'kiero lape (etu 1 vasen 30 mm korkeampi, muut ennallaan): varoitus puolelle 1, heitto 30 mm');
-ok(L.harjaKiilaPalat(K({ korkE1V: 763 })).varoitukset.length === 0, 'pieni heitto (3 mm): ei varoitusta');
+  'kiero lape (etu 1 vasen 30 mm korkeampi, harja annettu ennallaan): varoitus puolelle 1, heitto 30 mm');
+ok(L.harjaKiilaPalat(K({ korkE1V: 763, korkHV: 550 })).varoitukset.length === 0, 'pieni heitto (3 mm): ei varoitusta');
+
+// ---- 5b. Tyhjät vasemman puolen korkeudet lasketaan katon tasosta (Tomi 24.11.2026: laskettu ehdotus + selvä varoitus)
+const ml = L.harjaMalli(K({ korkE1V: 790 }));
+const laskettu = (m, kentta) => (m.lasketut.find(x => x.kentta === kentta) || {}).arvo;
+ok(near(laskettu(ml, 'korkHV'), 580, 1e-6) && near(laskettu(ml, 'korkE2V'), 970, 1e-6) && ml.lasketut.length === 2,
+  'vain etu 1 vasen 790 annettu: harja vasen 580 ja etu 2 vasen 970 lasketaan lappeiden tasoista (vasen puoli 30 korkeampi)');
+ok(ml.varoitukset.length === 1 && /^LASKETTU, EI MITATTU: harja vasen 580 mm, etu 2 vasen 970 mm/.test(ml.varoitukset[0]), 'lasketuista arvoista varoitus "LASKETTU, EI MITATTU"');
+const ms = L.harjaMalli(K({ kiilaOikea: -20 }));
+ok(ms.lasketut.length === 0 && ms.varoitukset.length === 0, 'kiila ilman korkeuksia: lasketut samat kuin suorassa → ei varoitusta');
+const ly = L.harjaMalli(K({ vasenPituus: 1175 }));
+ok(near(laskettu(ly, 'korkE2V'), 940 - 20 * 390 / 750, 0.01) && ly.lape2.heitto < 0.01 && ly.varoitukset.length === 1,
+  'vasen sivu 20 lyhyempi: etu 2 vasen lasketaan ' + laskettu(ly, 'korkE2V').toFixed(1) + ' (lähempänä harjaa → korkeammalla katolla), ei kieroutta');
 
 // ---- 6. Vino harja: vasemmalla sivulla harja 100 mm kauempana etu 1:stä. Harja on vaakasuora, joten tasaisilla lappeilla
 // harjasta kauempana olevat kulmat ovat matalammalla: korkeudet lasketaan lappeiden tasoista (oikea puoli ennallaan).
@@ -84,7 +96,13 @@ const hO = L.levitaTaso(pala(th, 'Huppu sivut oikea')).harja, hV = L.levitaTaso(
 ok(th && th.varoitukset.length === 0, 'vino harja, korkeudet tasaisista lappeista: ei kieroutta');
 ok(near(hO.x, 2.5 + 5 + 445 - 5 * ax, 1e-6) && near(hV.x, 2.5 + 5 + 650 - 5 * ax, 1e-6),
   'vino harja: oikealla harja ' + hO.x.toFixed(2) + ' mm etu 1 -päästä, vasemmalla ' + hV.x.toFixed(2) + ' mm etu 2 -päästä (huppu 5 mm ulompana siirtää harjaa 1,3 mm)');
-ok(L.harjaKiilaPalat(K({ harjaVasen: 545 })).varoitukset.length === 2, 'vino harja mutta korkeudet ennallaan: kumpikaan lape ei voi olla tasainen → varoitus molemmille');
+// Sama vino harja korkeudet tyhjinä: lasketaan samat korkeudet ja samat palat, varoituksena LASKETTU
+const tl6 = L.harjaKiilaPalat(K({ harjaVasen: 545 }));
+ok(near(laskettu(tl6.malli, 'korkE1V'), vinoH.korkE1V, 1e-6) && near(laskettu(tl6.malli, 'korkE2V'), vinoH.korkE2V, 1e-6)
+  && tl6.varoitukset.length === 1 && /^LASKETTU/.test(tl6.varoitukset[0]),
+  'vino harja korkeudet tyhjinä: etu 1 vasen ja etu 2 vasen lasketaan samoiksi kuin tasoista laskettuna (harja vaakasuora)');
+ok(th.palat.every(pa => { const pb = pala(tl6, pa.nimi), a = L.levitaTaso(pa).p, b = L.levitaTaso(pb).p; return near(a.w, b.w, 1e-6) && near(a.h, b.h, 1e-6); }),
+  'vino harja: lasketuilla korkeuksilla samat palat kuin annetuilla');
 
 // ---- 7. Poikki harjalta kiilan kanssa
 const tj = L.harjaKiilaPalat(K({ sivutJako: 2, vasenPituus: 1175 }));
