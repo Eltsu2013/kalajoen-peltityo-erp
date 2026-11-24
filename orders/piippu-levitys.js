@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v15 (24.11.2026): harjaKuvaYlhaalta, harjaSivukuva oikeasta sivusta kiilan kanssa.
 // v14 (24.11.2026): harjapiipun kiila / mutka (harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila; vaihe 5b).
 // v12 (23.11.2026): harjapiipun etukappaleet 1–3 osana (etuJako1 / etuJako2).
 // v11 (23.11.2026): jakosauma seuraa hupun saumaa (KPT_PIIPPU.harjaJakosauma).
@@ -608,7 +609,10 @@
   function harjaSivukuva(vals, opts) {
     const m = vals || {}, o = opts || {};
     const n = x => Number(x) || 0;
-    const suora1 = n(m.suora1), suora2 = n(m.suora2), kork1 = n(m.kork1), kork2 = n(m.kork2), korkH = n(m.korkH);
+    // Kiila / mutka (vaihe 5b, Tomi 24.11.): sivukuva oikeasta sivusta, korkeudet sen kulmista ja harjalta
+    const kt = m.kiilaPaalla ? harjaKiilaTiedot(m) : null, kiilaSivu = kt && !onSuoraHarja(kt);
+    const suora1 = n(m.suora1), suora2 = n(m.suora2);
+    const kork1 = kiilaSivu ? kt.korkeudet[1] : n(m.kork1), kork2 = kiilaSivu ? kt.korkeudet[2] : n(m.kork2), korkH = kiilaSivu ? kt.harjaKork.oikea : n(m.korkH);
     const C1 = '#f1f5f9', C2 = '#64748b', CI = '#38bdf8', CA = '#f59e0b', F = 'IBM Plex Mono, monospace';
     const txt = (x, y, t, a) => '<text x="' + x + '" y="' + y + '" fill="' + ((a && a.c) || C1) + '" font-size="' + ((a && a.s) || 12) + '" font-family="' + F + '" text-anchor="' + ((a && a.a) || 'middle') + '">' + esc(t) + '</text>';
     const mittaH = (x1, x2, y, t) => '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" stroke="' + CI + '" stroke-width="1"/>'
@@ -638,7 +642,7 @@
     const je1 = juuriEtu(x1, y1, xa, ya, n(m.k24_1), n(m.j25_1)), je2 = juuriEtu(x2, y2, xb, yb, n(m.k24_2), n(m.j25_2));
     h += je1.h + je2.h;
     let tod = null;
-    if (o.todelliset) { try { tod = PI.laskeHarjapiippu(m, { juuret: false, kansi: false, hattu: false }).geom; } catch (e) { tod = null; } }
+    if (o.todelliset && !kiilaSivu) { try { tod = PI.laskeHarjapiippu(m, { juuret: false, kansi: false, hattu: false }).geom; } catch (e) { tod = null; } }
     const korkeus = (x, yAla, arvo, a, todArvo) => {
       const yy = (yTop + yAla) / 2;
       return txt(x, yy, mm(arvo), { a }) + (tod ? txt(x, yy + 15, '↳ ' + mm(todArvo), { a, c: CI, s: 10.5 }) : '');
@@ -654,6 +658,7 @@
     const yM = Math.max(ya, yb, y1, y2, je1.yAla, je2.yAla) + 24;
     h += mittaH(x1, xH, yM, mm(suora1)) + mittaH(xH, x2, yM, mm(suora2)) + mittaH(x1, x2, yM + 30, 'koko ' + mm(suora1 + suora2));
     if (tod) h += txt(W - 6, H - 6, '↳ = hupun todellinen korkeus ilman taitoksia', { a: 'end', c: CI, s: 10 });
+    if (kiilaSivu) h += txt(6, H - 6, 'oikea sivu · vasen sivu kuvassa ylhäältä', { a: 'start', c: C2, s: 10.5 });
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;height:auto;display:block">' + h + '</svg>';
   }
 
@@ -867,6 +872,50 @@
     return { juuret, muut: huppu.concat(khT.muut), virheet: [], kansi: khT.kansi, geom: perus.geom, kiila: true, malli: m, symmetrinen: t.symmetrinen, varoitukset: t.varoitukset };
   }
 
+  // Harjapiippu ylhäältä (kiilan syöttöön, vaihe 5b): etu 1 vasemmalla ja etu 2 oikealla kuten sivukuvassa, oikea sivu alhaalla.
+  // Yläpää vihreällä, katon kohta piipun seinillä katkoviivalla, harja keltaisella, kulmissa korkeudet, harjalla korkeus ja matka etu 1:stä.
+  function harjaKuvaYlhaalta(vals) {
+    const m = harjaMalli(vals);
+    if (!m) return '';
+    const k = m.kiila, hp = m.harjaPiippu;
+    const kaikki = m.C.concat(m.ala.map(p => [p[0], p[1]]));
+    const xs = kaikki.map(p => p[0]), ys = kaikki.map(p => p[1]);
+    const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs), minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+    const W = 420, MX = 78, MY = 46;
+    const sc = Math.min((W - 2 * MX) / (maxY - minY || 1), (300 - 2 * MY) / (maxX - minX || 1));
+    const Hk = Math.round((maxX - minX) * sc + 2 * MY), H = Hk + 30;                 // korkeus kuvan mukaan, ei tyhjää tilaa
+    const X = p => W / 2 + (p[1] - (minY + maxY) / 2) * sc, Y = p => Hk / 2 + (p[0] - (minX + maxX) / 2) * sc;
+    const P = p => X(p).toFixed(1) + ',' + Y(p).toFixed(1);
+    const F = 'IBM Plex Mono, monospace';
+    const t = (x, y, s, a, c, kok) => '<text x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" font-size="' + (kok || 10.5) + '" font-family="' + F + '" fill="' + (c || '#e2eef5') + '" text-anchor="' + (a || 'middle') + '">' + esc(s) + '</text>';
+    const katto = [m.ala[0], m.ala[1], hp.oikea, m.ala[2], m.ala[3], hp.vasen];
+    let c = '<polygon points="' + katto.map(P).join(' ') + '" fill="none" stroke="#6b8fa8" stroke-dasharray="3,3"/>'
+      + '<polygon points="' + m.C.map(P).join(' ') + '" fill="rgba(34,197,94,.10)" stroke="#22c55e" stroke-width="1.6"/>'
+      + '<line x1="' + X(hp.oikea).toFixed(1) + '" y1="' + Y(hp.oikea).toFixed(1) + '" x2="' + X(hp.vasen).toFixed(1) + '" y2="' + Y(hp.vasen).toFixed(1) + '" stroke="#f5b942" stroke-width="1.6" stroke-dasharray="6,3"/>';
+    const kk = n => k.kiila[n] ? ' (' + (k.kiila[n] > 0 ? '+' : '') + mm(k.kiila[n]) + ')' : '';
+    const ala = Math.max(Y(m.C[1]), Y(m.C[2])), yla = Math.min(Y(m.C[0]), Y(m.C[3]));
+    // oikea sivu alhaalla, vasen ylhäällä: lähimpänä harjan tiedot, uloimpana sivun pituus
+    c += t(X(hp.oikea), ala + 14, 'harja ' + mm(k.harjaKork.oikea) + ' · ' + mm(k.harja.oikea), 'middle', '#f5b942');
+    c += t(X(hp.vasen), yla - 8, 'harja ' + mm(k.harjaKork.vasen) + ' · ' + mm(k.harja.vasen), 'middle', '#f5b942');
+    c += t((X(m.C[1]) + X(m.C[2])) / 2, ala + 29, 'oikea ' + mm(k.muoto.oikea) + kk('oikea'));
+    c += t((X(m.C[0]) + X(m.C[3])) / 2, yla - 23, 'vasen ' + mm(k.muoto.vasen) + kk('vasen'));
+    const etuX = Math.min(X(m.C[0]), X(m.C[1])) - 34, takaX = Math.max(X(m.C[2]), X(m.C[3])) + 34, keskiY = (Y(m.C[0]) + Y(m.C[1])) / 2;
+    c += '<text transform="translate(' + etuX.toFixed(1) + ' ' + keskiY.toFixed(1) + ') rotate(-90)" font-size="10.5" font-family="' + F + '" fill="#e2eef5" text-anchor="middle">etu 1 ' + mm(k.muoto.etu) + esc(kk('etu')) + '</text>';
+    c += '<text transform="translate(' + takaX.toFixed(1) + ' ' + ((Y(m.C[2]) + Y(m.C[3])) / 2).toFixed(1) + ') rotate(90)" font-size="10.5" font-family="' + F + '" fill="#e2eef5" text-anchor="middle">etu 2 ' + mm(k.muoto.taka) + esc(kk('taka')) + '</text>';
+    // korkeudet kulmissa
+    m.C.forEach((p, i) => {
+      const vas = i < 2, ylos2 = i === 0 || i === 3;
+      c += t(X(p) + (vas ? -5 : 5), Y(p) + (ylos2 ? -5 : 13), mm(k.korkeudet[i]), vas ? 'end' : 'start', '#f5b942', 9.5);
+    });
+    // suora kulma
+    const Kc = m.C[k.muoto.suora], A = m.C[(k.muoto.suora + 1) % 4], Bq = m.C[(k.muoto.suora + 3) % 4], r = 12 / sc;
+    const ua = unit(sub(A, Kc)), ub = unit(sub(Bq, Kc));
+    c += '<polyline points="' + [add(Kc, mul(ua, r)), add(add(Kc, mul(ua, r)), mul(ub, r)), add(Kc, mul(ub, r))].map(P).join(' ') + '" fill="none" stroke="#f5b942" stroke-width="1.4"/>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;background:#1a2332;border-radius:6px">' + c
+      + t(6, H - 18, 'ylhäältä, etu 1 vasemmalla · kulmissa korkeudet', 'start', '#6b8fa8', 9)
+      + t(6, H - 7, '⌐ suora kulma · harja: korkeus · matka etu 1:stä', 'start', '#6b8fa8', 9) + '</svg>';
+  }
+
   // ---------- Kuva ylhäältä (kiilan syöttöön) ----------
   // Yläpää vihreällä, katon kohta katkoviivalla, sivujen pituudet ja kiilat, kulmissa korkeudet, suora kulma merkittynä.
   function kuvaYlhaalta(vals) {
@@ -964,7 +1013,7 @@
   const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
     palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
     harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva,
-    harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila };
+    harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila, harjaKuvaYlhaalta };
   globalThis.KPT_PIIPPU_LEVITYS = KPT_PIIPPU_LEVITYS;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU_LEVITYS;
 })();

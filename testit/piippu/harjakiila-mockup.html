@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harjapiipun kiila / mutka — mockup</title>
+<!-- Vaihe 5b, 24.11.2026 (suunnitelma claude/harjapiippu_kiila_suunnitelma.md). Mockup OIKEALLA laskennalla: lataa samat
+     yhteiset tiedostot kuin harjapiippu.html. Ei kirjautumista eikä tallennusta. Kun Tomi on hyväksynyt, kentät siirretään
+     harjapiippu.html:ään (vaihe C). -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0a0f1a; --bg2: #111827; --bg3: #1a2332; --text: #e2eef5; --text2: #6b8fa8; --border: #1e3a4a; --accent: #22c55e; --amber: #f5b942; --red: #ef4444; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; }
+  header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  header h1 { font-size: 16px; font-weight: 500; }
+  header p { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+  .wrap { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 14px; padding: 14px; align-items: start; }
+  @media (max-width: 800px) { .wrap { grid-template-columns: 1fr; } }
+  .kortti { background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+  .kortti h3 { font-size: 13px; font-weight: 600; color: var(--accent); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .04em; }
+  .kortti h4 { font-size: 11px; font-weight: 600; color: var(--text2); margin: 10px 0 4px; }
+  .ohje { font-size: 11px; color: var(--text2); line-height: 1.45; margin-bottom: 6px; }
+  .rivi2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; }
+  .rivi3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 8px; }
+  .field label { display: block; font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+  input, select { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px 6px; border-radius: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  input::placeholder { color: #3b5568; }
+  .valmiit { display: flex; flex-wrap: wrap; gap: 6px; }
+  .valmiit button, .nappi { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 5px 9px; border-radius: 3px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .valmiit button:hover, .nappi:hover { border-color: var(--accent); }
+  .nappi.paalla { background: var(--accent); color: #04110a; border-color: var(--accent); font-weight: 600; }
+  .virhe { color: var(--red); font-size: 13px; margin: 6px 0; }
+  .varoitus { color: var(--amber); font-size: 13px; margin: 6px 0; line-height: 1.45; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); }
+  th { color: var(--text2); font-weight: 500; font-size: 11px; }
+  td.n { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .kuvat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  @media (max-width: 1100px) { .kuvat { grid-template-columns: 1fr; } }
+  .kuvat svg { max-width: 100%; }
+  .sivukuva svg { background: var(--bg3); border-radius: 6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Harjapiipun kiila / mutka — mockup</h1>
+  <p>Testisivu oikealla laskennalla (sama kuin tulevalla harjapiippu-sivulla). Ei tallennusta. Kokeile valmiita esimerkkejä tai omia mittoja.
+     Tyhjä kiilakenttä = kuten suorassa piipussa. Mitat piipun yläpäästä.</p>
+</header>
+<div class="wrap">
+  <div>
+    <div class="kortti">
+      <h3>Valmiit esimerkit</h3>
+      <div class="valmiit">
+        <button data-esim="suora">Suora</button>
+        <button data-esim="kiila">Kiila oikealla −20</button>
+        <button data-esim="kapenee">Kapenee joka sivulta</button>
+        <button data-esim="mutka">Mutka (vasen 30 korkeampi)</button>
+        <button data-esim="vino">Vino harja</button>
+        <button data-esim="kiero">Kiero katto</button>
+        <button data-esim="lyhyt">Vasen sivu 30 lyhyempi</button>
+      </div>
+    </div>
+    <div class="kortti">
+      <h3>Suoran harjapiipun mitat</h3>
+      <div class="rivi2">
+        <div class="field"><label>Etu 1 leveys</label><input type="number" id="lev1"></div>
+        <div class="field"><label>Etu 2 leveys</label><input type="number" id="lev2" placeholder="sama"></div>
+        <div class="field"><label>Suora 1 (etu 1 → harja)</label><input type="number" id="suora1"></div>
+        <div class="field"><label>Suora 2 (harja → etu 2)</label><input type="number" id="suora2"></div>
+      </div>
+      <div class="rivi3" style="margin-top:6px">
+        <div class="field"><label>Korkeus etu 1</label><input type="number" id="kork1"></div>
+        <div class="field"><label>Harjalla</label><input type="number" id="korkH"></div>
+        <div class="field"><label>Etu 2</label><input type="number" id="kork2"></div>
+      </div>
+      <div class="rivi3" style="margin-top:6px">
+        <div class="field"><label>Hupun sivut</label><select id="sivutJako"><option value="1">yhtenä</option><option value="2">poikki harjalta</option></select></div>
+        <div class="field"><label>Etu 1 osina</label><select id="etuJako1"><option>1</option><option>2</option><option>3</option></select></div>
+        <div class="field"><label>Etu 2 osina</label><select id="etuJako2"><option value="">sama</option><option>1</option><option>2</option><option>3</option></select></div>
+      </div>
+      <p class="ohje" style="margin-top:6px">Muut arvot harjapiippu-sivun oletuksilla: sauma 20, hupun lisä 10, yläreuna 20 ulos, alatupla 20, vähennys 20, liitosvara 5.</p>
+    </div>
+    <div class="kortti">
+      <h3 style="display:flex;justify-content:space-between;align-items:center">Kiila / mutka <button class="nappi" id="kiilaNappi" type="button">Kiila / mutka</button></h3>
+      <div id="kiilaKentat">
+        <p class="ohje">Oikea sivu = suora 1 + suora 2. Harjan kohta oikealla = suora 1. Etu 1 alhaalla kuvassa ylhäältä tarkoittaa: seiso etu 1:n edessä, oikea on oikealla kädellä.</p>
+        <h4>Yläpään muoto</h4>
+        <div class="rivi2">
+          <div class="field"><label>Vasen sivu</label><input type="number" id="vasenPituus"></div>
+          <div class="field"><label>Suora kulma</label><select id="suoraKulma"><option value="0">etu 1 vasen</option><option value="1">etu 1 oikea</option><option value="2">etu 2 oikea</option><option value="3">etu 2 vasen</option></select></div>
+          <div class="field"><label>Harjan kohta vasemmalla (etu 1:stä)</label><input type="number" id="harjaVasen"></div>
+        </div>
+        <h4>Korkeudet (piipun kulmasta kattoon)</h4>
+        <div class="rivi3">
+          <div class="field"><label>Etu 1 vasen</label><input type="number" id="korkE1V"></div>
+          <div class="field"><label>Harja vasen</label><input type="number" id="korkHV"></div>
+          <div class="field"><label>Etu 2 vasen</label><input type="number" id="korkE2V"></div>
+          <div class="field"><label>Etu 1 oikea</label><input type="number" id="korkE1O"></div>
+          <div class="field"><label>Harja oikea</label><input type="number" id="korkHO"></div>
+          <div class="field"><label>Etu 2 oikea</label><input type="number" id="korkE2O"></div>
+        </div>
+        <h4>Kiila katon kohdalla (miinus = kapenee alaspäin), korkeimmasta kulmasta</h4>
+        <div class="rivi2">
+          <div class="field"><label>Etu 1</label><input type="number" id="kiilaEtu1" placeholder="0"></div>
+          <div class="field"><label>Etu 2</label><input type="number" id="kiilaEtu2" placeholder="0"></div>
+          <div class="field"><label>Vasen</label><input type="number" id="kiilaVasen" placeholder="0"></div>
+          <div class="field"><label>Oikea</label><input type="number" id="kiilaOikea" placeholder="0"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div id="viestit"></div>
+    <div class="kortti">
+      <h3>Kuvat</h3>
+      <div class="kuvat"><div id="ylhaalta"></div><div id="sivukuva" class="sivukuva"></div></div>
+    </div>
+    <div class="kortti">
+      <h3>Peltilista</h3>
+      <div id="lista"></div>
+    </div>
+    <div class="kortti">
+      <h3>Hupun palat</h3>
+      <div id="palat"></div>
+    </div>
+  </div>
+</div>
+<script src="../../orders/geom.js?v=1"></script>
+<script src="../../orders/pellit.js?v=3"></script>
+<script src="../../orders/piippu-laskenta.js?v=10"></script>
+<script src="../../orders/piippu-levitys.js?v=15"></script>
+<script>
+const L = KPT_PIIPPU_LEVITYS;
+// Harjapiippu-sivun oletukset (orders/harjapiippu.html), joita mockupissa ei muuteta
+const VAKIO = { tyyppi: 'harjapiippu', poimu: 20, ylit1V: 150, ylit1O: 150, ylit2V: 150, ylit2O: 150, k24_1: 200, j25_1: 15, k24_2: 200, j25_2: 15,
+  tupla: 15, etulis: 40, nousu: 200, sivulisa: 50, sauma: 20, huplis: 10, ylareunaV: 20, ylaTyyppi: 'ulos', alatupla: 20, vahennys: 20,
+  hsivlisa: 5, hattulis: 250, jakosauma: '' };
+const PERUS = ['lev1', 'lev2', 'suora1', 'suora2', 'kork1', 'korkH', 'kork2', 'sivutJako', 'etuJako1', 'etuJako2'];
+const KIILA = ['vasenPituus', 'suoraKulma', 'harjaVasen', 'korkE1V', 'korkHV', 'korkE2V', 'korkE1O', 'korkHO', 'korkE2O', 'kiilaEtu1', 'kiilaEtu2', 'kiilaVasen', 'kiilaOikea'];
+const SUORA = { lev1: 400, lev2: '', suora1: 450, suora2: 750, kork1: 760, korkH: 550, kork2: 900, sivutJako: '1', etuJako1: '1', etuJako2: '' };
+// Vino harja: harja vaakasuora, joten harjasta kauempana olevat kulmat matalammalla (lappeiden tasoista laskettuna)
+const vinoA = 100 / 400, vinoE1 = Math.round(760 + vinoA * (210 / 450) * 400), vinoE2 = Math.round(900 - vinoA * (350 / 750) * 400);
+const ESIM = {
+  suora: { kiila: false },
+  kiila: { kiila: true, kiilaOikea: -20 },
+  kapenee: { kiila: true, kiilaEtu1: -15, kiilaEtu2: -15, kiilaVasen: -15, kiilaOikea: -15 },
+  mutka: { kiila: true, korkE1V: 790, korkHV: 580, korkE2V: 930 },
+  vino: { kiila: true, harjaVasen: 550, korkE1V: vinoE1, korkE2V: vinoE2 },
+  kiero: { kiila: true, korkE1V: 800 },
+  lyhyt: { kiila: true, vasenPituus: 1170, suoraKulma: '0', sivutJako: '2', korkE2V: 886 },   // etu 2 vasen 30 mm lähempänä harjaa → 14 mm matalampi
+};
+let kiilaPaalla = false;
+const el = id => document.getElementById(id);
+
+function aseta(esim) {
+  const e = ESIM[esim];
+  PERUS.forEach(k => { el(k).value = SUORA[k]; });
+  KIILA.forEach(k => { el(k).value = k === 'suoraKulma' ? '0' : ''; });
+  Object.keys(e).forEach(k => { if (k !== 'kiila') el(k).value = e[k]; });
+  setKiila(e.kiila);
+}
+function setKiila(on) {
+  kiilaPaalla = !!on;
+  el('kiilaNappi').classList.toggle('paalla', kiilaPaalla);
+  el('kiilaKentat').style.display = kiilaPaalla ? '' : 'none';
+  laske();
+}
+function vals() {
+  const v = Object.assign({}, VAKIO);
+  const num = id => el(id).value === '' ? '' : Number(el(id).value);
+  PERUS.forEach(k => { v[k] = num(k); });
+  v.lev2 = el('lev2').value === '' ? null : Number(el('lev2').value);
+  v.etuJako2 = el('etuJako2').value === '' ? '' : Number(el('etuJako2').value);
+  v.kiilaPaalla = kiilaPaalla;
+  if (kiilaPaalla) KIILA.forEach(k => { v[k] = num(k); });
+  return v;
+}
+// Tyhjien kiilakenttien vihjeeksi suoran piipun arvo
+function vihjeet(v) {
+  const k = L.harjaKiilaTiedot(Object.assign({}, v, { kiilaPaalla: false }));
+  const vh = { vasenPituus: k.muoto.oikea, harjaVasen: k.harja.oikea, korkE1V: k.korkeudet[0], korkE1O: k.korkeudet[1], korkE2O: k.korkeudet[2], korkE2V: k.korkeudet[3], korkHV: k.harjaKork.vasen, korkHO: k.harjaKork.oikea };
+  Object.keys(vh).forEach(id => { el(id).placeholder = vh[id]; });
+}
+const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function laske() {
+  const v = vals();
+  vihjeet(v);
+  const t = L.laskeKaikkiHarja(v);
+  let viestit = '';
+  (t.virheet || []).forEach(x => { viestit += '<div class="virhe">⚠ ' + esc(x) + '</div>'; });
+  (t.varoitukset || []).forEach(x => { viestit += '<div class="varoitus">⚠ ' + esc(x) + '</div>'; });
+  el('viestit').innerHTML = viestit ? '<div class="kortti">' + viestit + '</div>' : '';
+  el('ylhaalta').innerHTML = kiilaPaalla ? L.harjaKuvaYlhaalta(v) || '<p class="ohje">Kuvaa ei voi piirtää: mitat eivät sovi yhteen.</p>' : '<p class="ohje">Kuva ylhäältä näkyy, kun kiila / mutka on päällä.</p>';
+  el('sivukuva').innerHTML = L.harjaSivukuva(v);
+  const rivit = (t.juuret || []).concat(t.muut || []);
+  el('lista').innerHTML = '<table><tr><th>Osa</th><th style="text-align:right">Leveys</th><th style="text-align:right">Pituus</th><th style="text-align:right">kpl</th></tr>'
+    + rivit.map(r => '<tr><td>' + esc(r.osa) + '</td><td class="n">' + r.lev + '</td><td class="n">' + r.pit + '</td><td class="n">' + r.kpl + '</td></tr>').join('') + '</table>'
+    + (t.kiila ? '<p class="ohje" style="margin-top:6px">Kiila: hupun palat todellisen aihion kokoisina, juuret pisimmän sivun mukaan (mitataan erikseen), kansi ja hattu leveimmän ja pisimmän kohdan mukaan.</p>' : '');
+  const p = (t.virheet || []).length ? null : L.harjaHupunPalat(v);
+  el('palat').innerHTML = p ? L.SELITE + p.palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl })).join('') : '<p class="ohje">Ei paloja: korjaa mitat.</p>';
+}
+document.querySelectorAll('input, select').forEach(i => i.addEventListener(i.tagName === 'SELECT' ? 'change' : 'input', laske));
+document.querySelectorAll('[data-esim]').forEach(b => b.addEventListener('click', () => aseta(b.getAttribute('data-esim'))));
+el('kiilaNappi').addEventListener('click', () => setKiila(!kiilaPaalla));
+aseta('kiila');
+</script>
+</body>
+</html>
