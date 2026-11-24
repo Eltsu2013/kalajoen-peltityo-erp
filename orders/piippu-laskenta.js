@@ -11,7 +11,8 @@
 //          v3 hupun palat pyöristetään ylöspäin, v4 harjapiippu (laskeHarjapiippu, harjaPuoli2),
 //          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026), v6 jakosauma seuraa hupun saumaa (harjaJakosauma),
 //          v7 harjapiipun etukappaleet 1–3 osana kummallekin puolelle (harjaEtuJako, 23.11.2026),
-//          v8 kansi ja sen reiät (laskeKansi, kansiAsetukset; vaihe 7b, 23.11.2026, mockup piippu/kansi-mockup.html).
+//          v8 kansi ja sen reiät (laskeKansi, kansiAsetukset; vaihe 7b, 23.11.2026, mockup piippu/kansi-mockup.html),
+//          v9 kanttisen reiän leikkausviivan pyöristys enintään 1/4 lyhyemmästä sivusta (24.11.2026).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -456,7 +457,8 @@
       const cS = S.viiteSiirto + keskikohta(r.sTapa, r.sMm, du, S.viite);
       const k = r.karvaus ? r.karvMm : 0;
       const leikDw = dw - 2 * k, leikDu = du - 2 * k;
-      const rLeik = r.muoto !== 'pyorea' && k > 0 ? Math.max(0, Math.min(KARVAUS_R, leikDw / 2, leikDu / 2)) : 0;
+      // Pyöristys pienenee pienessä reiässä (Tomi 24.11.2026: pieni kanttinen reikä näytti pyöreältä): enintään 1/4 lyhyemmästä sivusta
+      const rLeik = r.muoto !== 'pyorea' && k > 0 ? Math.max(0, Math.min(KARVAUS_R, Math.min(leikDw, leikDu) / 4)) : 0;
       return {
         nro: i + 1, muoto: r.muoto, dw, du,
         w: D + (as.vaaka === 'vasen' ? cL : L.sisa - cL),

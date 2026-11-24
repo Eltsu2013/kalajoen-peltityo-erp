@@ -13,7 +13,7 @@
 //   KPT_KANSI.tiedot(k) → [[otsikko, teksti], ...] (aihio, taitos, kulmat) listoihin ja työkorttiin
 //   KPT_KANSI.sivuKortti(el, { muutos, kortti }) → piippusivujen kansikortti (lomake + kuva + taulukko + mitattu), ks. alla
 // Kuva: tasoaihio, ETU vasemmalla ja VASEN alhaalla (kuten piippusivuilla; kansi alapuolelta katsottuna, Tomi 23.11.).
-// Versiot: v1 23.11.2026.
+// Versiot: v1 23.11.2026. v2 24.11.2026: karvauksen profiilikuvake ei pieneen reikään (reiän muoto näkyy).
 (function () {
   const PI = globalThis.KPT_PIIPPU || (typeof require === 'function' ? require('./piippu-laskenta.js') : null);
   const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -186,13 +186,15 @@
         const kk = r.karvaus * skaala;
         if (r.muoto === 'pyorea') s += '<circle cx="' + f1(cx) + '" cy="' + f1(cy) + '" r="' + f1(hw - kk) + '" fill="none" stroke="' + CR + '" stroke-width="1.2" stroke-dasharray="5 3"/>';
         else s += '<rect x="' + f1(x0 + kk) + '" y="' + f1(y0 + kk) + '" width="' + f1(2 * hw - 2 * kk) + '" height="' + f1(2 * hh - 2 * kk) + '" rx="' + f1(r.rLeik * skaala) + '" fill="none" stroke="' + CR + '" stroke-width="1.2" stroke-dasharray="5 3"/>';
-        // pieni profiilikuva: pelti ja ylös käännetty reuna
+        // pieni profiilikuva: pelti ja ylös käännetty reuna (ei pieneen reikään, jottei peitä sitä; karvaus näkyy taulukossa)
+        if (Math.min(hw, hh) >= 28) {
         const ix = cx - 13, iy = r.muoto === 'pyorea' ? cy + Math.min(hw * 0.55, hw - 6) : cy + 16;
         s += '<rect x="' + f1(ix - 4) + '" y="' + f1(iy - 14) + '" width="34" height="20" rx="3" fill="#1a2332" stroke="' + CR + '" stroke-width="0.6"/>' +
           '<path d="M' + f1(ix) + ' ' + f1(iy + 1) + ' H' + f1(ix + 12) + ' V' + f1(iy - 10) + '" fill="none" stroke="' + CR + '" stroke-width="2"/>' +
           '<text x="' + f1(ix + 15) + '" y="' + f1(iy - 1) + '" font-size="10" fill="' + CR + '">' + mm(r.karvaus) + '</text>';
+        }
       }
-      const ny = r.muoto === 'pyorea' ? cy - Math.min(hw * 0.4, 30) : cy - (r.karvaus ? 2 : -5);
+      const ny = r.muoto === 'pyorea' ? cy - Math.min(hw * 0.4, 30) : cy - (r.karvaus && Math.min(hw, hh) >= 28 ? 2 : -5);
       s += '<text x="' + f1(cx) + '" y="' + f1(ny) + '" text-anchor="middle" font-size="15" font-weight="700" fill="' + CI + '">' + r.nro + '</text>';
       if (r.muoto === 'pyorea') {
         const vas = X(uAlku) <= cx, ala = Y(wAlku) >= cy;

@@ -56,6 +56,11 @@ ok(near(m3[0].sKeski, 20 + 22.5 + 200) && near(m3[0].vAlku, 20 + 22.5 + 120) && 
 ok(e3.reiat[0].karvaus === 7 && near(e3.reiat[0].leikDw, 136) && e3.reiat[0].rLeik === 30 && near(e3.reiat[0].rReika, 37) && e3.reiat[1].karvaus === 0 && e3.reiat[1].rReika === 0,
   'karvaus: 150 → leikataan 136, kulmat r30 (reiässä r37); ilman karvausta terävät kulmat');
 
+// ---- Pieni kanttinen reikä ei saa näyttää pyöreältä (Tomi 24.11.2026): pyöristys enintään 1/4 lyhyemmästä sivusta
+const ep = kansi(500, 700, { reiat: [nelio({ l: 60, s: 60 }), nelio({ l: 60, s: 200 })] });
+ok(near(ep.reiat[0].leikDw, 46) && near(ep.reiat[0].rLeik, 11.5) && near(ep.reiat[0].rReika, 18.5) && near(ep.reiat[1].rLeik, 11.5),
+  'pieni reikä 60 × 60, karvaus 7: leikataan 46, kulmat r11,5 (ei ympyrä); 60 × 200 lyhyemmän sivun mukaan');
+
 // ---- Mitattu ulkomitta (Tuotanto)
 const em = kansi(410, 970, { mitattu: { lev: 462, syv: 1024 }, reiat: [nelio({ sTapa: 'reuna', sMm: 130 })] });
 ok(em.aihio.lev === 507 && em.aihio.pit === 1069 && near(em.S.huppu, 984), 'mitattu 462 × 1024: aihio 507 × 1069, hupun pinta 984');
