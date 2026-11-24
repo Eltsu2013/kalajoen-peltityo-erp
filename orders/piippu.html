@@ -116,6 +116,11 @@
   .kiila-valinta { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 6px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
   .kiila-virhe { color: var(--red); font-size: 12px; margin-top: 6px; }
   .kiila-virhe:empty { display: none; }
+  /* Kiilan varoitukset sisältöalueen ylälaidassa kuten harjapiipussa (24.11.2026): laskettu korkeus, kiero katto */
+  .varoitus { background: #3f1212; border: 1px solid var(--red); color: #fecaca; border-radius: 4px; padding: 8px 12px; font-size: 13px; }
+  .varoitus:empty { display: none; }
+  .varoitus .laskettu-rivi { font-weight: 600; }
+  input.laskettu::placeholder { color: var(--red); font-weight: 600; opacity: 1; }
 
   .vakio-grid { display: grid; grid-template-columns: 1fr 56px; gap: 3px 8px; align-items: center; }
   .vakio-grid label { font-size: 11px; color: var(--text2); }
@@ -295,6 +300,7 @@
         </select>
       </div>
       <div class="kiila-alaotsikko">Korkeus kulmissa, takakulmat ylempänä kuten kuvassa</div>
+      <p class="kiila-ohje">Oikean puolen tyhjät = etu- ja takakorkeus yllä. Vasemman puolen tyhjät lasketaan katon tasosta (punainen ≈ = laskettu, ei mitattu).</p>
       <div class="field-grid">
         <div class="field"><label>Takavasen (mm)</label><input type="number" id="k-korkeusTV" oninput="laske()"></div>
         <div class="field"><label>Takaoikea (mm)</label><input type="number" id="k-korkeusTO" oninput="laske()"></div>
@@ -468,6 +474,7 @@
 </div>
 
 <div class="content">
+  <div class="varoitus" id="varoitus"></div>
 
   <!-- Etukuva ylimpänä ja aina auki sivua avattaessa (Tomi 24.11.2026: juuren mitat täytetään ensin) -->
   <details class="kuva-card etukuva-kortti" id="etukuva-kortti" open>
@@ -527,7 +534,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=17"></script>
+<script src="piippu-levitys.js?v=18"></script>
 <script src="kansi.js?v=4"></script>
 <script>
 let saumatyyppi = 1;
@@ -556,7 +563,15 @@ function kiilaArvot() {
 // Tyhjien kiilakenttien vihjeeksi suoran piipun arvo
 function paivitaKiilaVihjeet(vals) {
   const vihje = { takaLeveys: vals.leveys, vasenPituus: vals.suora, korkeusEV: vals.etukork, korkeusEO: vals.etukork, korkeusTO: vals.takakork, korkeusTV: vals.takakork };
-  Object.keys(vihje).forEach(n => { document.getElementById('k-' + n).placeholder = String(vihje[n] || 0); });
+  // Vasemman puolen tyhjät korkeudet lasketaan katon tasosta (24.11.2026): vihjeeksi laskettu arvo punaisella ≈-merkillä
+  let m = null;
+  if (kiilaPaalla && window.KPT_PIIPPU_LEVITYS) { try { m = KPT_PIIPPU_LEVITYS.hupunMalli(vals); } catch (e) { m = null; } }
+  if (m) { vihje.korkeusEV = m.korkeudet[0]; vihje.korkeusTV = m.korkeudet[3]; }
+  Object.keys(vihje).forEach(n => {
+    const el = document.getElementById('k-' + n), lask = !!(m && m.lasketut.some(x => x.kentta === n));
+    el.placeholder = (lask ? '≈ ' : '') + Math.round(vihje[n] || 0);
+    el.classList.toggle('laskettu', lask);
+  });
 }
 
 let takaKpl = 1;
@@ -957,6 +972,8 @@ function laske() {
   const { juuret, muut, geom: g } = tulos;
   paivitaKiilaVihjeet(vals);
   document.getElementById('kiila-virhe').textContent = kiilaPaalla && tulos.virhe ? tulos.virhe : '';
+  const kv = kiilaPaalla ? (tulos.varoitukset || []) : [];
+  document.getElementById('varoitus').innerHTML = kv.map(t => '<span' + (/^LASKETTU/.test(t) ? ' class="laskettu-rivi"' : '') + '>⚠ ' + t.replace(/</g, '&lt;') + '</span>').join('<br>');
   try { document.getElementById('kiila-kuva').innerHTML = kiilaPaalla && window.KPT_PIIPPU_LEVITYS ? KPT_PIIPPU_LEVITYS.kuvaYlhaalta(vals) : ''; }
   catch (e) { console.error('Kiilan kuva:', e); }
 

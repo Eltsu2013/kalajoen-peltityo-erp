@@ -221,5 +221,25 @@ ok(kiilaOk, '200 satunnaista kiila-/mutkapiippua, ' + kiilaPaloja + ' palaa: yks
   ok(kv && kv.etu === 1000 && kv.taka === 800, 'kiilaSivukuva: kiila vain vasemmalla → oikean sivun korkeudet ennallaan');
 }
 
+// ---- Lapepiipun kiila: tyhjät vasemmat korkeudet katon tasosta ja kiero katto -varoitus (24.11.2026)
+{
+  const K = o => Object.assign({}, OLETUS, { kiilaPaalla: true }, o);
+  const las = (m, kentta) => (m.lasketut.find(x => x.kentta === kentta) || {}).arvo;
+  const m1 = L.hupunMalli(K({ korkeusEO: 1040 }));
+  ok(Math.abs(las(m1, 'korkeusEV') - 1040) < 1e-6 && las(m1, 'korkeusTV') === undefined && m1.varoitukset.length === 1 && /^LASKETTU, EI MITATTU: etuvasen 1040 mm/.test(m1.varoitukset[0]),
+    'vain etuoikea 1040: etuvasen lasketaan 1040 (katto sivusuunnassa vaaka), takavasen = takakorkeus, varoitus LASKETTU');
+  const m2 = L.hupunMalli(K({ korkeusEV: 1040 }));
+  ok(Math.abs(las(m2, 'korkeusTV') - 840) < 1e-6 && m2.heitto < 0.01, 'etuvasen 1040 annettu: takavasen lasketaan 840 kolmen kulman tasosta');
+  const m3 = L.hupunMalli(K({ korkeusEV: 1040, korkeusTV: 800 }));
+  ok(m3.lasketut.length === 0 && m3.varoitukset.length === 1 && /^Katto on kiero: kulmien korkeudet heittävät noin 40 mm/.test(m3.varoitukset[0]),
+    'kaikki neljä kulmaa annettu, yksi 40 mm pielessä: varoitus kierosta katosta');
+  ok(L.hupunMalli(K({ korkeusEV: 1003, korkeusTV: 800 })).varoitukset.length === 0, 'pieni heitto (3 mm): ei varoitusta');
+  const m4 = L.hupunMalli(K({ vasenPituus: 580 }));
+  ok(Math.abs(las(m4, 'korkeusTV') - (800 + 20 * 200 / 600)) < 0.01 && m4.heitto < 0.01,
+    'vasen sivu 20 lyhyempi: takavasen lasketaan ' + (las(m4, 'korkeusTV') || 0).toFixed(1) + ' (lähempänä etureunaa → kauempana katosta)');
+  ok(L.hupunMalli(K({ kiilaOikea: -20 })).varoitukset.length === 0, 'kiila ilman korkeuksia: ei varoituksia');
+  ok(L.laskeKaikki(K({ korkeusEO: 1040 })).varoitukset.length === 1, 'laskeKaikki palauttaa varoitukset');
+}
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;
