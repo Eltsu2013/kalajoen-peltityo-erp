@@ -677,6 +677,9 @@
   }
 
 
+  // Aihion koko ylöspäin täyteen milliin, kuten levityskuvassa ja piippujen listoissa (Tomi 23.11. ja 24.11.2026: mieluummin hieman iso kuin liian pieni)
+  const aihioMm = x => Math.ceil(x - 1e-6);
+
   const TEEMA_RUUTU_KAISTA = Object.assign({}, TEEMA_RUUTU, { leikkaus: '#ef4444' });
   const TEEMA_PAPERI_KAISTA = Object.assign({}, TEEMA_PAPERI, { leikkaus: '#000000' });
   // Ruudun kaistakuva: vaaleassa ulkoasussa paperi (punainen viilto), muuten tumma (teema.js: html[data-teema="vaalea"])
@@ -758,7 +761,7 @@
       + '<h2>Leikattavat palat</h2><table class="tk-table"><tr><th>Pala</th><th>Kpl</th><th>Aihio (leveys × korkeus)</th><th>Leikattu</th></tr>';
     panels.forEach(p => {
       ala += p.w * p.h * p.kpl;
-      html += '<tr><td>' + esc(p.name) + '</td><td>' + p.kpl + '</td><td>' + Math.round(p.w) + ' × ' + Math.round(p.h) + ' mm</td><td class="tk-box">☐</td></tr>';
+      html += '<tr><td>' + esc(p.name) + '</td><td>' + p.kpl + '</td><td>' + aihioMm(p.w) + ' × ' + aihioMm(p.h) + ' mm</td><td class="tk-box">☐</td></tr>';
     });
     html += '</table><p class="tk-note">Aihion koko sisältää taitokset. Aihioiden yhteenlaskettu pinta-ala (yläraja, ei sisällä hukkaa): ' + (ala/1e6).toFixed(2) + ' m².</p>' + (TK ? TK.alaosa('Huuva') : '') + '</section>';
     // Kaistasivu: rullan menekki, kaistakuvat ja giljotiinileikkausten mitat (valinnainen)
@@ -782,7 +785,7 @@
         + '<div class="tk-svg">' + svg + '</div>'
         + '<h2>Mitat</h2><table class="tk-table"><tr><th>Alareuna</th><td>' + Math.round(p.a) + ' mm</td><th>Yläreuna</th><td>' + Math.round(p.c) + ' mm</td></tr>'
         + '<tr><th>Korkeus (kohtisuoraan)</th><td>' + Math.round(p.hp) + ' mm</td><th>Sivut (vasen / oikea)</th><td>' + Math.round(p.d) + ' / ' + Math.round(p.b) + ' mm</td></tr>'
-        + '<tr><th>Aihio</th><td colspan="3">' + Math.round(p.w) + ' × ' + Math.round(p.h) + ' mm (sisältää taitokset)</td></tr></table>';
+        + '<tr><th>Aihio</th><td colspan="3">' + aihioMm(p.w) + ' × ' + aihioMm(p.h) + ' mm (sisältää taitokset)</td></tr></table>';
       const rivit = taitosRivit(p);
       if (rivit.length) {
         html += '<h2>Taitokset</h2><table class="tk-table tk-fold"><tr><th>Reuna</th><th>Osa</th><th>Mitta mm</th><th>Kanttausluku</th><th>Taitto</th><th>Huom.</th></tr>';
@@ -802,7 +805,7 @@
         html += '<section class="tk-page">' + tkYla(nimi) + ''
           + '<h1>' + esc(p.name) + ' — merkintäpisteet' + (p.kpl > 1 ? ' <span class="tk-kpl">' + p.kpl + ' kpl</span>' : ' <span class="tk-kpl">1 kpl</span>') + '</h1>' + kenttia
           + '<div class="tk-svg tk-svg-pts' + (asennot.length ? ' tk-pts-kaista' : '') + '">' + mk + '</div>'
-          + '<h2>Pisteet (aihio ' + Math.round(p.w) + ' × ' + Math.round(p.h) + ' mm)' + (peili ? ' · SISÄPINTA, peilikuva' : '') + '</h2>' + pisteTaulu(p, 'tk-table tk-pts', peili)
+          + '<h2>Pisteet (aihio ' + aihioMm(p.w) + ' × ' + aihioMm(p.h) + ' mm)' + (peili ? ' · SISÄPINTA, peilikuva' : '') + '</h2>' + pisteTaulu(p, 'tk-table tk-pts', peili)
           + (asennot.length ? '<div class="tk-asento-osa"><h2>Palat kaistalla</h2>' + asentoTaulu(asennot, 'tk-table tk-asento') + '</div>' : '')
           + '<p class="tk-note">' + (asennot.length ? 'Mittaa <b>x</b> ja <b>y</b> nollakohdasta (taulukko yllä kertoo, missä se on kunkin palan pellillä; pelti on jo leikattu kaistasta oikean muotoiseksi, ohut viiva kuvassa). ' : 'Mittaa <b>x</b> aihion vasemmasta reunasta ja <b>y</b> aihion alareunasta (aihio = kaista, joka leikataan ensin tähän mittaan). ') + 'Yhdistä pisteet suorilla viivoilla numerojärjestyksessä <b>1 → 2 → … → ' + aihioPisteet(p, peili).pisteet.length + ' → 1</b>: tämä on leikkauslinja. Katkoviivat = paneelin reunat ja taitosviivat (eivät pisteitä). '
           + (peili ? '<b>Peilikuva (sisäpinta):</b> käännä pelti pystyakselin ympäri (alareuna pysyy alhaalla). Numerointi on uusi, ei vastaa ulkopinnan kuvaa.' : 'Kuva on piirretty pellin <b>ulkopinnalta</b> katsottuna (kuten levityskuva).') + '</p></section>';
@@ -834,7 +837,7 @@
     // Verstaalla tarvittava luku: aihion koko palaryhmittäin (taitokset mukana)
     panels.forEach(p => {
       html += '<div class="kpt-avainluku"><span class="nimi">' + esc(p.name) + ' · ' + p.kpl + ' kpl · aihio (leveys × korkeus)</span>'
-        + '<span class="arvo">' + Math.round(p.w) + ' × ' + Math.round(p.h) + '</span><span class="yks">mm</span></div>';
+        + '<span class="arvo">' + aihioMm(p.w) + ' × ' + aihioMm(p.h) + '</span><span class="yks">mm</span></div>';
     });
     panels.forEach(p => {
       totalAreaMM2 += p.w * p.h * p.kpl;
@@ -861,7 +864,7 @@
       });
     });
     html += '<div class="result-row"><span>Aihio per pala (n.)</span><span>'
-      + panels.map(p => (p.kpl > 1 ? p.kpl + ' × ' : '') + Math.round(p.w) + '×' + Math.round(p.h)).join(' · ') + ' mm</span></div>';
+      + panels.map(p => (p.kpl > 1 ? p.kpl + ' × ' : '') + aihioMm(p.w) + '×' + aihioMm(p.h)).join(' · ') + ' mm</span></div>';
     html += '<div class="result-row"><span>Pinta-ala yhteensä (yläraja)</span><span>' + (totalAreaMM2/1e6).toFixed(2) + ' m²</span></div>';
     html += '<p class="hint">Kanttausluku = kuinka monta astetta pelti käännetään suorasta. Alareunan luvut ovat järjestyksessä paneelin reunasta ulospäin. Taitto ulos / sisään = pelti kääntyy kohti / poispäin katsojasta levityskuvassa (kuva on ulkopuolelta). Piirroksessa sisäänpäin taitoksen viiva on pisteviiva. Aihion koko sisältää taitokset.</p>';
     cont.innerHTML = html;
