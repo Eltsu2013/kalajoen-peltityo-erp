@@ -38,6 +38,7 @@
       { href: 'vakiomallit.html',   label: '🔧 Vakiomallit' },
       { href: 'piippu.html',        label: '🏭 Piippu' },
       { href: 'huuva.html',         label: '🔥 Huuva' },
+      { href: 'kartio.html',        label: '📐 Kartio' },
     ]},
     { nimi: 'Varasto', id: 'varasto', sivut: [
       { href: 'varasto.html',       label: '📦 Varasto' },

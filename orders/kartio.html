@@ -3,223 +3,214 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kartio — laskin</title>
+<title>Kartio — Kalajoen Peltityö</title>
+<!-- Kartio ERP-sivuna (vaihe 8.2 + ulkoasuremontti R1, 24.11.2026). Laskenta siirretty sellaisenaan Kartio-mockupista v11
+     (Kartio-testisivu v11, poistettu 24.11.2026); testit testit/kartio/ lukevat tämän sivun ENSIMMÄISEN inline-skriptin laskentaosan
+     (ennen riviä "// ==== UI ===="), joten sivulle ei saa lisätä toista inline-skriptiä ennen sitä.
+     Uutta: uusi ulkoasu (tyyli.css), palan koko isolla, harpin kärjen paikka, kaaren pisteet mitoilla, kaistat useammalle
+     kappaleelle (menekki.js), työkortti yhteisellä pohjalla (tyokortti.js). Huomiot: projektin claude/kartio_huomiot.md. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="tyyli.css?v=1">
+<script src="teema.js?v=1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
 <style>
-  :root {
-    --bg:#29231a; --panel:#332b20; --panel2:#3d3426; --border:#56442e;
-    --accent:#f97316; --amber:#e8a020; --text:#ededf0; --text-dim:#9595a0;
-    --input-bg:#3a3020; --danger:#e84040;
-  }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font-family:'IBM Plex Sans', sans-serif; }
-  .topbar { background:var(--panel); border-bottom:1px solid var(--border); padding:14px 28px; display:flex; align-items:center; gap:32px; flex-wrap:wrap; }
-  .logo { font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:14px; letter-spacing:.06em; color:var(--accent); }
-  .wrap { max-width:1240px; margin:0 auto; padding:28px 24px 64px; }
-  .eyebrow { font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
-  .h1 { font-size:22px; font-weight:600; margin-bottom:20px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(min(440px,100%),1fr)); gap:20px; align-items:start; }
-  .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:24px; margin-bottom:20px; }
-  .card h3 { margin:0 0 14px; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--text-dim); }
-  .field { margin-bottom:14px; }
-  .field label, .mini-label { display:block; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
-  .field input, .field select { background:var(--input-bg); border:1px solid var(--border); color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:16px; padding:0 10px; border-radius:6px; width:100%; height:48px; }
-  .field input:focus, .field select:focus { outline:none; border-color:var(--accent); }
-  .field-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-  .field-row .field { margin-bottom:0; }
-  .hint { font-size:12px; color:var(--text-dim); line-height:1.5; margin:-6px 0 14px; }
-  .res { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); }
-  .res:last-child { border-bottom:none; }
-  .res span:first-child { font-size:13px; color:var(--text-dim); }
-  .res b { font-family:'IBM Plex Mono', monospace; font-size:17px; color:var(--accent); font-weight:600; text-align:right; }
-  .res b small { font-size:11px; color:var(--text-dim); font-weight:400; }
-  .res.sub b { font-size:14px; color:var(--text); }
-  .res-h { font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--amber); margin:14px 0 2px; }
-  .varoitus { border:1px solid var(--danger); border-radius:6px; padding:10px 12px; margin-top:12px; font-size:13px; line-height:1.5; color:#ffb4b4; }
-  .huom { border:1px solid var(--amber); border-radius:6px; padding:10px 12px; margin-top:12px; font-size:13px; line-height:1.5; color:#f3d58f; }
-  .ok { border:1px solid #5a9a5a; border-radius:6px; padding:10px 12px; margin-top:12px; font-size:13px; line-height:1.5; color:#b9e3b9; }
-  .piirros { background:#f4f1ea; border-radius:6px; padding:8px; }
-  .piirros svg { width:100%; height:auto; max-height:520px; display:block; }
-  .nappi { background:var(--accent); color:#1a1208; border:none; border-radius:8px; height:52px; width:100%; font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; cursor:pointer; }
-  .nappi:active { transform:translateY(1px); }
-  #tulostus { display:none; }
-  .sauma-rivi { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:14px; padding-top:12px; border-top:1px solid var(--border); }
-  .sauma-rivi:first-child { border-top:none; padding-top:0; }
-  .sauma-rivi .sr-nimi { grid-column:1 / -1; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--amber); }
-  .sauma-rivi .field { margin-bottom:0; }
-  .sauma-rivi .field label { font-size:11px; }
-  .sauma-rivi .field input { font-size:15px; padding:0 8px; }
-  .sauma-rivi .field input:disabled { opacity:.5; }
-  .ryhma-otsikko { font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--accent); margin:0 0 10px; }
-  .res-pieni { font-size:12px; color:var(--text-dim); margin-top:8px; line-height:1.5; }
-  @media (max-width:700px) { .sauma-rivi { grid-template-columns:1fr 1fr; } .sauma-rivi .field:nth-child(2) { grid-column:1 / -1; } }
-  @media (max-width:700px) { .wrap { padding:18px 16px 48px; } .card { padding:18px; } .topbar { padding:12px 16px; } }
+  /* Kartion omat tyylit: vain tyyli.css:n muuttujia (molemmat ulkoasut) */
+  .kartio-ryhma { font-family: var(--kpt-mono); font-size: 13px; color: var(--kpt-korostus); margin: 0 0 10px; }
+  .kpt-tulos b small { font-size: 12px; color: var(--kpt-himmea); font-weight: 400; }
+  .kartio-harppi { margin: 0 0 12px; }
+  .kartio-harppi .kpt-tulos > b { font-size: 16px; }
+  .sauma-rivi { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 10px; padding-top: 10px; border-top: 1px solid var(--kpt-reuna); }
+  .sauma-rivi:first-child { border-top: 0; padding-top: 0; }
+  .sauma-rivi .sr-nimi { grid-column: 1 / -1; font-family: var(--kpt-mono); font-size: 12px; color: var(--kpt-korostus); margin-bottom: 4px; }
+  .sauma-rivi .kpt-kentta input:disabled { opacity: .5; }
+  @media (max-width: 700px) { .sauma-rivi { grid-template-columns: 1fr 1fr; } .sauma-rivi .kpt-kentta:nth-child(2) { grid-column: 1 / -1; } }
+  .mtab { width: 100%; border-collapse: collapse; font-family: var(--kpt-mono); font-size: 13px; margin: 6px 0 14px; }
+  .mtab th, .mtab td { border-bottom: 1px solid var(--kpt-reuna); padding: 4px 6px; text-align: right; }
+  .mtab th:first-child, .mtab td:first-child { text-align: left; }
+  .mtab th { font-size: 11px; color: var(--kpt-himmea); font-weight: 500; }
+  .mtab td.tas { color: var(--kpt-huom); }
+  .mtab td.pv, .mtab th.pv { border-left: 1px solid var(--kpt-reuna); }
+  .mneuvo { font-size: 12.5px; color: var(--kpt-himmea); line-height: 1.55; margin: 0 0 10px; }
+  .mini-label { font-size: 13px; color: var(--kpt-himmea); margin: 12px 0 4px; }
+  details.kpt-kortti > summary .yv { text-transform: none; letter-spacing: 0; font-family: var(--kpt-fontti); font-weight: 400; color: var(--kpt-heikko); }
+  .kartio-ohje-pieni { font-size: 12px; color: var(--kpt-heikko); }
+  #nappi-tulosta { margin-top: 4px; }
 
-
-  .mtab { width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:13px; margin:6px 0 14px; }
-  .mtab th, .mtab td { border-bottom:1px solid var(--border); padding:4px 6px; text-align:right; }
-  .mtab th:first-child, .mtab td:first-child { text-align:left; }
-  .mtab th { font-size:11px; color:var(--text-dim); font-weight:500; }
-  .mtab tr.tark td { font-weight:700; color:var(--accent); }
-  .mtab td.tas { color:var(--amber); }
-  .mtab td.pv, .mtab th.pv { border-left:1px solid var(--border); }
-  .mneuvo { font-size:12px; color:var(--text-dim); line-height:1.55; margin:0 0 10px; }
-
+  /* Työkortti (tyokortti.js, #tkk): Kartion sisällön tyylit paperille */
   @media print {
-    @page { size: A4; margin: 12mm; }
-    html, body { background:#fff !important; color:#000 !important; }
-    .topbar, .wrap { display:none !important; }
-    #tulostus { display:block; font-family:'IBM Plex Sans', Arial, sans-serif; font-size:10.5pt; color:#000; }
-    .tk-brand { font-family:'IBM Plex Mono', monospace; font-size:9pt; letter-spacing:.1em; color:#555; border-bottom:1px solid #000; padding-bottom:3mm; margin-bottom:4mm; }
-    #tulostus h1 { font-size:20pt; margin:0 0 3mm; }
-    #tulostus h2 { font-size:10pt; text-transform:uppercase; letter-spacing:.08em; margin:4mm 0 2mm; color:#333; }
-    .tk-kpl { white-space:nowrap; font-size:15pt; border:2px solid #000; border-radius:3mm; padding:0 3mm; margin-left:4mm; vertical-align:middle; }
-    .tk-fields { display:flex; gap:8mm; font-size:10pt; margin-bottom:3mm; }
-    .tk-fields > div { flex:1; white-space:nowrap; }
-    .tk-line { display:inline-block; border-bottom:1px solid #000; width:24mm; height:1em; vertical-align:bottom; }
-    .tk-table { width:calc(100% - 0.6mm); border-collapse:collapse; font-size:10.5pt; }
-    .tk-table th, .tk-table td { border:1px solid #777; padding:1mm 2.5mm; text-align:left; }
-    .tk-table th { background:#eee; font-weight:600; }
-    .tk-two { display:flex; gap:6mm; align-items:flex-start; }
-    .tk-two > div { flex:1; min-width:0; }
-    #tulostus *, #tulostus svg { box-sizing:border-box; }
-    #tulostus .tk-svg svg { width:calc(100% - 0.6mm); height:auto; max-height:86mm; border:1px solid #999; }
-    #tulostus .tk-svg-sij svg { max-height:40mm; }
-    #tulostus .tk-svg-hu svg { max-height:58mm; }
-    #tulostus .tk-svg-mer.tk-svg-mer2 svg { max-height:35mm; }
-    .tk-note { font-size:9pt; color:#333; margin-top:2mm; }
-    .tk-page { page-break-after:always; break-after:page; }
-    .tk-page:last-child { page-break-after:auto; break-after:auto; }
-    #tulostus .mtab { width:100%; font-size:8.5pt; color:#000; margin:1mm 0 3mm; }
-    #tulostus .mtab th, #tulostus .mtab td { border:1px solid #777; padding:0.4mm 1.6mm; color:#000; }
-    #tulostus .mtab th { background:#eee; font-size:8pt; }
-    #tulostus .mtab th, #tulostus .mtab td { white-space:nowrap; }
-    #tulostus .mtab tr.tark td { background:#e4e4e4; color:#000; }
-    #tulostus .mtab td.tas { color:#000; font-weight:700; }
-    #tulostus .mneuvo { font-size:9pt; color:#333; }
-    #tulostus .tk-svg-mer svg { max-height:52mm; }
-    #tulostus .tk-svg-kul svg { max-height:150mm; }
-    .tk-lines { height:12mm; background:repeating-linear-gradient(transparent, transparent 7mm, #999 7mm, #999 7.3mm); }
+    #tkk .tk-svg svg { width: 100%; height: auto; max-height: 72mm; border: 1px solid #999; display: block; }
+    #tkk .tk-svg-sij svg { max-height: 38mm; }
+    #tkk .tk-svg-mer svg { max-height: 42mm; }
+    #tkk .tk-svg-mer.tk-svg-mer2 svg { max-height: 30mm; }
+    #tkk .tk-svg-kul svg { max-height: 125mm; }
+    #tkk .tk-note { font-size: 8pt; margin-top: 1mm; line-height: 1.25; }
+    #tkk .tk-two { display: flex; gap: 6mm; align-items: flex-start; }
+    #tkk .tk-two > div { flex: 1; min-width: 0; }
+    #tkk h2 { display: block; }
+    #tkk .mtab { width: 100%; font-size: 8pt; margin: 1mm 0 2mm; table-layout: auto; }
+    #tkk .mtab th, #tkk .mtab td { border: 1px solid #777; padding: 0.2mm 1.4mm; font-size: 8pt; white-space: nowrap; font-family: 'IBM Plex Mono', monospace; text-transform: none; letter-spacing: 0; }
+    #tkk .mtab th { font-size: 8pt; }
+    #tkk .mtab td.tas { font-weight: 700; }
+    #tkk .tk-table { width: 100%; table-layout: auto; }
+    #tkk .tk-table th, #tkk .tk-table td { border: 1px solid #777; padding: 0.8mm 2mm; text-transform: none; letter-spacing: 0; font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 9.5pt; }
+    #tkk .kk-pala { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2mm 5mm; border: 2.5px solid #000; padding: 2mm 4mm; margin: 2.5mm 0 3mm; }
+    #tkk .kk-pala .nimi { font-size: 10pt; width: 100%; }
+    #tkk .kk-pala .arvo { font-family: 'IBM Plex Mono', monospace; font-size: 24pt; font-weight: 700; }
+    #tkk .kk-harppi td { font-size: 11pt; }
+    #tkk .kk-harppi td b { font-size: 13pt; }
+    #tkk .tkk-levitys svg { max-height: 95mm; }
+    #tkk .tk-lines { height: 12mm; background: repeating-linear-gradient(transparent, transparent 7mm, #999 7mm, #999 7.3mm) !important; }
   }
 </style>
 </head>
-<body>
-<div class="topbar"><div class="logo">KALAJOEN PELTITYÖ · KARTIO</div></div>
-<div class="wrap">
-  <div class="eyebrow">versio 2: pyöreä ↔ pyöreä ja nelikulmio → pyöreä</div>
-  <div class="h1">Kartion ja siirtymän levitys</div>
+<body class="kpt-sivu">
 
-  <div class="grid">
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
+  <div class="nav-menu-wrap">
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
+      <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
+    </div>
+    <script src="nav.js?v=5"></script>
+  </div>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Kartio</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
+</header>
+
+<main class="kpt-sisalto">
+  <div class="kpt-tabs">
+    <a class="kpt-tab" href="huuva.html">Huuva</a>
+    <a class="kpt-tab aktiivinen" href="kartio.html">Kartio</a>
+  </div>
+
+  <div class="kpt-ruudukko">
     <div id="syotteet">
-      <div class="card">
-        <h3>Työ</h3>
-        <div class="field-row">
-          <div class="field"><label for="k-nimi">Työn nimi</label><input id="k-nimi" type="text" value="Kartio"></div>
-          <div class="field"><label for="k-kpl">Kappalemäärä</label><input id="k-kpl" type="text" inputmode="numeric" value="1"></div>
+      <div class="kpt-kortti">
+        <div class="kpt-kortti-otsikko">Kartio</div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label for="k-nimi">Työn nimi</label><input id="k-nimi" type="text" value="Kartio"></div>
+          <div class="kpt-kentta"><label for="k-kpl">Kappalemäärä</label><input id="k-kpl" type="text" inputmode="numeric" value="1"></div>
         </div>
-      </div>
-
-      <div class="card">
-        <h3>Kartion mitat</h3>
-        <div class="field"><label for="k-muoto">Alapään muoto</label>
+        <div class="kpt-kentta"><label for="k-muoto">Alapään muoto</label>
           <select id="k-muoto"><option value="pyorea" selected>Pyöreä</option><option value="nelio">Nelikulmio (neliö / suorakulmio), ylhäällä pyöreä</option></select></div>
-        <div class="field-row" id="rivi-nelio" style="display:none">
-          <div class="field"><label for="k-nw">Alapään leveys mm (etu/taka)</label><input id="k-nw" type="text" inputmode="decimal" value="600"></div>
-          <div class="field"><label for="k-nd">Alapään syvyys mm (sivut)</label><input id="k-nd" type="text" inputmode="decimal" value="400"></div>
+        <div class="kpt-kentat" id="rivi-nelio" style="display:none">
+          <div class="kpt-kentta"><label for="k-nw">Alapään leveys mm (etu/taka)</label><input id="k-nw" type="text" inputmode="decimal" value="600"></div>
+          <div class="kpt-kentta"><label for="k-nd">Alapään syvyys mm (sivut)</label><input id="k-nd" type="text" inputmode="decimal" value="400"></div>
         </div>
-        <div class="field-row">
-          <div class="field" id="kentta-ala-d"><label for="k-ala-d">Alapään halkaisija mm</label><input id="k-ala-d" type="text" inputmode="decimal" value="600"></div>
-          <div class="field"><label for="k-yla-d" id="k-yla-d-nimi">Yläpään halkaisija mm (0 = kärki)</label><input id="k-yla-d" type="text" inputmode="decimal" value="300"></div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta" id="kentta-ala-d"><label for="k-ala-d">Alapään halkaisija mm</label><input id="k-ala-d" type="text" inputmode="decimal" value="600"></div>
+          <div class="kpt-kentta"><label for="k-yla-d" id="k-yla-d-nimi">Yläpään halkaisija mm (0 = kärki)</label><input id="k-yla-d" type="text" inputmode="decimal" value="300"></div>
         </div>
-        <div class="field"><label for="k-h">Korkeus mm (päätasojen väli)</label><input id="k-h" type="text" inputmode="decimal" value="400"></div>
-        <div class="hint" id="mitat-hint">Korkeus on kartion oma pystyväli ilman putkien päällekkäisyyttä. Kumpi pää tahansa saa olla isompi.</div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label for="k-h">Korkeus mm (päätasojen väli)</label><input id="k-h" type="text" inputmode="decimal" value="400"></div>
+          <div class="kpt-kentta"><label for="k-t">Pellin paksuus mm</label><input id="k-t" type="text" inputmode="decimal" value="0,5"></div>
+        </div>
+        <p class="kpt-vihje" id="mitat-hint">Korkeus on kartion oma pystyväli ilman putkien päällekkäisyyttä. Kumpi pää tahansa saa olla isompi.</p>
       </div>
 
-      <div class="card" id="kortti-viuhka" style="display:none">
-        <h3>Nurkkaviuhka ja ympyrän paikka</h3>
-        <div class="field"><label for="k-nn">Viivoja per nurkka</label>
-          <select id="k-nn"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></div>
-        <div class="hint">Viivat lähtevät nurkasta ylärenkaalle. Uloimmat viivat lasketaan mukaan, joten 6 viivaa = 5 kolmiota per nurkka ja 2 viivaa = yksi kolmio. Enemmän viivoja = pyöreämpi kaari, mutta enemmän merkittävää.</div>
-        <div class="field-row">
-          <div class="field"><label for="k-ox">Ympyrän siirto sivuun X mm</label><input id="k-ox" type="text" inputmode="decimal" value="0"></div>
-          <div class="field"><label for="k-oy">Ympyrän siirto taakse Y mm</label><input id="k-oy" type="text" inputmode="decimal" value="0"></div>
+      <details class="kpt-kortti" id="kortti-viuhka" style="display:none">
+        <summary>Nurkkaviuhka ja ympyrän paikka <span class="yv" id="yv-viuhka"></span></summary>
+        <div style="margin-top:14px">
+          <div class="kpt-kentta"><label for="k-nn">Viivoja per nurkka</label>
+            <select id="k-nn"><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select></div>
+          <p class="kpt-vihje">Viivat lähtevät nurkasta ylärenkaalle. Uloimmat viivat lasketaan mukaan, joten 6 viivaa = 5 kolmiota per nurkka ja 2 viivaa = yksi kolmio. Enemmän viivoja = pyöreämpi kaari, mutta enemmän merkittävää.</p>
+          <div class="kpt-kentat">
+            <div class="kpt-kentta"><label for="k-ox">Ympyrän siirto sivuun X mm</label><input id="k-ox" type="text" inputmode="decimal" value="0"></div>
+            <div class="kpt-kentta"><label for="k-oy">Ympyrän siirto taakse Y mm</label><input id="k-oy" type="text" inputmode="decimal" value="0"></div>
+          </div>
+          <p class="kpt-vihje" style="margin:0">Siirto mitataan nelikulmion keskipisteestä (X oikealle, Y taaksepäin, miinus = vasemmalle/eteen). 0 = keskellä. Seinää vasten: Y = (syvyys − ylähalkaisija) / 2 pitää takareunan suorana.</p>
         </div>
-        <div class="hint">Siirto mitataan nelikulmion keskipisteestä (X oikealle, Y taaksepäin, miinus = vasemmalle/eteen). 0 = keskellä. Seinää vasten: Y = (syvyys − ylähalkaisija) / 2 pitää takareunan suorana.</div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h3>Päädyt: päälle vai sisään</h3>
-        <div class="field"><label for="k-ala-sov">Alapää</label>
-          <select id="k-ala-sov"><option value="ei">Ei sovitetta (halkaisija sellaisenaan)</option><option value="paalle" selected>Menee putken PÄÄLLE</option><option value="sisaan">Menee putken SISÄÄN</option></select></div>
-        <div class="field"><label for="k-yla-sov">Yläpää</label>
-          <select id="k-yla-sov"><option value="ei">Ei sovitetta (halkaisija sellaisenaan)</option><option value="paalle">Menee putken PÄÄLLE</option><option value="sisaan" selected>Menee putken SISÄÄN</option></select></div>
-        <div class="hint">Kun sovite on valittu, yllä oleva halkaisija on <b>putken</b> halkaisija. Päälle: putki + paksuus + välys. Sisään: putki − paksuus − välys. Sama laskutapa kuin laskimen Putket-sivulla.</div>
-        <div class="field-row">
-          <div class="field"><label for="k-t">Pellin paksuus mm</label><input id="k-t" type="text" inputmode="decimal" value="0,5"></div>
-          <div class="field"><label for="k-v">Välys mm</label><input id="k-v" type="text" inputmode="decimal" value="1"></div>
+      <details class="kpt-kortti">
+        <summary>Päädyt: päälle vai sisään <span class="yv" id="yv-paadyt"></span></summary>
+        <div style="margin-top:14px">
+          <div class="kpt-kentta"><label for="k-ala-sov">Alapää</label>
+            <select id="k-ala-sov"><option value="ei">Ei sovitetta (halkaisija sellaisenaan)</option><option value="paalle" selected>Menee putken PÄÄLLE</option><option value="sisaan">Menee putken SISÄÄN</option></select></div>
+          <div class="kpt-kentta"><label for="k-yla-sov">Yläpää</label>
+            <select id="k-yla-sov"><option value="ei">Ei sovitetta (halkaisija sellaisenaan)</option><option value="paalle">Menee putken PÄÄLLE</option><option value="sisaan" selected>Menee putken SISÄÄN</option></select></div>
+          <div class="kpt-kentta"><label for="k-v">Välys mm</label><input id="k-v" type="text" inputmode="decimal" value="1"></div>
+          <p class="kpt-vihje" style="margin:0">Kun sovite on valittu, halkaisija on <b>putken</b> halkaisija. Päälle: putki + paksuus + välys. Sisään: putki − paksuus − välys. Sama laskutapa kuin Laskimen Putket-sivulla.</p>
         </div>
-      </div>
+      </details>
 
-      <div class="card" id="kortti-huullos">
-        <h3>Huullos (reunataitos)</h3>
-        <div class="huom" id="hu-nelio-huom" style="display:none;margin:0 0 14px">Nelikulmio → pyöreä: alapää (nelikulmio) saa suorat liuskat sivuittain, nurkkiin jää rako. Yläpää (pyöreä) saa yhden jatkuvan liuskan. Liuskojen päät leikataan sauma-viivan jatkeella. Huulloksen taitoslinjaa ei merkitä pellille.</div>
-        <div class="field-row">
-          <div class="field"><label for="k-hu-ala">Alapään huullos mm</label><input id="k-hu-ala" type="text" inputmode="decimal" value="0"></div>
-          <div class="field"><label for="k-hu-yla">Yläpään huullos mm</label><input id="k-hu-yla" type="text" inputmode="decimal" value="0"></div>
+      <details class="kpt-kortti" id="kortti-huullos">
+        <summary>Huullos (reunataitos) <span class="yv" id="yv-huullos"></span></summary>
+        <div style="margin-top:14px">
+          <div class="kpt-ilmoitus huom" id="hu-nelio-huom" style="display:none">Nelikulmio → pyöreä: alapää (nelikulmio) saa suorat liuskat sivuittain, nurkkiin jää rako. Yläpää (pyöreä) saa yhden jatkuvan liuskan. Liuskojen päät leikataan sauma-viivan jatkeella. Huulloksen taitoslinjaa ei merkitä pellille.</div>
+          <div class="kpt-kentat">
+            <div class="kpt-kentta"><label for="k-hu-ala">Alapään huullos mm</label><input id="k-hu-ala" type="text" inputmode="decimal" value="0"></div>
+            <div class="kpt-kentta"><label for="k-hu-yla">Yläpään huullos mm</label><input id="k-hu-yla" type="text" inputmode="decimal" value="0"></div>
+          </div>
+          <div class="kpt-kentat">
+            <div class="kpt-kentta"><label for="k-hu-ala-s">Alapää: taitto</label>
+              <select id="k-hu-ala-s"><option value="ulos" selected>Ulos</option><option value="sisaan">Sisään</option><option value="putki">Putken suuntaan</option></select></div>
+            <div class="kpt-kentta"><label for="k-hu-yla-s">Yläpää: taitto</label>
+              <select id="k-hu-yla-s"><option value="ulos" selected>Ulos</option><option value="sisaan">Sisään</option><option value="putki">Putken suuntaan</option></select></div>
+          </div>
+          <div class="kpt-kentat">
+            <div class="kpt-kentta" id="kentta-hu-ala-k"><label for="k-hu-ala-k">Alapää: kanttausluku °</label><input id="k-hu-ala-k" type="text" inputmode="decimal" value="90"></div>
+            <div class="kpt-kentta" id="kentta-hu-yla-k"><label for="k-hu-yla-k">Yläpää: kanttausluku °</label><input id="k-hu-yla-k" type="text" inputmode="decimal" value="90"></div>
+          </div>
+          <p class="kpt-vihje" style="margin:0">Huullos on kaistale kappaleen reunan ulkopuolella, 0 = ei huullosta. Leveys mitataan taitoslinjasta leikkausreunaan. Taittosuunta ja kanttausluku eivät muuta levityskuvan muotoa. Putken suuntaan: huullos jatkuu akselin suuntaisesti kartiosta pois ja kanttausluku lasketaan kartion kaltevuudesta. Ei taivutusvaraa (varat otat itse mittaamalla).</p>
         </div>
-        <div class="field-row">
-          <div class="field"><label for="k-hu-ala-s">Alapää: taitto</label>
-            <select id="k-hu-ala-s"><option value="ulos" selected>Ulos</option><option value="sisaan">Sisään</option><option value="putki">Putken suuntaan</option></select></div>
-          <div class="field"><label for="k-hu-yla-s">Yläpää: taitto</label>
-            <select id="k-hu-yla-s"><option value="ulos" selected>Ulos</option><option value="sisaan">Sisään</option><option value="putki">Putken suuntaan</option></select></div>
-        </div>
-        <div class="field-row">
-          <div class="field" id="kentta-hu-ala-k"><label for="k-hu-ala-k">Alapää: kanttausluku °</label><input id="k-hu-ala-k" type="text" inputmode="decimal" value="90"></div>
-          <div class="field" id="kentta-hu-yla-k"><label for="k-hu-yla-k">Yläpää: kanttausluku °</label><input id="k-hu-yla-k" type="text" inputmode="decimal" value="90"></div>
-        </div>
-        <div class="hint" style="margin-bottom:0">Huullos on kaistale kappaleen reunan ulkopuolella, 0 = ei huullosta. Leveys mitataan taitoslinjasta leikkausreunaan. Taittosuunta ja kanttausluku eivät muuta levityskuvan muotoa. Putken suuntaan: huullos jatkuu akselin suuntaisesti kartiosta pois ja kanttausluku lasketaan kartion kaltevuudesta. Ei taivutusvaraa (varat otat itse mittaamalla).</div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h3>Osat ja saumat</h3>
-        <div class="field-row">
-          <div class="field"><label for="k-n">Osien määrä (pellit)</label>
-            <select id="k-n"><option value="1" selected>1 osa</option><option value="2">2 osaa</option><option value="3">3 osaa</option><option value="4">4 osaa</option><option value="5">5 osaa</option><option value="6">6 osaa</option><option value="7">7 osaa</option><option value="8">8 osaa</option></select></div>
-          <div class="field"><label for="k-a0">Saumalisä kaikille mm</label><input id="k-a0" type="text" inputmode="decimal" value="10"></div>
+      <details class="kpt-kortti">
+        <summary>Osat ja saumat <span class="yv" id="yv-saumat"></span></summary>
+        <div style="margin-top:14px">
+          <div class="kpt-kentat">
+            <div class="kpt-kentta"><label for="k-n">Osien määrä (pellit)</label>
+              <select id="k-n"><option value="1" selected>1 osa</option><option value="2">2 osaa</option><option value="3">3 osaa</option><option value="4">4 osaa</option><option value="5">5 osaa</option><option value="6">6 osaa</option><option value="7">7 osaa</option><option value="8">8 osaa</option></select></div>
+            <div class="kpt-kentta"><label for="k-a0">Saumalisä kaikille mm</label><input id="k-a0" type="text" inputmode="decimal" value="10"></div>
+          </div>
+          <p class="kpt-vihje" id="saumat-hint">Saumojen kulma kertoo, missä kohtaa kartion ympärystä sauma on (0–360°, kierretään koko ajan samaan suuntaan). Valmis jako on tasajako, ja kulmia voi muuttaa. Jokaisella saumalla on kaksi saumalisää, toinen kummallekin puolelle. Yksi osa = yksi sauma.</p>
+          <div id="saumat"></div>
         </div>
-        <div class="hint" id="saumat-hint">Saumojen kulma kertoo, missä kohtaa kartion ympärystä sauma on (0–360°, kierretään koko ajan samaan suuntaan). Valmis jako on tasajako, ja kulmia voi muuttaa. Jokaisella saumalla on kaksi saumalisää, toinen kummallekin puolelle. Yksi osa = yksi sauma.</div>
-        <div id="saumat"></div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h3>Pelti</h3>
-        <div class="field-row">
-          <div class="field"><label for="k-levy-tyyppi">Pelti</label>
-            <select id="k-levy-tyyppi"><option value="rulla" selected>Rulla</option><option value="levy">Levy</option></select></div>
-          <div class="field"><label for="k-levy-w">Leveys mm</label><input id="k-levy-w" type="text" inputmode="decimal" value="1250"></div>
+      <details class="kpt-kortti">
+        <summary>Pelti ja merkintä <span class="yv" id="yv-pelti"></span></summary>
+        <div style="margin-top:14px">
+          <div class="kpt-kentat">
+            <div class="kpt-kentta"><label for="k-levy-tyyppi">Pelti</label>
+              <select id="k-levy-tyyppi"><option value="rulla" selected>Rulla</option><option value="levy">Levy</option></select></div>
+            <div class="kpt-kentta"><label for="k-levy-w">Leveys mm</label><input id="k-levy-w" type="text" inputmode="decimal" value="1250"></div>
+          </div>
+          <div class="kpt-kentta"><label for="k-levy-l" id="k-levy-l-sel">Enimmäispituus mm (rulla)</label><input id="k-levy-l" type="text" inputmode="decimal" value="5000"></div>
+          <div class="kpt-kentta"><label for="k-sij-tila">Sijoitustapa</label>
+            <select id="k-sij-tila"><option value="reuna" selected>Suora reuna rullan reunaa vasten (mittaus helppo)</option><option value="saasta">Säästä pellissä (vapaa kierto)</option></select></div>
+          <div class="kpt-kentta"><label for="k-kaari-askel">Kaaren pisteiden väli mm (pyöreä, merkintä ilman harppia)</label><input id="k-kaari-askel" type="text" inputmode="decimal" value="100"></div>
+          <div class="kpt-kentta"><label for="k-kulma-b">Leikkauskulmat (nelikulmio → pyöreä)</label>
+            <select id="k-kulma-b"><option value="ei" selected>Vain kulmat (kaari leikataan merkkien mukaan)</option><option value="kylla">Ympyrän pisteet mukaan</option></select></div>
+          <div class="kpt-kentta"><label for="k-sym">Merkintämitat symmetriselle kappaleelle</label>
+            <select id="k-sym"><option value="puolikas" selected>Mittaa molemmista päistä (puolet riveistä)</option><option value="kaikki">Kaikki merkit alkukulmasta</option></select></div>
+          <p class="kpt-vihje" style="margin:0">Reunatavassa kappaleen yksi suora reuna on rullan reunaa vasten ja kappale on työnnetty leikkauspäätä vasten. Silloin jokainen merkki mitataan kahdella mitalla: matka leikkauspäästä ja etäisyys reunasta. Reunan voi vaihtaa kunkin kappaleen sijoituskortissa.</p>
         </div>
-        <div class="field"><label for="k-levy-l" id="k-levy-l-sel">Enimmäispituus mm (rulla)</label><input id="k-levy-l" type="text" inputmode="decimal" value="5000"></div>
-        <div class="field"><label for="k-sij-tila">Sijoitustapa</label>
-          <select id="k-sij-tila"><option value="reuna" selected>Suora reuna rullan reunaa vasten (mittaus helppo)</option><option value="saasta">Säästä pellissä (vapaa kierto)</option></select></div>
-        <div class="field"><label for="k-kulma-b">Leikkauskulmat (nelikulmio → pyöreä)</label>
-          <select id="k-kulma-b"><option value="ei" selected>Vain kulmat (kaari leikataan merkkien mukaan)</option><option value="kylla">Ympyrän pisteet mukaan</option></select></div>
-        <div class="field"><label for="k-sym">Merkintämitat symmetriselle kappaleelle</label>
-          <select id="k-sym"><option value="puolikas" selected>Mittaa molemmista päistä (puolet riveistä)</option><option value="kaikki">Kaikki merkit alkukulmasta</option></select></div>
-        <div class="hint" style="margin-bottom:0">Reunatavassa kappaleen yksi suora reuna on rullan reunaa vasten ja kappale on työnnetty leikkauspäätä vasten. Silloin jokainen merkki mitataan kahdella mitalla: matka leikkauspäästä ja etäisyys reunasta. Reunan voi vaihtaa kunkin kappaleen sijoituskortissa.</div>
-      </div>
+      </details>
     </div>
 
     <div>
-      <div class="card" id="tulos-kortti"><h3>Tulos</h3><div id="tulos"></div></div>
-      <div id="osat-kuvat"></div>
-      <button class="nappi" id="nappi-tulosta" type="button">Tulosta työkortti</button>
+      <div class="kpt-kortti" id="tulos-kortti"><div class="kpt-kortti-otsikko">Tulos</div><div id="tulos"></div></div>
+      <button class="kpt-nappi ensisijainen leve" id="nappi-tulosta" type="button">🖨 Tulosta työkortti</button>
+      <div id="osat-kuvat" style="margin-top:16px"></div>
     </div>
   </div>
-</div>
-<div id="tulostus"></div>
+</main>
 
+<script src="geom.js?v=1"></script>
+<script src="pellit.js?v=3"></script>
+<script src="menekki.js?v=2"></script>
+<script src="tyokortti.js?v=4"></script>
 <script>
+
 'use strict';
 // ====================================================================
 //  LASKENTA (ei kosketa sivun elementteihin; testit ajavat vain tämän osan)
@@ -1088,6 +1079,48 @@ function nelioKulmat(o, sj, mukaB) {
   });
 }
 
+// ====================================================================
+//  HARPPI JA KAAREN PISTEET (ERP-sivu, R1 24.11.2026, claude/kartio_huomiot.md kohdat A ja B)
+// ====================================================================
+// Pyöreän kartion osa pellillä (sijoitus sj): harpin kärjen paikka ja kaarien pisteet mitattuina pellin reunasta (x)
+// ja leikkauspäästä (y). Kärki on levityskuvan origo, joten pellillä se on sijoituksen siirto (voi olla pellin ulkopuolella:
+// x < 0 = rullan reunan ulkopuolella, y < 0 = leikkauspään takana). Kaaret ovat leikkausreunalla (huullos mukana).
+// askel = kaaren pisteiden suurin väli kaarta pitkin (mm); pisteet jaetaan tasaisesti.
+function kartioHarppi(o, sj, askel) {
+  var T = sijoituksenMuunnos(sj), kierto = o.kuva.kierto, th = o.theta;
+  var hb = o.huul ? o.huul.iso.h : 0, hs = o.huul ? o.huul.pieni.h : 0;
+  var P = function (r, phi) { return T(kierraPisteet([napa(r, phi)], kierto)[0]); };
+  var a = Math.max(10, luku(askel, 100));
+  var kaari = function (r, etuliite) {
+    if (!(r > 1e-9)) return null;
+    var L = r * rad(th), n = Math.max(1, Math.ceil(L / a - 1e-9)), pts = [], i;
+    for (i = 0; i <= n; i++) pts.push({ nimi: etuliite + (i + 1), p: P(r, th * i / n) });
+    return { r: r, pituus: L, n: n, janne: 2 * r * Math.sin(rad(th / n / 2)), pisteet: pts };
+  };
+  var iso = kaari(o.Rb + hb, 'I'), pieni = kaari(o.Rs - hs, 'P');
+  // Ääriviiva leikkausjärjestyksessä: alun saumalisän kulma isossa päässä (T1), iso kaari, lopun saumalisä (T3, T4),
+  // pieni kaari takaisin ja alun saumalisä pienessä päässä (T2). Huulloksen kohdalla saumalisän ja kaaren väliin tulee
+  // porras (K1–K4 = kappaleen reunan ja taitoslinjan kulmat), kuten levityskuvassa.
+  var kv = o.kuva, rivit = [];
+  var lisaa = function (nimi, p) { var ed = rivit[rivit.length - 1]; if (ed && dist2(ed.p, p) < 0.05) { ed.nimi += '=' + nimi; return; } rivit.push({ nimi: nimi, p: p }); };
+  lisaa('T1', T(kv.tab1[2]));
+  if (hb > 0 && o.a1 > 0) lisaa('K1', P(o.Rb, 0));
+  iso.pisteet.forEach(function (q) { lisaa(q.nimi, q.p); });
+  if (hb > 0 && o.a2 > 0) lisaa('K3', P(o.Rb, th));
+  lisaa('T3', T(kv.tab2[2]));
+  lisaa('T4', T(kv.tab2[3]));
+  if (pieni) {
+    if (hs > 0 && o.a2 > 0) lisaa('K4', P(o.Rs, th));
+    pieni.pisteet.slice().reverse().forEach(function (q) { lisaa(q.nimi, q.p); });
+    if (hs > 0 && o.a1 > 0) lisaa('K2', P(o.Rs, 0));
+  }
+  lisaa('T2', T(kv.tab1[3]));
+  var ens = rivit[0], vika = rivit[rivit.length - 1];
+  if (rivit.length > 1 && dist2(ens.p, vika.p) < 0.05) { ens.nimi = vika.nimi + '=' + ens.nimi; rivit.pop(); }   // kärkikartio ilman saumalisää
+  rivit.forEach(function (r, i) { var s = rivit[(i + 1) % rivit.length]; r.x = r.p[0]; r.y = r.p[1]; r.seurNimi = s.nimi; r.seurPit = dist2(r.p, s.p); });
+  return { karki: T([0, 0]), Rb: o.Rb, Rs: o.Rs, RbLeikkaus: o.Rb + hb, RsLeikkaus: o.Rs - hs, iso: iso, pieni: pieni, rivit: rivit, askel: a };
+}
+
 // ==== UI ====
 // ====================================================================
 //  SVG-PIIRROKSET
@@ -1206,7 +1239,7 @@ function sijoitusSvg(k, merkit) {
 // ====================================================================
 //  KÄYTTÖLIITTYMÄ
 // ====================================================================
-var KENTAT = ['k-nimi', 'k-kpl', 'k-muoto', 'k-ala-d', 'k-yla-d', 'k-nw', 'k-nd', 'k-nn', 'k-ox', 'k-oy', 'k-h', 'k-ala-sov', 'k-yla-sov', 'k-t', 'k-v', 'k-n', 'k-a0', 'k-levy-tyyppi', 'k-levy-w', 'k-levy-l', 'k-sij-tila', 'k-kulma-b', 'k-sym', 'k-hu-ala', 'k-hu-yla', 'k-hu-ala-s', 'k-hu-yla-s', 'k-hu-ala-k', 'k-hu-yla-k'];
+var KENTAT = ['k-nimi', 'k-kpl', 'k-muoto', 'k-ala-d', 'k-yla-d', 'k-nw', 'k-nd', 'k-nn', 'k-ox', 'k-oy', 'k-h', 'k-ala-sov', 'k-yla-sov', 'k-t', 'k-v', 'k-n', 'k-a0', 'k-levy-tyyppi', 'k-levy-w', 'k-levy-l', 'k-sij-tila', 'k-kulma-b', 'k-sym', 'k-hu-ala', 'k-hu-yla', 'k-hu-ala-s', 'k-hu-yla-s', 'k-hu-ala-k', 'k-hu-yla-k', 'k-kaari-askel'];
 var AVAIN = 'kartio_syote_v3';
 var $ = function (id) { return document.getElementById(id); };
 var SAUMAT = [];   // [{kulma, ed, seur}] merkkijonoina, kuten kentissä
@@ -1261,13 +1294,13 @@ function rakennaSaumaRivit() {
     var edNro = ((i - 1 + n) % n) + 1, seurNro = i + 1, ensimmainen;
     if (nelio) {
       var opts = PAIKAT.map(function (nm, k) { return '<option value="' + k + '"' + (String(r.paikka) === String(k) ? ' selected' : '') + '>' + esc(nm) + '</option>'; }).join('');
-      ensimmainen = '<div class="field" style="grid-column:1 / -1"><label>Paikka</label><select data-i="' + i + '" data-k="paikka">' + opts + '</select></div>';
+      ensimmainen = '<div class="kpt-kentta" style="grid-column:1 / -1"><label>Paikka</label><select data-i="' + i + '" data-k="paikka">' + opts + '</select></div>';
     } else {
-      ensimmainen = '<div class="field"><label>Kulma °</label><input type="text" inputmode="decimal" data-i="' + i + '" data-k="kulma" value="' + esc(r.kulma) + '"' + (n === 1 ? ' disabled' : '') + '></div>';
+      ensimmainen = '<div class="kpt-kentta"><label>Kulma °</label><input type="text" inputmode="decimal" data-i="' + i + '" data-k="kulma" value="' + esc(r.kulma) + '"' + (n === 1 ? ' disabled' : '') + '></div>';
     }
     h += '<div class="sauma-rivi"><div class="sr-nimi">Sauma ' + (i + 1) + '</div>' + ensimmainen +
-      '<div class="field"><label>Osan ' + edNro + ' reuna mm</label><input type="text" inputmode="decimal" data-i="' + i + '" data-k="ed" value="' + esc(r.ed) + '"></div>' +
-      '<div class="field"><label>Osan ' + seurNro + ' reuna mm</label><input type="text" inputmode="decimal" data-i="' + i + '" data-k="seur" value="' + esc(r.seur) + '"></div></div>';
+      '<div class="kpt-kentta"><label>Osan ' + edNro + ' reuna mm</label><input type="text" inputmode="decimal" data-i="' + i + '" data-k="ed" value="' + esc(r.ed) + '"></div>' +
+      '<div class="kpt-kentta"><label>Osan ' + seurNro + ' reuna mm</label><input type="text" inputmode="decimal" data-i="' + i + '" data-k="seur" value="' + esc(r.seur) + '"></div></div>';
   });
   $('saumat').innerHTML = h;
   Array.prototype.forEach.call($('saumat').querySelectorAll('input, select'), function (inp) {
@@ -1345,7 +1378,7 @@ function nelioHuullosTaulukko(o) {
 }
 var HUULLOS_KULMA_OHJE = ' Huullos: pisteet H1, H2, … ovat huulloksen ulkoreunan kulmat ja leikataan ulkoreunaa pitkin. Alapään nurkissa on rako: A-pisteet ovat raon pohjassa. Yläpään ulkoreunan kaari (kaari → H) leikataan U-merkkien mukaan, tai valitse "ympyrän pisteet", jolloin U-merkit tulevat taulukkoon.';
 var HUULLOS_A_MERKKI_HUOM = 'Alareunan merkit A ovat huulloksen taitoslinjalla (kappaleen reunalla), eivät huulloksen ulkoreunalla.';
-function res(nimi, arvo, yks, sub) { return '<div class="res' + (sub ? ' sub' : '') + '"><span>' + nimi + '</span><b>' + arvo + (yks ? ' <small>' + yks + '</small>' : '') + '</b></div>'; }
+function res(nimi, arvo, yks) { return '<div class="kpt-tulos"><span>' + nimi + '</span><b>' + arvo + (yks ? ' <small>' + yks + '</small>' : '') + '</b></div>'; }
 function soviteTeksti(D, d, tyyppi) { if (D === 0) return '0 (terävä kärki)'; return tyyppi === 'ei' ? fmt(d, 1) + ' (sellaisenaan)' : fmt(d, 1) + ' (' + fmt(D, 1) + (tyyppi === 'paalle' ? ' päälle' : ' sisään') + ')'; }
 function peltiTeksti(s) { return s.levyTyyppi === 'rulla' ? 'Rulla ' + fmt(s.levyW, 0) + ' mm leveä' : 'Levy ' + fmt(s.levyW, 0) + ' × ' + fmt(s.levyL, 0) + ' mm'; }
 function sijoitusSelitys(s, o) {
@@ -1366,14 +1399,14 @@ function reunaValinta(r, o) {
     var teksti = v.nimi + ' · ' + fmt(v.pit, 0) + ' mm' + (v.kelpaa ? ' · ' + fmt(v.w, 0) + ' × ' + fmt(v.h, 0) + (v.sopii ? '' : ' · ei mahdu') : ' · ei sovi reunaa vasten');
     opts += '<option value="' + esc(v.avain) + '"' + (v.kelpaa ? '' : ' disabled') + (sj.valittuKasin && sj.avain === v.avain ? ' selected' : '') + '>' + esc(teksti) + '</option>';
   });
-  return '<div class="field" style="margin-top:12px"><label>Reuna rullan reunaa vasten</label><select data-reuna="' + r.osa.nro + '">' + opts + '</select></div>';
+  return '<div class="kpt-kentta" style="margin-top:12px"><label>Reuna rullan reunaa vasten</label><select data-reuna="' + r.osa.nro + '">' + opts + '</select></div>';
 }
 function sijoitusKortti(s, r, n, nimi) {
   var o = r.osa, sj = o.sijoitus;
-  var h = '<div class="card"><h3>Sijoitus pellille' + (n > 1 ? ' · ' + esc(nimi) : '') + '</h3><div class="piirros">' + sijoitusSvg(o) + '</div>' + reunaValinta(r, o);
-  h += '<div class="hint" style="margin:10px 0 0">' + esc(sijoitusSelitys(s, o)) + (sj.tila === 'saasta' && !sj.ilmoitus ? ' Kappale on käännetty niin, että pellin kulutus on mahdollisimman pieni.' : '') + '</div>';
-  if (sj.tila === 'reuna') h += '<div class="hint" style="margin:6px 0 0">Kuvassa lihavat viivat: vasen = rullan reuna, ylhäällä = leikkauspää. Kappaleen paksu reuna on rullan reunaa vasten.</div>';
-  if (sj.huom) h += '<div class="huom">' + esc(sj.huom) + '</div>';
+  var h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Sijoitus pellille' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div><div class="kpt-piirros paperi">' + sijoitusSvg(o) + '</div>' + reunaValinta(r, o);
+  h += '<div class="kpt-vihje" style="margin:10px 0 0">' + esc(sijoitusSelitys(s, o)) + (sj.tila === 'saasta' && !sj.ilmoitus ? ' Kappale on käännetty niin, että pellin kulutus on mahdollisimman pieni.' : '') + '</div>';
+  if (sj.tila === 'reuna') h += '<div class="kpt-vihje" style="margin:6px 0 0">Kuvassa lihavat viivat: vasen = rullan reuna, ylhäällä = leikkauspää. Kappaleen paksu reuna on rullan reunaa vasten.</div>';
+  if (sj.huom) h += '<div class="kpt-ilmoitus huom">' + esc(sj.huom) + '</div>';
   return h + '</div>';
 }
 // Reunavalinnan vaihto: tallennetaan vain käsin tehdyt valinnat
@@ -1390,154 +1423,6 @@ function osanKulmat(o) { return fmt(o.alkuKulma, 1) + '° → ' + fmt(nolla360(o
 function ryhmanNimi(r, osia) { return osia > 1 ? 'Osa ' + r.nrot.join(' ja ') + (r.kpl > 1 ? ' (' + r.kpl + ' kpl samanlaista)' : '') : 'Kartio'; }
 
 var viimeisin = null;
-function renderAll() {
-  paivitaHuullosKentat();
-  var s = lueSyote();
-  $('k-levy-l-sel').textContent = s.levyTyyppi === 'rulla' ? 'Enimmäispituus mm (rulla)' : 'Levyn pituus mm';
-  var k = laske(s);
-  viimeisin = { s: s, k: k };
-  var T = $('tulos');
-  if (k.virheet && k.virheet.length) {
-    T.innerHTML = k.virheet.map(function (v) { return '<div class="varoitus">' + esc(v) + '</div>'; }).join('');
-    $('osat-kuvat').innerHTML = '';
-    return;
-  }
-  if (k.tyyppi === 'nelio') { renderNelio(s, k); return; }
-  var n = k.osat.length, h = '';
-  h += '<div class="res-h">Halkaisijat laskennassa</div>';
-  h += res('Alapää', soviteTeksti(s.alaD, k.da, s.alaSovite), 'mm', true);
-  h += res('Yläpää', soviteTeksti(s.ylaD, k.dy, s.ylaSovite), 'mm', true);
-  h += res('Isompi pää', k.suuriPaa === 'ala' ? 'alapää' : 'yläpää', '', true);
-  h += '<div class="res-h">Koko kartion levitys</div>';
-  h += res('Iso kaari, säde Rb', fmt(k.Rb), 'mm');
-  h += res('Pieni kaari, säde Rs', fmt(k.Rs), 'mm');
-  h += res('Kulma (koko kartio)', fmt(k.theta, 2), '°');
-  h += res('Iso kaari, pituus', fmt(k.kaariIso), 'mm', true);
-  h += res('Pieni kaari, pituus', fmt(k.kaariPieni), 'mm', true);
-  h += res('Kartion sivun pituus', fmt(k.sl), 'mm', true);
-  if (k.huul && k.huul.onko) {
-    h += '<div class="res-h">Huullokset</div>';
-    ['ala', 'yla'].forEach(function (paa) {
-      var x = k.huul.iso.paa === paa ? k.huul.iso : k.huul.pieni;
-      h += res((paa === 'ala' ? 'Alapää' : 'Yläpää') + (k.huul.iso.paa === paa ? ' (iso kaari)' : ' (pieni kaari)'), x.h > 0 ? huullosRivi(x) : 'ei huullosta', '', true);
-    });
-    h += res('Kartion kaltevuus akselista', fmt(k.huul.alfa, 1), '°', true);
-  }
-  h += '<div class="res-h">' + (n === 1 ? 'Pellin tarve' : 'Osat ja pellin tarve') + '</div>';
-  if (n === 1) {
-    var o = k.osat[0];
-    h += res('Jänne (isot kulmat)', fmt(o.janne), 'mm', true);
-    h += res('Kappale ilman saumalisää', fmt(o.sektoriRajat.w, 0) + ' × ' + fmt(o.sektoriRajat.h, 0), 'mm', true);
-    h += res(k.huul && k.huul.onko ? 'Kappale saumalisien ja huullosten kanssa' : 'Kappale saumalisien kanssa', fmt(o.ulkoRajat.w, 0) + ' × ' + fmt(o.ulkoRajat.h, 0), 'mm', true);
-  } else {
-    k.osat.forEach(function (o) {
-      h += res('Osa ' + o.nro + ': ' + osanKulmat(o), fmt(o.sijoitus.w, 0) + ' × ' + fmt(o.sijoitus.h, 0), 'mm' + (o.sijoitus.sopii ? '' : ' · EI MAHDU'), true);
-    });
-  }
-  if (k.kaikkiMahtuu) {
-    if (s.levyTyyppi === 'rulla') h += res('Rullaa kuluu yhteensä', fmt(k.pellinKulutus, 0), 'mm' + (n > 1 ? ' (osat peräkkäin)' : ' (leveys ' + fmt(k.sijoitus.w, 0) + ')'));
-    else h += res('Levyjä tarvitaan', String(n), 'kpl' + (n > 1 ? ' (yksi per osa)' : ''));
-    h += '<div class="ok">' + (n === 1 ? 'Mahtuu pellille' : 'Kaikki osat mahtuvat pellille') + '.</div>';
-    if (n > 1) h += '<div class="res-pieni">Osat on laskettu erikseen, ilman että niitä sovitetaan samalle pellille limittäin. Sijoittelu keskenään tulee myöhemmin.</div>';
-  }
-  k.huomautukset.forEach(function (x) { h += '<div class="' + (/Ei mahdu/.test(x) ? 'varoitus' : 'huom') + '">' + esc(x) + '</div>'; });
-  T.innerHTML = h;
-
-  var kuvat = '';
-  k.ryhmat.forEach(function (r) {
-    var o = r.osa, nimi = ryhmanNimi(r, n);
-    kuvat += '<div class="card"><h3>Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</h3>' +
-      (n > 1 ? '<div class="ryhma-otsikko">kulma kartiolla ' + osanKulmat(o) + ' · saumalisät ' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</div>' : '') +
-      '<div class="piirros">' + levitysSvg(o) + '</div></div>';
-    kuvat += sijoitusKortti(s, r, n, nimi);
-  });
-  $('osat-kuvat').innerHTML = kuvat;
-  liitaReunaValinnat();
-}
-
-function tulosta() {
-  if (!viimeisin || !viimeisin.k || (viimeisin.k.virheet && viimeisin.k.virheet.length)) { alert('Korjaa ensin syötteet.'); return; }
-  if (viimeisin.k.tyyppi === 'nelio') { tulostaNelio(); return; }
-  var s = viimeisin.s, k = viimeisin.k, n = k.osat.length;
-  var soviteNimi = { ei: 'ei sovitetta', paalle: 'putken päälle', sisaan: 'putken sisään' };
-  var kpl = s.kpl;
-  var otsikko = function (alaotsikko) {
-    return '<div class="tk-brand">KALAJOEN PELTITYÖ · KARTIO' + (alaotsikko ? ' · ' + esc(alaotsikko) : '') + '</div>' +
-      '<h1>' + esc(s.nimi || 'Kartio') + '<span class="tk-kpl">' + esc(String(kpl)) + ' kpl</span></h1>' +
-      '<div class="tk-fields"><div>Tekijä <span class="tk-line"></span></div><div>Pvm <span class="tk-line"></span></div><div>Valmis <span class="tk-line" style="width:14mm"></span></div></div>';
-  };
-  var mitat = function () {
-    var p = '<h2>Kartion mitat</h2><table class="tk-table">';
-    p += '<tr><th>Alapää</th><td>' + fmt(k.da, 1) + ' mm<br><small>' + (s.alaD === 0 ? 'terävä kärki' : s.alaSovite === 'ei' ? 'ei sovitetta' : fmt(s.alaD, 1) + ' mm ' + soviteNimi[s.alaSovite]) + '</small></td></tr>';
-    p += '<tr><th>Yläpää</th><td>' + fmt(k.dy, 1) + ' mm<br><small>' + (s.ylaD === 0 ? 'terävä kärki' : s.ylaSovite === 'ei' ? 'ei sovitetta' : fmt(s.ylaD, 1) + ' mm ' + soviteNimi[s.ylaSovite]) + '</small></td></tr>';
-    p += '<tr><th>Korkeus</th><td>' + fmt(s.H, 1) + ' mm</td></tr>';
-    p += '<tr><th>Paksuus / välys</th><td>' + fmt(s.t, 2) + ' / ' + fmt(s.v, 2) + ' mm</td></tr></table>';
-    return p;
-  };
-  var huulRivit = function () {
-    var r = '';
-    if (k.huul && k.huul.onko) ['ala', 'yla'].forEach(function (paa) {
-      var x = k.huul.iso.paa === paa ? k.huul.iso : k.huul.pieni;
-      r += '<tr><th>Huullos ' + (paa === 'ala' ? 'alapää' : 'yläpää') + '</th><td>' + (x.h > 0 ? esc(huullosRivi(x)) : 'ei huullosta') + '</td></tr>';
-    });
-    return r;
-  };
-  var sivut = [];
-  if (n === 1) {
-    var o = k.osat[0];
-    var p = otsikko('');
-    p += '<div class="tk-two"><div>' + mitat().replace('</table>', '<tr><th>Saumalisät</th><td>' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</td></tr></table>') + '</div>';
-    p += '<div><h2>Levityksen mitat</h2><table class="tk-table">';
-    p += '<tr><th>Säde Rb (iso kaari)</th><td>' + fmt(k.Rb, 1) + ' mm</td></tr>';
-    p += '<tr><th>Säde Rs (pieni kaari)</th><td>' + fmt(k.Rs, 1) + ' mm</td></tr>';
-    p += '<tr><th>Kulma</th><td>' + fmt(k.theta, 2) + '°</td></tr>';
-    p += '<tr><th>Kaaret</th><td>' + fmt(o.kaariIso, 1) + ' / ' + fmt(o.kaariPieni, 1) + ' mm</td></tr>';
-    p += '<tr><th>Jänne</th><td>' + fmt(o.janne, 1) + ' mm</td></tr>' + huulRivit() + '</table></div></div>';
-    p += '<h2>Levityskuva</h2><div class="tk-svg' + (k.huul && k.huul.onko ? ' tk-svg-hu' : '') + '">' + levitysSvg(o) + '</div>';
-    p += '<div class="tk-note">Harmaa alue = saumalisä, vaalea alue = huullos. Katkoviiva = kappaleen reuna (sauma), pitkä katkoviiva kaarella = huullosten taitoslinja. Rb ja Rs mitataan kärjestä.</div>';
-    p += '<h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + sijoitusSvg(o) + '</div>';
-    p += '<div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>';
-    p += '<h2>Muistiinpanot</h2><div class="tk-lines"></div>';
-    sivut.push(p);
-  } else {
-    // Yhteenvetosivu
-    var y = otsikko('yhteenveto');
-    y += '<div class="tk-two"><div>' + mitat() + '</div><div><h2>Koko kartion levitys</h2><table class="tk-table">';
-    y += '<tr><th>Säde Rb (iso kaari)</th><td>' + fmt(k.Rb, 1) + ' mm</td></tr>';
-    y += '<tr><th>Säde Rs (pieni kaari)</th><td>' + fmt(k.Rs, 1) + ' mm</td></tr>';
-    y += '<tr><th>Kulma yhteensä</th><td>' + fmt(k.theta, 2) + '°</td></tr>';
-    y += '<tr><th>Kaaret yhteensä</th><td>' + fmt(k.kaariIso, 1) + ' / ' + fmt(k.kaariPieni, 1) + ' mm</td></tr>';
-    y += '<tr><th>Osia</th><td>' + n + ' kpl</td></tr>' + huulRivit() + '</table></div></div>';
-    y += '<h2>Saumat</h2><table class="tk-table"><tr><th>Sauma</th><th>Kulma kartiolla</th><th>Edellisen osan reuna</th><th>Seuraavan osan reuna</th></tr>';
-    k.saumat.forEach(function (sa, i) {
-      var edNro = ((i - 1 + n) % n) + 1;
-      y += '<tr><td>Sauma ' + (i + 1) + '</td><td>' + fmt(sa.kulma, 1) + '°</td><td>osa ' + edNro + ': ' + fmt(sa.ed, 1) + ' mm</td><td>osa ' + (i + 1) + ': ' + fmt(sa.seur, 1) + ' mm</td></tr>';
-    });
-    y += '</table>';
-    y += '<h2>Osat</h2><table class="tk-table"><tr><th>Osa</th><th>Kartiolla</th><th>Kulma</th><th>Kaaret (iso / pieni)</th><th>Pellillä</th></tr>';
-    k.osat.forEach(function (o) {
-      y += '<tr><td>' + o.nro + '</td><td>' + osanKulmat(o) + '</td><td>' + fmt(o.theta, 2) + '°</td><td>' + fmt(o.kaariIso, 1) + ' / ' + fmt(o.kaariPieni, 1) + '</td><td>' + fmt(o.sijoitus.w, 0) + ' × ' + fmt(o.sijoitus.h, 0) + (o.sijoitus.sopii ? '' : ' EI MAHDU') + '</td></tr>';
-    });
-    y += '</table>';
-    y += '<div class="tk-note">Pelti: ' + esc(peltiTeksti(s)) + '. ' + (k.kaikkiMahtuu ? (s.levyTyyppi === 'rulla' ? 'Rullaa kuluu yhteensä ' + fmt(k.pellinKulutus, 0) + ' mm, kun osat leikataan peräkkäin.' : 'Levyjä tarvitaan ' + n + ' kpl (yksi per osa).') : 'Kaikki osat eivät mahdu.') + ' Samanlaiset osat: ' + k.ryhmat.map(function (r) { return r.nrot.join('+'); }).join(' | ') + '.</div>';
-    y += '<h2>Muistiinpanot</h2><div class="tk-lines"></div>';
-    sivut.push(y);
-    k.ryhmat.forEach(function (r) {
-      var o = r.osa;
-      var q = otsikko('osa ' + r.nrot.join(' ja ') + ' / ' + n);
-      q += '<table class="tk-table"><tr><th>Leikattava</th><td>' + r.kpl + ' kpl' + (r.kpl > 1 ? ' (osat ' + r.nrot.join(', ') + ')' : '') + '</td><th>Kulma</th><td>' + fmt(o.theta, 2) + '°</td></tr>';
-      q += '<tr><th>Kaaret</th><td>' + fmt(o.kaariIso, 1) + ' / ' + fmt(o.kaariPieni, 1) + ' mm</td><th>Jänne</th><td>' + fmt(o.janne, 1) + ' mm</td></tr>';
-      q += '<tr><th>Saumalisät</th><td>sauma ' + o.sauma1 + ': ' + fmt(o.a1, 1) + ' mm, sauma ' + o.sauma2 + ': ' + fmt(o.a2, 1) + ' mm</td><th>Säteet</th><td>Rb ' + fmt(k.Rb, 1) + ' / Rs ' + fmt(k.Rs, 1) + '</td></tr></table>';
-      q += '<h2>Levityskuva</h2><div class="tk-svg' + (k.huul && k.huul.onko ? ' tk-svg-hu' : '') + '">' + levitysSvg(o) + '</div>';
-      q += '<div class="tk-note">Harmaa alue = saumalisä. Katkoviiva = kappaleen reuna (sauma). Rb ja Rs mitataan kärjestä.</div>';
-      q += '<h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + sijoitusSvg(o) + '</div>';
-      q += '<div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>';
-      sivut.push(q);
-    });
-  }
-  $('tulostus').innerHTML = sivut.map(function (x) { return '<div class="tk-page">' + x + '</div>'; }).join('');
-  window.print();
-}
 
 // ====================================================================
 //  NELIKULMIO → PYÖREÄ: kuva, tulossivu ja työkortti
@@ -1760,9 +1645,9 @@ function viuhkaTeksti(mk) {
 var MERKINTA_OHJE = 'Mittaa suoralla nauhalla. "Suora alkukulmasta" on matka alkukulmasta kyseiseen merkkiin yhdellä nauhan vedolla (kaarevalla reunalla lyhyempi kuin välien summa). Se on joka merkille oma mittansa, joten virhe ei kerry. "Väli edellisestä" on suora matka edelliseen merkkiin; ensimmäinen väli on alkukulmasta ensimmäiseen merkkiin (tässä saumalisä). Välit on pyöristetty täysiin millimetreihin niin, ettei virhe kasva: ★ = tasausväli, 1 mm erilainen kuin muut. Viimeinen rivi on väli viimeisestä merkistä loppukulmaan ja suora matka alkukulmasta loppukulmaan. Joka kolmas rivi on lihavoitu, jotta kohdan löytää.';
 
 function merkintaKortti(o, nimi, n, puolikas) {
-  var mk = o.merkinnat, h = '<div class="card"><h3>Merkintä' + (n > 1 ? ' · ' + esc(nimi) : '') + '</h3>';
-  h += '<div class="piirros">' + merkintaSvg(o) + '</div>';
-  if (o.kuva.huul && o.kuva.huul.A) h += '<div class="huom" style="margin:10px 0">' + esc(HUULLOS_A_MERKKI_HUOM) + '</div>';
+  var mk = o.merkinnat, h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Merkintä' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>';
+  h += '<div class="kpt-piirros paperi">' + merkintaSvg(o) + '</div>';
+  if (o.kuva.huul && o.kuva.huul.A) h += '<div class="kpt-ilmoitus huom" style="margin:10px 0">' + esc(HUULLOS_A_MERKKI_HUOM) + '</div>';
   h += '<p class="mneuvo" style="margin-top:10px">' + esc(MERKINTA_OHJE) + '</p>';
   if (mk.ulko) h += '<p class="mneuvo">' + esc(ULKOMERKKI_OHJE) + '</p>';
   h += '<div class="mini-label" style="margin-top:12px">' + (mk.ulko ? 'Yläreuna: huulloksen ulkoreuna, merkit U · mm' : 'Yläreuna (ympyrä), merkit B · mm') + (puolikasKaytossa(mk.B, puolikas) ? ' · symmetrinen: mittaa molemmista päistä' : '') + '</div>' + lohkoTaulukko(mittaRivit(mk.B, 'loppukulma', puolikas), 1000, mittaOtsikot(mk.B, puolikas));
@@ -1811,7 +1696,7 @@ function kulmaTaulukko(rows, rpb) {
 }
 function kulmaKortti(s, r, n, nimi) {
   var o = r.osa, rows = nelioKulmat(o, o.sijoitus, s.kulmaB);
-  var h = '<div class="card"><h3>Leikkauskulmat' + (n > 1 ? ' · ' + esc(nimi) : '') + '</h3><div class="piirros">' + sijoitusSvg(o, rows) + '</div>';
+  var h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Leikkauskulmat' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div><div class="kpt-piirros paperi">' + sijoitusSvg(o, rows) + '</div>';
   h += '<p class="mneuvo" style="margin-top:10px">' + esc(KULMA_OHJE + (o.kuva.huul ? HUULLOS_KULMA_OHJE : '')) + '</p>' + kulmaTaulukko(kulmaRivit(o, s.kulmaB), 1000);
   return h + '</div>';
 }
@@ -1826,136 +1711,329 @@ function nelioPaikkaTeksti(o) { return PAIKAT[o.paikka1] + ' → ' + PAIKAT[o.pa
 function nelioRyhmanNimi(r, osia) { return osia > 1 ? 'Osa ' + r.nrot.join(' ja ') + (r.kpl > 1 ? ' (' + r.kpl + ' kpl samanlaista)' : '') : 'Siirtymä'; }
 var NURKKANIMET = ['etu–oikea', 'oikea–taka', 'taka–vasen', 'vasen–etu'];
 
-function renderNelio(s, k) {
-  var n = k.osat.length, h = '', T = $('tulos');
-  h += '<div class="res-h">Mitat laskennassa</div>';
-  h += res('Alapää (nelikulmio)', fmt(k.W, 1) + ' × ' + fmt(k.D, 1) + (s.alaSovite === 'ei' ? '' : ' (' + fmt(s.W, 1) + ' × ' + fmt(s.D, 1) + (s.alaSovite === 'paalle' ? ' päälle' : ' sisään') + ')'), 'mm', true);
-  h += res('Yläpää (pyöreä)', soviteTeksti(s.ylaD, k.d, s.ylaSovite), 'mm', true);
-  h += res('Korkeus', fmt(k.H, 1), 'mm', true);
-  if (k.ox || k.oy) h += res('Ympyrän siirto X / Y', fmt(k.ox, 1) + ' / ' + fmt(k.oy, 1), 'mm', true);
-  h += '<div class="res-h">Rakenne</div>';
-  h += res('Viivoja per nurkka', String(k.N), '');
-  h += res('Kolmioita koko kartiossa', String(k.kolmioita), '', true);
-  h += res('Alareuna yhteensä', fmt(k.alaKehaPit, 1), 'mm', true);
-  h += res('Yläympyrän kehä', fmt(k.ylaKehaPit, 1), 'mm', true);
-  h += res('Yläreuna kehityksessä (monikulmio)', fmt(k.ylaMonikulmio, 1) + ' (' + fmt((k.ylaMonikulmio - k.ylaKehaPit) / k.ylaKehaPit * 100, 2) + ' %)', 'mm', true);
-  h += '<div class="res-h">Viivojen pituudet (suorana mitattuna)</div>';
-  SIVUNIMET.forEach(function (nm, c) { h += res('Sivu ' + nm + ', keskiviiva', fmt(k.sivukeskiviivat[c], 1), 'mm', true); });
-  k.nurkkaviivat.forEach(function (lst, c) { h += res('Nurkka ' + (c + 1) + ' (' + NURKKANIMET[c] + ')', lst.map(function (x) { return fmt(x, 1); }).join(' / '), 'mm', true); });
-  if (k.huul.onko) {
-    h += '<div class="res-h">Huullokset</div>';
-    k.osat.forEach(function (o) {
-      nelioHuullosRivit(o).forEach(function (x) { h += res((n > 1 ? 'Osa ' + o.nro + ': ' : '') + x.nimi, fmt(x.h, 0) + ' mm, ' + x.teksti, '', true); });
+// ====================================================================
+//  ERP-SIVU (R1 24.11.2026): tulos, kortit, kaistat ja työkortti uudella ulkoasulla
+// ====================================================================
+var TK = window.KPT_TYOKORTTI;
+var SOVITE_NIMI = { ei: 'ei sovitetta', paalle: 'putken päälle', sisaan: 'putken sisään' };
+function kplKartioita(s) { return Math.max(1, Math.round(luku(s.kpl, 1)) || 1); }
+function mm0(x) { return fmt(x, 0); }
+function palaTeksti(sj) { return mm0(sj.w) + ' × ' + mm0(sj.h); }
+
+// Tarvittava pala isolla (Tomi 24.11.2026: palan koko selvästi näkyviin, levityskuvan yläpuolelle)
+function palaHtml(s, k, ryhmanNimiFn) {
+  var n = k.osat.length, kk = kplKartioita(s), h = '';
+  k.ryhmat.forEach(function (r) {
+    var sj = r.osa.sijoitus, maara = r.kpl * kk;
+    var nimi = n > 1 ? (r.nrot.length > 1 ? 'Osat ' + r.nrot.join(', ') : 'Osa ' + r.nrot[0]) + ' · ' : '';
+    h += '<div class="kpt-avainluku"><span class="nimi">' + esc(nimi) + 'Tarvittava pala (leveys × pituus pellillä)' + (maara > 1 ? ' · ' + maara + ' kpl' : '') + '</span>' +
+      '<span class="arvo">' + palaTeksti(sj) + '</span><span class="yks">mm' + (sj.sopii ? '' : ' · EI MAHDU') + '</span></div>';
+  });
+  return h;
+}
+
+// Harpin kärki sanoin: palan sisällä, rullalla palan ulkopuolella vai pellin ulkopuolella (apupelti)
+function karkiTeksti(hp, sj) {
+  var x = hp.karki[0], y = hp.karki[1], W = sj.W, rulla = !sj.L || sj.L > sj.h, osat = [];
+  var reuna = sj.tila === 'reuna' ? 'rullan reunasta' : 'pellin reunasta';
+  var xOk = x >= -0.5 && x <= W + 0.5, yOk = y >= -0.5;
+  if (xOk && yOk && y <= sj.h + 0.5) return mm0(Math.max(0, x)) + ' mm ' + reuna + ', ' + mm0(Math.max(0, y)) + ' mm leikkauspäästä';
+  if (xOk && yOk && y <= (sj.L || Infinity)) return mm0(Math.max(0, x)) + ' mm ' + reuna + ', ' + mm0(y) + ' mm leikkauspäästä (palan ulkopuolella: merkitse ennen kuin pala katkaistaan' + (rulla ? ' rullasta' : '') + ', tai käytä apupeltiä)';
+  osat.push(x < -0.5 ? mm0(-x) + ' mm ' + (sj.tila === 'reuna' ? 'rullan reunan' : 'pellin reunan') + ' ulkopuolella' : (x > W + 0.5 ? mm0(x - W) + ' mm pellin toisen reunan ulkopuolella' : mm0(x) + ' mm ' + reuna));
+  osat.push(y < -0.5 ? mm0(-y) + ' mm leikkauspään takana' : mm0(y) + ' mm leikkauspäästä');
+  return osat.join(', ') + ' (pellin ulkopuolella: apupelti)';
+}
+function harppiRivit(hp, sj) {
+  var hu = hp.RbLeikkaus !== hp.Rb || hp.RsLeikkaus !== hp.Rs;
+  var h = res('Säde Rb (iso kaari)', fmt(hp.Rb, 1), 'mm');
+  if (hp.RbLeikkaus !== hp.Rb) h += res('Iso kaari, leikkausreuna (huullos)', fmt(hp.RbLeikkaus, 1), 'mm');
+  h += res('Säde Rs (pieni kaari)', hp.Rs > 0 ? fmt(hp.Rs, 1) : '0 (kärki)', hp.Rs > 0 ? 'mm' : '');
+  if (hp.Rs > 0 && hp.RsLeikkaus !== hp.Rs) h += res('Pieni kaari, leikkausreuna (huullos)', fmt(hp.RsLeikkaus, 1), 'mm');
+  h += res('Harpin kärki', esc(karkiTeksti(hp, sj)), '');
+  return h;
+}
+function kaariAskel() { return Math.max(10, luku($('k-kaari-askel').value, 100)); }
+
+// Lisätiedot (ennen pääosa tulosta): laskennan välivaiheet avattavaksi
+function lisatiedotPyorea(s, k) {
+  var n = k.osat.length, h = '';
+  h += res('Alapää laskennassa', soviteTeksti(s.alaD, k.da, s.alaSovite), 'mm');
+  h += res('Yläpää laskennassa', soviteTeksti(s.ylaD, k.dy, s.ylaSovite), 'mm');
+  h += res('Isompi pää', k.suuriPaa === 'ala' ? 'alapää' : 'yläpää', '');
+  h += res('Kulma (koko kartio)', fmt(k.theta, 2), '°');
+  h += res('Iso kaari, pituus', fmt(k.kaariIso), 'mm');
+  h += res('Pieni kaari, pituus', fmt(k.kaariPieni), 'mm');
+  h += res('Kartion sivun pituus', fmt(k.sl), 'mm');
+  if (k.huul && k.huul.onko) {
+    ['ala', 'yla'].forEach(function (paa) {
+      var x = k.huul.iso.paa === paa ? k.huul.iso : k.huul.pieni;
+      h += res('Huullos ' + (paa === 'ala' ? 'alapää' : 'yläpää'), x.h > 0 ? huullosRivi(x) : 'ei huullosta', '');
     });
+    h += res('Kartion kaltevuus akselista', fmt(k.huul.alfa, 1), '°');
   }
-  h += '<div class="res-h">' + (n === 1 ? 'Pellin tarve' : 'Osat ja pellin tarve') + '</div>';
+  if (n === 1) {
+    h += res('Jänne', fmt(k.osat[0].janne), 'mm');
+    h += res('Kappale ilman saumalisää', mm0(k.osat[0].sektoriRajat.w) + ' × ' + mm0(k.osat[0].sektoriRajat.h), 'mm');
+  } else k.osat.forEach(function (o) { h += res('Osa ' + o.nro + ': ' + osanKulmat(o), fmt(o.theta, 2) + '°', ''); });
+  if (k.kaikkiMahtuu) h += s.levyTyyppi === 'rulla' ? res('Rullaa kuluu (osat peräkkäin)', mm0(k.pellinKulutus), 'mm') : res('Levyjä tarvitaan', String(n), 'kpl');
+  return '<details class="kpt-kortti" style="margin:12px 0 0;padding:12px 14px;background:transparent"><summary style="margin:-12px -14px;padding:12px 14px">Laskennan lisätiedot</summary><div style="margin-top:12px">' + h + '</div></details>';
+}
+function ilmoitukset(k, virheRe) {
+  return k.huomautukset.map(function (x) { return '<div class="kpt-ilmoitus ' + (virheRe.test(x) ? 'virhe' : 'huom') + '">' + esc(x) + '</div>'; }).join('');
+}
+
+// Kaaren pisteet mitoilla (ilman harppia): taulukko ja kuva pellillä
+function kaaretKortti(s, r, n, nimi) {
+  var o = r.osa, hp = kartioHarppi(o, o.sijoitus, kaariAskel());
+  var rivit = hp.rivit.map(function (x) { return { a: x.nimi, b: mm0(x.x), c: mm0(x.y), d: mm0(x.seurPit) + ' → ' + x.seurNimi }; });
+  var h = '<details class="kpt-kortti"><summary>Kaaren pisteet mitoilla' + (n > 1 ? ' · ' + esc(nimi) : '') + ' <span class="yv">ilman harppia, ' + hp.rivit.length + ' pistettä</span></summary>';
+  h += '<div style="margin-top:14px"><div class="kpt-piirros paperi">' + sijoitusSvg(o, hp.rivit.map(function (x) { return { nimi: x.nimi, p: x.p }; })) + '</div>';
+  h += '<p class="mneuvo" style="margin-top:10px">' + esc(KAARI_OHJE) + ' Pisteiden väli kaarella on enintään ' + mm0(hp.askel) + ' mm (iso kaari: jänne ' + fmt(hp.iso.janne, 1) + ' mm' + (hp.pieni ? ', pieni kaari: ' + fmt(hp.pieni.janne, 1) + ' mm' : '') + ').</p>';
+  h += '<div class="kpt-taulu-wrap">' + kulmaTaulukko(rivit, 1000) + '</div></div></details>';
+  return h;
+}
+var KAARI_OHJE = 'Merkitse pisteet mitoilla: y leikkauspäästä reunaa pitkin, x poikittain rullan reunasta. Yhdistä kaaren pisteet (I = iso kaari, P = pieni kaari) taipuisalla viivaimella tai rimalla. T1–T4 ovat saumalisän kulmat (T1 ja T2 alkureunassa, T3 ja T4 loppureunassa), K = huulloksen porras. Viimeinen sarake on suora matka seuraavaan pisteeseen tarkistusta varten.';
+
+// Useampi kappale samasta rullasta (kaistat, menekki.js; Tomi 24.11.2026 kohta D)
+// Harpin kärki merkitään sijoituskuvaan, kun se on pellillä (muuten mitat kerrotaan tekstinä: apupelti)
+function karkiKuvaan(html, o) {
+  var sj = o.sijoitus, hp = kartioHarppi(o, sj, kaariAskel()), x = hp.karki[0], y = hp.karki[1];
+  if (!(x >= -0.5 && x <= sj.W + 0.5 && y >= -0.5 && y <= Math.max(sj.h, Math.min(sj.L, sj.h + 80)))) return html;   // vain jos kärki osuu kuvan alueelle
+  var vanha = sijoitusSvg(o);
+  return html.indexOf(vanha) >= 0 ? html.replace(vanha, sijoitusSvg(o, [{ nimi: 'kärki', p: hp.karki }])) : html;
+}
+function kaistaKappaleet(s, k, nimiFn) {
+  var kk = kplKartioita(s), n = k.osat.length;
+  return k.ryhmat.map(function (r) {
+    var u = r.osa.kuva.ulko, b = rajat(u);
+    return { nimi: n > 1 ? nimiFn(r, n).replace(/ \(.*\)$/, '') : (k.tyyppi === 'nelio' ? 'Siirtymä' : 'Kartio'), kpl: r.kpl * kk, w: b.w, h: b.h, ring: u.map(function (p) { return [p[0] - b.x0, p[1] - b.y0]; }) };
+  });
+}
+function kaistaPaikka(s, k) {
+  var yht = k.ryhmat.reduce(function (a, r) { return a + r.kpl; }, 0) * kplKartioita(s);
+  if (yht < 2 || !window.KPT_MENEKKI) return '';
+  return '<details class="kpt-kortti" id="kaista-kortti"><summary>Kaistat ja menekki</summary><p class="kpt-vihje" style="margin-top:14px">Kun samaa palaa tarvitaan useampi, palat voi leikata rullasta kaistana: joka toinen pala käännetään 180°, jolloin vinot reunat menevät limittäin ja peltiä voi säästyä. Sijoitus- ja merkintäkortit yllä koskevat yhtä palaa.</p><div id="kaista-vertailu"></div><div id="kaista-sisalto"></div></details>';
+}
+function piirraKaistat(s, k, nimiFn) {
+  var el = document.getElementById('kaista-sisalto');
+  if (!el || !window.KPT_MENEKKI) return;
+  try {
+    // Vertailu: palat peräkkäin sijoituksen mukaan (leveä kartion pala ei aina lomitu hyvin, Tomi 24.11.2026 kohta D)
+    var kk = kplKartioita(s), perakkain = 0, kaikki = k.ryhmat.every(function (r) { return r.osa.sijoitus.sopii; });
+    k.ryhmat.forEach(function (r) { perakkain += r.osa.sijoitus.h * r.kpl * kk; });
+    var vertaa = function (kr) {
+      var v = document.getElementById('kaista-vertailu');
+      if (!v || !kaikki || !kr) { if (v) v.innerHTML = ''; return; }
+      var ero = perakkain - kr.pituus;
+      v.innerHTML = ero > 1
+        ? '<div class="kpt-ilmoitus ok">Kaistoina rullaa menee ' + mm0(Math.ceil(kr.pituus)) + ' mm, palat peräkkäin leikattuna ' + mm0(perakkain) + ' mm: säästö noin ' + mm0(ero) + ' mm.</div>'
+        : '<div class="kpt-ilmoitus huom">Tällä kartiolla kaistat eivät säästä peltiä. Leikkaa palat peräkkäin sijoituksen mukaan: rullaa menee yhteensä ' + mm0(perakkain) + ' mm (kaistoina ' + mm0(Math.ceil(kr.pituus)) + ' mm).</div>';
+    };
+    KPT_MENEKKI.sivuKortti(el, { kortti: document.getElementById('kaista-kortti'), muutos: vertaa, paksuus: function () { return $('k-t').value; } }).piirra(kaistaKappaleet(s, k, nimiFn));
+  } catch (e) { console.error('Kaistat:', e); el.innerHTML = '<p class="kpt-ilmoitus virhe">Kaistojen laskenta epäonnistui.</p>'; }
+}
+
+// Avattavien korttien otsikkoon tiivistelmä (puhelimella näkee asetukset avaamatta)
+function paivitaYhteenvedot() {
+  var t = function (id, x) { var el = $(id); if (el) el.textContent = x ? '· ' + x : ''; };
+  t('yv-paadyt', 'ala ' + SOVITE_NIMI[$('k-ala-sov').value] + ', ylä ' + SOVITE_NIMI[$('k-yla-sov').value]);
+  var ha = luku($('k-hu-ala').value, 0), hy = luku($('k-hu-yla').value, 0);
+  t('yv-huullos', ha > 0 || hy > 0 ? 'ala ' + fmt(ha, 0) + ' mm, ylä ' + fmt(hy, 0) + ' mm' : 'ei huullosta');
+  var n = parseInt($('k-n').value, 10) || 1;
+  t('yv-saumat', n + (n === 1 ? ' osa' : ' osaa') + ', saumalisä ' + $('k-a0').value + ' mm');
+  t('yv-pelti', ($('k-levy-tyyppi').value === 'rulla' ? 'rulla ' : 'levy ') + $('k-levy-w').value + ' mm' + ($('k-sij-tila').value === 'reuna' ? ', reuna rullan reunaa vasten' : ', vapaa kierto'));
+  t('yv-viuhka', $('k-nn').value + ' viivaa' + (luku($('k-ox').value, 0) || luku($('k-oy').value, 0) ? ', ympyrä siirretty' : ''));
+}
+
+function renderAll() {
+  paivitaHuullosKentat();
+  paivitaYhteenvedot();
+  var s = lueSyote();
+  $('k-levy-l-sel').textContent = s.levyTyyppi === 'rulla' ? 'Enimmäispituus mm (rulla)' : 'Levyn pituus mm';
+  var k = laske(s);
+  viimeisin = { s: s, k: k };
+  var T = $('tulos');
+  if (k.virheet && k.virheet.length) {
+    T.innerHTML = k.virheet.map(function (v) { return '<div class="kpt-ilmoitus virhe">' + esc(v) + '</div>'; }).join('');
+    $('osat-kuvat').innerHTML = '';
+    return;
+  }
+  if (k.tyyppi === 'nelio') { renderNelio(s, k); return; }
+  var n = k.osat.length, h = palaHtml(s, k, ryhmanNimi);
   if (n === 1) {
     var o = k.osat[0];
-    h += res('Kappale ilman saumalisää', fmt(o.sektoriRajat.w, 0) + ' × ' + fmt(o.sektoriRajat.h, 0), 'mm', true);
-    h += res(k.huul.onko ? 'Kappale saumalisien ja huullosten kanssa' : 'Kappale saumalisien kanssa', fmt(o.ulkoRajat.w, 0) + ' × ' + fmt(o.ulkoRajat.h, 0), 'mm', true);
+    h += '<div class="kartio-harppi">' + harppiRivit(kartioHarppi(o, o.sijoitus, kaariAskel()), o.sijoitus) + '</div>';
   } else {
-    k.osat.forEach(function (o) {
-      h += res('Osa ' + o.nro + ': ' + PAIKAT[o.paikka1] + ' →', fmt(o.sijoitus.w, 0) + ' × ' + fmt(o.sijoitus.h, 0), 'mm' + (o.sijoitus.sopii ? '' : ' · EI MAHDU'), true);
-    });
+    h += res('Säde Rb (iso kaari)', fmt(k.Rb, 1), 'mm') + res('Säde Rs (pieni kaari)', k.Rs > 0 ? fmt(k.Rs, 1) : '0 (kärki)', k.Rs > 0 ? 'mm' : '');
+    h += '<p class="kpt-vihje" style="margin:8px 0 0">Harpin kärjen paikka on kunkin osan kortissa, koska osat sijoitetaan pellille eri tavalla.</p>';
   }
-  if (k.kaikkiMahtuu) {
-    if (s.levyTyyppi === 'rulla') h += res('Rullaa kuluu yhteensä', fmt(k.pellinKulutus, 0), 'mm' + (n > 1 ? ' (osat peräkkäin)' : ' (leveys ' + fmt(k.sijoitus.w, 0) + ')'));
-    else h += res('Levyjä tarvitaan', String(n), 'kpl' + (n > 1 ? ' (yksi per osa)' : ''));
-    h += '<div class="ok">' + (n === 1 ? 'Mahtuu pellille' : 'Kaikki osat mahtuvat pellille') + '.</div>';
-    if (n > 1) h += '<div class="res-pieni">Osat on laskettu erikseen, ilman että niitä sovitetaan samalle pellille limittäin. Sijoittelu keskenään tulee myöhemmin.</div>';
-  }
-  k.huomautukset.forEach(function (x) { h += '<div class="' + (/Ei mahdu|leikkaa itseään/.test(x) ? 'varoitus' : 'huom') + '">' + esc(x) + '</div>'; });
+  if (k.kaikkiMahtuu) h += '<div class="kpt-ilmoitus ok" style="margin-top:12px">' + (n === 1 ? 'Mahtuu pellille' : 'Kaikki osat mahtuvat pellille') + '.</div>';
+  h += ilmoitukset(k, /Ei mahdu/);
+  h += lisatiedotPyorea(s, k);
+  T.innerHTML = h;
+
+  var kuvat = '';
+  k.ryhmat.forEach(function (r) {
+    var o = r.osa, nimi = ryhmanNimi(r, n);
+    kuvat += '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>';
+    if (n > 1) {
+      kuvat += '<div class="kartio-ryhma">kulma kartiolla ' + osanKulmat(o) + ' · saumalisät ' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</div>';
+      kuvat += '<div class="kpt-avainluku"><span class="nimi">Tarvittava pala' + (r.kpl * kplKartioita(s) > 1 ? ' · ' + r.kpl * kplKartioita(s) + ' kpl' : '') + '</span><span class="arvo">' + palaTeksti(o.sijoitus) + '</span><span class="yks">mm</span></div>';
+      kuvat += '<div class="kartio-harppi">' + res('Harpin kärki', esc(karkiTeksti(kartioHarppi(o, o.sijoitus, kaariAskel()), o.sijoitus)), '') + '</div>';
+    }
+    kuvat += '<div class="kpt-piirros paperi">' + levitysSvg(o) + '</div></div>';
+    kuvat += karkiKuvaan(sijoitusKortti(s, r, n, nimi), o);
+    kuvat += kaaretKortti(s, r, n, nimi);
+  });
+  kuvat += kaistaPaikka(s, k);
+  $('osat-kuvat').innerHTML = kuvat;
+  liitaReunaValinnat();
+  piirraKaistat(s, k, ryhmanNimi);
+}
+
+function renderNelio(s, k) {
+  var n = k.osat.length, T = $('tulos');
+  var h = palaHtml(s, k, nelioRyhmanNimi);
+  if (k.kaikkiMahtuu) h += '<div class="kpt-ilmoitus ok">' + (n === 1 ? 'Mahtuu pellille' : 'Kaikki osat mahtuvat pellille') + '.</div>';
+  h += ilmoitukset(k, /Ei mahdu|leikkaa itseään/);
+  var l = '';
+  l += res('Alapää (nelikulmio)', fmt(k.W, 1) + ' × ' + fmt(k.D, 1) + (s.alaSovite === 'ei' ? '' : ' (' + fmt(s.W, 1) + ' × ' + fmt(s.D, 1) + (s.alaSovite === 'paalle' ? ' päälle' : ' sisään') + ')'), 'mm');
+  l += res('Yläpää (pyöreä)', soviteTeksti(s.ylaD, k.d, s.ylaSovite), 'mm');
+  l += res('Korkeus', fmt(k.H, 1), 'mm');
+  if (k.ox || k.oy) l += res('Ympyrän siirto X / Y', fmt(k.ox, 1) + ' / ' + fmt(k.oy, 1), 'mm');
+  l += res('Viivoja per nurkka / kolmioita', k.N + ' / ' + k.kolmioita, '');
+  l += res('Alareuna yhteensä', fmt(k.alaKehaPit, 1), 'mm');
+  l += res('Yläympyrän kehä', fmt(k.ylaKehaPit, 1), 'mm');
+  l += res('Yläreuna kehityksessä (monikulmio)', fmt(k.ylaMonikulmio, 1) + ' (' + fmt((k.ylaMonikulmio - k.ylaKehaPit) / k.ylaKehaPit * 100, 2) + ' %)', 'mm');
+  SIVUNIMET.forEach(function (nm, c) { l += res('Sivu ' + nm + ', keskiviiva', fmt(k.sivukeskiviivat[c], 1), 'mm'); });
+  k.nurkkaviivat.forEach(function (lst, c) { l += res('Nurkka ' + (c + 1) + ' (' + NURKKANIMET[c] + ')', lst.map(function (x) { return fmt(x, 1); }).join(' / '), 'mm'); });
+  if (k.huul.onko) k.osat.forEach(function (o) { nelioHuullosRivit(o).forEach(function (x) { l += res((n > 1 ? 'Osa ' + o.nro + ': ' : '') + x.nimi, fmt(x.h, 0) + ' mm, ' + x.teksti, ''); }); });
+  if (k.kaikkiMahtuu) l += s.levyTyyppi === 'rulla' ? res('Rullaa kuluu (osat peräkkäin)', mm0(k.pellinKulutus), 'mm') : res('Levyjä tarvitaan', String(n), 'kpl');
+  h += '<details class="kpt-kortti" style="margin:12px 0 0;padding:12px 14px;background:transparent"><summary style="margin:-12px -14px;padding:12px 14px">Laskennan lisätiedot</summary><div style="margin-top:12px">' + l + '</div></details>';
   T.innerHTML = h;
   var kuvat = '';
   k.ryhmat.forEach(function (r) {
     var o = r.osa, nimi = nelioRyhmanNimi(r, n);
-    kuvat += '<div class="card"><h3>Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</h3>' +
-      '<div class="ryhma-otsikko">' + esc(nelioPaikkaTeksti(o)) + ' · saumalisät ' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</div>' +
-      '<div class="piirros">' + siirtymaSvg(o, k) + '</div>' +
-      '<div class="hint" style="margin:10px 0 0">Kuva on katsottu ulkopinnalta. Lihavat viivat ovat alareuna (suorat sivut) ja yläreuna (kaari). Ohuet viivat ovat taite- ja merkintäviivoja, pisteviiva = sivun keskiviiva. Tumma harmaa alue = saumalisä' + (k.huul.onko ? ', vaalea alue = huullos, pitkä katkoviiva = huulloksen taitoslinja' : '') + '.</div>' +
-      (k.huul.onko ? '<div style="margin-top:10px">' + nelioHuullosTaulukko(o).replace('class="tk-table"', 'class="mtab"') + '</div>' : '') + '</div>';
+    kuvat += '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>' +
+      '<div class="kartio-ryhma">' + esc(nelioPaikkaTeksti(o)) + ' · saumalisät ' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</div>' +
+      (n > 1 ? '<div class="kpt-avainluku"><span class="nimi">Tarvittava pala</span><span class="arvo">' + palaTeksti(o.sijoitus) + '</span><span class="yks">mm</span></div>' : '') +
+      '<div class="kpt-piirros paperi">' + siirtymaSvg(o, k) + '</div>' +
+      '<p class="kpt-vihje" style="margin:10px 0 0">Kuva on katsottu ulkopinnalta. Lihavat viivat ovat alareuna (suorat sivut) ja yläreuna (kaari). Ohuet viivat ovat taite- ja merkintäviivoja, pisteviiva = sivun keskiviiva. Tumma harmaa alue = saumalisä' + (k.huul.onko ? ', vaalea alue = huullos, pitkä katkoviiva = huulloksen taitoslinja' : '') + '.</p>' +
+      (k.huul.onko ? '<div class="kpt-taulu-wrap" style="margin-top:10px">' + nelioHuullosTaulukko(o).replace('class="tk-table"', 'class="mtab"') + '</div>' : '') + '</div>';
     kuvat += sijoitusKortti(s, r, n, nimi);
     kuvat += kulmaKortti(s, r, n, nimi);
     kuvat += merkintaKortti(o, nimi, n, s.puolikas);
   });
+  kuvat += kaistaPaikka(s, k);
   $('osat-kuvat').innerHTML = kuvat;
   liitaReunaValinnat();
+  piirraKaistat(s, k, nelioRyhmanNimi);
 }
 
-function tulostaNelio() {
-  var s = viimeisin.s, k = viimeisin.k, n = k.osat.length;
-  var soviteNimi = { ei: 'ei sovitetta', paalle: 'putken päälle', sisaan: 'putken sisään' };
-  var otsikko = function (alaotsikko) {
-    return '<div class="tk-brand">KALAJOEN PELTITYÖ · SIIRTYMÄ NELIKULMIO → PYÖREÄ' + (alaotsikko ? ' · ' + esc(alaotsikko) : '') + '</div>' +
-      '<h1>' + esc(s.nimi || 'Siirtymä') + '<span class="tk-kpl">' + esc(String(s.kpl)) + ' kpl</span></h1>' +
-      '<div class="tk-fields"><div>Tekijä <span class="tk-line"></span></div><div>Pvm <span class="tk-line"></span></div><div>Valmis <span class="tk-line" style="width:14mm"></span></div></div>';
-  };
-  var mitat = function () {
-    var p = '<h2>Mitat</h2><table class="tk-table">';
-    p += '<tr><th>Alapää</th><td>' + fmt(k.W, 1) + ' × ' + fmt(k.D, 1) + ' mm<br><small>' + (s.alaSovite === 'ei' ? 'ei sovitetta' : fmt(s.W, 1) + ' × ' + fmt(s.D, 1) + ' mm ' + soviteNimi[s.alaSovite]) + '</small></td></tr>';
-    p += '<tr><th>Yläpää Ø</th><td>' + fmt(k.d, 1) + ' mm<br><small>' + (s.ylaSovite === 'ei' ? 'ei sovitetta' : fmt(s.ylaD, 1) + ' mm ' + soviteNimi[s.ylaSovite]) + '</small></td></tr>';
-    p += '<tr><th>Korkeus</th><td>' + fmt(k.H, 1) + ' mm</td></tr>';
-    p += '<tr><th>Ympyrän siirto</th><td>X ' + fmt(k.ox, 1) + ' / Y ' + fmt(k.oy, 1) + ' mm</td></tr>';
-    p += '<tr><th>Viivoja / nurkka</th><td>' + k.N + '</td></tr>';
-    p += '<tr><th>Paksuus / välys</th><td>' + fmt(s.t, 2) + ' / ' + fmt(s.v, 2) + ' mm</td></tr></table>';
-    return p;
-  };
-  var viivat = function () {
-    var p = '<h2>Viivojen pituudet (mm)</h2><table class="tk-table"><tr><th>Viiva</th><th>Pituudet sivusta sivuun</th></tr>';
-    p += '<tr><td>Sivun keskiviivat</td><td>' + SIVUNIMET.map(function (nm, c) { return nm + ' ' + fmt(k.sivukeskiviivat[c], 1); }).join(' · ') + '</td></tr>';
-    k.nurkkaviivat.forEach(function (lst, c) { p += '<tr><td>Nurkka ' + (c + 1) + ' (' + NURKKANIMET[c] + ')</td><td>' + lst.map(function (x) { return fmt(x, 1); }).join(' · ') + '</td></tr>'; });
-    return p + '</table>';
-  };
-  var kuvaosa = function (o) {
-    var q = '<h2>Levityskuva</h2><div class="tk-svg">' + siirtymaSvg(o, k) + '</div>';
-    q += '<div class="tk-note">Katsottu ulkopinnalta. Lihavat viivat: alareuna ja yläreuna. Ohuet viivat: taite- ja merkintäviivat, pisteviiva = sivun keskiviiva. Tumma harmaa = saumalisä' + (o.kuva.huul ? ', vaalea = huullos, pitkä katkoviiva = huulloksen taitoslinja' : '') + '. N1–N4 = nurkat, sauma = katkoviiva.</div>';
-    if (o.kuva.huul) q += nelioHuullosTaulukko(o);
-    return q;
-  };
-  var sivut = [];
-  if (n === 1) {
-    var o = k.osat[0];
-    sivut.push(otsikko('') + '<div class="tk-two"><div>' + mitat() + '</div><div><h2>Pelti</h2><table class="tk-table"><tr><th>Pelti</th><td>' + esc(peltiTeksti(s)) + '</td></tr><tr><th>Saumalisät</th><td>' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</td></tr><tr><th>Sauma</th><td>' + esc(PAIKAT[o.paikka1]) + '</td></tr><tr><th>Kappale</th><td>' + fmt(o.ulkoRajat.w, 0) + ' × ' + fmt(o.ulkoRajat.h, 0) + ' mm (ilman kiertoa)</td></tr></table></div></div>' + kuvaosa(o));
-    sivut.push('<div class="tk-brand">KALAJOEN PELTITYÖ · SIIRTYMÄ · ' + esc(s.nimi || 'Siirtymä') + '</div><h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + sijoitusSvg(o) + '</div><div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>' + viivat() + '<h2>Muistiinpanot</h2><div class="tk-lines"></div>');
-    sivut.push('<div class="tk-brand">KALAJOEN PELTITYÖ · SIIRTYMÄ · ' + esc(s.nimi || 'Siirtymä') + '</div>' + kulmaSivu(s, o));
-    sivut.push('<div class="tk-brand">KALAJOEN PELTITYÖ · SIIRTYMÄ · ' + esc(s.nimi || 'Siirtymä') + '</div>' + merkintaSivu(o, s.puolikas));
-  } else {
-    var y = otsikko('yhteenveto');
-    y += '<div class="tk-two"><div>' + mitat() + '</div><div><h2>Kehän pituudet</h2><table class="tk-table"><tr><th>Alareuna</th><td>' + fmt(k.alaKehaPit, 1) + ' mm</td></tr><tr><th>Yläympyrä</th><td>' + fmt(k.ylaKehaPit, 1) + ' mm</td></tr><tr><th>Osia</th><td>' + n + ' kpl</td></tr><tr><th>Pelti</th><td>' + esc(peltiTeksti(s)) + '</td></tr></table></div></div>';
-    y += '<h2>Saumat</h2><table class="tk-table"><tr><th>Sauma</th><th>Paikka</th><th>Edellisen osan reuna</th><th>Seuraavan osan reuna</th></tr>';
-    k.saumat.forEach(function (sa, i) {
-      var edNro = ((i - 1 + n) % n) + 1;
-      y += '<tr><td>Sauma ' + (i + 1) + '</td><td>' + esc(PAIKAT[sa.paikka]) + '</td><td>osa ' + edNro + ': ' + fmt(sa.ed, 1) + ' mm</td><td>osa ' + (i + 1) + ': ' + fmt(sa.seur, 1) + ' mm</td></tr>';
-    });
-    y += '</table><h2>Osat</h2><table class="tk-table"><tr><th>Osa</th><th>Alkaa → päättyy</th><th>Alareuna</th><th>Pellillä</th></tr>';
-    k.osat.forEach(function (o) {
-      y += '<tr><td>' + o.nro + '</td><td>' + esc(nelioPaikkaTeksti(o)) + '</td><td>' + fmt(o.pitA, 1) + ' mm</td><td>' + fmt(o.sijoitus.w, 0) + ' × ' + fmt(o.sijoitus.h, 0) + (o.sijoitus.sopii ? '' : ' EI MAHDU') + '</td></tr>';
-    });
-    y += '</table><div class="tk-note">' + (k.kaikkiMahtuu ? (s.levyTyyppi === 'rulla' ? 'Rullaa kuluu yhteensä ' + fmt(k.pellinKulutus, 0) + ' mm, kun osat leikataan peräkkäin.' : 'Levyjä tarvitaan ' + n + ' kpl (yksi per osa).') : 'Kaikki osat eivät mahdu.') + ' Samanlaiset osat: ' + k.ryhmat.map(function (r) { return r.nrot.join('+'); }).join(' | ') + '.</div>';
-    y += viivat();
-    sivut.push(y);
-    k.ryhmat.forEach(function (r) {
-      var o = r.osa;
-      var q = otsikko('osa ' + r.nrot.join(' ja ') + ' / ' + n);
-      q += '<table class="tk-table"><tr><th>Leikattava</th><td>' + r.kpl + ' kpl' + (r.kpl > 1 ? ' (osat ' + r.nrot.join(', ') + ')' : '') + '</td><th>Alareuna</th><td>' + fmt(o.pitA, 1) + ' mm</td></tr>';
-      q += '<tr><th>Alkaa</th><td>' + esc(PAIKAT[o.paikka1]) + ' (lisä ' + fmt(o.a1, 1) + ' mm)</td><th>Päättyy</th><td>' + esc(PAIKAT[o.paikka2]) + ' (lisä ' + fmt(o.a2, 1) + ' mm)</td></tr></table>';
-      q += kuvaosa(o);
-      q += '<h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + sijoitusSvg(o) + '</div><div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>';
-      sivut.push(q);
-      sivut.push(otsikko('leikkauskulmat osa ' + r.nrot.join(' ja ') + ' / ' + n) + kulmaSivu(s, o));
-      sivut.push(otsikko('merkintä osa ' + r.nrot.join(' ja ') + ' / ' + n) + merkintaSivu(o, s.puolikas));
-    });
-  }
-  $('tulostus').innerHTML = sivut.map(function (x) { return '<div class="tk-page">' + x + '</div>'; }).join('');
-  window.print();
+// ====================================================================
+//  TYÖKORTTI (yhteinen pohja tyokortti.js; Tomi 24.11.2026: palan koko ja harpin mitat ensin, vähemmän muuta)
+// ====================================================================
+function tkMitatPyorea(s, k, o) {
+  var p = '<table class="tk-table">';
+  p += '<tr><th>Alapää</th><td>' + fmt(k.da, 1) + ' mm' + (s.alaD === 0 ? ' (kärki)' : s.alaSovite === 'ei' ? '' : ' (' + fmt(s.alaD, 1) + ' ' + SOVITE_NIMI[s.alaSovite] + ')') + '</td></tr>';
+  p += '<tr><th>Yläpää</th><td>' + fmt(k.dy, 1) + ' mm' + (s.ylaD === 0 ? ' (kärki)' : s.ylaSovite === 'ei' ? '' : ' (' + fmt(s.ylaD, 1) + ' ' + SOVITE_NIMI[s.ylaSovite] + ')') + '</td></tr>';
+  p += '<tr><th>Korkeus</th><td>' + fmt(s.H, 1) + ' mm</td></tr>';
+  p += '<tr><th>Saumalisät</th><td>' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</td></tr>';
+  if (k.huul && k.huul.onko) ['ala', 'yla'].forEach(function (paa) {
+    var x = k.huul.iso.paa === paa ? k.huul.iso : k.huul.pieni;
+    if (x.h > 0) p += '<tr><th>Huullos ' + (paa === 'ala' ? 'alapää' : 'yläpää') + '</th><td>' + esc(huullosRivi(x)) + '</td></tr>';
+  });
+  p += '<tr><th>Paksuus</th><td>' + fmt(s.t, 2) + ' mm</td></tr>';
+  return p + '</table>';
 }
+function tkPala(sj, maara, nimi) {
+  return '<div class="kk-pala"><span class="nimi">' + esc(nimi || 'Tarvittava pala') + ' (leveys × pituus pellillä)</span><span class="arvo">' + palaTeksti(sj) + ' mm</span>' + (maara > 0 ? TK.kpl(maara) : '') + '</div>';
+}
+function tkKartio(s, k, valinnat) {
+  var n = k.osat.length, kk = kplKartioita(s), sivut = [], nimiTyo = s.nimi || 'Kartio';
+  var mittaRivi = fmt(k.da, 0) + ' → ' + fmt(k.dy, 0) + ' mm, korkeus ' + fmt(s.H, 0) + ' mm' + (n > 1 ? ', ' + n + ' osaa' : '');
+  k.ryhmat.forEach(function (r, i) {
+    var o = r.osa, sj = o.sijoitus, hp = kartioHarppi(o, sj, kaariAskel());
+    var osaNimi = n > 1 ? 'Osa ' + r.nrot.join(' ja ') + ' / ' + n : '';
+    var p = i === 0 ? TK.ylaosa({ otsikko: 'KARTIO', alaotsikko: nimiTyo, pieni: mittaRivi }) : TK.ylaosaPieni({ otsikko: 'KARTIO', alaotsikko: nimiTyo, sivu: osaNimi });
+    p += tkPala(sj, r.kpl * kk, osaNimi ? osaNimi + ' · tarvittava pala' : 'Tarvittava pala');
+    p += '<div class="tk-two"><div><h2>Harppi</h2><table class="tk-table kk-harppi">';
+    p += '<tr><th>Säde Rb (iso kaari)</th><td><b>' + fmt(hp.RbLeikkaus, 1) + '</b> mm' + (hp.RbLeikkaus !== hp.Rb ? ' (huullos, taitos ' + fmt(hp.Rb, 1) + ')' : '') + '</td></tr>';
+    p += '<tr><th>Säde Rs (pieni kaari)</th><td>' + (hp.Rs > 0 ? '<b>' + fmt(hp.RsLeikkaus, 1) + '</b> mm' + (hp.RsLeikkaus !== hp.Rs ? ' (huullos, taitos ' + fmt(hp.Rs, 1) + ')' : '') : '0 (kärki)') + '</td></tr>';
+    p += '<tr><th>Harpin kärki</th><td>' + esc(karkiTeksti(hp, sj)) + '</td></tr>';
+    p += '<tr><th>Kaaret (tarkistus)</th><td>' + mm0(hp.iso.pituus) + (hp.pieni ? ' / ' + mm0(hp.pieni.pituus) : '') + ' mm</td></tr>';
+    p += '</table></div><div><h2>Mitat</h2>' + tkMitatPyorea(s, k, o) + '</div></div>';
+    if (n > 1 && i === 0) {
+      p += '<h2>Saumat</h2><table class="tk-table"><tr><th>Sauma</th><th>Kulma kartiolla</th><th>Edellisen osan reuna</th><th>Seuraavan osan reuna</th></tr>';
+      k.saumat.forEach(function (sa, j) { p += '<tr><td>Sauma ' + (j + 1) + '</td><td>' + fmt(sa.kulma, 1) + '°</td><td>osa ' + (((j - 1 + n) % n) + 1) + ': ' + fmt(sa.ed, 1) + ' mm</td><td>osa ' + (j + 1) + ': ' + fmt(sa.seur, 1) + ' mm</td></tr>'; });
+      p += '</table>';
+    }
+    p += '<h2>Levityskuva</h2><div class="tk-svg">' + levitysSvg(o) + '</div>';
+    p += '<div class="tk-note">Harmaa = saumalisä' + (k.huul && k.huul.onko ? ', vaalea = huullos, pitkä katkoviiva kaarella = huulloksen taitoslinja' : '') + '. Katkoviiva = kappaleen reuna (sauma). Rb ja Rs mitataan kärjestä.</div>';
+    p += '<h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + karkiKuvaan(sijoitusSvg(o), o) + '</div><div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>';
+    p += TK.alaosa('Kartio');
+    sivut.push(TK.sivu(p));
+    if (valinnat.kaaret) {
+      var rivit = hp.rivit.map(function (x) { return { a: x.nimi, b: mm0(x.x), c: mm0(x.y), d: mm0(x.seurPit) + ' → ' + x.seurNimi }; });
+      var q = TK.ylaosaPieni({ otsikko: 'KARTIO', alaotsikko: nimiTyo, sivu: 'kaaren pisteet' + (osaNimi ? ' · ' + osaNimi : '') });
+      q += '<h2>Kaaren pisteet pellillä (mm)</h2><div class="tk-svg tk-svg-kul">' + sijoitusSvg(o, hp.rivit.map(function (x) { return { nimi: x.nimi, p: x.p }; })) + '</div>';
+      q += '<div class="tk-note">' + esc(KAARI_OHJE) + '</div>' + kulmaTaulukko(rivit, 16) + TK.alaosa('Kartio');
+      sivut.push(TK.sivu(q));
+    }
+  });
+  return sivut.join('');
+}
+function tkNelio(s, k, valinnat) {
+  var n = k.osat.length, kk = kplKartioita(s), sivut = [], nimiTyo = s.nimi || 'Siirtymä';
+  var mittaRivi = fmt(k.W, 0) + ' × ' + fmt(k.D, 0) + ' → Ø' + fmt(k.d, 0) + ' mm, korkeus ' + fmt(k.H, 0) + ' mm' + (n > 1 ? ', ' + n + ' osaa' : '');
+  k.ryhmat.forEach(function (r, i) {
+    var o = r.osa, sj = o.sijoitus, osaNimi = n > 1 ? 'Osa ' + r.nrot.join(' ja ') + ' / ' + n : '';
+    var p = i === 0 ? TK.ylaosa({ otsikko: 'SIIRTYMÄ', alaotsikko: nimiTyo, pieni: 'Nelikulmio → pyöreä · ' + mittaRivi }) : TK.ylaosaPieni({ otsikko: 'SIIRTYMÄ', alaotsikko: nimiTyo, sivu: osaNimi });
+    p += tkPala(sj, r.kpl * kk, osaNimi ? osaNimi + ' · tarvittava pala' : 'Tarvittava pala');
+    p += '<div class="tk-two"><div><h2>Mitat</h2><table class="tk-table">';
+    p += '<tr><th>Alapää</th><td>' + fmt(k.W, 1) + ' × ' + fmt(k.D, 1) + ' mm' + (s.alaSovite === 'ei' ? '' : ' (' + SOVITE_NIMI[s.alaSovite] + ')') + '</td></tr>';
+    p += '<tr><th>Yläpää Ø</th><td>' + fmt(k.d, 1) + ' mm' + (s.ylaSovite === 'ei' ? '' : ' (' + SOVITE_NIMI[s.ylaSovite] + ')') + '</td></tr>';
+    p += '<tr><th>Korkeus</th><td>' + fmt(k.H, 1) + ' mm</td></tr>';
+    if (k.ox || k.oy) p += '<tr><th>Ympyrän siirto</th><td>X ' + fmt(k.ox, 1) + ' / Y ' + fmt(k.oy, 1) + ' mm</td></tr>';
+    p += '</table></div><div><h2>Osa</h2><table class="tk-table">';
+    p += '<tr><th>Alkaa</th><td>' + esc(PAIKAT[o.paikka1]) + ' (lisä ' + fmt(o.a1, 1) + ')</td></tr><tr><th>Päättyy</th><td>' + esc(PAIKAT[o.paikka2]) + ' (lisä ' + fmt(o.a2, 1) + ')</td></tr>';
+    p += '<tr><th>Viivoja / nurkka</th><td>' + k.N + '</td></tr></table></div></div>';
+    p += '<h2>Levityskuva</h2><div class="tk-svg">' + siirtymaSvg(o, k) + '</div>';
+    p += '<div class="tk-note">Katsottu ulkopinnalta. Lihavat viivat: alareuna ja yläreuna. Ohuet viivat: taite- ja merkintäviivat, pisteviiva = sivun keskiviiva. Tumma harmaa = saumalisä' + (o.kuva.huul ? ', vaalea = huullos' : '') + '. N1–N4 = nurkat.</div>';
+    if (o.kuva.huul) p += nelioHuullosTaulukko(o);
+    p += '<h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + sijoitusSvg(o) + '</div><div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>';
+    p += TK.alaosa('Siirtymä');
+    sivut.push(TK.sivu(p));
+    if (valinnat.merkinta) {
+      sivut.push(TK.sivu(TK.ylaosaPieni({ otsikko: 'SIIRTYMÄ', alaotsikko: nimiTyo, sivu: 'leikkauskulmat' + (osaNimi ? ' · ' + osaNimi : '') }) + kulmaSivu(s, o) + TK.alaosa('Siirtymä')));
+      sivut.push(TK.sivu(TK.ylaosaPieni({ otsikko: 'SIIRTYMÄ', alaotsikko: nimiTyo, sivu: 'merkintä' + (osaNimi ? ' · ' + osaNimi : '') }) + merkintaSivu(o, s.puolikas) + TK.alaosa('Siirtymä')));
+    }
+  });
+  return sivut.join('');
+}
+function kartionTyokortti(valinnat) {
+  if (!viimeisin || !viimeisin.k || (viimeisin.k.virheet && viimeisin.k.virheet.length)) return '';
+  var v = valinnat || {};
+  return viimeisin.k.tyyppi === 'nelio' ? tkNelio(viimeisin.s, viimeisin.k, v) : tkKartio(viimeisin.s, viimeisin.k, v);
+}
+function tulosta() {
+  if (!viimeisin || !viimeisin.k || (viimeisin.k.virheet && viimeisin.k.virheet.length)) { alert('Korjaa ensin syötteet.'); return; }
+  if (TK) TK.tulostaKysyen(); else window.print();
+}
+if (TK) TK.asenna(kartionTyokortti, {
+  avain: 'kpt_kartio_tyokortti',
+  valinnat: [
+    { id: 'kaaret', teksti: 'Pyöreä kartio: kaaren pisteet mitoilla (ilman harppia)', oletus: false },
+    { id: 'merkinta', teksti: 'Nelikulmio → pyöreä: leikkauskulma- ja merkintäsivut', oletus: true },
+  ],
+});
 
 function alusta() {
   lataa();
   paivitaMuoto();
   var n = parseInt($('k-n').value, 10) || 1;
   if (SAUMAT.length !== n) asetaN(); else rakennaSaumaRivit();
-  ['k-nimi', 'k-kpl', 'k-ala-d', 'k-yla-d', 'k-nw', 'k-nd', 'k-nn', 'k-ox', 'k-oy', 'k-h', 'k-ala-sov', 'k-yla-sov', 'k-t', 'k-v', 'k-levy-w', 'k-levy-l', 'k-levy-tyyppi', 'k-sij-tila', 'k-kulma-b', 'k-sym', 'k-hu-ala', 'k-hu-yla', 'k-hu-ala-s', 'k-hu-yla-s', 'k-hu-ala-k', 'k-hu-yla-k'].forEach(function (id) {
+  ['k-nimi', 'k-kpl', 'k-ala-d', 'k-yla-d', 'k-nw', 'k-nd', 'k-nn', 'k-ox', 'k-oy', 'k-h', 'k-ala-sov', 'k-yla-sov', 'k-t', 'k-v', 'k-levy-w', 'k-levy-l', 'k-levy-tyyppi', 'k-sij-tila', 'k-kulma-b', 'k-sym', 'k-hu-ala', 'k-hu-yla', 'k-hu-ala-s', 'k-hu-yla-s', 'k-hu-ala-k', 'k-hu-yla-k', 'k-kaari-askel'].forEach(function (id) {
     $(id).addEventListener('input', function () { tallenna(); renderAll(); });
     $(id).addEventListener('change', function () { tallenna(); renderAll(); });
   });
@@ -1972,9 +2050,11 @@ function alusta() {
     tallenna(); renderAll();
   });
   $('nappi-tulosta').addEventListener('click', tulosta);
+  document.addEventListener('kpt-teema', renderAll);   // kaistakuvan värit vaihtuvat ulkoasun mukana
   renderAll();
 }
 alusta();
+
 </script>
 </body>
 </html>

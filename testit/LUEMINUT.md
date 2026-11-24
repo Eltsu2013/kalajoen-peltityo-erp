@@ -48,7 +48,13 @@ Tarkempi kuvaus jokaisesta sarjasta: projektin `huuva/testit/LUEMINUT.md`.
 
 `test_menekki.js` testaa yhteistä kaistat ja menekki -tiedostoa (`orders/menekki.js`, vaihe 8.3) ilman Huuvaa: suorakaiteet suorana, puolisuunnikkaan lomitus käsin laskettuna, pelti-osat kappaleiksi ja piipun hupun palat kaistoille (`kaistaKappaleet`, peilikuvapari samalla kaistalla vuorotellen, kappalemäärä säilyy, harjapiippu).
 
+## kartio/ (3 sarjaa, 24.11.2026)
+
+Testaavat Kartio-sivua `orders/kartio.html` (vaihe 8.2 / ulkoasuremontti R1). Ne lukevat sivun ensimmäisen `<script>`-lohkon merkkiin `// ==== UI ====` asti, joten laskennan pitää olla sivun ensimmäinen inline-skripti ja ennen UI-merkkiä.
+
+- `test_kartio.js` ja `test_kartio_karki.js` — Tomin Kartio-testit Claude-projektista (pyöreä ja nelikulmainen kartio, sovitteet, huullokset, saumat, sijoitus, leikkauskulmat; terävä kärki). Siirretty sellaisinaan, vain polku ja tulostus muutettu tälle ajurille.
+- `test_kartio_harppi.js` — uusi `kartioHarppi` (Tomin toiveet A ja B): harpin kärjen paikka pellillä, kaaren pisteet tasavälein, pisteet leikkausääriviivalla, kärki palan / pellin ulkopuolella.
+
 ## Tulossa
 
 - `piippu/`: harjapiipun testipiiput A ja B (vaihe 5).
-- Kartion testit (`test_kartio.js`) siirretään, kun Kartio tulee repoon (vaihe 8).

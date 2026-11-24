@@ -14,6 +14,7 @@
 // Vaatii geom.js:n (kupera kuori, kuorten erotus, leikkaus puolitasolla, mm-muotoilu).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
 //
+// v2 (24.11.2026, ulkoasuremontti R1): sivukortti käyttää uuden ulkoasun värejä (--kpt-*) ja vaaleassa ulkoasussa paperiteemaa.
 // Vaihe 8.3 (24.11.2026): siirretty Huuvasta (orders/huuva.html, v16) sellaisenaan. Ainoa muutos: laskeKaistat ottaa
 // kappaleet, joilla on valmis ääriviiva (ring), eikä laske sitä itse pellit.js:n aihioPisteet-funktiolla. Huuva tekee
 // muunnoksen itse. Testit: testit/huuva/test_kaista.js (node testit/aja_kaikki.js).
@@ -410,19 +411,19 @@
   const HANKALA_PIT = 4000, HANKALA_LEV = 600;   // mm: tästä alkaen käsittelyvinkki (sama kuin Huuvassa)
   const CSS = `
 .kmk-asetukset { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:flex-end; margin-bottom:8px; }
-.kmk-asetukset label { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--text2, #9595a0); }
-.kmk-asetukset input, .kmk-asetukset select { background:var(--bg3, #3a3020); color:var(--text1, var(--text, #ededf0)); border:1px solid var(--border, #56442e); border-radius:4px; padding:4px 6px; font-size:13px; font-family:inherit; }
+.kmk-asetukset label { display:flex; flex-direction:column; gap:3px; font-size:11px; color:var(--kpt-himmea, var(--text2, #9595a0)); }
+.kmk-asetukset input, .kmk-asetukset select { background:var(--kpt-kentta, var(--bg3, #3a3020)); color:var(--kpt-teksti, var(--text1, var(--text, #ededf0))); border:1px solid var(--kpt-reuna2, var(--border, #56442e)); border-radius:4px; padding:4px 6px; font-size:13px; font-family:inherit; }
 .kmk-asetukset input { width:80px; }
-.kmk-vihje { font-size:12px; color:var(--text2, #9595a0); line-height:1.5; margin:6px 0; }
-.kmk-varoitus { font-size:12px; color:#f87171; line-height:1.5; margin:6px 0; }
-.kmk-kaista { border-top:1px solid var(--border, #56442e); padding-top:8px; margin-top:8px; }
+.kmk-vihje { font-size:12px; color:var(--kpt-himmea, var(--text2, #9595a0)); line-height:1.5; margin:6px 0; }
+.kmk-varoitus { font-size:12px; color:var(--kpt-virhe, #f87171); line-height:1.5; margin:6px 0; }
+.kmk-kaista { border-top:1px solid var(--kpt-reuna2, var(--border, #56442e)); padding-top:8px; margin-top:8px; }
 .kmk-kaista svg { width:100%; height:auto; display:block; max-height:340px; }
 .kmk-nimi { font-size:13px; font-weight:600; margin-bottom:4px; }
-.kmk-valinta { font-size:12px; color:var(--text2, #9595a0); margin:8px 0 2px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
-.kmk-valinta select { background:var(--bg3, #3a3020); color:var(--text1, var(--text, #ededf0)); border:1px solid var(--border, #56442e); border-radius:4px; padding:2px 4px; font-size:12px; max-width:100%; }
+.kmk-valinta { font-size:12px; color:var(--kpt-himmea, var(--text2, #9595a0)); margin:8px 0 2px; display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+.kmk-valinta select { background:var(--kpt-kentta, var(--bg3, #3a3020)); color:var(--kpt-teksti, var(--text1, var(--text, #ededf0))); border:1px solid var(--kpt-reuna2, var(--border, #56442e)); border-radius:4px; padding:2px 4px; font-size:12px; max-width:100%; }
 .kmk-taulu { border-collapse:collapse; font-size:12px; margin:4px 0; }
-.kmk-taulu th, .kmk-taulu td { border:1px solid var(--border, #56442e); padding:3px 7px; text-align:left; }
-.kmk-taulu th { color:var(--text2, #9595a0); font-weight:500; }
+.kmk-taulu th, .kmk-taulu td { border:1px solid var(--kpt-reuna2, var(--border, #56442e)); padding:3px 7px; text-align:left; }
+.kmk-taulu th { color:var(--kpt-himmea, var(--text2, #9595a0)); font-weight:500; }
 .kmk-taulu-wrap { overflow-x:auto; }
 `;
   function lisaaCss() {
@@ -449,7 +450,7 @@
   }
 
   // el = kortin sisältöelementti. opts: { kortti (details-elementti, piilotetaan kun ei kappaleita; otsikkoon menekki),
-  //   paksuus: () => pellin paksuus (mm, tyhjä = ei valittu), teema (valinnainen, oletus pellit.js:n TEEMA_RUUTU + punainen viilto) }
+  //   muutos: kr => ... (kutsutaan jokaisen laskennan jälkeen), paksuus: () => pellin paksuus (mm, tyhjä = ei valittu), teema (valinnainen, oletus pellit.js:n TEEMA_RUUTU + punainen viilto) }
   // Palauttaa { piirra(kappaleet), paivita(), tulos() }.
   function sivuKortti(el, opts) {
     lisaaCss();
@@ -473,7 +474,13 @@
       const s = e.target.closest('select[data-kmk-g]');
       if (s) { kplValinta[decodeURIComponent(s.dataset.kmkG)] = parseInt(s.value, 10) || 0; piirra(viim); }
     });
-    const teema = () => o.teema || Object.assign({}, (globalThis.KPT_PELLIT && globalThis.KPT_PELLIT.TEEMA_RUUTU) || {}, { leikkaus: '#ef4444' });
+    // Kuvan värit: vaaleassa ulkoasussa (teema.js, html[data-teema="vaalea"]) paperiteema, muuten ruudun tumma teema
+    const teema = () => {
+      if (o.teema) return o.teema;
+      const PL = globalThis.KPT_PELLIT || {};
+      const vaalea = typeof document !== 'undefined' && document.documentElement.dataset.teema === 'vaalea';
+      return Object.assign({}, (vaalea ? PL.TEEMA_PAPERI : PL.TEEMA_RUUTU) || {}, { leikkaus: vaalea ? '#dc2626' : '#ef4444' });
+    };
     function piirra(kappaleet) {
       viim = kappaleet; kr = null;
       if (o.kortti) o.kortti.style.display = kappaleet && kappaleet.length ? '' : 'none';
@@ -486,7 +493,8 @@
         let h = '<p class="kmk-vihje">Asettelu: <b>' + (kr.tila === 'lomitus' ? 'lomitettu' : 'suora') + '</b>'
           + (as.asettelu === 'auto' ? ' (paksuus ' + (pk > 0 ? String(pk).replace('.', ',') + ' mm' : 'ei valittu, oletus ' + String(PAKSUUS_OLETUS).replace('.', ',') + ' mm')
             + ' → ' + (paksuus <= KAISTA_LOMITUS_MAX_PAKS ? 'ohut, lomitus' : 'paksu, suora') + ')' : ' (valittu käsin)')
-          + '. Kaistan leveys = aihion korkeus. Lomitettuna joka toinen pala on käännetty 180° ja palat erottuvat yhdellä suoralla giljotiiniviillolla. Peilikuvaparit (esim. sivut) ovat samalla kaistalla vuorotellen, eikä niitä lomiteta, koska peilikuvaa ei saa kääntämällä.</p>';
+          + '. Kaistan leveys = aihion korkeus. Lomitettuna joka toinen pala on käännetty 180° ja palat erottuvat yhdellä suoralla giljotiiniviillolla.'
+          + (kappaleet.some(x => x.ringPeili) ? ' Peilikuvaparit (esim. sivut) ovat samalla kaistalla vuorotellen, eikä niitä lomiteta, koska peilikuvaa ei saa kääntämällä.' : '') + '</p>';
         const T = teema();
         kr.kaistat.forEach((k, i) => {
           if (k.osa === 1) h += kplValintaHtml(kr.ryhmat.find(r => r.nimi === k.nimi));
@@ -500,6 +508,7 @@
         sis.innerHTML = h;
         const ots = o.kortti && o.kortti.querySelector('summary');
         if (ots) ots.textContent = 'Kaistat ja menekki · rullasta ' + Math.ceil(kr.pituus - 1e-9) + ' mm';
+        if (typeof o.muutos === 'function') o.muutos(kr);   // sivu voi verrata tulosta (esim. Kartio: peräkkäin leikattuna)
       } catch (e) {
         console.error('Kaistat:', e);
         sis.innerHTML = '<p class="kmk-varoitus">Kaistojen laskenta epäonnistui.</p>';
