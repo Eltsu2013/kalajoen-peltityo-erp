@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v17 (24.11.2026): kiilaSivukuva (lapepiipun sivukuva oikeasta sivusta kiilan kanssa, vaihe 5c).
 // v16 (24.11.2026): tyhjät vasemman puolen korkeudet lasketaan katon tasosta (varoitus LASKETTU, EI MITATTU).
 // v15 (24.11.2026): harjaKuvaYlhaalta, harjaSivukuva oikeasta sivusta kiilan kanssa.
 // v14 (24.11.2026): harjapiipun kiila / mutka (harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila; vaihe 5b).
@@ -444,6 +445,21 @@
     const m = k.muoto, he = Number(v.etukork) || 0, ht = Number(v.takakork) || 0;
     return m.taka === m.etu && m.oikea === m.vasen && m.suora === 0 && k.korkeudet[0] === he && k.korkeudet[1] === he
       && k.korkeudet[2] === ht && k.korkeudet[3] === ht && SEINAT.every(n => !k.kiila[n]);
+  }
+
+  // ---------- Lapepiipun sivukuva kiilapiipussa (vaihe 5c, 24.11.2026) ----------
+  // Sivukuva näyttää oikean sivun (sama sivu kuin "Suora mitta"), kuten harjapiipussa (Tomi 24.11.: oikea sivu + kuva ylhäältä).
+  // Palauttaa { etu, taka, etuTod, takaTod } (korkeudet oikean sivun kulmista ja hupun oikean sivupalan todelliset korkeudet
+  // ilman taitoksia 3D-mallista) tai null, kun piippu on suora. Suoralla syötöllä etuTod / takaTod = hEtuTodellinen / hTakaTodellinen.
+  function kiilaSivukuva(vals) {
+    const v = vals || {}, k = kiilaTiedot(v);
+    if (!k.paalla || onSuora(v, k)) return null;
+    const tulos = { etu: k.korkeudet[1], taka: k.korkeudet[2], etuTod: null, takaTod: null };
+    let t = null;
+    try { t = hupunPalat(v); } catch (e) { t = null; }
+    const sivut = t ? t.palat.filter(pa => pa.osa === 'sivut' && pa.tahko === 'oikea') : [];
+    if (sivut.length) { tulos.etuTod = levitaPala(sivut[0]).mitat.vasen; tulos.takaTod = levitaPala(sivut[sivut.length - 1]).mitat.oikea; }
+    return tulos;
   }
 
   // ---------- Peltilista kiilan kanssa ----------
@@ -1051,7 +1067,7 @@
   }
 
   const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
-    palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
+    palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta, kiilaSivukuva,
     harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva,
     harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila, harjaKuvaYlhaalta };
   globalThis.KPT_PIIPPU_LEVITYS = KPT_PIIPPU_LEVITYS;

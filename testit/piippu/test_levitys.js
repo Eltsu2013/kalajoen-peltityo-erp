@@ -209,5 +209,17 @@ ok(kiilaOk, '200 satunnaista kiila-/mutkapiippua, ' + kiilaPaloja + ' palaa: yks
   ok(L.etukuva({ leveys: 0 }) === '' && L.etukuva(null) === '', 'etukuva ilman leveyttä on tyhjä');
 }
 
+// ---- Kiilapiipun sivukuva oikeasta sivusta (vaihe 5c, 24.11.2026)
+{
+  const P = require('../../orders/piippu-laskenta.js');
+  ok(L.kiilaSivukuva(OLETUS) === null && L.kiilaSivukuva(Object.assign({}, OLETUS, { kiilaPaalla: true })) === null, 'kiilaSivukuva: suora piippu → null (kuva kuten ennen)');
+  const mut = Object.assign({}, OLETUS, { kiilaPaalla: true, korkeusEO: 1040, korkeusTO: 840 });   // oikea puoli 40 korkeampi, katto tasainen
+  const ks = L.kiilaSivukuva(mut), g = P.laskeLapepiippu(Object.assign({}, OLETUS, { etukork: 1040, takakork: 840 })).geom;
+  ok(ks && ks.etu === 1040 && ks.taka === 840 && Math.abs(ks.etuTod - g.hEtuTodellinen) < 1 && Math.abs(ks.takaTod - g.hTakaTodellinen) < 1,
+    'kiilaSivukuva: mutka oikealla → korkeudet oikean sivun kulmista ja todelliset korkeudet oikeasta sivupalasta (' + (ks && ks.etuTod.toFixed(1)) + ' / ' + (ks && ks.takaTod.toFixed(1)) + ')');
+  const kv = L.kiilaSivukuva(Object.assign({}, OLETUS, { kiilaPaalla: true, kiilaVasen: -20 }));
+  ok(kv && kv.etu === 1000 && kv.taka === 800, 'kiilaSivukuva: kiila vain vasemmalla → oikean sivun korkeudet ennallaan');
+}
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;

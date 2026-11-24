@@ -174,7 +174,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=16"></script>
+<script src="piippu-levitys.js?v=17"></script>
 <script src="kansi.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=4"></script>
@@ -326,11 +326,20 @@ function etukuvaSvg(v) {
   if (!v || !window.KPT_PIIPPU_LEVITYS || !KPT_PIIPPU_LEVITYS.etukuva) return '';
   try { return KPT_PIIPPU_LEVITYS.etukuva(v); } catch (e) { console.error('Etukuva:', e); return ''; }
 }
+// Kiilapiipussa kulmat ja kaltevuus oikean sivun korkeuksista, kuten sivukuvassa (vaihe 5c, 24.11.2026)
+function sivuV(v) {
+  try { const ks = !onHarja(v) && window.KPT_PIIPPU_LEVITYS && KPT_PIIPPU_LEVITYS.kiilaSivukuva ? KPT_PIIPPU_LEVITYS.kiilaSivukuva(v) : null; return ks ? Object.assign({}, v, { etukork: ks.etu, takakork: ks.taka }) : v; }
+  catch (e) { return v; }
+}
 // opts.tuloste (työkortti): tekstit 1,5-kertaisiksi ja kaltevuus pois kuvasta (se on otsikossa), jotta kuva on paperilla luettava
 function piirraKuvaSVG(v, opts) {
   if (!v) return '';
   const tuloste = !!(opts && opts.tuloste);
   if (onHarja(v)) { try { return KPT_PIIPPU_LEVITYS.harjaSivukuva(v, { todelliset: true }); } catch (e) { console.error('Harjapiipun kuva:', e); return ''; } }
+  // Kiilapiippu (vaihe 5c, 24.11.2026): kuva oikeasta sivusta, korkeudet sen kulmista, ↳-luvut 3D-mallin oikeasta sivupalasta
+  let ks = null;
+  try { ks = window.KPT_PIIPPU_LEVITYS && KPT_PIIPPU_LEVITYS.kiilaSivukuva ? KPT_PIIPPU_LEVITYS.kiilaSivukuva(v) : null; } catch (e) { ks = null; }
+  if (ks) v = Object.assign({}, v, { etukork: ks.etu, takakork: ks.taka });
   const suora=v.suora||0, etukork=v.etukork||0;
   const takakork=v.takakork||0, harjalle=v.harjalle||0;
   const k24=v.k24||0, j25=v.j25||0;
@@ -340,7 +349,7 @@ function piirraKuvaSVG(v, opts) {
   const g = KPT_PIIPPU.laskeLapepiippu(v).geom;
   const korkeuserot=g.korkeuserot, kattokulma_rad=g.kattokulma_rad;
   // Hupun todellinen korkeus ilman taitoksia (Tomi 20.11.2026: pellissä näkyy se mitta, joka siitä pitää tulla)
-  const hEtuKork=g.hEtuTodellinen, hTakaKork=g.hTakaTodellinen, vinomitta=g.vinomitta;
+  const hEtuKork=ks && ks.etuTod !== null ? ks.etuTod : g.hEtuTodellinen, hTakaKork=ks && ks.takaTod !== null ? ks.takaTod : g.hTakaTodellinen, vinomitta=g.vinomitta;
   const hSivEtenemä=g.hSivEtenema;
 
   const W=900,H=380,mL=110,mR=160,mT=30,mB=30;
@@ -440,6 +449,7 @@ function piirraKuvaSVG(v, opts) {
   if (!tuloste) h+=`<text x="${W-10}" y="20" text-anchor="end" font-size="11" fill="${c2}" font-family="system-ui">1:${suhde}</text>`;
   if (tuloste) h = h.replace(/font-size="([\d.]+)"/g, (m, x) => `font-size="${(Number(x) * 1.5).toFixed(1)}"`);
 
+  if (ks) h+=`<text x="8" y="${H-8}" font-size="${tuloste?16:11}" fill="${c2}" font-family="system-ui">oikea sivu · muut sivut kuvassa ylhäältä (kiila / mutka)</text>`;
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${h}</svg>`;
 }
 
@@ -736,13 +746,13 @@ function render(items, order) {
         ${harjaKulmat(v)}
         ${v?.etukork&&v?.takakork&&v?.suora?`
           <span style="font-weight:400;color:var(--text);">
-            Etukulma: <strong style="font-family:'IBM Plex Mono',monospace">${Math.round(Math.atan((v.suora||0)/(v.etukork-v.takakork||1))*180/Math.PI)}°</strong>
+            Etukulma: <strong style="font-family:'IBM Plex Mono',monospace">${Math.round(Math.atan((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1))*180/Math.PI)}°</strong>
           </span>
           <span style="font-weight:400;color:var(--text);">
-            Takakulma: <strong style="font-family:'IBM Plex Mono',monospace">${180-Math.round(Math.atan((v.suora||0)/(v.etukork-v.takakork||1))*180/Math.PI)}°</strong>
+            Takakulma: <strong style="font-family:'IBM Plex Mono',monospace">${180-Math.round(Math.atan((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1))*180/Math.PI)}°</strong>
           </span>
           <span style="font-weight:400;color:var(--text);">
-            Kaltevuus: <strong style="font-family:'IBM Plex Mono',monospace">1:${((v.suora||0)/(v.etukork-v.takakork||1)).toFixed(1)}</strong>
+            Kaltevuus: <strong style="font-family:'IBM Plex Mono',monospace">1:${((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1)).toFixed(1)}</strong>
           </span>`:''}
       </h3>
       <div class="svg-wrap kuvat-rinn" style="padding:16px"><div>${svgHtml}</div><div>${etukuvaSvg(v)}</div></div>
@@ -831,6 +841,7 @@ function kulmatTeksti(v) {
       const g = KPT_PIIPPU.laskeHarjapiippu(v, { juuret: false, huppu: false, kansi: false, hattu: false }).geom;
       return 'Etukulmat ' + r(g.puoli1.kulmaDeg) + '° / ' + r(g.puoli2.kulmaDeg) + '° · kaltevuus ' + KPT_PIIPPU_LEVITYS.harjaSuhde(v).join(' / ');
     }
+    v = sivuV(v);
     if (v.etukork && v.takakork && v.suora) {
       const ero = (v.etukork - v.takakork) || 1, etu = Math.round(Math.atan((v.suora || 0) / ero) * 180 / Math.PI);
       return 'Etukulma ' + etu + '° · takakulma ' + (180 - etu) + '° · kaltevuus 1:' + ((v.suora || 0) / ero).toFixed(1);

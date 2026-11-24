@@ -489,6 +489,7 @@
       <div class="kulma-item">Takakulma (kanttikoneeseen):<span id="takakulma-txt">—</span>°</div>
       <div class="kulma-item">Katon kaltevuus:<span id="kaltevuus-txt">—</span></div>
     </div>
+    <div id="sivukuva-huom" style="font-size:11px;color:var(--text2);margin-top:4px;"></div>
   </div>
 
   <!-- Kansi ja reiät oletuksena kiinni (Tomi 24.11.2026); aukeaa muokattaessa, jos kannessa on reikiä -->
@@ -526,7 +527,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=16"></script>
+<script src="piippu-levitys.js?v=17"></script>
 <script src="kansi.js?v=4"></script>
 <script>
 let saumatyyppi = 1;
@@ -959,13 +960,17 @@ function laske() {
   try { document.getElementById('kiila-kuva').innerHTML = kiilaPaalla && window.KPT_PIIPPU_LEVITYS ? KPT_PIIPPU_LEVITYS.kuvaYlhaalta(vals) : ''; }
   catch (e) { console.error('Kiilan kuva:', e); }
 
-  document.getElementById('etukulma-txt').textContent = g.etukulma;
-  document.getElementById('takakulma-txt').textContent = g.takakulma;
+  // Kiilapiippu (vaihe 5c, 24.11.2026): sivukuva, kulmat ja kaltevuus oikeasta sivusta kuten Tuotannossa
+  let ks = null;
+  try { ks = window.KPT_PIIPPU_LEVITYS && KPT_PIIPPU_LEVITYS.kiilaSivukuva ? KPT_PIIPPU_LEVITYS.kiilaSivukuva(vals) : null; } catch (e) { ks = null; }
+  const gk = ks ? KPT_PIIPPU.laskeLapepiippu(Object.assign({}, vals, { etukork: ks.etu, takakork: ks.taka })).geom : g;
+  document.getElementById('etukulma-txt').textContent = gk.etukulma;
+  document.getElementById('takakulma-txt').textContent = gk.takakulma;
 
   // Kaltevuussuhde 1:X
   const kaltEl = document.getElementById('kaltevuus-txt');
-  if (g.korkeuserot > 0 && vals.suora > 0) {
-    const suhde = (vals.suora / g.korkeuserot).toFixed(1);
+  if (gk.korkeuserot > 0 && vals.suora > 0) {
+    const suhde = (vals.suora / gk.korkeuserot).toFixed(1);
     kaltEl.textContent = ` 1:${suhde}`;
   } else {
     kaltEl.textContent = '—';
@@ -982,8 +987,11 @@ function laske() {
     }
   });
 
-  piirraKuva(vals.leveys, vals.suora, vals.etukork, vals.takakork, vals.k24, vals.j25, vals.harjalle, g.vinomitta, vals.takareuna,
-    g.hEtuKorkMerkinta, g.hTakaKorkMerkinta, hasHuppu, g.q9, vals.harjaylitys, g.hSivEtenema);
+  // ↳ = merkintämitta (todellinen + yläreuna); kiilapiipussa oikean sivupalan todellinen korkeus 3D-mallista
+  const yla = Number(vals.ylareunaV) || 0;
+  piirraKuva(vals.leveys, vals.suora, ks ? ks.etu : vals.etukork, ks ? ks.taka : vals.takakork, vals.k24, vals.j25, vals.harjalle, gk.vinomitta, vals.takareuna,
+    ks && ks.etuTod !== null ? ks.etuTod + yla : gk.hEtuKorkMerkinta, ks && ks.takaTod !== null ? ks.takaTod + yla : gk.hTakaKorkMerkinta, hasHuppu, gk.q9, vals.harjaylitys, gk.hSivEtenema);
+  document.getElementById('sivukuva-huom').textContent = ks ? 'Kuva oikeasta sivusta (kiila / mutka). Muut sivut näkyvät kuvassa ylhäältä.' : '';
   piirraEtukuva(Object.assign({}, vals, { harjakulma: gv('v-harjakulma') }));
   piirraKansi(tulos.kansi, vals);
   renderTaulu('luettelo-juuret', juuret, piippukpl);
