@@ -316,7 +316,7 @@
 
       <details id="k-levitys" data-kortti class="kpt-kortti" open><summary>Levityskuva (laskettu) <span class="yv" id="ky-levitys"></span></summary><div class="k-sisalto">
         <div class="kpt-piirros paperi"><svg id="svg-levitys" viewBox="0 0 520 330"></svg></div>
-        <p class="kpt-vihje">Paksu viiva = paneeli, harmaa = taitos (leveys · kanttausluku). Piirretty ulkopuolelta katsottuna.</p>
+        <p class="kpt-vihje">Oranssi = paneeli, keltainen = taitos (leveys · kanttausluku). Piirretty ulkopuolelta katsottuna.</p>
       </div></details>
 
       <details id="k-merkinta" data-kortti class="kpt-kortti" open><summary>Merkintäpisteet (aihion vasemmasta alakulmasta) <span class="yv" id="ky-merkinta"></span></summary><div class="k-sisalto">
@@ -339,8 +339,8 @@
 </main>
 
 <script src="geom.js?v=1"></script>
-<script src="pellit.js?v=3"></script>
-<script src="menekki.js?v=2"></script>
+<script src="pellit.js?v=4"></script>
+<script src="menekki.js?v=3"></script>
 <script src="tyokortti.js?v=4"></script>
 <script>
   // Yhteiset työkalut (vaihe 1, 20.11.2026): geometria orders/geom.js ja pelti-osat orders/pellit.js.
@@ -354,7 +354,7 @@
   let {
     PANEL_NAMES, PARTITIIVI, computeCorners, flattenSide, paneelimaaritykset, laskeLevitys,
     geomPaneelit, tasonSisaanpain, sivuTaitosKulma, ylaTaitosKulma, alaKouruKulma, alaSisaanKulma,
-    alaTuplatKulma, laskeKaikki, TEEMA_RUUTU, TEEMA_PAPERI, levitysSvgSisalto, ryhmitteleSamat,
+    alaTuplatKulma, laskeKaikki, TEEMA_RUUTU, TEEMA_PAPERI, TEEMA_PAPERI_VARI, levitysSvgSisalto, ryhmitteleSamat,
     jiiriTeksti, kplTeksti, taitosRivit, aihioPisteet, merkintaSvgSisalto, pisteTaulu,
   } = globalThis.KPT_PELLIT;
 
@@ -583,7 +583,7 @@
   // ---------- Piirto ----------
 
   function dimLabelH(x1, x2, y, text) {
-    return '<text x="' + ((x1+x2)/2) + '" y="' + y + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + TEEMA_PAPERI.mitta + '" text-anchor="middle">' + text + '</text>';
+    return '<text x="' + ((x1+x2)/2) + '" y="' + y + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + TEEMA_PAPERI_VARI.mitta + '" text-anchor="middle">' + text + '</text>';
   }
 
   function drawHahmotelma(s) {
@@ -601,19 +601,19 @@
     const py = h => baseY - h*scale;
 
     let c = '';
-    c += '<line x1="' + px(0) + '" y1="' + baseY + '" x2="' + px(0) + '" y2="' + py(H) + '" stroke="' + TEEMA_PAPERI.himmea + '" stroke-width="1" stroke-dasharray="3,3"/>';
+    c += '<line x1="' + px(0) + '" y1="' + baseY + '" x2="' + px(0) + '" y2="' + py(H) + '" stroke="' + TEEMA_PAPERI_VARI.himmea + '" stroke-width="1" stroke-dasharray="3,3"/>';
     const pts = [[px(-Wb/2), baseY], [px(Wb/2), baseY], [px(dx+Wt/2), py(H)], [px(dx-Wt/2), py(H)]]
       .map(p => p.join(',')).join(' ');
-    c += '<polygon points="' + pts + '" fill="none" stroke="' + TEEMA_PAPERI.paneeli + '" stroke-width="1.75"/>';
+    c += '<polygon points="' + pts + '" fill="none" stroke="' + TEEMA_PAPERI_VARI.paneeli + '" stroke-width="1.75"/>';
     c += dimLabelH(px(-Wb/2), px(Wb/2), baseY + 14, Math.round(Wb) + ' mm');
     c += dimLabelH(px(dx-Wt/2), px(dx+Wt/2), py(H) - 9, Math.round(Wt) + ' mm');
     const midY = (baseY + py(H)) / 2;
-    c += '<text x="12" y="' + midY + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + TEEMA_PAPERI.mitta + '" text-anchor="middle" transform="rotate(-90 12 ' + midY + ')">' + Math.round(H) + ' mm</text>';
+    c += '<text x="12" y="' + midY + '" font-size="10" font-family="IBM Plex Mono, monospace" fill="' + TEEMA_PAPERI_VARI.mitta + '" text-anchor="middle" transform="rotate(-90 12 ' + midY + ')">' + Math.round(H) + ' mm</text>';
     svg.innerHTML = c;
   }
 
   function drawLevityskuva(panels) {
-    document.getElementById('svg-levitys').innerHTML = levitysSvgSisalto(panels, 520, 330, TEEMA_PAPERI);
+    document.getElementById('svg-levitys').innerHTML = levitysSvgSisalto(panels, 520, 330, TEEMA_PAPERI_VARI);
   }
 
   // ---------- Pistemerkinnät (v11) ----------
@@ -636,7 +636,7 @@
       const as = palaAsennot(krM, p, peili);
       const nimi = p.name + kplTeksti(p);
       html += '<div class="mk-ryhma"><div class="mk-nimi">' + esc(nimi) + ' · ' + aihioPisteet(p, peili).pisteet.length + ' pistettä' + (peili ? ' · peilikuva (sisäpinta)' : '') + '</div>'
-        + '<div class="kpt-piirros paperi"><svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">' + merkintaSvgSisalto(p, 520, 380, TEEMA_PAPERI, peili, edustavaLevy(as)) + '</svg></div>'
+        + '<div class="kpt-piirros paperi"><svg viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">' + merkintaSvgSisalto(p, 520, 380, TEEMA_PAPERI_VARI, peili, edustavaLevy(as)) + '</svg></div>'
         + pisteTaulu(p, 'pt-table', peili)
         + (as.length ? '<p class="hint" style="margin:8px 0 4px"><b>Palat kaistalla</b> (mistä nollakohta löytyy pellistä leikkauksen jälkeen):</p>' + asentoTaulu(as, 'pt-table') : '') + '</div>';
     });
@@ -684,7 +684,7 @@
   const TEEMA_PAPERI_KAISTA = Object.assign({}, TEEMA_PAPERI, { leikkaus: '#000000' });
   // Ruudun kaistakuva: vaaleassa ulkoasussa paperi (punainen viilto), muuten tumma (teema.js: html[data-teema="vaalea"])
   function vaaleaUlkoasu() { return typeof document !== 'undefined' && !!document.documentElement && document.documentElement.dataset.teema === 'vaalea'; }
-  function kaistaTeemaRuudulle() { return vaaleaUlkoasu() ? Object.assign({}, TEEMA_PAPERI, { leikkaus: '#dc2626' }) : TEEMA_RUUTU_KAISTA; }
+  function kaistaTeemaRuudulle() { return vaaleaUlkoasu() ? Object.assign({}, TEEMA_PAPERI_VARI, { leikkaus: '#dc2626' }) : TEEMA_RUUTU_KAISTA; }
 
 
   // Kaistat-kortin luku ruudun kentistä

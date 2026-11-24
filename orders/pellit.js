@@ -11,6 +11,7 @@
 // ja testit vahtivat, ettei huuvan laskenta muutu.
 //
 // Vaatii geom.js:n:  <script src="geom.js?v=1"></script>  <script src="pellit.js?v=2"></script>
+// v4 (24.11.2026, ulkoasuremontti R2a): ruudun värillinen paperi: PAPERI_VARIT, paperiVarit(svg), TEEMA_PAPERI_VARI. Vain lisäyksiä.
 // v3 (23.11.2026): aihion koko kuvissa ylöspäin pyöristettynä (aiemmin normaalisti), muuten ennallaan.
 // v2 (20.11.2026): p.paneeli valinnainen paneelin ääriviiva (harjapiipun viisikulmainen sivu), muuten ennallaan.
 // Nodessa:           const P = require('../orders/pellit.js');   (lataa geom.js:n itse)
@@ -375,6 +376,29 @@
   const aihioMm = x => Math.ceil(x - 1e-6);
   const TEEMA_PAPERI = { paneeli: '#000000', taitos: '#444444', taitosTaus: 'rgba(0,0,0,0.07)', mitta: '#000000', himmea: '#555555', nimi: '#000000', halo: '#ffffff' };
 
+  // Ruudun vaalea "paperi" (kpt-piirros paperi, ulkoasuremontti R2a 24.11.2026): kuvat piirretään ruudun tummilla väreillä
+  // ja värit vaihdetaan tässä tummemmiksi sävyiksi, jotta värien merkitys säilyy vaalealla pohjalla (Tomi: värilliset kuvat).
+  // Piirtokoodiin ei tarvitse koskea, ja sivut, jotka eivät kutsu tätä (esim. Tuotanto ennen R3:a), pysyvät ennallaan.
+  // Tulosteet ovat yhä mustavalkoisia (tyokortti.js paperille). Tuntemattomat värit jäävät ennalleen.
+  const PAPERI_TAUSTA = '#f7f5f0';
+  const PAPERI_VARIT = {
+    '#f1f5f9': '#1e2833', '#e2eef5': '#1e2833', '#ededf0': '#1e2833', '#e8eef5': '#1e2833', '#c9c4b8': '#1e2833',  // tekstit, ääriviivat
+    '#64748b': '#5b6776', '#6b8fa8': '#5b6776', '#847f72': '#5b6776', '#9595a0': '#5b6776', '#3a5468': '#9aa5b1',  // himmeät
+    '#22c55e': '#15803d', '#4ade80': '#15803d',   // vihreä: paneeli / 90° taitos
+    '#ef4444': '#dc2626', '#f87171': '#dc2626',   // punainen: loveus, karvaus
+    '#f97316': '#c2410c',                         // oranssi: Huuvan paneeli
+    '#f5b942': '#b45309', '#f59e0b': '#b45309', '#e8a020': '#b45309',   // keltainen: taitos, tupla
+    '#38bdf8': '#0369a1', '#a855f7': '#7e22ce',   // sininen: harja, reiät, mitat; violetti
+    '#1a2332': PAPERI_TAUSTA, '#111827': PAPERI_TAUSTA, '#0f172a': PAPERI_TAUSTA, '#3d3426': PAPERI_TAUSTA,   // ruudun taustat
+  };
+  function paperiVarit(svg) {
+    return String(svg || '')
+      .replace(/(fill|stroke|stop-color)="(#[0-9a-fA-F]{3,6})"/g, (m, a, c) => { const u = PAPERI_VARIT[c.toLowerCase()]; return u ? a + '="' + u + '"' : m; })
+      .replace(/background:\s*#[0-9a-fA-F]{3,6}/g, 'background:transparent');
+  }
+  const TEEMA_PAPERI_VARI = {};
+  Object.keys(TEEMA_RUUTU).forEach(k => { TEEMA_PAPERI_VARI[k] = PAPERI_VARIT[TEEMA_RUUTU[k]] || TEEMA_RUUTU[k]; });
+
   // Palauttaa levityskuvan SVG-sisällön annetuille (ryhmitellyille) paneeleille.
   function levitysSvgSisalto(panels, W, Hh, T) {
     const margin = 14, gapMM = 150, gapPx = 18, labelPx = 30;
@@ -630,7 +654,7 @@
   const KPT_PELLIT = {
     PANEL_NAMES, PARTITIIVI, computeCorners, flattenSide, paneelimaaritykset, laskeLevitys,
     geomPaneelit, tasonSisaanpain, sivuTaitosKulma, ylaTaitosKulma, alaKouruKulma, alaSisaanKulma,
-    alaTuplatKulma, laskeKaikki, TEEMA_RUUTU, TEEMA_PAPERI, levitysSvgSisalto, ryhmitteleSamat,
+    alaTuplatKulma, laskeKaikki, TEEMA_RUUTU, TEEMA_PAPERI, TEEMA_PAPERI_VARI, PAPERI_VARIT, paperiVarit, levitysSvgSisalto, ryhmitteleSamat,
     jiiriTeksti, kplTeksti, taitosRivit, aihioPisteet, merkintaSvgSisalto, pisteTaulu,
   };
 

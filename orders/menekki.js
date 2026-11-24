@@ -14,6 +14,7 @@
 // Vaatii geom.js:n (kupera kuori, kuorten erotus, leikkaus puolitasolla, mm-muotoilu).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
 //
+// v3 (24.11.2026, ulkoasuremontti R2a): vaaleassa ulkoasussa kaistakuva värillisellä paperiteemalla (pellit.js v4 TEEMA_PAPERI_VARI).
 // v2 (24.11.2026, ulkoasuremontti R1): sivukortti käyttää uuden ulkoasun värejä (--kpt-*) ja vaaleassa ulkoasussa paperiteemaa.
 // Vaihe 8.3 (24.11.2026): siirretty Huuvasta (orders/huuva.html, v16) sellaisenaan. Ainoa muutos: laskeKaistat ottaa
 // kappaleet, joilla on valmis ääriviiva (ring), eikä laske sitä itse pellit.js:n aihioPisteet-funktiolla. Huuva tekee
@@ -479,7 +480,7 @@
       if (o.teema) return o.teema;
       const PL = globalThis.KPT_PELLIT || {};
       const vaalea = typeof document !== 'undefined' && document.documentElement.dataset.teema === 'vaalea';
-      return Object.assign({}, (vaalea ? PL.TEEMA_PAPERI : PL.TEEMA_RUUTU) || {}, { leikkaus: vaalea ? '#dc2626' : '#ef4444' });
+      return Object.assign({}, (vaalea ? (PL.TEEMA_PAPERI_VARI || PL.TEEMA_PAPERI) : PL.TEEMA_RUUTU) || {}, { leikkaus: vaalea ? '#dc2626' : '#ef4444' });
     };
     function piirra(kappaleet) {
       viim = kappaleet; kr = null;

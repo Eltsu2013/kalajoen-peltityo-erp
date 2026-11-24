@@ -206,8 +206,8 @@
 </main>
 
 <script src="geom.js?v=1"></script>
-<script src="pellit.js?v=3"></script>
-<script src="menekki.js?v=2"></script>
+<script src="pellit.js?v=4"></script>
+<script src="menekki.js?v=3"></script>
 <script src="tyokortti.js?v=4"></script>
 <script>
 
@@ -1122,6 +1122,15 @@ function kartioHarppi(o, sj, askel) {
 }
 
 // ==== UI ====
+// Ruudun kuvat värillisinä (ulkoasuremontti R2a, 24.11.2026): kappaleen ääriviiva oranssi, saumalisä ja huullos keltaisella
+// sävytyksellä. Vain ruudulla: työkortti käyttää samoja kuvafunktioita ilman tätä, joten paperi pysyy mustavalkoisena.
+function ruudulle(svg) {
+  return String(svg || '')
+    .replace(/stroke="#000"([^>]*stroke-linejoin="round")/g, 'stroke="#c2410c"$1')
+    .replace(/fill="#dcdcdc"/g, 'fill="rgba(180,83,9,0.28)"')
+    .replace(/fill="#f0f0f0"/g, 'fill="rgba(180,83,9,0.12)"')
+    .replace(/fill="#e6e6e6"/g, 'fill="rgba(194,65,12,0.10)"');
+}
 // ====================================================================
 //  SVG-PIIRROKSET
 // ====================================================================
@@ -1403,7 +1412,7 @@ function reunaValinta(r, o) {
 }
 function sijoitusKortti(s, r, n, nimi) {
   var o = r.osa, sj = o.sijoitus;
-  var h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Sijoitus pellille' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div><div class="kpt-piirros paperi">' + sijoitusSvg(o) + '</div>' + reunaValinta(r, o);
+  var h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Sijoitus pellille' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div><div class="kpt-piirros paperi">' + ruudulle(sijoitusSvg(o)) + '</div>' + reunaValinta(r, o);
   h += '<div class="kpt-vihje" style="margin:10px 0 0">' + esc(sijoitusSelitys(s, o)) + (sj.tila === 'saasta' && !sj.ilmoitus ? ' Kappale on käännetty niin, että pellin kulutus on mahdollisimman pieni.' : '') + '</div>';
   if (sj.tila === 'reuna') h += '<div class="kpt-vihje" style="margin:6px 0 0">Kuvassa lihavat viivat: vasen = rullan reuna, ylhäällä = leikkauspää. Kappaleen paksu reuna on rullan reunaa vasten.</div>';
   if (sj.huom) h += '<div class="kpt-ilmoitus huom">' + esc(sj.huom) + '</div>';
@@ -1646,7 +1655,7 @@ var MERKINTA_OHJE = 'Mittaa suoralla nauhalla. "Suora alkukulmasta" on matka alk
 
 function merkintaKortti(o, nimi, n, puolikas) {
   var mk = o.merkinnat, h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Merkintä' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>';
-  h += '<div class="kpt-piirros paperi">' + merkintaSvg(o) + '</div>';
+  h += '<div class="kpt-piirros paperi">' + ruudulle(merkintaSvg(o)) + '</div>';
   if (o.kuva.huul && o.kuva.huul.A) h += '<div class="kpt-ilmoitus huom" style="margin:10px 0">' + esc(HUULLOS_A_MERKKI_HUOM) + '</div>';
   h += '<p class="mneuvo" style="margin-top:10px">' + esc(MERKINTA_OHJE) + '</p>';
   if (mk.ulko) h += '<p class="mneuvo">' + esc(ULKOMERKKI_OHJE) + '</p>';
@@ -1696,7 +1705,7 @@ function kulmaTaulukko(rows, rpb) {
 }
 function kulmaKortti(s, r, n, nimi) {
   var o = r.osa, rows = nelioKulmat(o, o.sijoitus, s.kulmaB);
-  var h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Leikkauskulmat' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div><div class="kpt-piirros paperi">' + sijoitusSvg(o, rows) + '</div>';
+  var h = '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Leikkauskulmat' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div><div class="kpt-piirros paperi">' + ruudulle(sijoitusSvg(o, rows)) + '</div>';
   h += '<p class="mneuvo" style="margin-top:10px">' + esc(KULMA_OHJE + (o.kuva.huul ? HUULLOS_KULMA_OHJE : '')) + '</p>' + kulmaTaulukko(kulmaRivit(o, s.kulmaB), 1000);
   return h + '</div>';
 }
@@ -1787,7 +1796,7 @@ function kaaretKortti(s, r, n, nimi) {
   var o = r.osa, hp = kartioHarppi(o, o.sijoitus, kaariAskel());
   var rivit = hp.rivit.map(function (x) { return { a: x.nimi, b: mm0(x.x), c: mm0(x.y), d: mm0(x.seurPit) + ' → ' + x.seurNimi }; });
   var h = '<details class="kpt-kortti"><summary>Kaaren pisteet mitoilla' + (n > 1 ? ' · ' + esc(nimi) : '') + ' <span class="yv">ilman harppia, ' + hp.rivit.length + ' pistettä</span></summary>';
-  h += '<div style="margin-top:14px"><div class="kpt-piirros paperi">' + sijoitusSvg(o, hp.rivit.map(function (x) { return { nimi: x.nimi, p: x.p }; })) + '</div>';
+  h += '<div style="margin-top:14px"><div class="kpt-piirros paperi">' + ruudulle(sijoitusSvg(o, hp.rivit.map(function (x) { return { nimi: x.nimi, p: x.p }; }))) + '</div>';
   h += '<p class="mneuvo" style="margin-top:10px">' + esc(KAARI_OHJE) + ' Pisteiden väli kaarella on enintään ' + mm0(hp.askel) + ' mm (iso kaari: jänne ' + fmt(hp.iso.janne, 1) + ' mm' + (hp.pieni ? ', pieni kaari: ' + fmt(hp.pieni.janne, 1) + ' mm' : '') + ').</p>';
   h += '<div class="kpt-taulu-wrap">' + kulmaTaulukko(rivit, 1000) + '</div></div></details>';
   return h;
@@ -1799,8 +1808,10 @@ var KAARI_OHJE = 'Merkitse pisteet mitoilla: y leikkauspäästä reunaa pitkin, 
 function karkiKuvaan(html, o) {
   var sj = o.sijoitus, hp = kartioHarppi(o, sj, kaariAskel()), x = hp.karki[0], y = hp.karki[1];
   if (!(x >= -0.5 && x <= sj.W + 0.5 && y >= -0.5 && y <= Math.max(sj.h, Math.min(sj.L, sj.h + 80)))) return html;   // vain jos kärki osuu kuvan alueelle
-  var vanha = sijoitusSvg(o);
-  return html.indexOf(vanha) >= 0 ? html.replace(vanha, sijoitusSvg(o, [{ nimi: 'kärki', p: hp.karki }])) : html;
+  var vanha = sijoitusSvg(o), uusi = sijoitusSvg(o, [{ nimi: 'kärki', p: hp.karki }]);
+  if (html.indexOf(vanha) >= 0) return html.replace(vanha, uusi);
+  var vanhaR = ruudulle(vanha);   // ruudun värillinen kuva (R2a)
+  return html.indexOf(vanhaR) >= 0 ? html.replace(vanhaR, ruudulle(uusi)) : html;
 }
 function kaistaKappaleet(s, k, nimiFn) {
   var kk = kplKartioita(s), n = k.osat.length;
@@ -1881,7 +1892,7 @@ function renderAll() {
       kuvat += '<div class="kpt-avainluku"><span class="nimi">Tarvittava pala' + (r.kpl * kplKartioita(s) > 1 ? ' · ' + r.kpl * kplKartioita(s) + ' kpl' : '') + '</span><span class="arvo">' + palaTeksti(o.sijoitus) + '</span><span class="yks">mm</span></div>';
       kuvat += '<div class="kartio-harppi">' + res('Harpin kärki', esc(karkiTeksti(kartioHarppi(o, o.sijoitus, kaariAskel()), o.sijoitus)), '') + '</div>';
     }
-    kuvat += '<div class="kpt-piirros paperi">' + levitysSvg(o) + '</div></div>';
+    kuvat += '<div class="kpt-piirros paperi">' + ruudulle(levitysSvg(o)) + '</div></div>';
     kuvat += karkiKuvaan(sijoitusKortti(s, r, n, nimi), o);
     kuvat += kaaretKortti(s, r, n, nimi);
   });
@@ -1917,7 +1928,7 @@ function renderNelio(s, k) {
     kuvat += '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>' +
       '<div class="kartio-ryhma">' + esc(nelioPaikkaTeksti(o)) + ' · saumalisät ' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</div>' +
       (n > 1 ? '<div class="kpt-avainluku"><span class="nimi">Tarvittava pala</span><span class="arvo">' + palaTeksti(o.sijoitus) + '</span><span class="yks">mm</span></div>' : '') +
-      '<div class="kpt-piirros paperi">' + siirtymaSvg(o, k) + '</div>' +
+      '<div class="kpt-piirros paperi">' + ruudulle(siirtymaSvg(o, k)) + '</div>' +
       '<p class="kpt-vihje" style="margin:10px 0 0">Kuva on katsottu ulkopinnalta. Lihavat viivat ovat alareuna (suorat sivut) ja yläreuna (kaari). Ohuet viivat ovat taite- ja merkintäviivoja, pisteviiva = sivun keskiviiva. Tumma harmaa alue = saumalisä' + (k.huul.onko ? ', vaalea alue = huullos, pitkä katkoviiva = huulloksen taitoslinja' : '') + '.</p>' +
       (k.huul.onko ? '<div class="kpt-taulu-wrap" style="margin-top:10px">' + nelioHuullosTaulukko(o).replace('class="tk-table"', 'class="mtab"') + '</div>' : '') + '</div>';
     kuvat += sijoitusKortti(s, r, n, nimi);
