@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v19 (24.11.2026): kaistaKappaleet (hupun palat kaistoille, menekki.js, vaihe 8.3; peilikuvapari samalle kaistalle vuorotellen).
 // v18 (24.11.2026): lapepiipun kiilassa tyhjät vasemmat korkeudet katon tasosta (LASKETTU), kiero katto -varoitus.
 // v17 (24.11.2026): kiilaSivukuva (lapepiipun sivukuva oikeasta sivusta kiilan kanssa, vaihe 5c).
 // v16 (24.11.2026): tyhjät vasemman puolen korkeudet lasketaan katon tasosta (varoitus LASKETTU, EI MITATTU).
@@ -1106,7 +1107,27 @@
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' + h + '</svg>';
   }
 
-  const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
+  // Hupun palat kaistoille (menekki.js, vaihe 8.3 24.11.2026): kappale = { nimi, kpl, w, h, ring } aihion ääriviivasta.
+  // kerroin = piippujen määrä. Peilikuvaparille (pa.peili, esim. sivut) annetaan myös peilattu ääriviiva (ringPeili):
+  // joka toinen pala leikataan peilikuvana, koska peilikuvaa ei saa kääntämällä (maalattu pinta). Jos ääriviiva on itse
+  // peilisymmetrinen, peilausta ei tarvita.
+  function kaistaKappaleet(palat, kerroin) {
+    const kk = kerroin > 1 ? Math.floor(kerroin) : 1, tulos = [];
+    const avain = r => r.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).sort().join(';');
+    (palat || []).forEach(pa => {
+      const p = levita(pa).p, n = pa.kpl * kk;
+      const rengas = peili => PL.aihioPisteet(p, peili).pisteet.map(q => [q.x, q.y]);
+      const r0 = rengas(false);
+      if (pa.peili && n >= 2 && n % 2 === 0) {
+        const r1 = rengas(true);
+        if (avain(r0) !== avain(r1)) { tulos.push({ nimi: pa.nimi, kpl: n, w: p.w, h: p.h, ring: r0, ringPeili: r1 }); return; }
+      }
+      tulos.push({ nimi: pa.nimi, kpl: n, w: p.w, h: p.h, ring: r0 });
+    });
+    return tulos;
+  }
+
+  const KPT_PIIPPU_LEVITYS = { kaistaKappaleet, YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
     palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta, kiilaSivukuva,
     harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva,
     harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila, harjaKuvaYlhaalta };

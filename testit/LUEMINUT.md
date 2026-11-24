@@ -15,7 +15,7 @@ Repo on julkinen: testeissä ei käytetä asiakkaiden nimiä eikä tietoja (esim
 Huuvan testit siirrettiin Claude-projektista (`huuva/testit/`) vaiheessa 1 (suunnitelma `claude/yhteiset_tyokalut_suunnitelma.md`). Ne testaavat Huuva-sivua (`orders/huuva.html`, Huuva v16; vaiheeseen 8.1 asti testisivu `savuhuuva-mockup.html`), jonka geometria ja pelti-osat ovat yhteisissä tiedostoissa:
 
 - Huuva on 24.11.2026 alkaen oikea ERP-sivu `orders/huuva.html` (vaihe 8.1, laskenta ennallaan). Testisivu `savuhuuva-mockup.html` poistettiin, jotta Huuvasta on vain yksi versio. Projektin kopio `huuva/savuhuuva-mockup.html` on vanha.
-- `lataa.js` — lataa yhteiset tiedostot (geom.js, pellit.js, tyokortti.js) ja antaa `orders/huuva.html`:n skriptin testeille.
+- `lataa.js` — lataa yhteiset tiedostot (geom.js, pellit.js, menekki.js, tyokortti.js) ja antaa `orders/huuva.html`:n skriptin testeille. Kaistalaskenta on 24.11.2026 alkaen yhteisessä `orders/menekki.js`:ssä (vaihe 8.3), ja `test_kaista` todistaa, ettei se muuttunut siirrossa.
 - `test_*.js` — testit. Sisältö on sama kuin projektissa; vain latausrivi muuttui. `test_geom.js` testaa nyt oikeaa `pellit.js`:ää (ennen siinä oli oma kopio funktioista).
 
 | Sarja | Mitä testaa |
@@ -45,6 +45,8 @@ Tarkempi kuvaus jokaisesta sarjasta: projektin `huuva/testit/LUEMINUT.md`.
 - Kokeiltu: jos E2-korjaus (18.11.) tai Sauma 2 -korjaus (20.11.) perutaan, testi hälyttää.
 
 `test_levitys.js` (26 tarkistusta) testaa hupun levityskuvia (`orders/piippu-levitys.js`): käsin lasketut etupalan merkintäpisteet, sivupalan 40 mm sauma (20 suoraan + tupla, nurkassa ei taitosta), saumatyypit ja jaetut palat, yläreunan Ulos / Sisään / Tupla, tuplien 45° viisteet ja 300 satunnaista piippua (yksi ääriviiva, aihio mahtuu listan mittoihin, loveukset ei tyhjiä).
+
+`test_menekki.js` testaa yhteistä kaistat ja menekki -tiedostoa (`orders/menekki.js`, vaihe 8.3) ilman Huuvaa: suorakaiteet suorana, puolisuunnikkaan lomitus käsin laskettuna, pelti-osat kappaleiksi ja piipun hupun palat kaistoille (`kaistaKappaleet`, peilikuvapari samalla kaistalla vuorotellen, kappalemäärä säilyy, harjapiippu).
 
 ## Tulossa
 

@@ -49,6 +49,12 @@
 
   .section-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   .section-card h3 { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; background: var(--panel2); border-bottom: 1px solid var(--border); }
+  /* Kaistat ja menekki: avattava kortti, otsikko kuten h3 (24.11.2026) */
+  .kaista-tuotanto > summary { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; background: var(--panel2); cursor: pointer; list-style: none; }
+  .kaista-tuotanto > summary::-webkit-details-marker { display: none; }
+  .kaista-tuotanto > summary::before { content: "▸ "; }
+  .kaista-tuotanto[open] > summary { border-bottom: 1px solid var(--border); }
+  .kaista-tuotanto[open] > summary::before { content: "▾ "; }
 
   table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   thead th { background: var(--panel2); color: var(--text-dim); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -173,8 +179,9 @@
 <script src="auth-guard.js"></script>
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
+<script src="menekki.js?v=1"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=18"></script>
+<script src="piippu-levitys.js?v=19"></script>
 <script src="kansi.js?v=4"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=4"></script>
@@ -648,18 +655,23 @@ async function setStatusMobile(rowId, nextKey, itemId, currentIdx, btn) {
 }
 // Hupun levityskuvat tilatuista hupun paloista (yhteinen piippu-levitys.js). Pala kerrallaan avattavina korteina.
 // Vanhoissa tilauksissa yläreunan taitoksen suuntaa ei ole tallennettu: oletus Ulos.
+// Tilatut hupun palat, kpl tilauksesta (sisältää piippujen määrän). Tyhjä lista, jos huppua ei ole tilattu.
+function tilatutHupunPalat(v, muut) {
+  if (!v || !window.KPT_PIIPPU_LEVITYS) return [];
+  const L = window.KPT_PIIPPU_LEVITYS;
+  const tilatut = new Map(muut.filter(p => p.osa.startsWith('Huppu')).map(p => [p.osa, p.kpl]));
+  const t = onHarja(v) ? L.harjaHupunPalat(v) : L.hupunPalat(v);
+  if (!t) return [];
+  return t.palat.filter(pa => tilatut.has(pa.nimi)).map(pa => Object.assign({}, pa, { kpl: tilatut.get(pa.nimi) || pa.kpl }));
+}
 function levityskuvatHtml(v, muut) {
   try {
-    if (!v || !window.KPT_PIIPPU_LEVITYS) return '';
     const L = window.KPT_PIIPPU_LEVITYS;
-    const tilatut = new Map(muut.filter(p => p.osa.startsWith('Huppu')).map(p => [p.osa, p.kpl]));
-    const t = onHarja(v) ? L.harjaHupunPalat(v) : L.hupunPalat(v);
-    if (!t) return '';
-    const palat = t.palat.filter(pa => tilatut.has(pa.nimi));
+    const palat = tilatutHupunPalat(v, muut);
     if (!palat.length) return '';
     return `<div class="section-card" style="margin-bottom:16px">
       <h3>Hupun levityskuvat</h3>
-      <div style="padding:12px 14px">${L.SELITE}${palat.map(pa => L.palaHtml(pa, { kpl: tilatut.get(pa.nimi) || pa.kpl })).join('')}</div>
+      <div style="padding:12px 14px">${L.SELITE}${palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl })).join('')}</div>
     </div>`;
   } catch (e) {
     console.error('Levityskuvat:', e);
@@ -767,6 +779,8 @@ function render(items, order) {
 
     ${levityskuvatHtml(v, muut)}
 
+    ${window.KPT_MENEKKI && tilatutHupunPalat(v, muut).length ? `<details class="section-card kaista-tuotanto" id="kaista-tuotanto-kortti" style="margin-bottom:16px"><summary>Kaistat ja menekki</summary><div id="kaista-tuotanto" style="padding:12px 14px"></div></details>` : ''}
+
     ${kansi ? `<div class="section-card" style="margin-bottom:16px"><h3>Kansi ja reiät</h3><div id="kansi-tuotanto" style="padding:12px 14px"></div></div>` : ''}
 
     <div class="section-card">
@@ -775,6 +789,18 @@ function render(items, order) {
     </div>
   `;
   piirraKansiTuotanto();
+  piirraKaistatTuotanto(v, muut, items[0] && items[0].thickness_mm);
+}
+
+// ── Kaistat ja menekki (vaihe 8.3, 24.11.2026) ─────────────
+// Tilatut hupun palat kaistoiksi rullasta (yhteinen menekki.js). Asettelu paksuuden mukaan, asetukset muistetaan selaimessa.
+function piirraKaistatTuotanto(v, muut, paksuus) {
+  const el = document.getElementById('kaista-tuotanto');
+  if (!el || !window.KPT_MENEKKI) return;
+  try {
+    const kortti = KPT_MENEKKI.sivuKortti(el, { kortti: document.getElementById('kaista-tuotanto-kortti'), paksuus: () => paksuus || '' });
+    kortti.piirra(KPT_PIIPPU_LEVITYS.kaistaKappaleet(tilatutHupunPalat(v, muut), 1));
+  } catch (e) { console.error('Kaistat:', e); el.innerHTML = '<p class="empty-msg">Kaistojen laskenta epäonnistui.</p>'; }
 }
 
 // ── Kansi ja reiät (vaihe 7b, 23.11.2026) ─────────────────

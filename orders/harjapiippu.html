@@ -468,6 +468,11 @@
     <h3>Hupun levityskuvat</h3>
     <div id="levityskuvat"></div>
   </div>
+  <!-- Kaistat ja rullan menekki (yhteinen menekki.js, vaihe 8.3 24.11.2026): hupun palat kaistoiksi, oletuksena kiinni -->
+  <details class="kuva-card etukuva-kortti" id="kaista-kortti" style="margin-top:12px;display:none;">
+    <summary>Kaistat ja menekki</summary>
+    <div id="kaista-sisalto" style="margin-top:8px"></div>
+  </details>
   <div style="padding:12px;border-top:1px solid var(--border);">
     <button id="btn-lisaa" onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
       Lisää tilaukseen →
@@ -481,8 +486,9 @@
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=3"></script>
+<script src="menekki.js?v=1"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=18"></script>
+<script src="piippu-levitys.js?v=19"></script>
 <script src="kansi.js?v=4"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
@@ -617,6 +623,12 @@ function piirraEtukuva(v) {
 })();
 
 // Kansi ja reiät (yhteinen kansi.js, laskenta piippu-laskenta.js, vaihe 7b 23.11.2026)
+// Kaistat ja menekki (menekki.js): var, koska tallennaMateriaali voi kutsua tätä ennen kuin rivi on ajettu
+var kaistaKortti = window.KPT_MENEKKI ? KPT_MENEKKI.sivuKortti(document.getElementById('kaista-sisalto'), { kortti: document.getElementById('kaista-kortti'), paksuus: () => document.getElementById('sel-paksuus').value }) : null;
+function piirraKaistat(palat, piippukpl) {
+  if (!kaistaKortti) return;
+  try { kaistaKortti.piirra(palat ? KPT_PIIPPU_LEVITYS.kaistaKappaleet(palat, piippukpl) : null); } catch (e) { console.error('Kaistat:', e); kaistaKortti.piirra(null); }
+}
 const kansiKortti = window.KPT_KANSI ? KPT_KANSI.sivuKortti(document.getElementById('kansi-sisalto'), { muutos: () => laske(), kortti: document.getElementById('kansi-kortti') }) : null;
 const kansiArvo = () => kansiKortti ? kansiKortti.arvo() : {};
 
@@ -662,13 +674,14 @@ function piirraLevityskuvat(vals, nayta, piippukpl) {
   const kortti = document.getElementById('levitys-card');
   const el = document.getElementById('levityskuvat');
   try {
-    if (!nayta) { kortti.style.display = 'none'; return; }
+    if (!nayta) { kortti.style.display = 'none'; piirraKaistat(null); return; }
     const auki = Array.from(el.querySelectorAll('details')).map(d => d.open);   // näppäily ei sulje avattuja kortteja
     const L = KPT_PIIPPU_LEVITYS, t = L.harjaHupunPalat(vals);
-    if (!t) { kortti.style.display = 'none'; return; }
+    if (!t) { kortti.style.display = 'none'; piirraKaistat(null); return; }
     el.innerHTML = L.SELITE + t.palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl * piippukpl })).join('');
     el.querySelectorAll('details').forEach((d, i) => { if (auki[i] !== undefined) d.open = auki[i]; });
     kortti.style.display = '';
+    piirraKaistat(t.palat, piippukpl);
   } catch (e) {
     console.error('Levityskuvat:', e);
     el.innerHTML = '<p class="empty-msg">Levityskuvien piirto epäonnistui.</p>';
@@ -732,6 +745,7 @@ function tallennaMateriaali() {
     localStorage.setItem('kpt_piippu_mat', JSON.stringify({ mat: document.getElementById('sel-materiaali').value,
       vari: document.getElementById('sel-vari').value, pak: document.getElementById('sel-paksuus').value }));
   } catch (e) { /* ei tallennusta */ }
+  if (kaistaKortti) kaistaKortti.paivita();   // paksuus vaikuttaa kaistojen asetteluun
 }
 function paivitaVarit(muistettuVari, muistettuPak) {
   const mat = document.getElementById('sel-materiaali').value;
