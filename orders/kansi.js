@@ -14,6 +14,7 @@
 //   KPT_KANSI.sivuKortti(el, { muutos, kortti }) → piippusivujen kansikortti (lomake + kuva + taulukko + mitattu), ks. alla
 // Kuva: tasoaihio, ETU vasemmalla ja VASEN alhaalla (kuten piippusivuilla; kansi alapuolelta katsottuna, Tomi 23.11.).
 // Versiot: v1 23.11.2026. v2 24.11.2026: karvauksen profiilikuvake ei pieneen reikään (reiän muoto näkyy).
+//          v3 24.11.2026: reikien mitat oletuksena muuratusta piipusta (Tomi), hupun pinta kuvaan omana viivanaan.
 (function () {
   const PI = globalThis.KPT_PIIPPU || (typeof require === 'function' ? require('./piippu-laskenta.js') : null);
   const esc = s => String(s === null || s === undefined ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -62,7 +63,7 @@
   function lomake(el, opts) {
     lisaaCss();
     const o = opts || {};
-    let tila = { tyyppi: 'tupla', T: null, lovi: '45', viite: 'huppu', vaaka: 'vasen', syva: 'etu', reiat: [] };
+    let tila = { tyyppi: 'tupla', T: null, lovi: '45', viite: 'piippu', vaaka: 'vasen', syva: 'etu', reiat: [] };
     let oletusT = 20;
     const muutos = () => { if (typeof o.muutos === 'function') o.muutos(); };
 
@@ -72,7 +73,7 @@
         '<div class="kpk-rivi"><label>Kannen reunan taitos</label>' + valinta('tyyppi', tila.tyyppi, [['tupla', 'Tupla (yläreunan päälle)'], ['90', '90° alas']]) + '</div>' +
         '<div class="kpk-rivi"><label>Taitoksen leveys (mm)</label>' + luku('T', tila.T, ' placeholder="' + esc(oletusT) + '"') + '</div>' +
         '<div class="kpk-rivi"><label>Kulmat</label>' + valinta('lovi', tila.lovi, [['45', '45° viisto'], ['suora', 'Suora lovi']]) + '</div>' +
-        '<div class="kpk-rivi"><label>Reikien mitat mitattu</label>' + valinta('viite', tila.viite, [['huppu', 'hupun pellin ulkopinnasta'], ['piippu', 'muuratusta piipusta']]) + '</div>' +
+        '<div class="kpk-rivi"><label>Reikien mitat mitattu</label>' + valinta('viite', tila.viite, [['piippu', 'muuratusta piipusta'], ['huppu', 'hupun pellin ulkopinnasta']]) + '</div>' +
         '<div class="kpk-rivi"><label>Etu–taka-mitat</label>' + valinta('syva', tila.syva, [['etu', 'edestä taaksepäin'], ['taka', 'takaa eteenpäin']]) + '</div>' +
         '<div class="kpk-rivi"><label>Vasen–oikea-mitat</label>' + valinta('vaaka', tila.vaaka, [['vasen', 'vasemmasta'], ['oikea', 'oikeasta']]) + '</div>';
       tila.reiat.forEach((r, i) => {
@@ -90,7 +91,7 @@
           '<div class="kpk-rivi"><label>Vasen–oikea</label>' + valinta(p + 'vTapa', r.vTapa, TAVAT) + mitta(r.vTapa, 'vMm', r.vMm) + '</div>' +
           '<div class="kpk-rivi"><label>Karvaus</label><input type="checkbox" data-k="' + p + 'karvaus"' + (r.karvaus ? ' checked' : '') + '>' +
           (r.karvaus ? ' ' + luku(p + 'karvMm', r.karvMm) + ' mm ylöspäin' : ' <span class="kpk-vihje">ei karvausta</span>') + '</div>' +
-          '<div class="kpk-vihje">Etu–taka ' + syva + ', vasen–oikea ' + vaaka + ' reunasta. Koko: etu–taka × vasen–oikea.</div>' +
+          '<div class="kpk-vihje">Etu–taka ' + syva + ', vasen–oikea ' + vaaka + ' reunasta (' + (tila.viite === 'huppu' ? 'hupun pellin pinnasta' : 'muuratusta piipusta') + '). Koko: etu–taka × vasen–oikea.</div>' +
           '</div>';
       });
       h += (tila.reiat.length < PI.KANSI_REIKIA_MAX ? '<button type="button" class="kpk-nappi" data-lisaa="1">+ Lisää reikä</button>' : '') +
@@ -131,7 +132,7 @@
         const a = k || {};
         tila = {
           tyyppi: a.tyyppi === '90' ? '90' : 'tupla', T: a.T === undefined || a.T === '' ? null : a.T, lovi: a.lovi === 'suora' ? 'suora' : '45',
-          viite: a.viite === 'piippu' ? 'piippu' : 'huppu', vaaka: a.vaaka === 'oikea' ? 'oikea' : 'vasen', syva: a.syva === 'taka' ? 'taka' : 'etu',
+          viite: a.viite === 'huppu' ? 'huppu' : 'piippu', vaaka: a.vaaka === 'oikea' ? 'oikea' : 'vasen', syva: a.syva === 'taka' ? 'taka' : 'etu',
           reiat: (Array.isArray(a.reiat) ? a.reiat : []).slice(0, PI.KANSI_REIKIA_MAX).map(r => uusiReika(r)),
         };
         piirra();
@@ -171,7 +172,14 @@
     const pu0 = D + k.S.piippuSiirto, pw0 = D + k.L.piippuSiirto;
     s += '<rect x="' + f1(X(pu0)) + '" y="' + f1(Y(pw0 + k.L.piippu)) + '" width="' + f1(k.S.piippu * skaala) + '" height="' + f1(k.L.piippu * skaala) +
       '" fill="none" stroke="' + C2 + '" stroke-width="1" stroke-dasharray="2 4"/>';
-    s += '<text x="' + f1(X(pu0) + 4) + '" y="' + f1(Y(pw0 + k.L.piippu) + 12) + '" font-size="10" fill="' + C2 + '">piippu</text>';
+    s += '<text x="' + f1(X(pu0) + 4) + '" y="' + f1(Y(pw0 + k.L.piippu) + 12) + '" font-size="10" fill="' + C2 + '">muurattu piippu</text>';
+    // Hupun pellin pinta omana viivanaan, kun reikien mitat on annettu siitä (Tomi 24.11.2026: muuten mitta näytti alkavan piipusta)
+    if (as.viite === 'huppu' && k.S.huppu > k.S.piippu + 0.5) {
+      const hu0 = D + (k.S.sisa - k.S.huppu) / 2, hw0 = D + (k.L.sisa - k.L.huppu) / 2;
+      s += '<rect x="' + f1(X(hu0)) + '" y="' + f1(Y(hw0 + k.L.huppu)) + '" width="' + f1(k.S.huppu * skaala) + '" height="' + f1(k.L.huppu * skaala) +
+        '" fill="none" stroke="' + C2 + '" stroke-width="1" stroke-dasharray="8 3 2 3"/>';
+      s += '<text x="' + f1(X(hu0 + k.S.huppu) - 4) + '" y="' + f1(Y(hw0 + k.L.huppu) - 3) + '" text-anchor="end" font-size="10" fill="' + C2 + '">hupun pinta</text>';
+    }
 
     const pois = o.mista === 'taitettu' ? D : 0;
     const uAlku = as.syva === 'etu' ? pois : AU - pois, wAlku = as.vaaka === 'vasen' ? pois : AW - pois;

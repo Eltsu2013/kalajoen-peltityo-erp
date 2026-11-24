@@ -12,7 +12,8 @@
 //          v5 harjapiipun sivuilta leikkausmitat pois (23.11.2026), v6 jakosauma seuraa hupun saumaa (harjaJakosauma),
 //          v7 harjapiipun etukappaleet 1–3 osana kummallekin puolelle (harjaEtuJako, 23.11.2026),
 //          v8 kansi ja sen reiät (laskeKansi, kansiAsetukset; vaihe 7b, 23.11.2026, mockup piippu/kansi-mockup.html),
-//          v9 kanttisen reiän leikkausviivan pyöristys enintään 1/4 lyhyemmästä sivusta (24.11.2026).
+//          v9 kanttisen reiän leikkausviivan pyöristys enintään 1/4 lyhyemmästä sivusta (24.11.2026),
+//          v10 reikien mitat oletuksena muuratusta piipusta (24.11.2026).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kummallakin piippusivulla ja aja testit
 //         (node testit/aja_kaikki.js).
 //
@@ -400,7 +401,7 @@
   //  - Tuotannossa piipun ulkomitan voi korvata mitatulla (kansi.mitattu), jolloin kansi ja reiät lasketaan siitä
   //  - reiät 1–8: pyöreä (d) tai suorakulmio (l = vasen–oikea, s = etu–taka). Paikka kummallakin akselilla
   //    'keski' | 'reuna' (reunasta reiän reunaan) | 'keskelle' (reunasta reiän keskelle), mitattuna valitusta reunasta
-  //    (vaaka: vasen/oikea, syva: etu/taka) hupun pellin ulkopinnasta (oletus) tai muuratusta piipusta.
+  //    (vaaka: vasen/oikea, syva: etu/taka) muuratusta piipusta (oletus 24.11.2026 alkaen) tai hupun pellin ulkopinnasta.
   //    Piippu oletetaan kannen keskelle. Karvaus (oletus 7 mm): leikkausviiva karvauksen verran reiän sisällä.
   // vals.kansi = { tyyppi, T, lovi, valjyys, viite, vaaka, syva, reiat: [...], mitattu: { lev, syv } }. Puuttuva = oletus,
   // joten vanhatkin tilaukset laskevat kannen samalla tavalla (aiempi kaava antoi 5 mm liikaa väljyyttä).
@@ -417,7 +418,7 @@
       T: Math.max(0, num(k.T, (v && (v.ylaTyyppi || 'ulos') === 'ulos' && luku(v.ylareunaV) > 0) ? luku(v.ylareunaV) : 20)),
       lovi: val(k.lovi, ['45', 'suora']),
       valjyys: num(k.valjyys, 5),
-      viite: val(k.viite, ['huppu', 'piippu']),
+      viite: val(k.viite, ['piippu', 'huppu']),   // oletus muurattu piippu (Tomi 24.11.2026), vanhat tilaukset tallensivat valinnan
       vaaka: val(k.vaaka, ['vasen', 'oikea']),
       syva: val(k.syva, ['etu', 'taka']),
       reiat: (Array.isArray(k.reiat) ? k.reiat : []).slice(0, KANSI_REIKIA_MAX).map(r => ({

@@ -1,6 +1,7 @@
 // Piipun kansi ja sen reiät (orders/piippu-laskenta.js: laskeKansi, kansiAsetukset, kansiReianMitat).
 // Tomin päätökset 23.11.2026 (mockup piippu/kansi-mockup.html): sisämitta = piipun ulkomitta + väljyys 5 mm yhteensä,
-// taitos vie reunasta T (tupla tai 90°, sama koko), reiät mitataan oletuksena hupun pellin ulkopinnasta, piippu kannen keskellä.
+// taitos vie reunasta T (tupla tai 90°, sama koko), piippu kannen keskellä. Reikien mitat oletuksena muuratusta piipusta (Tomi 24.11.2026; 23.11. oletus oli hupun pinta).
+// Esimerkit 2 ja 3 sekä mitattu ovat hupun pinnasta mitattuja (Tomin piirros 23.11.), joten niissä viite: 'huppu' annetaan erikseen.
 // Esimerkit Tomin piirroksista (esimerkin 3 piipun koko ja keskikohdat keksitty).
 const P = require('../../orders/piippu-laskenta.js');
 
@@ -9,13 +10,18 @@ function ok(cond, msg) { if (!cond) { fails++; console.log('FAIL:', msg); } else
 const near = (a, b) => Math.abs(a - b) < 1e-6;
 
 const PERUS = { huplis: 10, ylareunaV: 20, ylaTyyppi: 'ulos' };
-const kansi = (lev, syv, k) => P.laskeKansi(lev, syv, Object.assign({}, PERUS, { kansi: k }));
+const kansi0 = (lev, syv, k) => P.laskeKansi(lev, syv, Object.assign({}, PERUS, { kansi: k }));
+const kansi = (lev, syv, k) => kansi0(lev, syv, Object.assign({ viite: 'huppu' }, k));   // hupun pinnasta mitatut esimerkit
 const nelio = (o) => Object.assign({ muoto: 'nelio', l: 150, s: 150, vTapa: 'keski', sTapa: 'keski' }, o);
 
 // ---- Oletukset
 const as0 = P.kansiAsetukset({});
-ok(as0.tyyppi === 'tupla' && as0.T === 20 && as0.lovi === '45' && as0.valjyys === 5 && as0.viite === 'huppu' && as0.vaaka === 'vasen' && as0.syva === 'etu' && as0.reiat.length === 0,
-  'oletukset: tupla 20, 45° viisto, väljyys 5, reiät hupun pinnasta, vasemmasta ja edestä');
+ok(as0.tyyppi === 'tupla' && as0.T === 20 && as0.lovi === '45' && as0.valjyys === 5 && as0.viite === 'piippu' && as0.vaaka === 'vasen' && as0.syva === 'etu' && as0.reiat.length === 0,
+  'oletukset: tupla 20, 45° viisto, väljyys 5, reiät muuratusta piipusta, vasemmasta ja edestä');
+// Tomin lasku 24.11.: 100 mm piipun etureunasta → 20 tupla + 2,5 väljyys + 20 yläreuna + 5 hupun lisä + 100 = 147,5 kannen reunasta
+const eo = kansi0(400, 1200, { reiat: [nelio({ sTapa: 'reuna', sMm: 100, vTapa: 'reuna', vMm: 100 })] });
+const mo = P.kansiReianMitat(eo.reiat[0], eo, 'leikkuu');
+ok(near(mo.sAlku, 147.5) && near(mo.vAlku, 147.5), 'oletus: 100 mm muuratusta piipusta → 147,5 kannen leikkuureunasta (Tomin lasku 24.11.)');
 ok(P.kansiAsetukset({ ylareunaV: 25 }).T === 25 && P.kansiAsetukset({ ylareunaV: 25, ylaTyyppi: 'sisaan' }).T === 20 && P.kansiAsetukset({ ylareunaV: 25, kansi: { T: 15 } }).T === 15,
   'taitoksen oletus = hupun yläreuna ulos (25), sisäänpäin taitetulla 20, oma arvo voittaa');
 ok(P.kansiAsetukset({ kansi: { reiat: new Array(12).fill({}) } }).reiat.length === 8, 'enintään 8 reikää');
