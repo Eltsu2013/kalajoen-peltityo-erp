@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mallisto — Kalajoen Peltityö</title>
+<title>Peltilistat — Kalajoen Peltityö</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
@@ -621,9 +621,9 @@
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
-    <script src="nav.js?v=3"></script>
+    <script src="nav.js?v=4"></script>
   </div>
-  <h1>Mallisto</h1>
+  <h1>Peltilistat</h1>
 </header>
 
 <!-- Tilausyhteys-palkki — näkyy vain kun avattu tilauslomakkeelta -->
@@ -834,7 +834,7 @@
 // Profiilien kaavat ovat yhteisessä tiedostossa profiilit.js (siirretty 13.11.2026)
 if (!window.KPT_PROFIILIT) {
   document.documentElement.style.visibility = '';
-  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#e84040;color:#fff;padding:14px 18px;font:600 15px sans-serif">Tiedosto profiilit.js puuttuu tai ei latautunut. Mallisto ei toimi ilman sitä. Tarkista, että profiilit.js on samassa kansiossa kuin tämä sivu.</div>');
+  document.body.insertAdjacentHTML('afterbegin', '<div style="background:#e84040;color:#fff;padding:14px 18px;font:600 15px sans-serif">Tiedosto profiilit.js puuttuu tai ei latautunut. Peltilistat ei toimi ilman sitä. Tarkista, että profiilit.js on samassa kansiossa kuin tämä sivu.</div>');
 }
 const TYPES = window.KPT_PROFIILIT ? window.KPT_PROFIILIT.mallit : {};
 

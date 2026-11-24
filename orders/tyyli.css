@@ -1,0 +1,292 @@
+/*
+ * Kalajoen Peltityö ERP — yhteinen ulkoasu (orders/tyyli.css)
+ *
+ * Ulkoasuremontti, vaihe R0 (24.11.2026). Suunnitelma: projektin claude/ulkoasu_remontti_suunnitelma.md.
+ * Kaikki sivut saavat saman pohjan; sivun kategoria näkyy korostusvärinä (yläpalkin juova, kategorian nimi,
+ * ensisijaiset napit, valittu välilehti). Kategoria tulee automaattisesti nav.js:stä (html[data-kategoria]).
+ * Kaksi ulkoasua: tumma (oletus) ja vaalea, html[data-teema="vaalea"]. Valinta: teema.js (ladataan <head>issa).
+ *
+ * Käyttö sivulla:
+ *   <head> ... <link rel="stylesheet" href="tyyli.css?v=1"> <script src="teema.js?v=1"></script>
+ *   <body class="kpt-sivu"> ... yläpalkki <header class="kpt-yla"> (malli: testit/ulkoasu-mallit.html)
+ * Kaikki luokat alkavat kpt-, jotta ne eivät sekoitu sivujen vanhoihin tyyleihin siirtymäaikana.
+ * Sivun omissa tyyleissä käytetään näitä muuttujia (--kpt-...), ei kiinteitä värejä, jotta vaalea ulkoasu toimii.
+ * MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
+ */
+
+/* ---------- Värit: tumma ulkoasu (oletus) ---------- */
+:root {
+  color-scheme: dark;
+  --kpt-tausta: #151c26;
+  --kpt-paneeli: #1c2532;
+  --kpt-paneeli2: #243042;
+  --kpt-kentta: #111821;
+  --kpt-reuna: #2a3442;
+  --kpt-reuna2: #3b4859;
+  --kpt-teksti: #e8eef5;
+  --kpt-himmea: #94a3b8;
+  --kpt-heikko: #64748b;
+  --kpt-varjo: 0 6px 20px rgba(0, 0, 0, 0.45);
+
+  /* Kategoriavärit (suunnitelma, kohta 2) */
+  --kpt-v-tilaukset: #38bdf8;
+  --kpt-v-tuotanto: #22c55e;
+  --kpt-v-mallisto: #f97316;
+  --kpt-v-varasto: #eab308;
+  --kpt-v-ajat: #a78bfa;
+  --kpt-v-toimisto: #ec4899;
+  --kpt-v-neutraali: #cbd5e1;
+  --kpt-teksti-korostuksella: #0b1016;   /* teksti kategorian värisellä napilla */
+
+  /* Tilavärit: varattu, ei kategorioille */
+  --kpt-virhe: #f87171;
+  --kpt-huom: #fbbf24;
+  --kpt-ok: #4ade80;
+  --kpt-info: #7dd3fc;
+
+  --kpt-fontti: 'IBM Plex Sans', system-ui, sans-serif;
+  --kpt-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --kpt-pyoristys: 8px;
+
+  --kpt-korostus: var(--kpt-v-neutraali);
+}
+
+/* ---------- Värit: vaalea ulkoasu ---------- */
+html[data-teema="vaalea"] {
+  color-scheme: light;
+  --kpt-tausta: #f6f7f9;
+  --kpt-paneeli: #ffffff;
+  --kpt-paneeli2: #eef1f5;
+  --kpt-kentta: #ffffff;
+  --kpt-reuna: #d9dee5;
+  --kpt-reuna2: #c3cad4;
+  --kpt-teksti: #1e2833;
+  --kpt-himmea: #5b6776;
+  --kpt-heikko: #8a94a3;
+  --kpt-varjo: 0 6px 20px rgba(30, 40, 51, 0.12);
+
+  /* Tummemmat sävyt, jotta ne erottuvat valkoisella */
+  --kpt-v-tilaukset: #0284c7;
+  --kpt-v-tuotanto: #16a34a;
+  --kpt-v-mallisto: #ea580c;
+  --kpt-v-varasto: #a16207;
+  --kpt-v-ajat: #7c3aed;
+  --kpt-v-toimisto: #db2777;
+  --kpt-v-neutraali: #334155;
+  --kpt-teksti-korostuksella: #ffffff;
+
+  --kpt-virhe: #b91c1c;
+  --kpt-huom: #a16207;
+  --kpt-ok: #15803d;
+  --kpt-info: #0369a1;
+}
+
+/* ---------- Kategorian korostusväri ---------- */
+html[data-kategoria="tilaukset"] { --kpt-korostus: var(--kpt-v-tilaukset); }
+html[data-kategoria="tuotanto"]  { --kpt-korostus: var(--kpt-v-tuotanto); }
+html[data-kategoria="mallisto"]  { --kpt-korostus: var(--kpt-v-mallisto); }
+html[data-kategoria="varasto"]   { --kpt-korostus: var(--kpt-v-varasto); }
+html[data-kategoria="ajat"]      { --kpt-korostus: var(--kpt-v-ajat); }
+html[data-kategoria="toimisto"]  { --kpt-korostus: var(--kpt-v-toimisto); }
+:root { --kpt-korostus-tausta: color-mix(in srgb, var(--kpt-korostus) 14%, transparent); }
+
+/* ---------- Pohja ---------- */
+.kpt-sivu, .kpt-sivu * { box-sizing: border-box; }
+body.kpt-sivu {
+  margin: 0; background: var(--kpt-tausta); color: var(--kpt-teksti);
+  font-family: var(--kpt-fontti); font-size: 15px; line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+.kpt-sivu a { color: var(--kpt-korostus); }
+.kpt-sivu h1, .kpt-sivu h2, .kpt-sivu h3 { margin: 0; font-weight: 600; line-height: 1.25; }
+.kpt-vain-vaalea { display: none !important; }
+html[data-teema="vaalea"] .kpt-vain-vaalea { display: revert !important; }
+html[data-teema="vaalea"] .kpt-vain-tumma { display: none !important; }
+
+/* ---------- Yläpalkki ---------- */
+.kpt-yla {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 16px; background: var(--kpt-paneeli);
+  border-top: 3px solid var(--kpt-korostus); border-bottom: 1px solid var(--kpt-reuna);
+}
+.kpt-logo { display: flex; align-items: center; height: 40px; }
+.kpt-logo img { height: 40px; width: auto; display: block; }
+.kpt-otsikko { display: flex; flex-direction: column; min-width: 0; }
+.kpt-otsikko h1 { font-size: 17px; }
+.kpt-kategoria {
+  font-family: var(--kpt-mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--kpt-korostus);
+}
+.kpt-yla .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Kirjautunut käyttäjä ja Kirjaudu ulos (auth-guard.js lisää ne, omilla kiinteillä väreillään) */
+.kpt-sivu #auth-user-info { color: var(--kpt-himmea) !important; }
+.kpt-sivu #auth-user-info button {
+  background: transparent !important; color: var(--kpt-himmea) !important;
+  border: 1px solid var(--kpt-reuna2) !important; border-radius: 6px !important; min-height: 32px;
+}
+.kpt-sivu #auth-user-info button:hover { color: var(--kpt-teksti) !important; border-color: var(--kpt-himmea) !important; }
+
+/* Ulkoasun kytkin (teema.js) */
+.kpt-teema-kytkin {
+  background: transparent; color: var(--kpt-himmea); border: 1px solid var(--kpt-reuna2);
+  border-radius: 6px; min-height: 32px; padding: 0 10px; font: inherit; font-size: 13px; cursor: pointer;
+}
+.kpt-teema-kytkin:hover { color: var(--kpt-teksti); border-color: var(--kpt-himmea); }
+
+/* ---------- Valikko (sisältö nav.js:stä) ---------- */
+.kpt-sivu .nav-menu-wrap { position: relative; }
+.kpt-valikko-nappi {
+  background: var(--kpt-paneeli2); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna);
+  border-radius: 6px; min-height: 36px; padding: 0 12px; font: 600 13px var(--kpt-fontti); cursor: pointer;
+}
+.kpt-valikko-nappi:hover { border-color: var(--kpt-reuna2); }
+.kpt-sivu .nav-dropdown {
+  display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 999;
+  min-width: 230px; max-height: calc(100vh - 90px); overflow-y: auto;
+  background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys);
+  box-shadow: var(--kpt-varjo); padding: 4px 0;
+}
+.kpt-sivu .nav-dropdown.open { display: block; }
+.kpt-sivu .nav-item {
+  display: block; padding: 10px 14px; font-size: 14px; color: var(--kpt-teksti); text-decoration: none;
+}
+.kpt-sivu .nav-item:hover { background: var(--kpt-korostus-tausta); }
+.kpt-sivu .nav-item.current { color: var(--kpt-korostus); font-weight: 600; }
+.kpt-sivu .nav-item[href="tuotanto.html"] { color: var(--kpt-v-tuotanto); font-weight: 600; }
+.kpt-sivu .nav-section-label {
+  font-family: var(--kpt-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--kpt-heikko); padding: 8px 14px 4px;
+}
+.kpt-sivu .nav-divider { border: 0; border-top: 1px solid var(--kpt-reuna); margin: 4px 0; }
+.kpt-sivu .nav-kat[data-kat-id="tilaukset"] { color: var(--kpt-v-tilaukset); }
+.kpt-sivu .nav-kat[data-kat-id="mallisto"]  { color: var(--kpt-v-mallisto); }
+.kpt-sivu .nav-kat[data-kat-id="varasto"]   { color: var(--kpt-v-varasto); }
+.kpt-sivu .nav-kat[data-kat-id="ajat"]      { color: var(--kpt-v-ajat); }
+.kpt-sivu .nav-kat[data-kat-id="toimisto"]  { color: var(--kpt-v-toimisto); }
+
+/* ---------- Sisältö ja asettelu ---------- */
+.kpt-sisalto { max-width: 1240px; margin: 0 auto; padding: 20px 20px 64px; }
+.kpt-ruudukko { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 16px; align-items: start; }
+
+/* Välilehdet (esim. Lapepiippu | Harjapiippu) */
+.kpt-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 16px; }
+.kpt-tab {
+  display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border-radius: 6px;
+  border: 1px solid var(--kpt-reuna); color: var(--kpt-himmea) !important; text-decoration: none;
+  font-size: 14px; font-weight: 500; background: transparent;
+}
+.kpt-tab:hover { border-color: var(--kpt-reuna2); color: var(--kpt-teksti) !important; }
+.kpt-tab.aktiivinen { border-color: var(--kpt-korostus); color: var(--kpt-korostus) !important; background: var(--kpt-korostus-tausta); }
+
+/* Kortit, myös avattavat (<details class="kpt-kortti">) */
+.kpt-kortti {
+  background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys);
+  padding: 16px; margin: 0 0 16px;
+}
+.kpt-kortti-otsikko, details.kpt-kortti > summary {
+  font-family: var(--kpt-mono); font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--kpt-himmea); margin: 0 0 12px;
+}
+details.kpt-kortti > summary { cursor: pointer; list-style: none; margin: -16px; padding: 16px; }
+details.kpt-kortti > summary::-webkit-details-marker { display: none; }
+details.kpt-kortti > summary::before { content: '▸ '; color: var(--kpt-korostus); }
+details.kpt-kortti[open] > summary { margin-bottom: 0; }
+details.kpt-kortti[open] > summary::before { content: '▾ '; }
+
+/* Avainluku: tärkein mitta isolla (esim. tarvittavan palan koko) */
+.kpt-avainluku {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px;
+  border-left: 4px solid var(--kpt-korostus); padding: 6px 0 6px 12px; margin: 0 0 12px;
+}
+.kpt-avainluku .nimi { font-size: 13px; color: var(--kpt-himmea); width: 100%; }
+.kpt-avainluku .arvo { font-family: var(--kpt-mono); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.kpt-avainluku .yks { font-size: 14px; color: var(--kpt-himmea); }
+
+/* Tulosrivit: nimi vasemmalla, arvo oikealla */
+.kpt-tulos { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--kpt-reuna); }
+.kpt-tulos:last-child { border-bottom: 0; }
+.kpt-tulos > span:first-child { color: var(--kpt-himmea); font-size: 14px; }
+.kpt-tulos > b { font-family: var(--kpt-mono); font-weight: 600; text-align: right; }
+
+/* ---------- Kentät ---------- */
+.kpt-kentta { display: flex; flex-direction: column; gap: 5px; margin: 0 0 12px; min-width: 0; }
+.kpt-kentta > label { font-size: 13px; color: var(--kpt-himmea); }
+.kpt-kentta input, .kpt-kentta select, .kpt-kentta textarea {
+  width: 100%; min-height: 44px; padding: 0 10px; font: 15px var(--kpt-fontti);
+  background: var(--kpt-kentta); color: var(--kpt-teksti);
+  border: 1px solid var(--kpt-reuna2); border-radius: 6px;
+}
+.kpt-kentta textarea { padding: 8px 10px; min-height: 80px; resize: vertical; }
+.kpt-kentta input:focus, .kpt-kentta select:focus, .kpt-kentta textarea:focus {
+  outline: none; border-color: var(--kpt-korostus); box-shadow: 0 0 0 3px var(--kpt-korostus-tausta);
+}
+.kpt-kentta.virhe input, .kpt-kentta.virhe select { border-color: var(--kpt-virhe); }
+.kpt-kentta .kpt-vihje { margin: 0; }
+.kpt-kentat { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 0 12px; }
+.kpt-vihje { font-size: 13px; color: var(--kpt-himmea); line-height: 1.5; margin: 0 0 12px; }
+
+/* ---------- Napit ---------- */
+.kpt-nappi {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 0 16px; border-radius: 6px; cursor: pointer;
+  font: 600 14px var(--kpt-fontti); text-decoration: none;
+  background: transparent; color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2);
+}
+.kpt-nappi:hover { border-color: var(--kpt-himmea); }
+.kpt-nappi:active { transform: translateY(1px); }
+.kpt-nappi.ensisijainen { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border-color: var(--kpt-korostus); }
+.kpt-nappi.ensisijainen:hover { filter: brightness(1.08); }
+.kpt-nappi.vaara { color: var(--kpt-virhe); border-color: color-mix(in srgb, var(--kpt-virhe) 55%, transparent); }
+.kpt-nappi.vaara:hover { background: color-mix(in srgb, var(--kpt-virhe) 12%, transparent); }
+.kpt-nappi.pieni { min-height: 32px; padding: 0 10px; font-size: 13px; }
+.kpt-nappi.leve { width: 100%; }
+.kpt-nappi:disabled { opacity: 0.5; cursor: default; }
+
+/* ---------- Taulukot ---------- */
+.kpt-taulu-wrap { overflow-x: auto; }
+.kpt-taulu { width: 100%; border-collapse: collapse; font-size: 14px; }
+.kpt-taulu th, .kpt-taulu td { padding: 7px 10px; border-bottom: 1px solid var(--kpt-reuna); text-align: left; vertical-align: top; }
+.kpt-taulu th { font-size: 12px; font-weight: 600; color: var(--kpt-himmea); background: var(--kpt-paneeli2); }
+.kpt-taulu td.luku, .kpt-taulu th.luku { text-align: right; font-family: var(--kpt-mono); }
+.kpt-taulu tr:hover td { background: var(--kpt-korostus-tausta); }
+
+/* ---------- Ilmoitukset ---------- */
+.kpt-ilmoitus {
+  border: 1px solid; border-radius: 6px; padding: 10px 12px; margin: 0 0 12px;
+  font-size: 14px; line-height: 1.5;
+}
+.kpt-ilmoitus.virhe { color: var(--kpt-virhe); border-color: color-mix(in srgb, var(--kpt-virhe) 50%, transparent); background: color-mix(in srgb, var(--kpt-virhe) 9%, transparent); }
+.kpt-ilmoitus.huom  { color: var(--kpt-huom);  border-color: color-mix(in srgb, var(--kpt-huom) 50%, transparent);  background: color-mix(in srgb, var(--kpt-huom) 9%, transparent); }
+.kpt-ilmoitus.ok    { color: var(--kpt-ok);    border-color: color-mix(in srgb, var(--kpt-ok) 50%, transparent);    background: color-mix(in srgb, var(--kpt-ok) 9%, transparent); }
+.kpt-ilmoitus.info  { color: var(--kpt-info);  border-color: color-mix(in srgb, var(--kpt-info) 50%, transparent);  background: color-mix(in srgb, var(--kpt-info) 9%, transparent); }
+
+/* Pieni merkki (tila, määrä) */
+.kpt-merkki {
+  display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  color: var(--kpt-korostus); background: var(--kpt-korostus-tausta);
+}
+
+/* Piirrosalue (SVG). .paperi = aina vaalea paperipohja (mustat viivat), kummassakin ulkoasussa */
+.kpt-piirros { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); border-radius: 6px; padding: 8px; }
+.kpt-piirros.paperi { background: #f7f5f0; border-color: #d9d4c8; }
+.kpt-piirros svg { display: block; width: 100%; height: auto; }
+
+/* ---------- Puhelin ---------- */
+@media (max-width: 700px) {
+  .kpt-yla { padding: 6px 12px; gap: 8px; }
+  .kpt-logo, .kpt-logo img { height: 32px; }
+  .kpt-sisalto { padding: 12px 12px 48px; }
+  .kpt-kortti { padding: 14px; }
+  details.kpt-kortti > summary { margin: -14px; padding: 14px; }
+  .kpt-kentta input, .kpt-kentta select { min-height: 48px; font-size: 16px; }   /* 16 px: iPhone ei zoomaa kenttään */
+  .kpt-nappi { min-height: 44px; }
+  .kpt-avainluku .arvo { font-size: 24px; }
+}
+
+/* ---------- Tuloste ---------- */
+@media print {
+  .kpt-yla, .kpt-teema-kytkin { display: none !important; }
+  body.kpt-sivu { background: #fff; color: #000; }
+}

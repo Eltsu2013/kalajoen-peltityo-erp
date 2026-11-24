@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fi" data-kategoria="mallisto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ulkoasun mallisivu — Kalajoen Peltityö</title>
+<!-- Mallisivu (ulkoasuremontti R0, 24.11.2026): kaikki yhteisen ulkoasun osat yhdellä sivulla.
+     <base> osoittaa orders-kansioon, joten tyylit, logot ja valikon linkit toimivat kuten oikeilla sivuilla. -->
+<base href="../orders/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="tyyli.css?v=1">
+<script src="teema.js?v=1"></script>
+<style>
+  .malli-varit { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+  .malli-vari { border: 1px solid var(--kpt-reuna); border-radius: 6px; overflow: hidden; font-size: 13px; }
+  .malli-vari div { height: 34px; }
+  .malli-vari span { display: block; padding: 6px 8px; }
+  .malli-rivi { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 0 0 12px; }
+</style>
+</head>
+<body class="kpt-sivu">
+
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
+  <div class="nav-menu-wrap">
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
+    </div>
+    <script src="nav.js?v=4"></script>
+  </div>
+  <div class="kpt-otsikko"><span class="kpt-kategoria" id="malli-katnimi">Mallisto</span><h1>Ulkoasun mallisivu</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
+</header>
+
+<main class="kpt-sisalto">
+
+  <div class="kpt-ilmoitus info">Tämä on mallisivu. Kokeile kategorioita ja ulkoasun kytkintä (oikealla ylhäällä). Mikään tällä sivulla ei tallennu.</div>
+
+  <div class="kpt-kortti">
+    <div class="kpt-kortti-otsikko">Kategoria (värijuova, otsikko ja ensisijainen nappi vaihtuvat)</div>
+    <div class="kpt-tabs" id="malli-kategoriat">
+      <a class="kpt-tab" href="#" data-k="tilaukset">Tilaukset</a>
+      <a class="kpt-tab" href="#" data-k="tuotanto">Tuotanto</a>
+      <a class="kpt-tab aktiivinen" href="#" data-k="mallisto">Mallisto</a>
+      <a class="kpt-tab" href="#" data-k="varasto">Varasto</a>
+      <a class="kpt-tab" href="#" data-k="ajat">Ajat ja henkilöstö</a>
+      <a class="kpt-tab" href="#" data-k="toimisto">Toimisto</a>
+      <a class="kpt-tab" href="#" data-k="">Etusivu (neutraali)</a>
+    </div>
+    <div class="malli-varit">
+      <div class="malli-vari"><div style="background:var(--kpt-v-tilaukset)"></div><span>Tilaukset</span></div>
+      <div class="malli-vari"><div style="background:var(--kpt-v-tuotanto)"></div><span>Tuotanto</span></div>
+      <div class="malli-vari"><div style="background:var(--kpt-v-mallisto)"></div><span>Mallisto</span></div>
+      <div class="malli-vari"><div style="background:var(--kpt-v-varasto)"></div><span>Varasto</span></div>
+      <div class="malli-vari"><div style="background:var(--kpt-v-ajat)"></div><span>Ajat ja henkilöstö</span></div>
+      <div class="malli-vari"><div style="background:var(--kpt-v-toimisto)"></div><span>Toimisto</span></div>
+    </div>
+  </div>
+
+  <div class="kpt-tabs">
+    <a class="kpt-tab aktiivinen" href="#">Kartio</a>
+    <a class="kpt-tab" href="#">Huuva</a>
+  </div>
+
+  <div class="kpt-ruudukko">
+    <div>
+      <div class="kpt-kortti">
+        <div class="kpt-kortti-otsikko">Kartion mitat (kentät)</div>
+        <div class="kpt-kentta"><label for="m-muoto">Alapään muoto</label>
+          <select id="m-muoto"><option>Pyöreä</option><option>Nelikulmio, ylhäällä pyöreä</option></select></div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label for="m-ala">Alapään halkaisija mm</label><input id="m-ala" inputmode="decimal" value="600"></div>
+          <div class="kpt-kentta"><label for="m-yla">Yläpään halkaisija mm</label><input id="m-yla" inputmode="decimal" value="300"></div>
+          <div class="kpt-kentta"><label for="m-h">Korkeus mm</label><input id="m-h" inputmode="decimal" value="400"></div>
+          <div class="kpt-kentta virhe"><label for="m-kpl">Kappalemäärä</label><input id="m-kpl" inputmode="numeric" value="0"><p class="kpt-vihje" style="color:var(--kpt-virhe)">Vähintään 1 kpl.</p></div>
+        </div>
+        <p class="kpt-vihje">Vihjeteksti: korkeus on päätasojen pystyväli ilman putkien päällekkäisyyttä.</p>
+        <div class="malli-rivi">
+          <button class="kpt-nappi ensisijainen" type="button">Tulosta työkortti</button>
+          <button class="kpt-nappi" type="button">Lähetä tilaukseen</button>
+          <button class="kpt-nappi vaara" type="button">Poista</button>
+          <button class="kpt-nappi pieni" type="button">Pieni nappi</button>
+        </div>
+      </div>
+
+      <details class="kpt-kortti">
+        <summary>Avattava kortti · huullos ja saumat</summary>
+        <p class="kpt-vihje" style="margin-top:12px">Harvemmin tarvittavat kentät avattavan kortin sisään. Otsikkoon voi kirjoittaa tiivistelmän (esim. "ei huullosta").</p>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label for="m-hu1">Alapään huullos mm</label><input id="m-hu1" value="0"></div>
+          <div class="kpt-kentta"><label for="m-hu2">Yläpään huullos mm</label><input id="m-hu2" value="0"></div>
+        </div>
+      </details>
+    </div>
+
+    <div>
+      <div class="kpt-kortti">
+        <div class="kpt-kortti-otsikko">Tulos</div>
+        <div class="kpt-avainluku"><span class="nimi">Tarvittava pala (leveys × pituus)</span><span class="arvo">1060 × 640</span><span class="yks">mm</span></div>
+        <div class="kpt-tulos"><span>Säde Rb (iso kaari)</span><b>854,4 mm</b></div>
+        <div class="kpt-tulos"><span>Säde Rs (pieni kaari)</span><b>427,2 mm</b></div>
+        <div class="kpt-tulos"><span>Harpin kärki</span><b>640 mm pellin ulkopuolella</b></div>
+        <div class="kpt-tulos"><span>Tila</span><b><span class="kpt-merkki">Mahtuu pellille</span></b></div>
+      </div>
+
+      <div class="kpt-ilmoitus ok">Mahtuu pellille (ok).</div>
+      <div class="kpt-ilmoitus huom">Kulma on yli 180°: harkitse jakamista osiin (huomautus).</div>
+      <div class="kpt-ilmoitus virhe">LASKETTU, EI MITATTU: etuvasen 1040 mm (varoitus).</div>
+
+      <div class="kpt-kortti">
+        <div class="kpt-kortti-otsikko">Taulukko</div>
+        <div class="kpt-taulu-wrap"><table class="kpt-taulu">
+          <tr><th>Merkki</th><th class="luku">Suora alkukulmasta</th><th class="luku">Väli edellisestä</th></tr>
+          <tr><td>B1</td><td class="luku">10</td><td class="luku">10</td></tr>
+          <tr><td>B2</td><td class="luku">57</td><td class="luku">47</td></tr>
+          <tr><td>B3</td><td class="luku">104</td><td class="luku">47</td></tr>
+        </table></div>
+      </div>
+
+      <div class="kpt-kortti">
+        <div class="kpt-kortti-otsikko">Piirros: ulkoasun värit ja paperipohja</div>
+        <div class="kpt-ruudukko" style="grid-template-columns:1fr 1fr;gap:8px">
+          <div class="kpt-piirros"><svg viewBox="0 0 200 120" style="color:var(--kpt-teksti)"><path d="M20 100 A160 160 0 0 1 180 100 L140 40 A90 90 0 0 0 60 40 Z" fill="none" stroke="currentColor" stroke-width="2"/><text x="100" y="114" font-size="10" text-anchor="middle" fill="currentColor">ulkoasun väreissä</text></svg></div>
+          <div class="kpt-piirros paperi"><svg viewBox="0 0 200 120"><path d="M20 100 A160 160 0 0 1 180 100 L140 40 A90 90 0 0 0 60 40 Z" fill="none" stroke="#000" stroke-width="2"/><text x="100" y="114" font-size="10" text-anchor="middle" fill="#000">paperipohja</text></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Kategorian vaihto mallisivulla (oikeilla sivuilla kategoria tulee nav.js:stä)
+  document.getElementById('malli-kategoriat').addEventListener('click', e => {
+    const a = e.target.closest('[data-k]');
+    if (!a) return;
+    e.preventDefault();
+    document.documentElement.dataset.kategoria = a.dataset.k;
+    document.querySelectorAll('#malli-kategoriat .kpt-tab').forEach(t => t.classList.toggle('aktiivinen', t === a));
+    document.getElementById('malli-katnimi').textContent = a.dataset.k ? a.textContent : 'Etusivu';
+  });
+</script>
+</body>
+</html>
