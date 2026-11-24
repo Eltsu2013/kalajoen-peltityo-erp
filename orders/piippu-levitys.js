@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v14 (24.11.2026): harjapiipun kiila / mutka (harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila; vaihe 5b).
 // v12 (23.11.2026): harjapiipun etukappaleet 1–3 osana (etuJako1 / etuJako2).
 // v11 (23.11.2026): jakosauma seuraa hupun saumaa (KPT_PIIPPU.harjaJakosauma).
 // v10 (23.11.2026): palaTiedot(pa) ja levita(pa) julki (työkortin palasivut); palaHtml käyttää samaa, ruutu ennallaan.
@@ -493,6 +494,7 @@
   //         vasen, oikea ({ tyyppi, nurkka, w, s, kulma }), yla, ylaW, ylaKulma, ala, peili, paat, alaNimet }.
   function harjaHupunPalat(vals) {
     const v = vals || {};
+    if (v.kiilaPaalla && !onSuoraHarja(harjaKiilaTiedot(v))) return harjaKiilaPalat(v);   // kiila / mutka (vaihe 5b)
     const t = PI.laskeHarjapiippu(v, { juuret: false, huppu: true, kansi: false, hattu: false });
     if (t.virheet.length) return null;
     const g = t.geom, s = Number(v.sauma) || 0, jako = PI.harjaJakosauma ? PI.harjaJakosauma(v) : (Number(v.jakosauma) || 0);
@@ -667,6 +669,7 @@
   // (Tomi 20.11.2026: ei varmuusvaraa). Leikkausmitat poistettu 23.11.2026 (piippu-laskenta.js v5).
   function laskeKaikkiHarja(vals, osat) {
     const o = osat || {};
+    if (vals && vals.kiilaPaalla && !onSuoraHarja(harjaKiilaTiedot(vals))) return laskeKaikkiHarjaKiila(vals, o);   // kiila / mutka (vaihe 5b)
     const perus = PI.laskeHarjapiippu(vals, o);
     if (o.huppu === false || perus.virheet.length) return perus;
     const t = harjaHupunPalat(vals);
@@ -678,6 +681,190 @@
       return Object.assign({}, r, { lev: ylos(lv.p.w), pit: ylos(lv.p.h) });
     });
     return perus;
+  }
+
+  // ======================================================================================================
+  // HARJAPIIPUN KIILA / MUTKA (vaihe 5b, 24.11.2026, suunnitelma claude/harjapiippu_kiila_suunnitelma.md, Tomi hyväksyi 24.11.)
+  // Sama tapa kuin lapepiipun kiilassa: piippu ja huppu 3D:nä, jokainen hupun seinä on tasainen levy. Kattoja on kaksi
+  // (puolen 1 ja puolen 2 lape), harja on niiden leikkausviiva. Sivuseinä on viisikulmio (alareuna taittuu harjalla), ja se
+  // avataan levitaTaso-funktiolla kuten suoran harjapiipun sivu. Kolmiointia ei tarvita, koska seinät ovat tasaisia.
+  // Kulmat (ylhäältä, etu 1 alhaalla): 0 = etu 1 vasen, 1 = etu 1 oikea, 2 = etu 2 oikea, 3 = etu 2 vasen.
+  // Seinät 0 etu 1, 1 oikea, 2 etu 2, 3 vasen; seinä j ulkopuolelta katsottuna: vasemmalla kulma j, oikealla kulma j + 1.
+  // Tallennus profile_data.vals: kiilaPaalla, vasenPituus (oikea sivu = suora1 + suora2), suoraKulma (0–3), harjaVasen
+  // (etu 1:n kulmasta harjalle vasemmalla sivulla; oikealla = suora1), korkE1V, korkE1O, korkHV, korkHO, korkE2V, korkE2O,
+  // kiilaEtu1, kiilaEtu2, kiilaVasen, kiilaOikea. Tyhjä = kuten suorassa harjapiipussa.
+  function harjaKiilaTiedot(vals) {
+    const v = vals || {}, on = !!v.kiilaPaalla, n = x => Number(x) || 0;
+    const lev1 = n(v.lev1), lev2 = v.lev2 === null || v.lev2 === undefined || v.lev2 === '' ? lev1 : n(v.lev2);
+    const s1 = n(v.suora1), koko = s1 + n(v.suora2), k1 = n(v.kork1), kH = n(v.korkH), k2 = n(v.kork2);
+    const tai = (x, oletus) => { const a = on ? luku(x) : null; return a === null ? oletus : a; };
+    return {
+      paalla: on,
+      muoto: { etu: lev1, taka: lev2, oikea: koko, vasen: tai(v.vasenPituus, koko), suora: on && [0, 1, 2, 3].includes(Number(v.suoraKulma)) ? Number(v.suoraKulma) : 0 },
+      harja: { oikea: s1, vasen: tai(v.harjaVasen, s1) },
+      korkeudet: [tai(v.korkE1V, k1), tai(v.korkE1O, k1), tai(v.korkE2O, k2), tai(v.korkE2V, k2)],
+      harjaKork: { oikea: tai(v.korkHO, kH), vasen: tai(v.korkHV, kH) },
+      kiila: { etu: tai(v.kiilaEtu1, 0), oikea: tai(v.kiilaOikea, 0), taka: tai(v.kiilaEtu2, 0), vasen: tai(v.kiilaVasen, 0) },
+    };
+  }
+  function onSuoraHarja(k) {
+    const m = k.muoto, H = k.korkeudet;
+    return m.etu === m.taka && m.vasen === m.oikea && m.suora === 0 && k.harja.vasen === k.harja.oikea
+      && H[0] === H[1] && H[2] === H[3] && k.harjaKork.vasen === k.harjaKork.oikea && SEINAT.every(s => !k.kiila[s]);
+  }
+
+  // Pienimmän neliösumman taso z = a·x + b·y + c pisteiden kautta. Palauttaa rivin [−a, −b, 1, c] ja heiton:
+  // neljällä pisteellä heitto = kuinka paljon yksi kohta on muiden kolmen tason ulkopuolella (4 × suurin poikkeama).
+  function tasoPisteista(pts) {
+    const ka = a => a.reduce((s, x) => s + x, 0) / a.length;
+    const mx = ka(pts.map(p => p[0])), my = ka(pts.map(p => p[1])), mz = ka(pts.map(p => p[2]));
+    let Sxx = 0, Sxy = 0, Syy = 0, Sxz = 0, Syz = 0;
+    pts.forEach(p => { const dx = p[0] - mx, dy = p[1] - my, dz = p[2] - mz; Sxx += dx * dx; Sxy += dx * dy; Syy += dy * dy; Sxz += dx * dz; Syz += dy * dz; });
+    const den = Sxx * Syy - Sxy * Sxy;
+    if (Math.abs(den) < 1e-9) return null;
+    const a = (Sxz * Syy - Syz * Sxy) / den, b = (Syz * Sxx - Sxz * Sxy) / den, c = mz - a * mx - b * my;
+    const poik = Math.max.apply(null, pts.map(p => Math.abs(p[2] - (a * p[0] + b * p[1] + c))));
+    return { rivi: [-a, -b, 1, c], heitto: pts.length === 4 ? 4 * poik : poik };
+  }
+
+  // Harjapiipun 3D-malli. Palauttaa null, jos mitat eivät sovi yhteen.
+  function harjaMalli(vals) {
+    const v = vals || {}, k = harjaKiilaTiedot(v);
+    const C = ylapaa(k.muoto);
+    if (!C) return null;
+    if (!(k.harja.oikea > 0 && k.harja.oikea < k.muoto.oikea && k.harja.vasen > 0 && k.harja.vasen < k.muoto.vasen)) return null;   // harja sivulle
+    const H = k.korkeudet, h2 = (Number(v.huplis) || 0) / 2, zt = -(Number(v.vahennys) || 0);
+    const pit2 = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const seina = (j, lisa) => {
+      const p = C[j], q = C[(j + 1) % 4], l = pit2(p, q);
+      const n = [(q[1] - p[1]) / l, -(q[0] - p[0]) / l], Hhi = Math.max(H[j], H[(j + 1) % 4]) || 1;
+      const kal = (k.kiila[SEINAT[j]] || 0) / Hhi;
+      return [n[0], n[1], kal, n[0] * p[0] + n[1] * p[1] + lisa];
+    };
+    const pS = [0, 1, 2, 3].map(j => seina(j, 0)), hS = [0, 1, 2, 3].map(j => seina(j, h2));
+    const ala = [0, 1, 2, 3].map(i => ratkaise3([pS[(i + 3) % 4], pS[i], [0, 0, 1, -H[i]]]));
+    // Harjan kohta piipun sivuseinällä: matka etu 1:n kulmasta sivua pitkin (yläpäässä), seinän tasossa korkeudella −H
+    const harjaPiste = (j, alku, loppu, matka, Hh) => {
+      const P = C[alku], Q = C[loppu], t = matka / (pit2(P, Q) || 1), pl = pS[j];
+      const xy = [P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t];
+      return [xy[0] + pl[0] * pl[2] * Hh, xy[1] + pl[1] * pl[2] * Hh, -Hh];
+    };
+    const hO = harjaPiste(1, 1, 2, k.harja.oikea, k.harjaKork.oikea), hV = harjaPiste(3, 0, 3, k.harja.vasen, k.harjaKork.vasen);
+    const lape1 = tasoPisteista([ala[0], ala[1], hO, hV]), lape2 = tasoPisteista([ala[2], ala[3], hO, hV]);
+    if (!lape1 || !lape2) return null;
+    const katto = i => i < 2 ? lape1.rivi : lape2.rivi;
+    const B = [0, 1, 2, 3].map(i => ratkaise3([hS[(i + 3) % 4], hS[i], katto(i)]));
+    const T = [0, 1, 2, 3].map(i => ratkaise3([hS[(i + 3) % 4], hS[i], [0, 0, 1, zt]]));
+    const BH = { 1: ratkaise3([hS[1], lape1.rivi, lape2.rivi]), 3: ratkaise3([hS[3], lape1.rivi, lape2.rivi]) };   // hupun harjapisteet
+    if (B.concat(T, [BH[1], BH[3]]).some(p => p.some(x => !isFinite(x)))) return null;
+    // Harjan pitää osua sivulle kulmien väliin, ja hupun pitää olla katon yläpuolella
+    const valissa = (P, A, Bp) => { const d = vsub(Bp, A), t = vdot(vsub(P, A), d) / (vdot(d, d) || 1); return t > 0.001 && t < 0.999; };
+    if (!valissa(BH[1], B[1], B[2]) || !valissa(BH[3], B[0], B[3])) return null;
+    if ([0, 1, 2, 3].some(i => B[i][2] >= T[i][2]) || BH[1][2] >= zt || BH[3][2] >= zt) return null;
+    const tahkot = [0, 1, 2, 3].map(j => {
+      const n = vnorm([hS[j][0], hS[j][1], hS[j][2]]), jj = (j + 1) % 4;
+      const pts = [B[j]].concat(BH[j] ? [BH[j]] : [], [B[jj], T[jj], T[j]]);
+      return { nimi: SEINAT[j], n, cen: pts.reduce((a, p) => vadd(a, vscale(p, 1 / pts.length)), [0, 0, 0]), Dc: T[j], Cc: T[jj], pts };
+    });
+    const varoitukset = [];
+    [[lape1, 1], [lape2, 2]].forEach(([l, nro]) => {
+      if (l.heitto > 5) varoitukset.push('Puolen ' + nro + ' lape on kiero: korkeudet heittävät noin ' + Math.round(l.heitto) + ' mm (yksi kohta ei osu samaan tasoon muiden kanssa). Tarkista korkeudet; laskenta käyttää keskimääräistä kattoa.');
+    });
+    return { kiila: k, C, ala, harjaPiippu: { oikea: hO, vasen: hV }, lape1, lape2, B, T, BH, tahkot, varoitukset };
+  }
+
+  // Tasaisen seinän avaus: yläreuna x-akselille (vasen pää origossa, ulkopuolelta katsottuna), paneeli alapuolella.
+  function tasoon(F, TL, TR) {
+    const e = vnorm(vsub(TR, TL));
+    let u = vnorm(vcross(F.n, e)); if (u[2] < 0) u = vscale(u, -1);
+    return P => { const d = vsub(P, TL); return [vdot(d, e), vdot(d, u)]; };
+  }
+
+  // Kiila- / mutkaharjapiipun hupun palat. Sama muoto kuin harjaHupunPalat ({ palat, geom }) + malli, symmetrinen, varoitukset.
+  // Toimii myös suoralla syötöllä (testi: antaa samat palat kuin harjaHupunPalat).
+  function harjaKiilaPalat(vals) {
+    const v = vals || {};
+    const t0 = PI.laskeHarjapiippu(v, { juuret: false, huppu: false, kansi: false, hattu: false });
+    if (t0.virheet.length) return null;
+    const m = harjaMalli(v);
+    if (!m) return null;
+    const g = t0.geom, s = Number(v.sauma) || 0, jako = PI.harjaJakosauma(v), L = Number(v.hsivlisa) || 0;
+    const yla = YLA_TYYPIT[v.ylaTyyppi] ? v.ylaTyyppi : 'ulos';
+    const reuna = (tyyppi, nurkka, leveys, kulma) => ({ tyyppi, nurkka, s: leveys, w: tyyppi === 'k40' ? 2 * leveys : leveys, kulma: nurkka ? kulma : 90 });
+    const F = m.tahkot, B = m.B, T = m.T;
+    const nurkka = (j, vasenPaa) => {                  // seinän j kulmasauman kanttausluku (vasen = kulma j, oikea = kulma j + 1)
+      const i = vasenPaa ? j : (j + 1) % 4, naapuri = vasenPaa ? (j + 3) % 4 : (j + 1) % 4;
+      return nurkkaKulma(F[j], F[naapuri], B[i], T[i]);
+    };
+    const yht = j => ({ yla, ylaW: Number(v.ylareunaV) || 0, ylaKulma: yla === 'tupla' ? 180 : ylaKulma(F[j], yla), ala: Number(v.alatupla) || 0, harja: true, kiila: true });
+    const palat = [];
+    // Etukappaleet 1–3 osana: palat tahkolle tasavälein ylä- ja alareunaa pitkin (kuten lapepiipun kiilassa)
+    [[0, 1, g.etuJako1 || 1], [2, 2, g.etuJako2 || 1]].forEach(([j, nro, kpl]) => {
+      const jj = (j + 1) % 4, f = tasoon(F[j], T[j], T[jj]);
+      for (let i = 1; i <= kpl; i++) {
+        const a = (i - 1) / kpl, b = i / kpl;
+        const TL = lerp3(T[j], T[jj], a), TR = lerp3(T[j], T[jj], b), BL = lerp3(B[j], B[jj], a), BR = lerp3(B[j], B[jj], b);
+        const x0 = f(TL)[0], P = f(TR)[0] - x0, siirto = q => { const r = f(q); return [r[0] - x0, r[1]]; };
+        palat.push(Object.assign({ nimi: 'Huppu etu ' + nro + (kpl > 1 ? ' osa ' + i : ''), kpl: 1, osa: 'etu', P, ala2d: [siirto(BL), siirto(BR)],
+          vasen: i === 1 ? reuna('t90', true, s, nurkka(j, true)) : reuna('k40', false, s), oikea: i === kpl ? reuna('t90', true, s, nurkka(j, false)) : reuna('t90', false, s),
+          paat: ['', ''], alaNimet: [''] }, yht(j)));
+      }
+    });
+    // Sivut ulkopuolelta: oikealla etu 1 vasemmalla, vasemmalla etu 2 vasemmalla. Liitosvara L/2 kumpaankin päähän.
+    const sivu = (j, puoli) => {
+      const jj = (j + 1) % 4, f = tasoon(F[j], T[j], T[jj]);
+      const P = f(T[jj])[0] + L, bl = f(B[j]), bh = f(m.BH[j]), br = f(B[jj]);
+      const ala = [[bl[0], bl[1]], [bh[0] + L / 2, bh[1]], [br[0] + L, br[1]]];
+      const pE1 = j === 1;                              // oikea sivu: vasen pää on etu 1
+      const paat = pE1 ? ['etu 1', 'etu 2'] : ['etu 2', 'etu 1'], alaNimet = pE1 ? ['etu 1 -puoli', 'etu 2 -puoli'] : ['etu 2 -puoli', 'etu 1 -puoli'];
+      const kV = nurkka(j, true), kO = nurkka(j, false), lisa = ' ' + puoli;
+      if (g.sivutJako !== 2) {
+        return [Object.assign({ nimi: 'Huppu sivut' + lisa, kpl: 1, osa: 'sivut', P, ala2d: ala, vasen: reuna('k40', true, s, kV), oikea: reuna('k40', true, s, kO),
+          paat, alaNimet, harjaX: ala[1][0] }, yht(j))];
+      }
+      // Poikki harjalta: leikkaus harjan kohdalta kohtisuoraan yläreunaan. Etu 1 -puolelle jakosauma 90° ulos, etu 2 -puolelle 2 × jakosauma.
+      const xH = ala[1][0];
+      const vasenPala = { P: xH, ala2d: [ala[0], ala[1]] }, oikeaPala = { P: P - xH, ala2d: [[0, ala[1][1]], [ala[2][0] - xH, ala[2][1]]] };
+      const e1 = Object.assign(pE1 ? vasenPala : oikeaPala, { nimi: 'Huppu sivu 1' + lisa, paat: pE1 ? ['etu 1', 'harja'] : ['harja', 'etu 1'],
+        vasen: pE1 ? reuna('k40', true, s, kV) : reuna('t90', false, jako), oikea: pE1 ? reuna('t90', false, jako) : reuna('k40', true, s, kO), harjaX: pE1 ? xH : 0 });
+      const e2 = Object.assign(pE1 ? oikeaPala : vasenPala, { nimi: 'Huppu sivu 2' + lisa, paat: pE1 ? ['harja', 'etu 2'] : ['etu 2', 'harja'],
+        vasen: pE1 ? reuna('k40', false, jako) : reuna('k40', true, s, kV), oikea: pE1 ? reuna('k40', true, s, kO) : reuna('k40', false, jako), harjaX: pE1 ? 0 : xH });
+      return [e1, e2].map(pa => Object.assign({ kpl: 1, osa: 'sivut', alaNimet: [''] }, pa, yht(j)));
+    };
+    const oikeat = sivu(1, 'oikea'), vasemmat = sivu(3, 'vasen');
+    // Ovatko sivut peilikuvia? Verrataan levitettyjä ääriviivoja (vasen peilattuna) ja kanttauslukuja, kuten lapepiipussa.
+    const muoto = (pa, peili) => PL.aihioPisteet(levitaTaso(pa).p, peili).pisteet;
+    const symmetrinen = oikeat.every((o, i) => {
+      const vk = vasemmat[i], a = muoto(o, false), b = muoto(vk, true);
+      return a.length === b.length && a.every((q, k2) => Math.hypot(q.x - b[k2].x, q.y - b[k2].y) < 0.5)
+        && Math.abs(o.vasen.kulma - vk.oikea.kulma) < 0.05 && Math.abs(o.oikea.kulma - vk.vasen.kulma) < 0.05 && Math.abs(o.ylaKulma - vk.ylaKulma) < 0.05;
+    });
+    const sivut = symmetrinen
+      ? oikeat.map(o => Object.assign({}, o, { nimi: o.nimi.replace(/ oikea$/, ''), kpl: 2, peili: true }))
+      : oikeat.concat(vasemmat);
+    const kaikki = palat.concat(sivut);
+    kaikki.forEach(pa => { const lv = levitaTaso(pa); pa.listaLev = ylos(lv.p.w); pa.listaPit = ylos(lv.p.h); });
+    return { palat: kaikki, geom: g, malli: m, symmetrinen, varoitukset: m.varoitukset };
+  }
+
+  // Kiila- / mutkaharjapiipun peltilista: hupun palat 3D-mallista, juuret pisimmän sivun mukaan (Tomi 24.11.: mitataan
+  // kuitenkin erikseen), kansi ja hattu leveimmän ja pisimmän yläpään mitan mukaan.
+  function laskeKaikkiHarjaKiila(vals, osat) {
+    const v = vals || {}, o = osat || {};
+    const perus = PI.laskeHarjapiippu(v, o);
+    if (perus.virheet.length) return Object.assign(perus, { kiila: true });
+    const t = harjaKiilaPalat(v);
+    if (!t) return Object.assign(perus, { kiila: true, virheet: ['Kiilan mitat eivät sovi yhteen: tarkista sivujen pituudet, suoran kulman valinta, harjan kohdat ja korkeudet.'] });
+    const m = t.malli, a = m.ala, hp = m.harjaPiippu;
+    const vaaka = (p, q) => Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const pisin = pts => pts.map(([p, q]) => ({ s: vaaka(p, q), ero: q[2] - p[2] })).reduce((x, y) => Math.hypot(y.s, y.ero) > Math.hypot(x.s, x.ero) ? y : x);
+    const p1 = pisin([[a[1], hp.oikea], [a[0], hp.vasen]]), p2 = pisin([[a[2], hp.oikea], [a[3], hp.vasen]]);
+    const juuret = o.juuret === false ? [] : PI.laskeHarjapiippu(Object.assign({}, v, { lev1: vaaka(a[0], a[1]), lev2: vaaka(a[2], a[3]),
+      suora1: p1.s, suora2: p2.s, korkH: 1000, kork1: 1000 + p1.ero, kork2: 1000 + p2.ero }), { juuret: true, huppu: false, kansi: false, hattu: false }).juuret;
+    const km = m.kiila.muoto, levMax = Math.max(km.etu, km.taka), pitMax = Math.max(km.oikea, km.vasen), s2 = Number(v.suora2) || 0;
+    const khT = PI.laskeHarjapiippu(Object.assign({}, v, { lev1: levMax, lev2: levMax, suora1: pitMax - s2 }), { juuret: false, huppu: false, kansi: o.kansi !== false, hattu: o.hattu !== false });
+    const huppu = o.huppu === false ? [] : t.palat.map(pa => ({ osa: pa.nimi, lev: pa.listaLev, pit: pa.listaPit, kpl: pa.kpl }));
+    return { juuret, muut: huppu.concat(khT.muut), virheet: [], kansi: khT.kansi, geom: perus.geom, kiila: true, malli: m, symmetrinen: t.symmetrinen, varoitukset: t.varoitukset };
   }
 
   // ---------- Kuva ylhäältä (kiilan syöttöön) ----------
@@ -776,7 +963,8 @@
 
   const KPT_PIIPPU_LEVITYS = { YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
     palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta,
-    harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva };
+    harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva,
+    harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila };
   globalThis.KPT_PIIPPU_LEVITYS = KPT_PIIPPU_LEVITYS;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_PIIPPU_LEVITYS;
 })();
