@@ -33,6 +33,10 @@
       { href: 'piippu.html',        label: '🏭 Piippu' },
       { href: 'laskin.html',        label: '🧮 Laskin' },
     ]},
+    // Sovitteet (vaihe 8, 24.11.2026): levityskuvalliset sovitteet. Kartio tulee vaiheessa 8.2.
+    { nimi: 'Sovitteet', sivut: [
+      { href: 'huuva.html',         label: '🔥 Huuva' },
+    ]},
     { nimi: 'Varasto', sivut: [
       { href: 'varasto.html',       label: '📦 Varasto' },
       { href: 'varastotyo.html',    label: '📱 Varastotyö' },

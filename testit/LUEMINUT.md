@@ -12,10 +12,10 @@ Repo on julkinen: testeissä ei käytetä asiakkaiden nimiä eikä tietoja (esim
 
 ## huuva/ (12 sarjaa, 2313 tarkistusta 20.11.2026)
 
-Huuvan testit siirrettiin Claude-projektista (`huuva/testit/`) vaiheessa 1 (suunnitelma `claude/yhteiset_tyokalut_suunnitelma.md`). Ne testaavat Huuva-mockupia v16, jonka laskenta ja piirto ovat nyt yhteisissä tiedostoissa:
+Huuvan testit siirrettiin Claude-projektista (`huuva/testit/`) vaiheessa 1 (suunnitelma `claude/yhteiset_tyokalut_suunnitelma.md`). Ne testaavat Huuva-sivua (`orders/huuva.html`, Huuva v16; vaiheeseen 8.1 asti testisivu `savuhuuva-mockup.html`), jonka geometria ja pelti-osat ovat yhteisissä tiedostoissa:
 
-- `savuhuuva-mockup.html` — Huuva-mockup v16. Sivun oma osa (lomake, kaistat, työkortit, avattavat kortit) on tässä, ja geometria ja pelti-osat ladataan tiedostoista `../../orders/geom.js` ja `../../orders/pellit.js`. **Tämä on nyt Huuva-mockupin pääversio**; projektin kopio on vanha (siinä funktiot ovat vielä sivun sisällä). Huuva siirretään varsinaiseksi sivuksi myöhemmin (suunnitelman vaihe 8).
-- `lataa.js` — lataa yhteiset tiedostot ja antaa mockupin skriptin testeille.
+- Huuva on 24.11.2026 alkaen oikea ERP-sivu `orders/huuva.html` (vaihe 8.1, laskenta ennallaan). Testisivu `savuhuuva-mockup.html` poistettiin, jotta Huuvasta on vain yksi versio. Projektin kopio `huuva/savuhuuva-mockup.html` on vanha.
+- `lataa.js` — lataa yhteiset tiedostot (geom.js, pellit.js, tyokortti.js) ja antaa `orders/huuva.html`:n skriptin testeille.
 - `test_*.js` — testit. Sisältö on sama kuin projektissa; vain latausrivi muuttui. `test_geom.js` testaa nyt oikeaa `pellit.js`:ää (ennen siinä oli oma kopio funktioista).
 
 | Sarja | Mitä testaa |

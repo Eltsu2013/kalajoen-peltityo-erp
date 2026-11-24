@@ -3,9 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Huuva — laskin</title>
+<title>Huuva — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap">
+<!-- Huuva ERP-sivuna (vaihe 8.1, 24.11.2026): siirretty testisivulta testit/huuva/savuhuuva-mockup.html (v16) ilman
+     laskennan muutoksia. Kirjautuminen, valikko, yhteinen työkortti (tyokortti.js). Suunnitelma claude/vaihe8_sovitteet_suunnitelma.md. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="auth-guard.js"></script>
 <style>
   :root {
     --bg:         #29231a;
@@ -27,29 +31,31 @@
     color: var(--text);
     font-family: 'IBM Plex Sans', sans-serif;
   }
-  .topbar {
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 14px 28px;
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    flex-wrap: wrap;
+  /* ── HEADER ja valikko (sama kuin laskin.html) ── */
+  header {
+    background: #1e1810; border-bottom: 2px solid var(--accent); padding: 10px 16px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100;
   }
-  .logo {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.06em;
-    color: var(--accent);
+  header h1 { font-size: 16px; font-weight: 500; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .nav-menu-wrap { position: relative; }
+  .nav-btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 4px; cursor: pointer; letter-spacing: 0.04em; min-height: 36px;
   }
-  .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-  .tab-btn {
-    background: none; border: none; border-bottom: 2px solid transparent;
-    color: var(--text-dim); font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px; padding: 8px 14px; cursor: pointer;
+  .nav-btn:hover { background: var(--input-bg); }
+  .nav-dropdown {
+    display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--panel2); border: 1px solid var(--border);
+    border-radius: 6px; min-width: 200px; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,0.5); overflow: hidden;
   }
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .nav-dropdown.open { display: block; }
+  .nav-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); padding: 8px 14px 4px; }
+  .nav-item { display: block; padding: 10px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text); text-decoration: none; transition: background 0.1s; }
+  .nav-item:hover { background: rgba(249,115,22,0.13); color: var(--accent); }
+  .nav-item.current { color: var(--accent); font-weight: 600; }
+  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  @media (max-width: 700px) { .wrap { padding: 16px 12px 48px !important; } }
 
   .wrap { max-width: 1240px; margin: 0 auto; padding: 28px 24px 64px; }
   .eyebrow {
@@ -208,62 +214,61 @@
   .pt-table th, .pt-table td { border: 1px solid var(--border); padding: 2px 10px; text-align: right; }
   .pt-table th { color: var(--text-dim); font-weight: 600; }
 
-  /* Työkortit (näkyvät vain tulostettaessa) */
-  #tulostus { display: none; }
+  /* Työkortit: pohja tyokortti.js (#tkk), alla Huuvan omat sisältötyylit. Taulukoiden tyylit kumoavat pohjan yleiset table-säännöt. */
   @media print {
-    @page { size: A4; margin: 12mm; }
-    html, body { background: #fff !important; color: #000 !important; }
-    .topbar, .wrap { display: none !important; }
-    #tulostus { display: block; font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 11pt; color: #000; }
-    .tk-page { page-break-after: always; break-after: page; }
-    .tk-page:last-child { page-break-after: auto; break-after: auto; }
-    .tk-brand { font-family: 'IBM Plex Mono', monospace; font-size: 9pt; letter-spacing: 0.1em; color: #555; border-bottom: 1px solid #000; padding-bottom: 3mm; margin-bottom: 4mm; }
-    #tulostus h1 { font-size: 22pt; margin: 0 0 3mm; }
-    #tulostus h2 { font-size: 10pt; text-transform: uppercase; letter-spacing: 0.08em; margin: 5mm 0 2mm; color: #333; }
-    .tk-kpl { white-space: nowrap; font-size: 16pt; border: 2px solid #000; border-radius: 3mm; padding: 0 3mm; margin-left: 4mm; vertical-align: middle; }
-    .tk-fields { display: flex; gap: 8mm; font-size: 10pt; margin-bottom: 3mm; }
-    .tk-fields > div { flex: 1; white-space: nowrap; }
-    .tk-line { display: inline-block; border-bottom: 1px solid #000; width: 24mm; height: 1em; vertical-align: bottom; }
-    .tk-svg svg { width: 100%; height: 88mm; border: 1px solid #999; }
+    #tkk { font-size: 11pt; }
+    #tkk .tk-page { page-break-after: always; break-after: page; }
+    #tkk .tk-page:last-child { page-break-after: auto; break-after: auto; }
+    #tkk .tk-brand { font-family: 'IBM Plex Mono', monospace; font-size: 9pt; letter-spacing: 0.1em; color: #555; border-bottom: 1px solid #000; padding-bottom: 3mm; margin-bottom: 4mm; }
+    #tkk h1 { font-size: 22pt; margin: 0 0 3mm; }
+    #tkk .tk-page h2 { font-size: 10pt; text-transform: uppercase; letter-spacing: 0.08em; margin: 5mm 0 2mm; color: #333; border-bottom: none; padding-bottom: 0; display: block; }
+    #tkk .tk-kpl { white-space: nowrap; font-size: 16pt; border: 2px solid #000; border-radius: 3mm; padding: 0 3mm; margin-left: 4mm; vertical-align: middle; }
+    #tkk .tk-fields { display: flex; gap: 8mm; font-size: 10pt; margin-bottom: 3mm; }
+    #tkk .tk-fields > div { flex: 1; white-space: nowrap; }
+    #tkk .tk-line { display: inline-block; border-bottom: 1px solid #000; width: 24mm; height: 1em; vertical-align: bottom; }
+    #tkk .tk-svg svg { width: 100%; height: 88mm; border: 1px solid #999; }
 
-    .tk-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
-    .tk-table th, .tk-table td { border: 1px solid #777; padding: 1.5mm 2.5mm; text-align: left; }
-    .tk-table th { background: #eee; font-weight: 600; }
-    .tk-fold td b { font-size: 13pt; }
-    .tk-fold td:first-child { white-space: nowrap; }
-    .tk-fold td:last-child { font-size: 9.5pt; }
-    .tk-box { text-align: center; font-size: 14pt; }
-    .tk-note { font-size: 9pt; color: #333; margin-top: 3mm; }
-    .tk-notes { margin-top: 4mm; font-size: 10pt; }
-    .tk-lines { height: 14mm; background: repeating-linear-gradient(transparent, transparent 7mm, #999 7mm, #999 7.3mm); }
-    #tulostus .tk-svg-kaista svg { width: 100%; height: auto; max-height: 40mm; }
-    #tulostus .tk-kaista-osa { margin-bottom: 4mm; break-inside: avoid; page-break-inside: avoid; }
-    #tulostus .tk-svg-pts svg { width: 100%; height: auto; max-height: 134mm; }
-    #tulostus .tk-svg-pts.tk-pts-kaista svg { max-height: 100mm; }
-    #tulostus .tk-asento { width: auto; font-size: 10pt; margin-top: 1mm; }
-    #tulostus .tk-asento th, #tulostus .tk-asento td { text-align: left; padding: 0.7mm 3mm; }
-    #tulostus .tk-asento-osa { break-inside: avoid; page-break-inside: avoid; }
-    #tulostus .tk-pts { width: auto; font-size: 11pt; }
-    #tulostus .tk-pts th, #tulostus .tk-pts td { text-align: right; padding: 0.8mm 4mm; }
-    #tulostus .pt-wrap { display: flex; gap: 10mm; align-items: flex-start; }
+    #tkk .tk-table { width: 100%; border-collapse: collapse; font-size: 11pt; table-layout: auto; margin-top: 0; }
+    #tkk .tk-table th, #tkk .tk-table td { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 11pt; text-transform: none; letter-spacing: normal; overflow-wrap: normal; }
+    #tkk .tk-table th, #tkk .tk-table td { border: 1px solid #777; padding: 1.5mm 2.5mm; text-align: left; }
+    #tkk .tk-table th { background: #eee; font-weight: 600; }
+    #tkk .tk-fold td b { font-size: 13pt; }
+    #tkk .tk-fold td:first-child { white-space: nowrap; }
+    #tkk .tk-fold td:last-child { font-size: 9.5pt; }
+    #tkk .tk-box { text-align: center; font-size: 14pt; }
+    #tkk .tk-note { font-size: 9pt; color: #333; margin-top: 3mm; }
+    #tkk .tk-notes { margin-top: 4mm; font-size: 10pt; }
+    #tkk .tk-lines { height: 14mm; background: repeating-linear-gradient(transparent, transparent 7mm, #999 7mm, #999 7.3mm); }
+    #tkk .tk-svg-kaista svg { width: 100%; height: auto; max-height: 40mm; }
+    #tkk .tk-kaista-osa { margin-bottom: 4mm; break-inside: avoid; page-break-inside: avoid; }
+    #tkk .tk-svg-pts svg { width: 100%; height: auto; max-height: 134mm; }
+    #tkk .tk-svg-pts.tk-pts-kaista svg { max-height: 100mm; }
+    #tkk .tk-asento { width: auto; font-size: 10pt; margin-top: 1mm; }
+    #tkk .tk-asento th, #tkk .tk-asento td { text-align: left; padding: 0.7mm 3mm; }
+    #tkk .tk-asento-osa { break-inside: avoid; page-break-inside: avoid; }
+    #tkk .tk-pts { width: auto; font-size: 11pt; }
+    #tkk .tk-pts th, #tkk .tk-pts td { text-align: right; padding: 0.8mm 4mm; }
+    #tkk .pt-wrap { display: flex; gap: 10mm; align-items: flex-start; }
   }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div class="logo">KALAJOEN PELTITYÖ</div>
-  <div class="tabs">
-    <button type="button" class="tab-btn">Seinäpellit</button>
-    <button type="button" class="tab-btn">Kattopellit</button>
-    <button type="button" class="tab-btn active">Huuvat</button>
-    <button type="button" class="tab-btn">Levityskuvat</button>
+<header>
+  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+  <div class="nav-menu-wrap">
+    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
+      <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
+    </div>
+    <script src="nav.js?v=3"></script>
   </div>
-</div>
+  <h1>Huuva</h1>
+  <div class="header-right"></div>
+</header>
 
 <div class="wrap">
-  <div class="eyebrow">Mallisto — versio 16: avattavat kortit yhteenveto-riveineen</div>
-  <div class="h1">Huuva</div>
   <div class="k-toolbar"><button type="button" class="k-nappi" onclick="avaaKaikki(true)">Avaa kaikki</button><button type="button" class="k-nappi" onclick="avaaKaikki(false)">Sulje kaikki</button></div>
 
   <div class="grid">
@@ -458,10 +463,10 @@
   </div>
 </div>
 
-<div id="tulostus"></div>
 
-<script src="../../orders/geom.js?v=1"></script>
-<script src="../../orders/pellit.js?v=1"></script>
+<script src="geom.js?v=1"></script>
+<script src="pellit.js?v=3"></script>
+<script src="tyokortti.js?v=4"></script>
 <script>
   // Yhteiset työkalut (vaihe 1, 20.11.2026): geometria orders/geom.js ja pelti-osat orders/pellit.js.
   // Funktiot otetaan käyttöön samoilla nimillä kuin ennen, joten alla oleva Huuvan koodi ei muuttunut.
@@ -1202,6 +1207,12 @@
   // ---------- Tulostettavat työkortit ----------
   let viimeisinLasku = null;   // { s, panels } — päivitetään renderAll:ssa
 
+  // Yläosa yhteisestä pohjasta (logo-musta, otsikko); ilman tyokortti.js:ää vanha tekstiyläosa (testit voivat ajaa ilman)
+  const TK = globalThis.KPT_TYOKORTTI;
+  function tkYla(nimi, sivu) {
+    return TK ? TK.ylaosaPieni({ otsikko: 'HUUVA', alaotsikko: nimi, sivu: sivu || '' }) : '<div class="tk-brand">KALAJOEN PELTITYÖ · ' + esc(nimi) + '</div>';
+  }
+
   function rakennaTyokortit(s, panels, nimi, tyyppiTeksti, valinnat) {
     valinnat = valinnat || {};
     const pvm = new Date().toLocaleDateString('fi-FI');
@@ -1210,7 +1221,7 @@
     const krK = valinnat.kaista ? laskeKaistat(panels, valinnat.kaista) : null;
     // Yhteenvetosivu
     let ala = 0;
-    html += '<section class="tk-page"><div class="tk-brand">KALAJOEN PELTITYÖ</div><h1>' + esc(nimi) + ' — levityslista</h1>' + kenttia
+    html += '<section class="tk-page">' + tkYla(nimi, 'levityslista') + '<h1>' + esc(nimi) + ' — levityslista</h1>' + kenttia
       + '<h2>Huuvan mitat</h2><table class="tk-table"><tr><th>Alareuna</th><td>' + Math.round(s.Wb) + ' × ' + Math.round(s.Db) + ' mm</td></tr>'
       + '<tr><th>Yläreuna</th><td>' + Math.round(s.Wt) + ' × ' + Math.round(s.Dt) + ' mm</td></tr>'
       + '<tr><th>Korkeus</th><td>' + Math.round(s.H) + ' mm</td></tr>'
@@ -1222,11 +1233,11 @@
       ala += p.w * p.h * p.kpl;
       html += '<tr><td>' + esc(p.name) + '</td><td>' + p.kpl + '</td><td>' + Math.round(p.w) + ' × ' + Math.round(p.h) + ' mm</td><td class="tk-box">☐</td></tr>';
     });
-    html += '</table><p class="tk-note">Aihion koko sisältää taitokset. Aihioiden yhteenlaskettu pinta-ala (yläraja, ei sisällä hukkaa): ' + (ala/1e6).toFixed(2) + ' m².</p></section>';
+    html += '</table><p class="tk-note">Aihion koko sisältää taitokset. Aihioiden yhteenlaskettu pinta-ala (yläraja, ei sisällä hukkaa): ' + (ala/1e6).toFixed(2) + ' m².</p>' + (TK ? TK.alaosa('Huuva') : '') + '</section>';
     // Kaistasivu: rullan menekki, kaistakuvat ja giljotiinileikkausten mitat (valinnainen)
     if (valinnat.kaista) {
       const kr = krK;
-      html += '<section class="tk-page tk-kaista"><div class="tk-brand">KALAJOEN PELTITYÖ · ' + esc(nimi) + '</div><h1>Kaistat — pelti rullasta</h1>' + kenttia
+      html += '<section class="tk-page tk-kaista">' + tkYla(nimi, 'kaistat') + '<h1>Kaistat — pelti rullasta</h1>' + kenttia
         + '<p class="tk-note"><b>Työjärjestys:</b> 1. Leikkaa kaista rullasta pituuteen (kaistan leveys = aihion korkeus). 2. Merkitse Alku-, numeroidut ja Loppu-leikkaukset kaistan reunoihin ja leikkaa giljotiinilla, jolloin palat irtoavat oikean muotoisina. 3. Jokaisella palalla on oma merkintäsivu (taitosviivat ja pienet leikkaukset).<br>Pellin paksuus ' + String(valinnat.kaista.paksuus).replace('.', ',') + ' mm · asettelu: <b>' + (kr.tila === 'lomitus' ? 'lomitettu' : 'suora') + '</b>. Leikkausten mitat ovat kaistan <b>vasemmasta päästä</b>, alareunasta ja yläreunasta. Harmaa kappale on käännetty 180°. ' + (kr.kaistat.some(k => k.paat && (k.paat.alku || k.paat.loppu)) ? PAATY_HUOM : '') + '</p>';
       kr.kaistat.forEach((k, i) => {
         const vbH = Math.round(Math.min(300, Math.max(110, 560 * k.h / k.pituus + 60)));
@@ -1239,7 +1250,7 @@
     // Yksi sivu per pala
     panels.forEach(p => {
       const svg = '<svg viewBox="0 0 520 360" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + levitysSvgSisalto([p], 520, 360, TEEMA_PAPERI) + '</svg>';
-      html += '<section class="tk-page"><div class="tk-brand">KALAJOEN PELTITYÖ · ' + esc(nimi) + '</div>'
+      html += '<section class="tk-page">' + tkYla(nimi) + ''
         + '<h1>' + esc(p.name) + (p.kpl > 1 ? ' <span class="tk-kpl">' + p.kpl + ' kpl</span>' : ' <span class="tk-kpl">1 kpl</span>') + '</h1>' + kenttia
         + '<div class="tk-svg">' + svg + '</div>'
         + '<h2>Mitat</h2><table class="tk-table"><tr><th>Alareuna</th><td>' + Math.round(p.a) + ' mm</td><th>Yläreuna</th><td>' + Math.round(p.c) + ' mm</td></tr>'
@@ -1254,14 +1265,14 @@
         html += '</table>';
       }
       html += '<p class="tk-note">Kuva on piirretty <b>ulkopuolelta</b> katsottuna. Kanttausluku = montako astetta pelti käännetään suorasta. Taitto <b>ulos</b> = pelti kääntyy kohti katsojaa kuvassa, <b>sisään</b> = poispäin. Alareunan osat luetaan paneelin reunasta ulospäin.</p>'
-        + '<div class="tk-notes">Muistiinpanot:</div><div class="tk-lines"></div></section>';
+        + '<div class="tk-notes">Muistiinpanot:</div><div class="tk-lines tkk-viivat"></div></section>';
       // Merkintäsivu: aihion leikkauspisteet numeroituina (valinnainen)
       if (valinnat.pisteet === true) {
         const peili = valinnat.peili === true;
         const vbH = Math.round(Math.min(520, Math.max(300, 560 * p.h / p.w + 70)));
         const asennot = palaAsennot(krK, p, peili);
         const mk = '<svg viewBox="0 0 560 ' + vbH + '" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' + merkintaSvgSisalto(p, 560, vbH, TEEMA_PAPERI, peili, edustavaLevy(asennot)) + '</svg>';
-        html += '<section class="tk-page"><div class="tk-brand">KALAJOEN PELTITYÖ · ' + esc(nimi) + '</div>'
+        html += '<section class="tk-page">' + tkYla(nimi) + ''
           + '<h1>' + esc(p.name) + ' — merkintäpisteet' + (p.kpl > 1 ? ' <span class="tk-kpl">' + p.kpl + ' kpl</span>' : ' <span class="tk-kpl">1 kpl</span>') + '</h1>' + kenttia
           + '<div class="tk-svg tk-svg-pts' + (asennot.length ? ' tk-pts-kaista' : '') + '">' + mk + '</div>'
           + '<h2>Pisteet (aihio ' + Math.round(p.w) + ' × ' + Math.round(p.h) + ' mm)' + (peili ? ' · SISÄPINTA, peilikuva' : '') + '</h2>' + pisteTaulu(p, 'tk-table tk-pts', peili)
@@ -1273,14 +1284,27 @@
     return html;
   }
 
-  function tulostaTyokortit() {
-    if (!viimeisinLasku) return;
+  // Työkortin sisältö viimeisimmästä laskusta ja sivun valinnoista (merkintäpisteet, kaistasivu)
+  function huuvanTyokortti() {
+    if (!viimeisinLasku) return '';
     const nimi = document.querySelector('.name-input').value || 'Huuva';
     const tyyppiTeksti = { vapaa: 'Vapaasti seisova', seina: 'Seinää vasten', nurkka: 'Nurkkaan (' + nurkkaSivu + ')' }[tyyppiState] || tyyppiState;
     const chk = document.getElementById('chk-pisteet');
-    document.getElementById('tulostus').innerHTML = rakennaTyokortit(viimeisinLasku.s, viimeisinLasku.panels, nimi, tyyppiTeksti, { pisteet: !chk || chk.checked, peili: merkkausPeili(), kaista: (document.getElementById('chk-kaista') || { checked: true }).checked ? lueKaistaAsetukset() : null, huuvia: viimeisinLasku.huuvia });
-    window.print();
+    return rakennaTyokortit(viimeisinLasku.s, viimeisinLasku.panels, nimi, tyyppiTeksti, { pisteet: !chk || chk.checked, peili: merkkausPeili(), kaista: (document.getElementById('chk-kaista') || { checked: true }).checked ? lueKaistaAsetukset() : null, huuvia: viimeisinLasku.huuvia });
   }
+  // Tulostus yhteisellä pohjalla: Tulosta-nappi ja Ctrl+P tulostavat vain työkortin (tyokortti.js)
+  function tulostaTyokortit() {
+    if (!viimeisinLasku) return;
+    if (TK) TK.tulosta(); else window.print();
+  }
+  if (TK && typeof window !== 'undefined' && window.addEventListener) TK.asenna(huuvanTyokortti);
+
+  // Valikko (sama kuin muilla sivuilla)
+  function toggleNav(e) {
+    e.stopPropagation();
+    document.getElementById('navDropdown').classList.toggle('open');
+  }
+  if (typeof window !== 'undefined' && window.addEventListener) document.addEventListener('click', () => { const d = document.getElementById('navDropdown'); if (d) d.classList.remove('open'); });
 
   function renderResult(s, panels) {
     const cont = document.getElementById('result-rows');
