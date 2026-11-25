@@ -524,7 +524,7 @@
   </div>
 </div>
 
-<script src="lahetys.js?v=2"></script>
+<script src="lahetys.js?v=3"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -1275,10 +1275,12 @@ window.addEventListener('storage', (e) => {
 
 async function receiveFromMallisto(data) {
   // Piipun päivitys — poistetaan vanhat ja lisätään uudet atomisesti
-  if (data.type === 'REPLACE_PIIPPU') {
+  // REPLACE_RYHMA (vaihe 8.4a, 25.11.2026): huuva / kartio korvaa ryhmänsä rivit samalla tavalla kuin piippu (tyyppi viestissä)
+  if (data.type === 'REPLACE_PIIPPU' || data.type === 'REPLACE_RYHMA') {
+    const tyyppi = data.type === 'REPLACE_PIIPPU' ? 'piippu' : (data.profileType || 'sovite');
     let group = groups.find(g => g.id === data.groupId);
     if (!group) {
-      group = { id: data.groupId, name: uniikkiRyhmanNimi(data.groupName || 'Piippu'), items: [] };
+      group = { id: data.groupId, name: uniikkiRyhmanNimi(data.groupName || (tyyppi === 'piippu' ? 'Piippu' : 'Sovite')), items: [] };
       groups.push(group);
     }
     // Varmista että tilaus on olemassa ennen tallennusta
@@ -1288,7 +1290,7 @@ async function receiveFromMallisto(data) {
       return;
     }
     // Poista vanhat piippu-rivit Supabasesta
-    const vanhat = group.items.filter(i => i.profileType === 'piippu');
+    const vanhat = group.items.filter(i => i.profileType === tyyppi);
     for (const v of vanhat) {
       if (v.supabaseId) {
         await fetch(`${SUPABASE_URL}/rest/v1/order_items?id=eq.${v.supabaseId}`, {
@@ -1296,7 +1298,7 @@ async function receiveFromMallisto(data) {
         });
       }
     }
-    group.items = group.items.filter(i => i.profileType !== 'piippu');
+    group.items = group.items.filter(i => i.profileType !== tyyppi);
     // Nimeämätön ryhmä saa piipun nimen (esim. "Harjapiippu 400×(450+750) RR33"). renameGroup päivittää myös ryhmän
     // muiden, jo tallennettujen rivien nimen. Käyttäjän antamaa nimeä ei muuteta.
     if (data.groupName && onOletusnimi(group.name)) await renameGroup(group.id, data.groupName);
@@ -1304,7 +1306,7 @@ async function receiveFromMallisto(data) {
     for (const p of (data.items || [])) {
       const item = {
         id: 'i_' + Date.now() + Math.random(),
-        profileType: 'piippu',
+        profileType: tyyppi,
         nimike: p.nimike,
         aihio_width_mm: p.aihio_width_mm,
         profile_data: p.profile_data,
@@ -1322,7 +1324,8 @@ async function receiveFromMallisto(data) {
     }
     renderGroups();
     updateSummary();
-    setSaveStatus('ok', `Piippu päivitetty — ${data.items?.length || 0} riviä`);
+    setSaveStatus('ok', `${tyyppi === 'piippu' ? 'Piippu' : group.name} päivitetty — ${data.items?.length || 0} riviä`);
+    if (tyyppi !== 'piippu') return;
     // Kuittaus piippusivulle (vaihe 6c): tilaus ja ryhmän lopullinen nimi Tuotannon linkkiä varten
     try { localStorage.setItem('kpt_piippu_tallennettu', JSON.stringify({ groupId: data.groupId, orderId: currentOrderId, groupName: group.name, aika: Date.now() })); } catch (e) { /* ei tallennusta */ }
     return;
@@ -2037,7 +2040,7 @@ function renderItem(item, groupId) {
         <div>${rowsHtml}</div>
       </div>
       <div class="item-actions">
-        <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="editItem('${groupId}','${item.id}')">✎ Muokkaa</button>
+        ${['huuva', 'kartio'].includes(item.profileType) ? '' : `<button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="editItem('${groupId}','${item.id}')">✎ Muokkaa</button>`}
         <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="copyItem('${groupId}','${item.id}')" title="Kopioi tuote">⧉ Kopioi</button>
         <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteItem('${groupId}','${item.id}')">✕</button>
       </div>
@@ -2424,7 +2427,8 @@ async function vastaanotaLahetys(viesti, l) {
       asiakas: (document.getElementById('customer-search').value || '').trim(),
     };
   }
-  if (!viesti || viesti.type !== 'REPLACE_PIIPPU') throw new Error('Tuntematon lähetys');
+  if (!viesti || (viesti.type !== 'REPLACE_PIIPPU' && viesti.type !== 'REPLACE_RYHMA')) throw new Error('Tuntematon lähetys');
+  const tyyppi = viesti.type === 'REPLACE_PIIPPU' ? 'piippu' : viesti.profileType;
   const uusiTilaus = !currentOrderId;
   // Huomio tilauksen huomioihin (Tomi 25.11.2026: "sisältää monesti oleellista tietoa"). Uudella tilauksella se menee
   // mukaan tilauksen luontiin, olemassa olevalla tallennetaan erikseen.
@@ -2434,7 +2438,7 @@ async function vastaanotaLahetys(viesti, l) {
   await receiveFromMallisto(viesti);
   if (!currentOrderId) throw new Error('Tilauksen luonti epäonnistui');
   const group = groups.find(g => g.id === viesti.groupId);
-  const pi = group ? group.items.filter(i => i.profileType === 'piippu') : [];
+  const pi = group ? group.items.filter(i => i.profileType === tyyppi) : [];
   if (!group || pi.length !== (viesti.items || []).length || pi.some(i => !i.supabaseId)) throw new Error('Kaikki rivit eivät tallentuneet');
   if (!uusiTilaus && notes.value !== ennen) saveOrderMeta();
   if (!document.getElementById('customer-select').value) { korostaAsiakas(); setSaveStatus('ok', 'Työ lisätty — valitse asiakas'); }

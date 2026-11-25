@@ -73,6 +73,11 @@
   .chk-row input { width: 18px; height: 18px; accent-color: var(--kpt-korostus); flex: none; }
   .sel-mini { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); color: var(--kpt-teksti); font-family: var(--kpt-fontti); font-size: 14px; padding: 6px 8px; border-radius: 6px; max-width: 100%; }
   #nappi-tulosta { margin-top: 4px; }
+  .tilaukseen { border-top: 1px solid var(--kpt-reuna); margin-top: 14px; padding-top: 12px; }
+  .tilaukseen textarea { width: 100%; box-sizing: border-box; min-height: 64px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 10px; font-family: var(--kpt-fontti); font-size: 16px; resize: vertical; }
+  .tilaukseen textarea:focus { outline: none; border-color: var(--kpt-korostus); }
+  .tilaus-status { font-size: 13px; min-height: 18px; margin-top: 8px; color: var(--kpt-himmea); overflow-wrap: anywhere; }
+  .tilaus-status.ok { color: var(--kpt-ok); } .tilaus-status.huom { color: var(--kpt-huom); } .tilaus-status.virhe { color: var(--kpt-virhe); }
 
   /* Kuvat ja taulukot korteissa */
   .kpt-piirros + .hint { margin-top: 8px; }
@@ -307,6 +312,14 @@
           <label class="chk-row" style="margin-top:12px"><input type="checkbox" id="chk-pisteet" checked> Merkintäpisteet-sivut mukaan (yksi lisäsivu per pala)</label>
           <label class="chk-row"><input type="checkbox" id="chk-kaista" checked> Kaistasivu mukaan (rullan menekki, kaistakuva ja leikkausmitat)</label>
           <label class="chk-row" style="margin-bottom:0">Merkkaus: <select id="sel-puoli" class="sel-mini" onchange="renderAll()"><option value="ulko">pellin ulkopinnalle (kuten kuva)</option><option value="sisa">pellin sisäpinnalle (peilikuva)</option></select></label>
+        </div>
+        <!-- Tilaukseen (vaihe 8.4a, 25.11.2026): materiaali, huomio ja lähetys lahetys.js:llä -->
+        <div class="tilaukseen">
+          <div class="section-title">Tilaukseen</div>
+          <div id="materiaali-valinta"></div>
+          <div class="kpt-kentta"><label for="tilaus-huomio">Huomio</label><textarea id="tilaus-huomio" rows="2" placeholder="Näkyy tilauksen huomioissa"></textarea></div>
+          <button type="button" class="kpt-nappi leve" id="nappi-tilaukseen" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
+          <div id="tilaus-status" class="tilaus-status"></div>
         </div>
       </div>
 
@@ -993,6 +1006,71 @@
   alustaKortit();
   if (typeof window !== 'undefined' && document.addEventListener) document.addEventListener('kpt-teema', renderAll);
   renderAll();
+</script>
+<script src="materiaali.js?v=1"></script>
+<script src="lahetys.js?v=3"></script>
+<script>
+// ── Tilaukseen (vaihe 8.4a, 25.11.2026) ─────────────────────────────────────────────────────────
+// Oma skripti laskentaskriptin jälkeen: Huuvan testit lukevat vain ensimmäisen inline-skriptin, joten tämä ei vaikuta niihin.
+// Tilausrivit = leikattavat palat palaryhmittäin (Tomi 25.11.2026: "Kyllä"), aihio ylöspäin täyteen milliin kuten tuloksessa.
+// Ensimmäisellä rivillä kaikki syötöt (profile_data.vals), joista muokkaus (8.4b) palauttaa huuvan.
+const MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-valinta'), {
+  avain: 'kpt_huuva_materiaali',
+  // Paksuus tuotelistasta myös kaistojen laskentaan (sama pelti), vain kun käyttäjä valitsee sen
+  muutos: (a, mika) => {
+    if (mika !== 'alku') tilausStatus('', '');
+    if (mika !== 'alku' && a.thickness) { const p = document.getElementById('in-paksuus'); if (p) { p.value = a.thickness; renderAll(); } }
+  },
+});
+function huuvaSyotteet() {
+  const kentat = {};
+  document.querySelectorAll('[data-kortti] input, [data-kortti] select').forEach(el => {
+    if (el.id && el.id !== 'k-nimi') kentat[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  const kopio = o => JSON.parse(JSON.stringify(o));
+  return {
+    tyyppi: 'huuva', versio: 1, nimi: document.getElementById('k-nimi').value, kentat,
+    tila: { tyyppiState, nurkkaSivu, sijaintiState, panelOn: kopio(panelOn), ylaTyyppi: kopio(ylaTyyppi), loveusOn,
+            reunaTyyppi: kopio(reunaTyyppi), seinaSuunta: kopio(seinaSuunta), kaistaKplValinta: kopio(kaistaKplValinta) },
+  };
+}
+function tilausStatus(teksti, tyyppi) {
+  const el = document.getElementById('tilaus-status');
+  el.textContent = teksti; el.className = 'tilaus-status' + (tyyppi && tyyppi !== 'odota' ? ' ' + tyyppi : '');
+  document.getElementById('nappi-tilaukseen').disabled = tyyppi === 'odota';
+}
+const tilausGroupId = new URLSearchParams(location.search).get('groupId') || null;
+function lisaaTilaukseen() {
+  renderAll();
+  const lasku = viimeisinLasku;
+  if (!lasku || !lasku.panels || !lasku.panels.length) return tilausStatus('Korjaa mitat ensin: ei laskettuja paloja.', 'virhe');
+  const m = MATERIAALI.arvo();
+  if (!m.material || !m.color || !m.thickness) return tilausStatus('Valitse ' + (!m.material ? 'materiaali' : !m.color ? 'väri' : 'paksuus') + ' ensin.', 'virhe');
+  const s = lasku.s, huuvia = Math.max(1, Math.round(parseFloat(document.getElementById('in-huuvia').value) || 1));
+  const r = x => Math.round(x);
+  const nimi = document.getElementById('k-nimi').value.trim();
+  const mitat = r(s.Wb) + '×' + r(s.Db) + '→' + r(s.Wt) + '×' + r(s.Dt) + ' h' + r(s.H);
+  const ryhmaNimi = 'Huuva ' + mitat + ' ' + m.color;
+  const huomio = document.getElementById('tilaus-huomio').value.trim();
+  const vals = huuvaSyotteet();
+  const items = lasku.panels.map((p, i) => {
+    const w = aihioMm(p.w), h = aihioMm(p.h), kpl = p.kpl * huuvia;
+    return {
+      nimike: 'Huuva: ' + p.name, profileType: 'huuva', aihio_width_mm: w,
+      profile_data: i === 0 ? { vals } : undefined,
+      rows: [{ mitta: h, paat: 0, kok: h, kpl, huomio: i === 0 ? huomio : '' }],
+      angles: [], totalM2: w * h * kpl / 1e6,
+      material: m.material, color: m.color, thickness: m.thickness, productGroup: 'Huuva', source: 'huuva',
+    };
+  });
+  const groupId = tilausGroupId || ('g_huuva_' + Date.now());
+  KPT_LAHETYS.laheta({ type: 'REPLACE_RYHMA', profileType: 'huuva', groupId, groupName: ryhmaNimi, items }, {
+    kuvaus: (huuvia > 1 ? huuvia + ' kpl · ' : '') + ryhmaNimi + (nimi && nimi !== 'Huuva 1' ? ' (' + nimi + ')' : ''),
+    huomio, lahde: 'huuva', kohdeTilaus: null,
+    supabaseUrl: KPT_MATERIAALI.SUPABASE_URL, supabaseKey: KPT_MATERIAALI.SUPABASE_KEY,
+    ilmoita: tilausStatus,
+  });
+}
 </script>
 </body>
 </html>

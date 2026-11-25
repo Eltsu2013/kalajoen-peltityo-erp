@@ -17,7 +17,8 @@
 //
 // Käyttäjät: piippu.html, harjapiippu.html, peltipiirturi.html, vakiomallit.html (lähettäjät, T2 25.11.2026), tilaus.html
 // (vastaanotin). Huuva ja Kartio (8.4) tulevat myöhemmin.
-// v2 (T2): pellit (ADD_TO_ORDER) eivät korvaa toisiaan odottavien jonossa. Viestit ilman lahetysId:tä (vanhat lähettäjät) käsittelee tilaus.html kuten ennen.
+// v2 (T2): pellit (ADD_TO_ORDER) eivät korvaa toisiaan odottavien jonossa.
+// v3 (8.4a): REPLACE_RYHMA = huuva / kartio (profileType viestissä) korvaa ryhmänsä kuten piippu. Viestit ilman lahetysId:tä (vanhat lähettäjät) käsittelee tilaus.html kuten ennen.
 // Testit: testit/lahetys/test_lahetys.js. MUISTA: nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat tämän.
 (function () {
   'use strict';
@@ -69,7 +70,7 @@
       kuvaus: o.kuvaus || 'Työ', lahde: o.lahde || '', huomio: (o.huomio || '').trim(),
       kohdeTilaus: o.kohdeTilaus || null,
       // Vain piippu korvaa koko ryhmän; pellit (ADD_TO_ORDER) ovat erillisiä rivejä, eivät korvaa toisiaan jonossa
-      ryhma: viesti && viesti.type === 'REPLACE_PIIPPU' && viesti.groupId ? viesti.groupId : null,
+      ryhma: viesti && (viesti.type === 'REPLACE_PIIPPU' || viesti.type === 'REPLACE_RYHMA') && viesti.groupId ? viesti.groupId : null,
       viesti,
     };
   }
@@ -109,7 +110,7 @@
     // Uuden ulkoasun muuttujat, vanhat sivut saavat varavärit (tumma pohja)
     st.textContent = `
 .kla-tausta { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; display: flex; align-items: flex-start; justify-content: center; padding: 24px 12px; overflow-y: auto; }
-.kla-ikkuna { background: var(--kpt-kortti, #1c2532); color: var(--kpt-teksti, #e8eef5); border: 1px solid var(--kpt-reuna, #2a3442); border-radius: 10px; width: 560px; max-width: 100%; padding: 18px; font-family: var(--kpt-fontti, 'IBM Plex Sans', system-ui, sans-serif); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+.kla-ikkuna { background: var(--kpt-paneeli, #1c2532); color: var(--kpt-teksti, #e8eef5); border: 1px solid var(--kpt-reuna, #2a3442); border-radius: 10px; width: 560px; max-width: 100%; padding: 18px; font-family: var(--kpt-fontti, 'IBM Plex Sans', system-ui, sans-serif); box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
 .kla-ikkuna h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
 .kla-pieni { font-size: 13px; color: var(--kpt-himmea, #94a3b8); margin: 0 0 14px; line-height: 1.45; }
 .kla-tyo { font-family: var(--kpt-mono, 'IBM Plex Mono', monospace); font-size: 13px; background: var(--kpt-kentta, #111821); border: 1px solid var(--kpt-reuna, #2a3442); border-radius: 6px; padding: 8px 10px; margin-bottom: 14px; overflow-wrap: anywhere; }

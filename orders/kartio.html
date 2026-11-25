@@ -37,6 +37,10 @@
   details.kpt-kortti > summary .yv { text-transform: none; letter-spacing: 0; font-family: var(--kpt-fontti); font-weight: 400; color: var(--kpt-heikko); }
   .kartio-ohje-pieni { font-size: 12px; color: var(--kpt-heikko); }
   #nappi-tulosta { margin-top: 4px; }
+  .tilaukseen textarea { width: 100%; box-sizing: border-box; min-height: 64px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 10px; font-family: var(--kpt-fontti); font-size: 16px; resize: vertical; }
+  .tilaukseen textarea:focus { outline: none; border-color: var(--kpt-korostus); }
+  .tilaus-status { font-size: 13px; min-height: 18px; margin-top: 8px; color: var(--kpt-himmea); overflow-wrap: anywhere; }
+  .tilaus-status.ok { color: var(--kpt-ok); } .tilaus-status.huom { color: var(--kpt-huom); } .tilaus-status.virhe { color: var(--kpt-virhe); }
 
   /* Työkortti (tyokortti.js, #tkk): Kartion sisällön tyylit paperille */
   @media print {
@@ -200,6 +204,13 @@
     <div>
       <div class="kpt-kortti" id="tulos-kortti"><div class="kpt-kortti-otsikko">Tulos</div><div id="tulos"></div></div>
       <button class="kpt-nappi ensisijainen leve" id="nappi-tulosta" type="button">🖨 Tulosta työkortti</button>
+      <!-- Tilaukseen (vaihe 8.4a, 25.11.2026): materiaali, huomio ja lähetys lahetys.js:llä -->
+      <div class="kpt-kortti tilaukseen" id="tilaus-kortti" style="margin-top:16px"><div class="kpt-kortti-otsikko">Tilaukseen</div>
+        <div id="materiaali-valinta"></div>
+        <div class="kpt-kentta"><label for="tilaus-huomio">Huomio</label><textarea id="tilaus-huomio" rows="2" placeholder="Näkyy tilauksen huomioissa"></textarea></div>
+        <button class="kpt-nappi leve" id="nappi-tilaukseen" type="button" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
+        <div id="tilaus-status" class="tilaus-status"></div>
+      </div>
       <div id="osat-kuvat" style="margin-top:16px"></div>
     </div>
   </div>
@@ -2066,6 +2077,63 @@ function alusta() {
 }
 alusta();
 
+</script>
+<script src="materiaali.js?v=1"></script>
+<script src="lahetys.js?v=3"></script>
+<script>
+// ── Tilaukseen (vaihe 8.4a, 25.11.2026) ─────────────────────────────────────────────────────────
+// Tilausrivit = tarvittavat palat osaryhmittäin (leveys × pituus pellillä, ylöspäin täyteen milliin). Ensimmäisellä rivillä
+// kaikki syötöt samassa muodossa kuin sivun oma muisti (tallenna / lataa), joista muokkaus (8.4b) palauttaa kartion.
+var MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-valinta'), {
+  avain: 'kpt_kartio_materiaali',
+  // Paksuus tuotelistasta myös laskentaan (pellin paksuus), vain kun käyttäjä valitsee sen
+  muutos: function (a, mika) {
+    if (mika !== 'alku') tilausStatus('', '');
+    if (mika !== 'alku' && a.thickness) { var t = $('k-t'); t.value = String(a.thickness).replace('.', ','); t.dispatchEvent(new Event('input')); }
+  },
+});
+function kartioSyotteet() {
+  var o = { tyyppi: 'kartio', versio: 1 };
+  KENTAT.forEach(function (id) { o[id] = $(id).value; });
+  o.saumat = JSON.parse(JSON.stringify(SAUMAT)); o.reunaValinnat = JSON.parse(JSON.stringify(REUNAVALINNAT));
+  return o;
+}
+function tilausStatus(teksti, tyyppi) {
+  var el = $('tilaus-status');
+  el.textContent = teksti; el.className = 'tilaus-status' + (tyyppi && tyyppi !== 'odota' ? ' ' + tyyppi : '');
+  $('nappi-tilaukseen').disabled = tyyppi === 'odota';
+}
+var tilausGroupId = new URLSearchParams(location.search).get('groupId') || null;
+function lisaaTilaukseen() {
+  renderAll();
+  var s = viimeisin && viimeisin.s, k = viimeisin && viimeisin.k;
+  if (!k || (k.virheet && k.virheet.length) || !k.ryhmat || !k.ryhmat.length) return tilausStatus('Korjaa mitat ensin.', 'virhe');
+  var m = MATERIAALI.arvo();
+  if (!m.material || !m.color || !m.thickness) return tilausStatus('Valitse ' + (!m.material ? 'materiaali' : !m.color ? 'väri' : 'paksuus') + ' ensin.', 'virhe');
+  var r = function (x) { return String(Math.round(x)); };
+  var mitat = (k.tyyppi === 'nelio' ? r(s.W) + '×' + r(s.D) : 'Ø' + r(s.alaD)) + '→Ø' + r(s.ylaD) + ' h' + r(s.H);
+  var ryhmaNimi = 'Kartio ' + mitat + ' ' + m.color;
+  var kk = kplKartioita(s), n = k.osat.length, huomio = $('tilaus-huomio').value.trim(), vals = kartioSyotteet();
+  var ylos = function (x) { return Math.ceil(x - 1e-6); };
+  var items = k.ryhmat.map(function (ry, i) {
+    var sj = ry.osa.sijoitus, w = ylos(sj.w), h = ylos(sj.h), kpl = ry.kpl * kk;
+    var osa = n > 1 ? (ry.nrot.length > 1 ? 'osat ' + ry.nrot.join(', ') : 'osa ' + ry.nrot[0]) : 'pala';
+    return {
+      nimike: 'Kartio: ' + osa, profileType: 'kartio', aihio_width_mm: w,
+      profile_data: i === 0 ? { vals: vals } : undefined,
+      rows: [{ mitta: h, paat: 0, kok: h, kpl: kpl, huomio: i === 0 ? huomio : '' }],
+      angles: [], totalM2: w * h * kpl / 1e6,
+      material: m.material, color: m.color, thickness: m.thickness, productGroup: 'Kartio', source: 'kartio',
+    };
+  });
+  var nimi = $('k-nimi').value.trim();
+  KPT_LAHETYS.laheta({ type: 'REPLACE_RYHMA', profileType: 'kartio', groupId: tilausGroupId || ('g_kartio_' + Date.now()), groupName: ryhmaNimi, items: items }, {
+    kuvaus: (kk > 1 ? kk + ' kpl · ' : '') + ryhmaNimi + (nimi && nimi !== 'Kartio' ? ' (' + nimi + ')' : ''),
+    huomio: huomio, lahde: 'kartio', kohdeTilaus: null,
+    supabaseUrl: KPT_MATERIAALI.SUPABASE_URL, supabaseKey: KPT_MATERIAALI.SUPABASE_KEY,
+    ilmoita: tilausStatus,
+  });
+}
 </script>
 </body>
 </html>
