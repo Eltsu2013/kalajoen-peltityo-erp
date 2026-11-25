@@ -271,6 +271,9 @@
   </div>
 </div>
 
+<!-- Lähettämättömät työt (vaihe T1, lahetys.js): täytetään, kun piippusivulla tehty työ odottaa tilausta -->
+<div id="odottavat-banneri" style="display:none"></div>
+
 <div class="main">
 
   <!-- VASEN PANEELI: Tilauksen tiedot + uusi profiili -->
@@ -521,6 +524,7 @@
   </div>
 </div>
 
+<script src="lahetys.js?v=1"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -1260,6 +1264,7 @@ window.addEventListener('storage', (e) => {
   if (e.key === 'kpt_add_to_order' && e.newValue) {
     try {
       const data = JSON.parse(e.newValue);
+      if (data.lahetysId) return;   // uusi lähetys (vaihe T1): lahetys.js valitsee yhden vastaanottajan ja kuittaa
       if (data.type === 'ADD_TO_ORDER' || data.type === 'REPLACE_PIIPPU') {
         localStorage.removeItem('kpt_add_to_order');
         receiveFromMallisto(data);
@@ -2354,21 +2359,64 @@ function setSaveStatus(type, msg) {
   if (type === 'ok') setTimeout(() => el.textContent = '', 3000);
 }
 
+// ── Lähetys tilaukseen (vaihe T1, 25.11.2026, lahetys.js) ─────────
+// Piippusivulla tehty työ tulee tänne joko auki olevaan tilaukseen (viimeksi käytetty tai työn oma tilaus) tai
+// valintaikkunasta avattuun tilaukseen (tilaus.html?odottava=<id>). Työ poistuu odottavista vasta, kun kaikki rivit on
+// tallennettu; muuten se jää odottamaan ja näkyy sivun yläosassa ("Lähettämätöntä työtä").
+function korostaAsiakas() {
+  const panel = document.getElementById('left-panel');
+  if (panel && panel.classList.contains('mobile-collapsed') && getComputedStyle(panel).display === 'none') toggleMobileDetails();
+  const inp = document.getElementById('customer-search');
+  if (!inp) return;
+  inp.style.outline = '2px solid #f59e0b';
+  inp.placeholder = 'Valitse asiakas tilaukselle…';
+  inp.scrollIntoView({ block: 'center' });
+  const pois = () => { inp.style.outline = ''; inp.removeEventListener('focus', pois); };
+  inp.addEventListener('focus', pois);
+}
+async function vastaanotaLahetys(viesti, l) {
+  if (!viesti || viesti.type !== 'REPLACE_PIIPPU') throw new Error('Tuntematon lähetys');
+  const uusiTilaus = !currentOrderId;
+  // Huomio tilauksen huomioihin (Tomi 25.11.2026: "sisältää monesti oleellista tietoa"). Uudella tilauksella se menee
+  // mukaan tilauksen luontiin, olemassa olevalla tallennetaan erikseen.
+  const notes = document.getElementById('order-notes');
+  const ennen = notes.value;
+  if (l.huomio) notes.value = KPT_LAHETYS.yhdistaHuomio(notes.value, l.kuvaus, l.huomio);
+  await receiveFromMallisto(viesti);
+  if (!currentOrderId) throw new Error('Tilauksen luonti epäonnistui');
+  const group = groups.find(g => g.id === viesti.groupId);
+  const pi = group ? group.items.filter(i => i.profileType === 'piippu') : [];
+  if (!group || pi.length !== (viesti.items || []).length || pi.some(i => !i.supabaseId)) throw new Error('Kaikki rivit eivät tallentuneet');
+  if (!uusiTilaus && notes.value !== ennen) saveOrderMeta();
+  if (!document.getElementById('customer-select').value) { korostaAsiakas(); setSaveStatus('ok', 'Työ lisätty — valitse asiakas'); }
+  return {
+    orderId: currentOrderId,
+    numero: (document.getElementById('order-number-display').textContent || '').trim(),
+    asiakas: (document.getElementById('customer-search').value || '').trim(),
+  };
+}
+const LAHETYS = window.KPT_LAHETYS ? KPT_LAHETYS.vastaanotin({
+  tilaus: () => ({ orderId: currentOrderId }),
+  kasittele: vastaanotaLahetys,
+  banneri: document.getElementById('odottavat-banneri'),
+}) : null;
+
 // ── Init ──────────────────────────────────────────────────────────
 document.getElementById('order-date').value = new Date().toISOString().slice(0,10);
 fetchProducts();
 const openOrderId = localStorage.getItem('openOrderId');
 const copyOrderId = localStorage.getItem('copyOrderId');
 const copyKeepCustomer = localStorage.getItem('copyKeepCustomer') === 'true';
+let alustus = null;   // lähetykset otetaan vastaan vasta, kun tilaus on latautunut
 if (openOrderId) {
   localStorage.removeItem('openOrderId');
-  loadOrderById(openOrderId).then(korostaPiippu);
+  alustus = loadOrderById(openOrderId).then(korostaPiippu);
 } else if (copyOrderId) {
   localStorage.removeItem('copyOrderId');
   localStorage.removeItem('copyKeepCustomer');
-  copyOrderById(copyOrderId, copyKeepCustomer);
+  alustus = copyOrderById(copyOrderId, copyKeepCustomer);
 } else {
-  fetchCustomers().then(() => {
+  alustus = fetchCustomers().then(() => {
     const preCustomerId = localStorage.getItem('newOrderCustomerId');
     const preCustomerName = localStorage.getItem('newOrderCustomerName');
     if (preCustomerId && preCustomerName) {
@@ -2381,6 +2429,7 @@ if (openOrderId) {
     }
   });
 }
+Promise.resolve(alustus).catch(e => console.warn('Tilauksen alustus', e)).then(() => { if (LAHETYS) LAHETYS.aloita(); });
 
 // ── Sidebar resize ────────────────────────────────────────────────
 (function() {

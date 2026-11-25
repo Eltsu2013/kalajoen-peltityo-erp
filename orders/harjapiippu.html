@@ -490,10 +490,11 @@
 <script src="piippu-laskenta.js?v=10"></script>
 <script src="piippu-levitys.js?v=19"></script>
 <script src="kansi.js?v=4"></script>
+<script src="lahetys.js?v=1"></script>
 <script>
 // Harjapiippu-sivu (yhteiset työkalut vaihe 5, 20.11.2026). Laskenta: piippu-laskenta.js (laskeHarjapiippu, harjaPuoli2),
 // hupun palat ja peltilista: piippu-levitys.js (harjaHupunPalat, laskeKaikkiHarja). Mockup: projektin piippu/harjapiippu-mockup.html v2.
-// Tallennus tilaukseen (vaihe 6a): sama reitti kuin Piippu-sivulla (localStorage kpt_add_to_order → avoin tilaussivu tallentaa).
+// Tallennus tilaukseen (vaihe 6a, T1 25.11.2026): sama reitti kuin Piippu-sivulla, lahetys.js (odottaa kuittausta, kysyy tilauksen).
 function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
 function chk(id) { return document.getElementById(id).checked; }
 const r = n => Math.round(n);
@@ -868,15 +869,32 @@ function lisaaTilaukseen() {
   try {
     localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, orderId: tuotantoKohde ? tuotantoKohde.orderId : null, groupName: tuotantoKohde ? tuotantoKohde.groupName : null, vals: piippuData, material: materiaali, color: vari, thickness: paksuus,
       items: pellit.map(p => ({ nimike: p.osa, kpl: p.kpl * piippukpl, pituus: typeof p.pit === 'number' })) }));
-    localStorage.setItem('kpt_add_to_order', JSON.stringify({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, items: kaikki }));
   } catch (e) { return virhe('Tallennus selaimeen epäonnistui'); }
+  // Työn oma tilaus vain, kun piippu on avattu tilauksesta (ryhmä); suoraan avatulla sivulla jokainen lähetys on uusi piippu
+  const kohdeTilaus = targetGroupId ? ((muokattava && muokattava.orderId) || (tuotantoKohde && tuotantoKohde.orderId) || null) : null;
+  KPT_LAHETYS.laheta({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, items: kaikki }, {
+    kuvaus: (piippukpl > 1 ? piippukpl + ' kpl · ' : '') + ryhmaNimi,
+    huomio, lahde: 'harjapiippu', kohdeTilaus,
+    supabaseUrl: SUPA_URL, supabaseKey: SUPA_KEY,
+    ilmoita: lahetysIlmoitus,
+  });
   muokattava = { groupId, vals: piippuData, orderId: tuotantoKohde ? tuotantoKohde.orderId : null, groupName: tuotantoKohde ? tuotantoKohde.groupName : null };
   toinenTyyppi = null;
   document.querySelectorAll('.muokkaus-ilmo').forEach(el => el.remove());
-  status.style.color = '#4ade80';
-  status.textContent = (korvaa ? `Muutokset lähetetty tilaukseen (${pellit.length} riviä).` : `${pellit.length} riviä lähetetty tilaukseen!`) + ' (tilaussivun pitää olla auki)';
   paivitaLisaysNappi();
-  setTimeout(() => { status.textContent = ''; }, 4000);
+}
+
+// Lähetys tilaukseen (vaihe T1, 25.11.2026): lahetys.js pitää työn tallessa, kunnes tilaus kuittaa tallennuksen, ja
+// kysyy tilauksen (uusi / olemassa oleva), jos yhtään tilausta ei ole auki. Ilmoitus kertoo vasta kuittauksen jälkeen,
+// mihin tilaukseen työ tallentui (ennen sivu sanoi "lähetetty", vaikka tilausta ei ollut auki).
+let lisaysStatusAjastin = null;
+function lahetysIlmoitus(teksti, tyyppi) {
+  const st = document.getElementById('lisays-status');
+  if (!st) return;
+  clearTimeout(lisaysStatusAjastin);
+  st.style.color = ({ odota: 'var(--text2)', ok: '#4ade80', huom: '#f5b942', virhe: '#f87171' })[tyyppi] || '';
+  st.textContent = teksti;
+  if (tyyppi === 'ok') lisaysStatusAjastin = setTimeout(() => { st.textContent = ''; }, 10000);
 }
 
 haeMateriaalit();

@@ -542,6 +542,7 @@
 <script src="piippu-laskenta.js?v=10"></script>
 <script src="piippu-levitys.js?v=19"></script>
 <script src="kansi.js?v=4"></script>
+<script src="lahetys.js?v=1"></script>
 <script>
 let saumatyyppi = 1;
 function setSauma(n) {
@@ -917,20 +918,33 @@ async function lisaaTilaukseen() {
     };
   });
 
-  localStorage.setItem('kpt_add_to_order', JSON.stringify({
-    type: 'REPLACE_PIIPPU',
-    groupId,
-    groupName: ryhmaNimi,
-    items: kaikki,
-  }));
+  KPT_LAHETYS.laheta({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, items: kaikki }, {
+    kuvaus: (piippukpl > 1 ? piippukpl + ' kpl · ' : '') + ryhmaNimi,
+    huomio, lahde: 'piippu',
+    // Työn oma tilaus vain, kun piippu on avattu tilauksesta (ryhmä). Suoraan avatulla sivulla jokainen lähetys on uusi
+    // piippu, joka menee auki olevaan tilaukseen tai valitaan ikkunasta.
+    kohdeTilaus: targetGroupId ? ((muokattava && muokattava.orderId) || (tuotantoKohde && tuotantoKohde.orderId) || null) : null,
+    supabaseUrl: SUPA_URL, supabaseKey: SUPA_KEY,
+    ilmoita: lahetysIlmoitus,
+  });
 
   toinenTyyppi = null;
   const ilmo = document.getElementById('muokkaus-ilmo');
   if (ilmo) ilmo.remove();
-  status.style.color = '#4ade80';
-  status.textContent = korvaa ? `Muutokset lähetetty tilaukseen (${pellit.length} riviä).` : `${pellit.length} riviä lähetetty tilaukseen!`;
   paivitaLisaysNappi();
-  setTimeout(() => { status.textContent = ''; }, 3000);
+}
+
+// Lähetys tilaukseen (vaihe T1, 25.11.2026): lahetys.js pitää työn tallessa, kunnes tilaus kuittaa tallennuksen, ja
+// kysyy tilauksen (uusi / olemassa oleva), jos yhtään tilausta ei ole auki. Ilmoitus kertoo vasta kuittauksen jälkeen,
+// mihin tilaukseen työ tallentui (ennen sivu sanoi "lähetetty", vaikka tilausta ei ollut auki).
+let lisaysStatusAjastin = null;
+function lahetysIlmoitus(teksti, tyyppi) {
+  const st = document.getElementById('lisays-status');
+  if (!st) return;
+  clearTimeout(lisaysStatusAjastin);
+  st.style.color = ({ odota: 'var(--text2)', ok: '#4ade80', huom: '#f5b942', virhe: '#f87171' })[tyyppi] || '';
+  st.textContent = teksti;
+  if (tyyppi === 'ok') lisaysStatusAjastin = setTimeout(() => { st.textContent = ''; }, 10000);
 }
 
 // Syöttökentät, joista laskenta lukee arvot (nimi laskennassa, kentän id). Samat nimet kuin tilauksen profile_data.vals:ssa.
