@@ -15,8 +15,9 @@
 //  6. Tilaus näyttää avautuessaan muut odottavat lähetykset: "Lisää tähän tilaukseen" / "Hylkää".
 //  7. Huomio kulkee lähetyksen mukana, ja tilaus lisää sen tilauksen huomioihin (Tomi 25.11.2026).
 //
-// Käyttäjät: piippu.html, harjapiippu.html (lähettäjät), tilaus.html (vastaanotin). Peltilistat ja Vakiomallit (T2) ja
-// Huuva ja Kartio (8.4) tulevat myöhemmin. Viestit ilman lahetysId:tä (vanhat lähettäjät) käsittelee tilaus.html kuten ennen.
+// Käyttäjät: piippu.html, harjapiippu.html, peltipiirturi.html, vakiomallit.html (lähettäjät, T2 25.11.2026), tilaus.html
+// (vastaanotin). Huuva ja Kartio (8.4) tulevat myöhemmin.
+// v2 (T2): pellit (ADD_TO_ORDER) eivät korvaa toisiaan odottavien jonossa. Viestit ilman lahetysId:tä (vanhat lähettäjät) käsittelee tilaus.html kuten ennen.
 // Testit: testit/lahetys/test_lahetys.js. MUISTA: nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat tämän.
 (function () {
   'use strict';
@@ -67,7 +68,8 @@
       id: uusiId(), aika: Date.now(),
       kuvaus: o.kuvaus || 'Työ', lahde: o.lahde || '', huomio: (o.huomio || '').trim(),
       kohdeTilaus: o.kohdeTilaus || null,
-      ryhma: viesti && viesti.groupId ? viesti.groupId : null,
+      // Vain piippu korvaa koko ryhmän; pellit (ADD_TO_ORDER) ovat erillisiä rivejä, eivät korvaa toisiaan jonossa
+      ryhma: viesti && viesti.type === 'REPLACE_PIIPPU' && viesti.groupId ? viesti.groupId : null,
       viesti,
     };
   }

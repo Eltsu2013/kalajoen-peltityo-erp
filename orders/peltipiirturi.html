@@ -628,14 +628,15 @@
 
 <!-- Tilausyhteys-palkki — näkyy vain kun avattu tilauslomakkeelta -->
 <div id="tilaus-bar" style="display:none; background:#1e3d2e; border-bottom:1px solid #2a6a4a; padding:8px 24px; align-items:center; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:12px;">
-  <span style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
+  <span id="tilaus-tila" style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
   <span id="tilaus-ryhmä" style="color:#e8e8e8"></span>
   <span id="tilaus-nimike" style="color:#e8a020; font-weight:600"></span>
   <span id="tilaus-lukko" style="display:none">Mallia ei voi vaihtaa muokatessa. Poista pelti ja lisää uusi, jos malli on väärä.</span>
-  <button onclick="lisaaTilaukseen()" style="margin-left:auto; background:#3dba6e; color:#1a1a1a; border:none; border-radius:4px; padding:6px 16px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer;">
+  <span id="tilaus-ilmoitus" style="margin-left:auto"></span>
+  <button id="tilaus-laheta-nappi" onclick="lisaaTilaukseen()" style="background:#3dba6e; color:#1a1a1a; border:none; border-radius:4px; padding:6px 16px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer;">
     ✓ Lisää tilaukseen
   </button>
-  <button onclick="peruutaTilaus()" style="background:#333; color:#aaa; border:none; border-radius:4px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer;">
+  <button id="tilaus-peruuta" onclick="peruutaTilaus()" style="background:#333; color:#aaa; border:none; border-radius:4px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer;">
     Peruuta
   </button>
 </div>
@@ -829,6 +830,7 @@
   </div>
 </div>
 
+<script src="lahetys.js?v=2"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── Profiilityypit ───────────────────────────────────────────────
 // Profiilien kaavat ovat yhteisessä tiedostossa profiilit.js (siirretty 13.11.2026)
@@ -1745,7 +1747,7 @@ function aktivoiTilausPalkki(ctx) {
     setType(tilausContext.profileType);
   }
   const bar = document.getElementById('tilaus-bar');
-  bar.style.display = 'flex';
+  tilausPalkkiTila(true);
   document.getElementById('tilaus-ryhmä').textContent = tilausContext.groupName + ' —';
   document.getElementById('tilaus-nimike').textContent = tilausContext.nimike;
 
@@ -1835,6 +1837,10 @@ if (savedCtx) {
       }
     }, 200);
   } catch(e) { console.warn('Tilauskontekstin luku epäonnistui:', e); }
+} else {
+  // Suoraan valikosta avattu (T2): palkki "Ei tilausta auki", pelti lähetetään valintaikkunan kautta
+  tilausPalkkiTila(false);
+  document.getElementById('tilaus-ryhmä').textContent = 'Piirrä pelti ja lisää se uuteen tai olemassa olevaan tilaukseen';
 }
 
 // BroadcastChannel fallback
@@ -1843,7 +1849,7 @@ bc.onmessage = (e) => {
 };
 
 function lisaaTilaukseen() {
-  if (!tilausContext) return;
+  const ctx = tilausContext || {};
 
   const vals = getVals();
   const opts = getOpts();
@@ -1879,12 +1885,13 @@ function lisaaTilaukseen() {
 
   const payload = {
     type: 'ADD_TO_ORDER',
-    orderId: tilausContext.orderId,
-    groupId: tilausContext.groupId,
-    editItemId: tilausContext.editItemId || null,
-    supabaseId: tilausContext.supabaseId || null,
+    orderId: ctx.orderId || null,
+    groupId: ctx.groupId || null,
+    groupName: ctx.groupName || null,   // T2: tilaus löytää ryhmän nimellä, jos se on välillä avattu uudelleen
+    editItemId: ctx.editItemId || null,
+    supabaseId: ctx.supabaseId || null,
     profileType: activeType,
-    nimike: document.getElementById('profile-nimike')?.value || tilausContext.nimike,
+    nimike: document.getElementById('profile-nimike')?.value || ctx.nimike || (tilausContext ? ctx.nimike : (TYPES[activeType] && TYPES[activeType].name) || ''),
     aihio_width_mm: Math.round(aihio),
     profile_data: Object.assign({ vals, opts, taitokset: laskeTaitokset(), asento: siistiAsento(kuvanAsento) },
       (!TYPES[activeType].pituusKiila && Object.keys(kiilaArvotB()).length) ? { valsB: kiilaArvotB(), pituusViite: pituusViite } : (TYPES[activeType].pituusKiila ? { pituusViite: pituusViite } : {}),
@@ -1899,14 +1906,40 @@ function lisaaTilaukseen() {
     productGroup: document.getElementById('pm-group') ? document.getElementById('pm-group').value || null : null,
   };
 
-  // Lähetetään localStoragen kautta — BroadcastChannel ei toimi GitHub Pagesilla luotettavasti
-  localStorage.setItem('kpt_add_to_order', JSON.stringify(payload));
-  setTimeout(() => localStorage.removeItem('kpt_add_to_order'), 2000);
+  // Lähetys lahetys.js:n kautta (T2): odottaa tilauksen kuittausta, kysyy tilauksen, jos mikään ei ole auki
+  const nimi = String(payload.nimike || '').trim() && payload.nimike !== '0' ? payload.nimike : ((TYPES[activeType] && TYPES[activeType].name) || 'Pelti');
+  lahetaTilaukseen(payload, nimi + ' · ' + rows.length + (rows.length === 1 ? ' pituus' : ' pituutta'), 'peltilistat');
+}
 
+// ─── Lähetys tilaukseen (vaihe T2, 25.11.2026, lahetys.js) ─────────
+// Palkki näkyy myös ilman tilausta ("Ei tilausta auki"): pelti lähetetään uuteen tai olemassa olevaan tilaukseen
+// valintaikkunasta. Tilauksesta avattu sivu sulkeutuu vasta, kun tilaus on kuitannut tallennuksen (ennen 1,5 s:n päästä
+// joka tapauksessa, jolloin pelti saattoi kadota), suoraan avattu sivu jää auki seuraavaa peltiä varten.
+function tilausIlmoitus(teksti, tyyppi) {
+  const el = document.getElementById('tilaus-ilmoitus');
+  if (el) { el.textContent = teksti; el.style.color = ({ odota: '#9aa5b1', ok: '#3dba6e', huom: '#f5b942', virhe: '#f87171' })[tyyppi] || ''; }
+  const nappi = document.getElementById('tilaus-laheta-nappi');
+  if (nappi) nappi.disabled = tyyppi === 'odota';
+}
+function tilausPalkkiTila(auki) {
   const bar = document.getElementById('tilaus-bar');
-  bar.innerHTML = '<span style="color:#3dba6e;font-weight:600;font-family:IBM Plex Mono,monospace;font-size:12px">✓ Lisätty tilaukseen!</span>';
-  tilausContext = null;
-  setTimeout(() => window.close(), 1500);
+  bar.style.display = 'flex';
+  bar.style.background = auki ? '#1e3d2e' : '#1c2532';
+  bar.style.borderBottomColor = auki ? '#2a6a4a' : '#2a3442';
+  const tila = document.getElementById('tilaus-tila');
+  tila.textContent = auki ? '● TILAUS AUKI' : '○ EI TILAUSTA AUKI';
+  tila.style.color = auki ? '#3dba6e' : '#9aa5b1';
+  const peruuta = document.getElementById('tilaus-peruuta');
+  if (peruuta) peruuta.style.display = auki ? '' : 'none';
+}
+function lahetaTilaukseen(payload, kuvaus, lahde) {
+  const ctx = tilausContext;
+  KPT_LAHETYS.laheta(payload, {
+    kuvaus, lahde, kohdeTilaus: ctx ? ctx.orderId || null : null,
+    supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY,
+    ilmoita: tilausIlmoitus,
+    tallennettu: () => { if (ctx) { tilausContext = null; setTimeout(() => window.close(), 1500); } },
+  });
 }
 
 function peruutaTilaus() {

@@ -37,6 +37,10 @@ const piippu = (groupId, n) => ({ type: 'REPLACE_PIIPPU', groupId, groupName: 'L
   const ilmanRyhmaa = L.luoLahetys({ type: 'ADD_TO_ORDER' }, {});
   L.lisaaOdottava(s, ilmanRyhmaa); L.lisaaOdottava(s, L.luoLahetys({ type: 'ADD_TO_ORDER' }, {}));
   ok(L.lue(s).length === 4, '2c: ilman ryhmää olevat eivät korvaa toisiaan');
+  const pelti = () => ({ type: 'ADD_TO_ORDER', groupId: 'gX', nimike: 'Räystäspelti' });
+  const s2 = muisti();
+  L.lisaaOdottava(s2, L.luoLahetys(pelti(), {})); L.lisaaOdottava(s2, L.luoLahetys(pelti(), {}));
+  ok(L.lue(s2).length === 2 && L.lue(s2).every(x => x.ryhma === null), '2d: kaksi peltiä samaan ryhmään ovat eri rivejä, eivät korvaa toisiaan (T2)');
 })();
 
 // ---- 3) Vanhat odottavat poistuvat kahden viikon jälkeen
