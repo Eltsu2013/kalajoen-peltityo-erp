@@ -2079,7 +2079,7 @@ alusta();
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="materiaali.js?v=1"></script>
+<script src="materiaali.js?v=2"></script>
 <script src="lahetys.js?v=3"></script>
 <script>
 // ── Tilaukseen (vaihe 8.4a, 25.11.2026) ─────────────────────────────────────────────────────────
@@ -2141,10 +2141,11 @@ function lisaaTilaukseen() {
   var s = viimeisin && viimeisin.s, k = viimeisin && viimeisin.k;
   if (!k || (k.virheet && k.virheet.length) || !k.ryhmat || !k.ryhmat.length) return tilausStatus('Korjaa mitat ensin.', 'virhe');
   var m = MATERIAALI.arvo();
-  if (!m.material || !m.color || !m.thickness) return tilausStatus('Valitse ' + (!m.material ? 'materiaali' : !m.color ? 'väri' : 'paksuus') + ' ensin.', 'virhe');
+  var puuttuu = MATERIAALI.puuttuu();   // väri vain, jos materiaalilla on värejä (v2)
+  if (puuttuu) return tilausStatus('Valitse ' + puuttuu + ' ensin.', 'virhe');
   var r = function (x) { return String(Math.round(x)); };
   var mitat = (k.tyyppi === 'nelio' ? r(s.W) + '×' + r(s.D) : 'Ø' + r(s.alaD)) + '→Ø' + r(s.ylaD) + ' h' + r(s.H);
-  var ryhmaNimi = 'Kartio ' + mitat + ' ' + m.color;
+  var ryhmaNimi = 'Kartio ' + mitat + ' ' + (m.color || m.material);
   var kk = kplKartioita(s), n = k.osat.length, huomio = $('tilaus-huomio').value.trim(), vals = kartioSyotteet();
   var ylos = function (x) { return Math.ceil(x - 1e-6); };
   var items = k.ryhmat.map(function (ry, i) {

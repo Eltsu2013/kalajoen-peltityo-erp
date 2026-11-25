@@ -1008,7 +1008,7 @@
   renderAll();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="materiaali.js?v=1"></script>
+<script src="materiaali.js?v=2"></script>
 <script src="lahetys.js?v=3"></script>
 <script>
 // ── Tilaukseen (vaihe 8.4a, 25.11.2026) ─────────────────────────────────────────────────────────
@@ -1089,12 +1089,13 @@ function lisaaTilaukseen() {
   const lasku = viimeisinLasku;
   if (!lasku || !lasku.panels || !lasku.panels.length) return tilausStatus('Korjaa mitat ensin: ei laskettuja paloja.', 'virhe');
   const m = MATERIAALI.arvo();
-  if (!m.material || !m.color || !m.thickness) return tilausStatus('Valitse ' + (!m.material ? 'materiaali' : !m.color ? 'väri' : 'paksuus') + ' ensin.', 'virhe');
+  const puuttuu = MATERIAALI.puuttuu();   // väri vain, jos materiaalilla on värejä (v2)
+  if (puuttuu) return tilausStatus('Valitse ' + puuttuu + ' ensin.', 'virhe');
   const s = lasku.s, huuvia = Math.max(1, Math.round(parseFloat(document.getElementById('in-huuvia').value) || 1));
   const r = x => Math.round(x);
   const nimi = document.getElementById('k-nimi').value.trim();
   const mitat = r(s.Wb) + '×' + r(s.Db) + '→' + r(s.Wt) + '×' + r(s.Dt) + ' h' + r(s.H);
-  const ryhmaNimi = 'Huuva ' + mitat + ' ' + m.color;
+  const ryhmaNimi = 'Huuva ' + mitat + ' ' + (m.color || m.material);
   const huomio = document.getElementById('tilaus-huomio').value.trim();
   const vals = huuvaSyotteet();
   const items = lasku.panels.map((p, i) => {

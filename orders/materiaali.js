@@ -1,27 +1,45 @@
 // orders/materiaali.js → KPT_MATERIAALI — materiaali, väri ja paksuus tuotelistasta (vaihe 8.4a, 25.11.2026)
 //
-// Huuva ja Kartio tarvitsevat tilausriville materiaalin, värin ja paksuuden (tilaus, Tuotanto, varasto). Sama valinta kuin
-// piippusivuilla (sel-materiaali / sel-vari / sel-paksuus), mutta yhteisenä, uuden ulkoasun kentillä (kpt-kentta).
-// Tuotteet: products, is_active = true. Viimeisin valinta muistetaan selaimessa (oma avain sivulle).
+// Huuva ja Kartio tarvitsevat tilausriville materiaalin, värin ja paksuuden (tilaus, Tuotanto, varasto).
+// v2 (25.11.2026, Tomin testi): samanlainen kuin Peltilistoissa — materiaaliin ja väriin voi kirjoittaa, lista suodattuu
+// (ei pitkää pudotusvalikkoa), tuotteina vain levytuotteet (unit = m², kuten Peltilistat), ja väri on vapaaehtoinen, jos
+// materiaalilla ei ole värejä (esim. Stucco-alumiini: ennen herjasi "valitse väri", eikä väriä voinut valita).
+// Viimeisin valinta muistetaan selaimessa (oma avain sivulle). Isompi materiaalivalinnan uudistus suunnitellaan erikseen.
 //
-// valitsin(el, { avain, muutos(arvo, mikaMuuttui) }) → { arvo(): { material, color, thickness }, aseta(arvo), valmis: Promise }
+// valitsin(el, { avain, muutos(arvo, mikaMuuttui) }) → { arvo(), aseta(a), puuttuu(), valmis: Promise }
+//   arvo() = { material, color (null, jos materiaalilla ei värejä), thickness }; puuttuu() = 'materiaali' | 'väri' | 'paksuus' | null
 // Käyttäjät: huuva.html, kartio.html. MUISTA: nosta ?v=-numeroa sivuilla, jotka lataavat tämän.
 (function () {
   'use strict';
   const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
 
-  // Puhtaat apufunktiot (testattavissa)
+  // ── Puhtaat apufunktiot (testattavissa) ──
   const uniikit = a => [...new Set(a)];
-  function materiaalit(tuotteet) { return uniikit(tuotteet.map(p => p.material).filter(Boolean)).sort((a, b) => a.localeCompare(b, 'fi')); }
-  function varit(tuotteet, mat) { return uniikit(tuotteet.filter(p => p.material === mat).map(p => p.color).filter(Boolean)).sort((a, b) => a.localeCompare(b, 'fi')); }
-  function paksuudet(tuotteet, mat, vari) { return uniikit(tuotteet.filter(p => p.material === mat && p.color === vari).map(p => Number(p.thickness_mm)).filter(x => x > 0)).sort((a, b) => a - b); }
+  const jarj = (a, b) => String(a).localeCompare(String(b), 'fi');
+  function materiaalit(tuotteet) { return uniikit(tuotteet.map(p => p.material).filter(Boolean)).sort(jarj); }
+  function varit(tuotteet, mat) { return uniikit(tuotteet.filter(p => p.material === mat).map(p => p.color).filter(Boolean)).sort(jarj); }
+  // Värittömällä materiaalilla (tai kun väriä ei ole valittu) kaikki materiaalin paksuudet, kuten Peltilistoissa
+  function paksuudet(tuotteet, mat, vari) {
+    return uniikit(tuotteet.filter(p => p.material === mat && (!vari || p.color === vari)).map(p => Number(p.thickness_mm)).filter(x => x > 0)).sort((a, b) => a - b);
+  }
+  function suodata(lista, haku) {
+    const h = String(haku || '').trim().toLowerCase();
+    return h ? lista.filter(v => String(v).toLowerCase().indexOf(h) >= 0) : lista;
+  }
+  function puuttuu(tuotteet, a) {
+    if (!a || !a.material) return 'materiaali';
+    if (!a.color && varit(tuotteet, a.material).length) return 'väri';
+    if (!a.thickness) return 'paksuus';
+    return null;
+  }
   function teksti(a) { return a && a.material ? [a.material, a.color, a.thickness ? String(a.thickness).replace('.', ',') + ' mm' : ''].filter(Boolean).join(' ') : ''; }
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   let tuotteetLupaus = null;
   function haeTuotteet() {
     if (!tuotteetLupaus) {
-      tuotteetLupaus = fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&select=material,color,thickness_mm&order=material,color',
+      tuotteetLupaus = fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m%C2%B2&select=material,color,thickness_mm&order=material,color',
         { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } })
         .then(r => r.ok ? r.json() : [])
         .catch(() => []);
@@ -29,46 +47,107 @@
     return tuotteetLupaus;
   }
 
+  function tyylit() {
+    if (typeof document === 'undefined' || document.getElementById('kma-tyylit')) return;
+    const st = document.createElement('style');
+    st.id = 'kma-tyylit';
+    st.textContent = `
+.kma-haku { position: relative; }
+.kma-lista { display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 50; max-height: 240px; overflow-y: auto;
+  background: var(--kpt-paneeli, #1c2532); border: 1px solid var(--kpt-reuna2, #3a4656); border-top: 0; border-radius: 0 0 6px 6px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
+.kma-lista.auki { display: block; }
+.kma-lista button { display: block; width: 100%; text-align: left; min-height: 44px; padding: 8px 12px; border: 0; border-bottom: 1px solid var(--kpt-reuna, #2a3442);
+  background: transparent; color: var(--kpt-teksti, #e8eef5); font: inherit; font-size: 15px; cursor: pointer; }
+.kma-lista button:hover, .kma-lista button.valittu { background: var(--kpt-kentta, #111821); }
+.kma-lista .kma-tyhja { padding: 10px 12px; font-size: 13px; color: var(--kpt-himmea, #94a3b8); }
+.kma-haku input:disabled { opacity: 0.6; }
+`;
+    document.head.appendChild(st);
+  }
+
+  // Hakukenttä + suodattuva lista (kuten Peltilistoissa). Arvo hyväksytään vain listasta (klikkaus, Enter tai tarkka nimi).
+  function hakuKentta(el, nimi, o) {
+    el.innerHTML = '<label>' + esc(nimi) + '</label><div class="kma-haku"><input type="text" autocomplete="off" spellcheck="false" placeholder="Kirjoita tai valitse"><div class="kma-lista" role="listbox"></div></div>';
+    const inp = el.querySelector('input'), lista = el.querySelector('.kma-lista');
+    let arvo = '', vaihtoehdot = [];
+    function nayta() {
+      const v = suodata(vaihtoehdot, inp.value === arvo ? '' : inp.value);
+      lista.innerHTML = v.length ? v.slice(0, 60).map((x, i) => '<button type="button" data-v="' + esc(x) + '"' + (i === 0 ? ' class="valittu"' : '') + '>' + esc(x) + '</button>').join('')
+        : '<div class="kma-tyhja">Ei osumia</div>';
+      lista.classList.add('auki');
+    }
+    function valitse(x) {
+      arvo = x || ''; inp.value = arvo; lista.classList.remove('auki');
+      o.valittu(arvo);
+    }
+    inp.addEventListener('focus', () => { inp.select(); nayta(); });
+    inp.addEventListener('input', nayta);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); const b = lista.querySelector('button'); if (b) valitse(b.dataset.v); }
+      if (e.key === 'Escape') { inp.value = arvo; lista.classList.remove('auki'); inp.blur(); }
+    });
+    // mousedown ennen blur-tapahtumaa, jotta klikkaus listassa ehtii
+    lista.addEventListener('mousedown', e => { const b = e.target.closest('button'); if (b) { e.preventDefault(); valitse(b.dataset.v); } });
+    inp.addEventListener('blur', () => {
+      setTimeout(() => {
+        lista.classList.remove('auki');
+        if (inp.value === arvo) return;
+        const tarkka = vaihtoehdot.find(x => String(x).toLowerCase() === inp.value.trim().toLowerCase());
+        if (tarkka) valitse(tarkka); else inp.value = arvo;   // vain listan arvo kelpaa
+      }, 120);
+    });
+    return {
+      aseta(x) { arvo = x || ''; inp.value = arvo; },
+      vaihtoehdot(v, tyhjaTeksti) {
+        vaihtoehdot = v || [];
+        inp.disabled = !vaihtoehdot.length;
+        inp.placeholder = vaihtoehdot.length ? 'Kirjoita tai valitse' : (tyhjaTeksti || '');
+      },
+      arvo: () => arvo,
+    };
+  }
+
   function valitsin(el, o) {
     o = o || {};
+    tyylit();
     const avain = o.avain || 'kpt_materiaali';
     let tuotteet = [];
     el.innerHTML = '<div class="kpt-kentat">'
-      + '<div class="kpt-kentta"><label>Materiaali</label><select data-m="material"><option value="">Haetaan…</option></select></div>'
-      + '<div class="kpt-kentta"><label>Väri</label><select data-m="color"><option value="">Väri</option></select></div>'
+      + '<div class="kpt-kentta" data-m="material"></div>'
+      + '<div class="kpt-kentta" data-m="color"></div>'
       + '<div class="kpt-kentta"><label>Paksuus</label><select data-m="thickness"><option value="">Paksuus</option></select></div>'
       + '</div>';
-    const sel = k => el.querySelector('select[data-m="' + k + '"]');
-    const optiot = (s, lista, tyhja, nimi) => { s.innerHTML = '<option value="">' + tyhja + '</option>' + lista.map(v => '<option value="' + String(v).replace(/"/g, '&quot;') + '">' + (nimi ? nimi(v) : v) + '</option>').join(''); };
+    const pk = el.querySelector('select[data-m="thickness"]');
+    const kMat = hakuKentta(el.querySelector('[data-m="material"]'), 'Materiaali', { valittu: m => muutos('material', { material: m, color: null, thickness: null }) });
+    const kVari = hakuKentta(el.querySelector('[data-m="color"]'), 'Väri', { valittu: v => muutos('color', { material: kMat.arvo(), color: v, thickness: null }) });
     function arvo() {
-      const t = parseFloat(sel('thickness').value);
-      return { material: sel('material').value || null, color: sel('color').value || null, thickness: t > 0 ? t : null };
+      const t = parseFloat(pk.value);
+      return { material: kMat.arvo() || null, color: kVari.arvo() || null, thickness: t > 0 ? t : null };
     }
-    function muista() { try { localStorage.setItem(avain, JSON.stringify(arvo())); } catch (e) { /* ei tallennusta */ } }
     function tayta(a) {
       a = a || {};
-      optiot(sel('material'), uniikit(materiaalit(tuotteet).concat(a.material ? [a.material] : [])), 'Materiaali');   // tallennettu, poistunut tuote näkyy silti
-      sel('material').value = a.material || '';
-      optiot(sel('color'), a.material ? uniikit(varit(tuotteet, a.material).concat(a.color ? [a.color] : [])) : [], 'Väri');
-      sel('color').value = a.color || '';
-      const pk = a.material && a.color ? uniikit(paksuudet(tuotteet, a.material, a.color).concat(a.thickness ? [Number(a.thickness)] : [])).sort((x, y) => x - y) : [];
-      optiot(sel('thickness'), pk, 'Paksuus', v => String(v).replace('.', ',') + ' mm');
-      sel('thickness').value = a.thickness ? String(Number(a.thickness)) : '';
+      kMat.vaihtoehdot(uniikit(materiaalit(tuotteet).concat(a.material ? [a.material] : [])).sort(jarj), 'Haetaan…');   // tallennettu, poistunut tuote näkyy silti
+      kMat.aseta(a.material);
+      const v = a.material ? uniikit(varit(tuotteet, a.material).concat(a.color ? [a.color] : [])).sort(jarj) : [];
+      kVari.vaihtoehdot(v, a.material ? 'Ei värejä' : 'Valitse materiaali');
+      kVari.aseta(a.color);
+      const pks = a.material ? uniikit(paksuudet(tuotteet, a.material, a.color).concat(a.thickness ? [Number(a.thickness)] : [])).sort((x, y) => x - y) : [];
+      pk.innerHTML = '<option value="">Paksuus</option>' + pks.map(x => '<option value="' + x + '">' + String(x).replace('.', ',') + ' mm</option>').join('');
+      pk.value = a.thickness ? String(Number(a.thickness)) : '';
     }
-    el.addEventListener('change', e => {
-      const k = e.target && e.target.dataset ? e.target.dataset.m : null;
-      if (!k) return;
-      const a = arvo();
-      if (k === 'material') { a.color = null; a.thickness = null; }
-      if (k === 'color') {
-        a.thickness = null;
-        const pk = paksuudet(tuotteet, a.material, a.color);
-        if (pk.length === 1) a.thickness = pk[0];   // ainoa paksuus valitaan valmiiksi
+    function muista() { try { localStorage.setItem(avain, JSON.stringify(arvo())); } catch (e) { /* ei tallennusta */ } }
+    function muutos(mika, a) {
+      // Ainoa paksuus valitaan valmiiksi, kun väri on valittu tai materiaalilla ei ole värejä
+      if (mika !== 'thickness' && a.material && (a.color || !varit(tuotteet, a.material).length)) {
+        const pks = paksuudet(tuotteet, a.material, a.color);
+        if (pks.length === 1) a.thickness = pks[0];
       }
       tayta(a);
       muista();
-      if (o.muutos) o.muutos(arvo(), k);
-    });
+      if (o.muutos) o.muutos(arvo(), mika);
+    }
+    pk.addEventListener('change', () => muutos('thickness', arvo()));
+    tayta({});
     const valmis = haeTuotteet().then(t => {
       tuotteet = Array.isArray(t) ? t : [];
       let muistettu = null;
@@ -76,10 +155,15 @@
       tayta(muistettu || {});
       if (o.muutos) o.muutos(arvo(), 'alku');
     });
-    return { arvo, aseta: a => valmis.then(() => { tayta(a); }), valmis, teksti: () => teksti(arvo()) };
+    return {
+      arvo, valmis,
+      aseta: a => valmis.then(() => { tayta(a); }),
+      puuttuu: () => puuttuu(tuotteet, arvo()),
+      teksti: () => teksti(arvo()),
+    };
   }
 
-  const KPT_MATERIAALI = { valitsin, materiaalit, varit, paksuudet, teksti, SUPABASE_URL, SUPABASE_KEY };
+  const KPT_MATERIAALI = { valitsin, materiaalit, varit, paksuudet, suodata, puuttuu, teksti, SUPABASE_URL, SUPABASE_KEY };
   if (typeof globalThis !== 'undefined') globalThis.KPT_MATERIAALI = KPT_MATERIAALI;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_MATERIAALI;
 })();
