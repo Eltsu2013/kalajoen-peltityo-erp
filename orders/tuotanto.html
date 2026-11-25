@@ -705,7 +705,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="tyokortti.js?v=4"></script>
+<script src="tyokortti.js?v=5"></script>
 <script src="profiilit.js?v=20261113k"></script>
 </head>
 <body>
@@ -1757,6 +1757,17 @@ function renderItemCards(order) {
     // Kanttaus-lohko
     let kanttausBlock = '';
     if (item.profile_type && item.profile_type !== 'KAPPALE') {
+      // Huuva / kartio (vaihe 8.4c, 25.11.2026): linkki sivulle tuotantotilassa (kuvat, kaistat, työkortti tilauksen tiedoilla)
+      if (item.profile_type === 'huuva' || item.profile_type === 'kartio') {
+        kanttausBlock = `<div style="margin-top:4px">
+          <a href="${item.profile_type}.html?orderId=${item.order_id}&groupName=${encodeURIComponent(item.group_name||'')}"
+             target="_blank"
+             style="display:inline-block;padding:6px 14px;background:var(--panel2);border:1px solid var(--accent);
+                    color:var(--accent);border-radius:4px;font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace;">
+            🏭 Avaa ${item.profile_type} →
+          </a>
+        </div>`;
+      } else
       // Piippu — näytetään linkki erilliselle sivulle
       if (item.profile_type === 'piippu') {
         kanttausBlock = `<div style="margin-top:4px">
@@ -2289,7 +2300,37 @@ function rakennaTyokortti(asetus) {
       </div></div>`;
     }
 
-    pellit.filter(i => i.profile_type !== 'piippu').forEach(i => {
+    // Huuva / kartio (vaihe 8.4c): palat taulukkona ja QR sivulle tuotantotilassa, jossa on oma työkortti kuvineen
+    ['huuva', 'kartio'].forEach(tyyppi => {
+      const osat = pellit.filter(i => i.profile_type === tyyppi);
+      if (!osat.length) return;
+      const i0 = osat[0];
+      const mat = [i0.material, i0.color, i0.thickness_mm ? i0.thickness_mm + ' mm' : ''].filter(Boolean).join(' · ');
+      const linkkiS = location.origin + location.pathname.replace(/[^/]*$/, tyyppi + '.html') + '?orderId=' + encodeURIComponent(o.id) + '&groupName=' + encodeURIComponent(g.nimi);
+      const qrS = T.qrSvg(linkkiS);
+      const nimiS = tyyppi === 'huuva' ? 'Huuva' : 'Kartio';
+      const rivitS = osat.map(i => {
+        const rr = i.order_item_rows || [];
+        const kplS = rr.reduce((a, r) => a + (Number(r.kpl) || 0), 0) || i.quantity || '';
+        const pit = rr.length ? (rr[0].kok_mm || rr[0].mitta_mm || '') : '—';
+        return `<tr><td class="tk-teksti"><b>${e(i.nimike || '—')}</b></td><td>${e(i.aihio_width_mm || '—')}</td><td>${e(pit)}</td>
+          <td class="tk-c"><b>${e(kplS)}</b></td><td><div class="tk-ruutu"></div></td><td><div class="tk-ruutu"></div></td></tr>`;
+      }).join('');
+      h += `<div class="tk-pelti"><div class="tk-paa">
+        <div class="tk-piippu-qr">${qrS ? qrS + '<div>' + nimiS + 'n työkortti:<br>avaa puhelimella tai tulosta sivulta</div>' : ''}</div>
+        <div>
+          <div class="tk-nimike">${e(nimiS)}</div>
+          <div class="tk-mat">${e(mat)}</div>
+          <table><colgroup><col><col style="width:12%"><col style="width:12%"><col style="width:9%"><col style="width:13%"><col style="width:13%"></colgroup>
+            <tr><th>Pala</th><th>Leveys</th><th>Pituus</th><th class="tk-c">kpl</th><th>Leikattu</th><th>Kantattu</th></tr>
+            ${rivitS}
+          </table>
+          <div style="font-size:8.5pt;margin-top:1mm">Levityskuvat${tyyppi === 'kartio' ? ', harppimitat' : ' ja merkintäpisteet'} ovat ${tyyppi === 'huuva' ? 'huuvan' : 'kartion'} omalla työkortilla (QR).</div>
+        </div>
+      </div></div>`;
+    });
+
+    pellit.filter(i => i.profile_type !== 'piippu' && i.profile_type !== 'huuva' && i.profile_type !== 'kartio').forEach(i => {
       const pd = i.profile_data || {};
       const mat = [i.material, i.color, i.thickness_mm ? i.thickness_mm + ' mm' : ''].filter(Boolean).join(' · ');
       const rows = [...(i.order_item_rows || [])].sort((a, b) => (b.kok_mm || 0) - (a.kok_mm || 0));

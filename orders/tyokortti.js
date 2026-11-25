@@ -15,6 +15,9 @@
 //   html = T.sivu(T.ylaosa({...}) + T.tiedot({...}) + ... + T.alaosa())
 //
 // MUISTA: kun tätä tiedostoa muutetaan, nosta tyokortti.js?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
+// v5 (25.11.2026, vaihe 8.4c): asetaTilaus({ numero, ryhma, orderId, ...tiedot }) — sivu on avattu Tuotannosta tilauksen
+//   ryhmälle: ensimmäiselle sivulle lisätään yläosan alle tilausrivi, tilauksen tiedot ja QR (tuotanto.html?tilaus=<id>).
+//   Ilman asetaTilausta kortit ennallaan. Käyttäjät: huuva.html, kartio.html.
 // Versiot: v1 (23.11.2026) pohja ja piipun etusivu. v2 (23.11.2026) rajaa() ja kuvat rinnakkain (.tkk-kuvat). v3: ylaosaPieni() ja palasivujen tyylit. v4: tulostusikkuna valintoineen (tulostaKysyen).
 (function () {
   'use strict';
@@ -57,6 +60,9 @@
   #${ID} .tkk-otsikko .tkk-pieni { font-size: 9pt; }
   #${ID} .tkk-qr { text-align: center; font-size: 6.5pt; line-height: 1.2; }
   #${ID} .tkk-qr svg { width: 22mm; height: 22mm; display: block; margin: 0 auto 0.5mm; }
+  #${ID} .tkk-tilausrivi { display: flex; gap: 5mm; align-items: flex-start; border: 0.3mm solid #000; padding: 2mm 3mm; margin: 2mm 0 3mm; }
+  #${ID} .tkk-tilausrivi > div:last-child { flex: 1; }
+  #${ID} .tkk-tilausotsikko { font-weight: 700; font-size: 11pt; }
   #${ID} .tkk-tiedot { display: grid; grid-template-columns: 1.3fr 1.3fr 1fr; gap: 1.2mm 6mm; margin: 2.5mm 0; }
   #${ID} .tkk-lab { font-size: 7pt; text-transform: uppercase; letter-spacing: 0.08em; color: #444 !important; }
   #${ID} .tkk-arvo { font-weight: 600; white-space: pre-line; }
@@ -208,11 +214,36 @@
     return v;
   }
   function tallennaValinnat(v) { try { localStorage.setItem(maaritys.avain, JSON.stringify(v)); } catch (e) {} }
+  // ---------- Tilauksen tiedot ensimmäiselle sivulle (v5) ----------
+  let tilaus = null;
+  function asetaTilaus(t) { tilaus = t || null; }
+  function tilausLohko(t) {
+    const linkki = t.orderId && typeof location !== 'undefined' ? location.origin + location.pathname.replace(/[^/]*$/, 'tuotanto.html') + '?tilaus=' + encodeURIComponent(t.orderId) : '';
+    const qr = linkki ? qrSvg(linkki) : '';
+    return `<div class="tkk-tilausrivi">${qr ? `<div class="tkk-qr">${qr}Tilaus Tuotannossa</div>` : ''}<div>
+      <div class="tkk-tilausotsikko">Tilaus ${esc(t.numero || '')}${t.ryhma ? ' · ' + esc(t.ryhma) : ''}${t.status ? ' · ' + esc(STATUS_FI[t.status] || t.status) : ''}</div>
+      ${tiedot(t)}</div></div>`;
+  }
+  // Lisää lohkon ensimmäisen yläosan (tkk-yla / tkk-yla-pieni) perään; jos yläosaa ei löydy, ensimmäisen sivun alkuun
+  function lisaaEnsimmaiselle(html, lohko) {
+    const alku = html.search(/<div class="tkk-yla(-pieni)?"/);
+    if (alku < 0) { const m = html.match(/<section[^>]*>/); return m ? html.replace(m[0], m[0] + lohko) : lohko + html; }
+    let syv = 0, i = alku;
+    const re = /<div\b|<\/div>/g;
+    re.lastIndex = alku;
+    let m;
+    while ((m = re.exec(html))) {
+      syv += m[0] === '</div>' ? -1 : 1;
+      if (syv === 0) { i = m.index + m[0].length; break; }
+    }
+    return html.slice(0, i) + lohko + html.slice(i);
+  }
   function rakenna(valinnat) {
     if (!rakentaja) return false;
     let html = '';
     try { html = rakentaja(valinnat || lueValinnat()) || ''; } catch (e) { console.error('Työkortti:', e); html = ''; }
     if (!html) return false;
+    if (tilaus) html = lisaaEnsimmaiselle(html, tilausLohko(tilaus));
     lisaaTyylit();
     elementti().innerHTML = html;
     return true;
@@ -265,7 +296,7 @@
     ikk.querySelector('[data-t="ok"]').focus();
   }
 
-  const KPT_TYOKORTTI = { VERSIO: 4, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
+  const KPT_TYOKORTTI = { VERSIO: 5, asetaTilaus, lisaaEnsimmaiselle, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
   if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
   if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
 })();

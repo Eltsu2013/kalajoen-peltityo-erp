@@ -354,7 +354,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=3"></script>
-<script src="tyokortti.js?v=4"></script>
+<script src="tyokortti.js?v=5"></script>
 <script>
   // Yhteiset työkalut (vaihe 1, 20.11.2026): geometria orders/geom.js ja pelti-osat orders/pellit.js.
   // Funktiot otetaan käyttöön samoilla nimillä kuin ennen, joten alla oleva Huuvan koodi ei muuttunut.
@@ -1007,6 +1007,7 @@
   if (typeof window !== 'undefined' && document.addEventListener) document.addEventListener('kpt-teema', renderAll);
   renderAll();
 </script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="materiaali.js?v=1"></script>
 <script src="lahetys.js?v=3"></script>
 <script>
@@ -1114,6 +1115,47 @@ function lisaaTilaukseen() {
     ilmoita: tilausStatus,
   });
 }
+
+// ── Tuotantotila (vaihe 8.4c, 25.11.2026): Tuotannon "Avaa huuva" → ?orderId=…&groupName=… ─────────────────
+// Sama sivu toimii tuotantonäkymänä (Tomi 25.11.2026): syötöt haetaan tilausriviltä, kuvat ja kaistat kuten aina, ja
+// työkortin ensimmäiselle sivulle tulevat tilauksen tiedot ja QR (tyokortti.js v5 asetaTilaus). Muutokset tehdään
+// tilauksen "Muokkaa"-napista, joten Tilaukseen-osio piilotetaan.
+var TUOTANTO = (function () {
+  var p = new URLSearchParams(location.search);
+  return p.get('orderId') && p.get('groupName') ? { orderId: p.get('orderId'), groupName: p.get('groupName') } : null;
+})();
+function avaaTuotannossa() {
+  var osio = document.querySelector('.tilaukseen'); if (osio) osio.style.display = 'none';
+  var ilmo = document.createElement('div');
+  ilmo.className = 'kpt-ilmoitus info'; ilmo.id = 'tuotanto-ilmo'; ilmo.style.marginBottom = '14px'; ilmo.textContent = 'Haetaan tilauksen tietoja…';
+  var main = document.querySelector('main.kpt-sisalto'); main.insertBefore(ilmo, main.firstChild);
+  var U = KPT_MATERIAALI.SUPABASE_URL, K = KPT_MATERIAALI.SUPABASE_KEY, H = { apikey: K, Authorization: 'Bearer ' + K };
+  var enc = encodeURIComponent;
+  var hae = function (polku) { return fetch(U + '/rest/v1/' + polku, { headers: H }).then(function (r) { return r.ok ? r.json() : []; }); };
+  (window._authReady || Promise.resolve()).then(function () {
+    return Promise.all([
+      hae('order_items?order_id=eq.' + enc(TUOTANTO.orderId) + '&group_name=eq.' + enc(TUOTANTO.groupName) + '&profile_type=eq.huuva&select=*'),
+      hae('orders?id=eq.' + enc(TUOTANTO.orderId) + '&select=*,customers(name,phone,email)'),
+    ]);
+  }).then(function (res) {
+    var rivit = res[0] || [], o = (res[1] || [])[0];
+    var eka = rivit.filter(function (i) { return i.profile_data && i.profile_data.vals; })[0];
+    if (!o || !eka || !palautaHuuva(eka.profile_data.vals)) {
+      ilmo.className = 'kpt-ilmoitus virhe';
+      ilmo.textContent = 'Tilauksen ryhmää "' + TUOTANTO.groupName + '" ei löytynyt tai siinä ei ole tallennettuja syöttöjä.';
+      return;
+    }
+    var c = o.customers || {}, numero = o.order_number || String(o.id).slice(0, 8);
+    var mat = [eka.material, eka.color, eka.thickness_mm ? String(eka.thickness_mm).replace('.', ',') + ' mm' : ''].filter(Boolean).join(' ');
+    ilmo.innerHTML = '<b>Tuotanto</b> · tilaus ' + esc(numero) + ' · ' + esc(c.name || 'ei asiakasta') + ' · ' + esc(TUOTANTO.groupName)
+      + (mat ? ' · ' + esc(mat) : '') + '<br>Muutokset tehdään tilauksessa ("Muokkaa huuvaa"). '
+      + '<a href="tuotanto.html?tilaus=' + enc(o.id) + '">← Tuotanto</a>';
+    KPT_TYOKORTTI.asetaTilaus({ numero: numero, ryhma: TUOTANTO.groupName, orderId: o.id, status: o.status,
+      asiakas: c.name, puhelin: c.phone, email: c.email, kohde: o.kohde, toimitus: o.delivery_date, osoite: o.site_address,
+      tilattu: o.order_date, ohjeet: o.site_instructions });
+  }).catch(function (e) { ilmo.className = 'kpt-ilmoitus virhe'; ilmo.textContent = 'Tilauksen haku epäonnistui: ' + e.message; });
+}
+if (TUOTANTO) avaaTuotannossa();
 </script>
 </body>
 </html>
