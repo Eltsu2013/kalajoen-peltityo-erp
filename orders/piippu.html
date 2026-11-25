@@ -918,7 +918,8 @@ async function lisaaTilaukseen() {
     };
   });
 
-  KPT_LAHETYS.laheta({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, items: kaikki }, {
+  const tilausRyhma = targetGroupId ? ((muokattava && muokattava.groupName) || (tuotantoKohde && tuotantoKohde.groupName) || null) : null;
+  KPT_LAHETYS.laheta({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, tilausRyhma, items: kaikki }, {
     kuvaus: (piippukpl > 1 ? piippukpl + ' kpl · ' : '') + ryhmaNimi,
     huomio, lahde: 'piippu',
     // Työn oma tilaus vain, kun piippu on avattu tilauksesta (ryhmä). Suoraan avatulla sivulla jokainen lähetys on uusi

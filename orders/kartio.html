@@ -2104,6 +2104,37 @@ function tilausStatus(teksti, tyyppi) {
   $('nappi-tilaukseen').disabled = tyyppi === 'odota';
 }
 var tilausGroupId = new URLSearchParams(location.search).get('groupId') || null;
+
+// ── Muokkaus (vaihe 8.4b, 25.11.2026): tilauksen "Muokkaa kartiota" → syötöt takaisin ─────────────
+// Sama muoto kuin sivun oma muisti (tallenna / lataa), joten palautus tekee saman kuin sivun avaus.
+function palautaKartio(o) {
+  if (!o || o.tyyppi !== 'kartio') return false;
+  KENTAT.forEach(function (id) { if (o[id] != null) $(id).value = o[id]; });
+  REUNAVALINNAT = o.reunaValinnat && typeof o.reunaValinnat === 'object' ? JSON.parse(JSON.stringify(o.reunaValinnat)) : {};
+  paivitaMuoto();
+  if (Array.isArray(o.saumat) && o.saumat.length === (parseInt($('k-n').value, 10) || 1)) { SAUMAT = JSON.parse(JSON.stringify(o.saumat)); rakennaSaumaRivit(); }
+  else asetaN();
+  renderAll();
+  return true;
+}
+
+// Avattu tilauksen ryhmästä (?groupId=…): palautetaan syötöt, materiaali ja huomio, ja tallennus korvaa ryhmän rivit
+var MUOKKAUS = (function () {
+  try {
+    var m = JSON.parse(localStorage.getItem('kpt_sovite_muokkaa') || 'null');
+    return m && tilausGroupId && m.groupId === tilausGroupId && m.tyyppi === 'kartio' ? m : null;
+  } catch (e) { return null; }
+})();
+if (MUOKKAUS && palautaKartio(MUOKKAUS.vals)) {
+  MATERIAALI.aseta({ material: MUOKKAUS.material, color: MUOKKAUS.color, thickness: MUOKKAUS.thickness });
+  document.getElementById('tilaus-huomio').value = MUOKKAUS.huomio || '';
+  document.getElementById('nappi-tilaukseen').textContent = 'Tallenna muutokset tilaukseen →';
+  var ilmo = document.createElement('div');
+  ilmo.className = 'kpt-ilmoitus info'; ilmo.id = 'muokkaus-ilmo'; ilmo.style.marginBottom = '10px';
+  ilmo.textContent = 'Muokkaat tilauksen ryhmää "' + (MUOKKAUS.groupName || '') + '". Tallennus korvaa ryhmän palat.';
+  var paikka = document.getElementById('materiaali-valinta');
+  paikka.parentNode.insertBefore(ilmo, paikka);
+}
 function lisaaTilaukseen() {
   renderAll();
   var s = viimeisin && viimeisin.s, k = viimeisin && viimeisin.k;
@@ -2127,9 +2158,9 @@ function lisaaTilaukseen() {
     };
   });
   var nimi = $('k-nimi').value.trim();
-  KPT_LAHETYS.laheta({ type: 'REPLACE_RYHMA', profileType: 'kartio', groupId: tilausGroupId || ('g_kartio_' + Date.now()), groupName: ryhmaNimi, items: items }, {
+  KPT_LAHETYS.laheta({ type: 'REPLACE_RYHMA', profileType: 'kartio', groupId: tilausGroupId || ('g_kartio_' + Date.now()), groupName: ryhmaNimi, tilausRyhma: MUOKKAUS ? MUOKKAUS.groupName : null, items: items }, {
     kuvaus: (kk > 1 ? kk + ' kpl · ' : '') + ryhmaNimi + (nimi && nimi !== 'Kartio' ? ' (' + nimi + ')' : ''),
-    huomio: huomio, lahde: 'kartio', kohdeTilaus: null,
+    huomio: huomio, lahde: 'kartio', kohdeTilaus: MUOKKAUS ? MUOKKAUS.orderId || null : null,
     supabaseUrl: KPT_MATERIAALI.SUPABASE_URL, supabaseKey: KPT_MATERIAALI.SUPABASE_KEY,
     ilmoita: tilausStatus,
   });

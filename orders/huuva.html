@@ -1040,6 +1040,49 @@ function tilausStatus(teksti, tyyppi) {
   document.getElementById('nappi-tilaukseen').disabled = tyyppi === 'odota';
 }
 const tilausGroupId = new URLSearchParams(location.search).get('groupId') || null;
+
+// ── Muokkaus (vaihe 8.4b, 25.11.2026): tilauksen "Muokkaa huuvaa" → syötöt takaisin ───────────────
+// Tyyppi, sijainti ja nurkka omilla funktioillaan (ne päivittävät napit ja esiasetukset), sen jälkeen paneelit, taitokset,
+// reunat ja kaikki kentät tallennetusta. Testi: tallenna → palauta → samat syötöt ja palat (selaintesti).
+function palautaHuuva(v) {
+  if (!v || v.tyyppi !== 'huuva') return false;
+  const t = v.tila || {}, kopio = o => JSON.parse(JSON.stringify(o));
+  setSijainti(t.sijaintiState || 'keski');
+  setNurkka(t.nurkkaSivu || 'oikea');
+  setTyyppi(t.tyyppiState || 'vapaa');
+  if (t.panelOn) panelOn = kopio(t.panelOn);
+  if (t.ylaTyyppi) ylaTyyppi = kopio(t.ylaTyyppi);
+  if (t.reunaTyyppi) reunaTyyppi = kopio(t.reunaTyyppi);
+  if (t.seinaSuunta) seinaSuunta = kopio(t.seinaSuunta);
+  kaistaKplValinta = t.kaistaKplValinta ? kopio(t.kaistaKplValinta) : {};
+  Object.keys(v.kentat || {}).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!v.kentat[id]; else el.value = v.kentat[id];
+  });
+  if (v.nimi != null) document.getElementById('k-nimi').value = v.nimi;
+  paivitaPaneeliNapit();
+  setLoveus(t.loveusOn !== false);   // päivittää napit ja laskee uudelleen
+  return true;
+}
+
+// Avattu tilauksen ryhmästä (?groupId=…): palautetaan syötöt, materiaali ja huomio, ja tallennus korvaa ryhmän rivit
+var MUOKKAUS = (function () {
+  try {
+    var m = JSON.parse(localStorage.getItem('kpt_sovite_muokkaa') || 'null');
+    return m && tilausGroupId && m.groupId === tilausGroupId && m.tyyppi === 'huuva' ? m : null;
+  } catch (e) { return null; }
+})();
+if (MUOKKAUS && palautaHuuva(MUOKKAUS.vals)) {
+  MATERIAALI.aseta({ material: MUOKKAUS.material, color: MUOKKAUS.color, thickness: MUOKKAUS.thickness });
+  document.getElementById('tilaus-huomio').value = MUOKKAUS.huomio || '';
+  document.getElementById('nappi-tilaukseen').textContent = 'Tallenna muutokset tilaukseen →';
+  var ilmo = document.createElement('div');
+  ilmo.className = 'kpt-ilmoitus info'; ilmo.id = 'muokkaus-ilmo'; ilmo.style.marginBottom = '10px';
+  ilmo.textContent = 'Muokkaat tilauksen ryhmää "' + (MUOKKAUS.groupName || '') + '". Tallennus korvaa ryhmän palat.';
+  var paikka = document.getElementById('materiaali-valinta');
+  paikka.parentNode.insertBefore(ilmo, paikka);
+}
 function lisaaTilaukseen() {
   renderAll();
   const lasku = viimeisinLasku;
@@ -1064,9 +1107,9 @@ function lisaaTilaukseen() {
     };
   });
   const groupId = tilausGroupId || ('g_huuva_' + Date.now());
-  KPT_LAHETYS.laheta({ type: 'REPLACE_RYHMA', profileType: 'huuva', groupId, groupName: ryhmaNimi, items }, {
+  KPT_LAHETYS.laheta({ type: 'REPLACE_RYHMA', profileType: 'huuva', groupId, groupName: ryhmaNimi, tilausRyhma: MUOKKAUS ? MUOKKAUS.groupName : null, items }, {
     kuvaus: (huuvia > 1 ? huuvia + ' kpl · ' : '') + ryhmaNimi + (nimi && nimi !== 'Huuva 1' ? ' (' + nimi + ')' : ''),
-    huomio, lahde: 'huuva', kohdeTilaus: null,
+    huomio, lahde: 'huuva', kohdeTilaus: MUOKKAUS ? MUOKKAUS.orderId || null : null,
     supabaseUrl: KPT_MATERIAALI.SUPABASE_URL, supabaseKey: KPT_MATERIAALI.SUPABASE_KEY,
     ilmoita: tilausStatus,
   });

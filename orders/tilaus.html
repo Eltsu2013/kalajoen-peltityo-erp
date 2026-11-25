@@ -1278,7 +1278,10 @@ async function receiveFromMallisto(data) {
   // REPLACE_RYHMA (vaihe 8.4a, 25.11.2026): huuva / kartio korvaa ryhmänsä rivit samalla tavalla kuin piippu (tyyppi viestissä)
   if (data.type === 'REPLACE_PIIPPU' || data.type === 'REPLACE_RYHMA') {
     const tyyppi = data.type === 'REPLACE_PIIPPU' ? 'piippu' : (data.profileType || 'sovite');
-    let group = groups.find(g => g.id === data.groupId);
+    // Muokattu työ: ryhmä tunnuksella, tai nimellä, jos tilaus on välillä avattu uudelleen (tunnukset vaihtuvat; 8.4b)
+    let group = groups.find(g => g.id === data.groupId)
+      || (data.tilausRyhma ? groups.find(g => g.name === data.tilausRyhma && g.items.some(i => i.profileType === tyyppi)) : null);
+    if (group) data.groupId = group.id;
     if (!group) {
       group = { id: data.groupId, name: uniikkiRyhmanNimi(data.groupName || (tyyppi === 'piippu' ? 'Piippu' : 'Sovite')), items: [] };
       groups.push(group);
@@ -1655,6 +1658,26 @@ function piippuMuokkausTiedot(groupId) {
   } catch (e) { console.warn('Piipun muokkaustietojen välitys epäonnistui', e); }
 }
 
+// Huuva / kartio (vaihe 8.4b, 25.11.2026): ryhmän "Muokkaa huuvaa / kartiota" välittää syötöt sivulle avaimella
+// kpt_sovite_muokkaa (kuten kpt_piippu_muokkaa), ja sivu palauttaa ne ja tallentaa muutokset samaan ryhmään.
+function soviteTyyppi(g) {
+  const i = g && g.items.find(x => x.profileType === 'huuva' || x.profileType === 'kartio');
+  return i ? i.profileType : null;
+}
+function soviteMuokkausTiedot(groupId) {
+  try {
+    const group = groups.find(g => g.id === groupId);
+    const tyyppi = soviteTyyppi(group);
+    const eka = group ? group.items.find(i => i.profileType === tyyppi && i.profile_data && i.profile_data.vals) : null;
+    if (!eka) { localStorage.removeItem('kpt_sovite_muokkaa'); return; }
+    localStorage.setItem('kpt_sovite_muokkaa', JSON.stringify({
+      groupId, orderId: currentOrderId || null, groupName: group.name, tyyppi,
+      vals: eka.profile_data.vals, material: eka.material || null, color: eka.color || null, thickness: eka.thickness || null,
+      huomio: (eka.rows && eka.rows[0] && eka.rows[0].huomio) || '',
+    }));
+  } catch (e) { console.warn('Muokkaustietojen välitys epäonnistui', e); }
+}
+
 // Ryhmän piippusivu: harjapiippu omalle sivulleen, muuten Piippu-sivu (lapepiippu)
 function piippuSivu(groupId) {
   const group = groups.find(g => g.id === groupId);
@@ -1892,6 +1915,15 @@ function renderGroups() {
   }
   container.innerHTML = groups.map(g => {
     const onPiippu = g.items.some(i => i.profileType === 'piippu');
+    const sovite = soviteTyyppi(g);
+    const soviteNappi = sovite
+      ? `<a href="${sovite}.html?groupId=${g.id}" target="_blank" data-soviteryhma="${g.id}" onclick="soviteMuokkausTiedot('${g.id}')"
+           style="display:inline-flex;align-items:center;padding:3px 8px;font-size:11px;
+                  background:none;border:1px solid var(--accent);color:var(--accent);
+                  border-radius:4px;text-decoration:none;white-space:nowrap;">
+           ✏️ Muokkaa ${sovite === 'huuva' ? 'huuvaa' : 'kartiota'} →
+         </a>`
+      : '';
     const piippuNappi = onPiippu
       ? `<a href="${piippuSivu(g.id)}?groupId=${g.id}" target="_blank" data-piippuryhma="${g.id}" onclick="piippuMuokkausTiedot('${g.id}')"
            style="display:inline-flex;align-items:center;padding:3px 8px;font-size:11px;
@@ -1905,7 +1937,7 @@ function renderGroups() {
       <div class="group-header">
         <input type="text" value="${String(g.name).replace(/"/g, '&quot;')}" size="${Math.max(14, String(g.name).length + 2)}" oninput="this.size = Math.max(14, this.value.length + 2)" onchange="renameGroup('${g.id}', this.value)" title="Klikkaa nimetäksesi uudelleen">
         ${groupQtyTags(g)}
-        ${piippuNappi}
+        ${piippuNappi}${soviteNappi}
         <div style="margin-left:auto;display:flex;gap:6px">
           <button class="btn btn-secondary" style="padding:3px 8px;font-size:11px" onclick="copyGroup('${g.id}')">Kopioi</button>
           <button class="btn btn-danger" style="padding:3px 8px;font-size:11px" onclick="deleteGroup('${g.id}')">Poista</button>

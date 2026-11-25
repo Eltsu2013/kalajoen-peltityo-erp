@@ -872,7 +872,8 @@ function lisaaTilaukseen() {
   } catch (e) { return virhe('Tallennus selaimeen epäonnistui'); }
   // Työn oma tilaus vain, kun piippu on avattu tilauksesta (ryhmä); suoraan avatulla sivulla jokainen lähetys on uusi piippu
   const kohdeTilaus = targetGroupId ? ((muokattava && muokattava.orderId) || (tuotantoKohde && tuotantoKohde.orderId) || null) : null;
-  KPT_LAHETYS.laheta({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, items: kaikki }, {
+  const tilausRyhma = targetGroupId ? ((muokattava && muokattava.groupName) || (tuotantoKohde && tuotantoKohde.groupName) || null) : null;
+  KPT_LAHETYS.laheta({ type: 'REPLACE_PIIPPU', groupId, groupName: ryhmaNimi, tilausRyhma, items: kaikki }, {
     kuvaus: (piippukpl > 1 ? piippukpl + ' kpl · ' : '') + ryhmaNimi,
     huomio, lahde: 'harjapiippu', kohdeTilaus,
     supabaseUrl: SUPA_URL, supabaseKey: SUPA_KEY,
