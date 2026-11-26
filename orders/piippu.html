@@ -86,12 +86,6 @@
   #varoitus .laskettu-rivi { font-weight: 600; }
   #ilmo-paikka:empty { display: none; }
 
-  /* Uusi piippu (Tomi 26.11.2026): mitattavat kentät tyhjinä, esimerkki harmaana. Tyhjä mittakenttä oranssilla reunalla,
-     ja kuvat, lista ja lähetys näkyvät vasta, kun kaikki mitat on annettu (muuten laskenta tekisi nollista vääriä kuvia). */
-  input.mitta:placeholder-shown { border-color: var(--kpt-huom); }
-  input.mitta::placeholder { color: var(--kpt-himmea); opacity: .7; }
-  #mitat-puuttuu:empty { display: none; }
-  body.mitat-puuttuu .vaatii-mitat { display: none !important; }
 
   /* Kuvat */
   #etukuva svg { max-width: 560px; margin: 0 auto; }
@@ -135,6 +129,10 @@
     .k-toolbar { width: 100%; } .k-toolbar .kpt-nappi { flex: 1; }
     #kansi-sisalto input[type=number], #kansi-sisalto select { font-size: 16px; min-height: 40px; }   /* iPhone ei zoomaa */
   }
+  /* Muuttamattomat mitat (Tomi 26.11.2026): uudessa piipussa oletusmitat kentissä, mutta muuttamaton mittakenttä näkyy oranssilla
+     reunalla ja listassa, kunnes siihen kirjoittaa. Kuvat näkyvät koko ajan (Tomi: kuvasta näkee muokattavan kohdan). */
+  input.mitta.oletus { border-color: var(--kpt-huom); }
+  #mitat-puuttuu:empty { display: none; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
@@ -210,10 +208,10 @@
 
     <details id="k-mitat" data-kortti class="kpt-kortti" open><summary>Piipun mitat <span class="yv" id="ky-mitat"></span></summary><div class="k-sisalto">
       <div class="kpt-kentat">
-        <div class="kpt-kentta"><label for="leveys">Piipun leveys (mm)</label><input type="number" id="leveys" class="mitta" value="" placeholder="esim. 400" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="suora">Suora mitta (mm)</label><input type="number" id="suora" class="mitta" value="" placeholder="esim. 600" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="etukork">Etukorkeus (mm)</label><input type="number" id="etukork" class="mitta" value="" placeholder="esim. 1000" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="takakork">Takakorkeus (mm)</label><input type="number" id="takakork" class="mitta" value="" placeholder="esim. 800" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="leveys">Piipun leveys (mm)</label><input type="number" id="leveys" class="mitta" value="400" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="suora">Suora mitta (mm)</label><input type="number" id="suora" class="mitta" value="600" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="etukork">Etukorkeus (mm)</label><input type="number" id="etukork" class="mitta" value="1000" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="takakork">Takakorkeus (mm)</label><input type="number" id="takakork" class="mitta" value="800" min="0" oninput="laske()"></div>
       </div>
     </div></details>
 
@@ -257,18 +255,18 @@
     <!-- Juuren mitat (nillityslista 23.11.2026): kenttien id:t ennallaan, joten tallennetut tilaukset aukeavat kuten ennen. -->
     <details id="k-juuri" data-kortti class="kpt-kortti" open><summary>Juuren mitat <span class="yv" id="ky-juuri"></span></summary><div class="k-sisalto">
       <div class="kpt-kentat">
-        <div class="kpt-kentta"><label for="k24">Eteen piipusta (mm)</label><input type="number" id="k24" class="mitta" value="" placeholder="esim. 200" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="j25">Alas (mm)</label><input type="number" id="j25" class="mitta" value="" placeholder="esim. 15" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="k24">Eteen piipusta (mm)</label><input type="number" id="k24" class="mitta" value="200" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="j25">Alas (mm)</label><input type="number" id="j25" class="mitta" value="15" min="0" oninput="laske()"></div>
       </div>
       <div class="alaotsikko">Sivumitat</div>
       <div class="kpt-kentat">
-        <div class="kpt-kentta"><label for="vasen">Vasen (mm)</label><input type="number" id="vasen" class="mitta" value="" placeholder="esim. 150" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="oikea">Oikea (mm)</label><input type="number" id="oikea" class="mitta" value="" placeholder="esim. 100" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="poimu">Uraan (mm)</label><input type="number" id="poimu" class="mitta" value="" placeholder="esim. 20" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="vasen">Vasen (mm)</label><input type="number" id="vasen" class="mitta" value="150" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="oikea">Oikea (mm)</label><input type="number" id="oikea" class="mitta" value="100" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="poimu">Uraan (mm)</label><input type="number" id="poimu" class="mitta" value="20" min="0" oninput="laske()"></div>
         <div class="kpt-kentta"><label for="v-harjakulma">Uraan kulma (°)</label><input type="number" id="v-harjakulma" value="45" min="0" max="180" oninput="laske()"></div>
       </div>
       <div class="kpt-kentat">
-        <div class="kpt-kentta"><label for="harjalle">Takareunasta harjalle (mm)</label><input type="number" id="harjalle" class="mitta" value="" placeholder="esim. 1050" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="harjalle">Takareunasta harjalle (mm)</label><input type="number" id="harjalle" class="mitta" value="1050" min="0" oninput="laske()"></div>
       </div>
     </div></details>
 
@@ -364,14 +362,14 @@
   <!-- OIKEA: tulokset. Etukuva ylimpänä ja aina auki (Tomi 24.11.2026: juuren mitat täytetään ensin). -->
   <div class="oikea">
     <div class="kpt-ilmoitus virhe" id="varoitus"></div>
-    <div class="kpt-ilmoitus info" id="mitat-puuttuu"></div>
+    <div class="kpt-ilmoitus huom" id="mitat-puuttuu"></div>
 
-    <details class="kpt-kortti vaatii-mitat" id="etukuva-kortti" open>
+    <details class="kpt-kortti" id="etukuva-kortti" open>
       <summary>Piippu edestä · juuren mitat</summary>
       <div class="k-sisalto"><div class="kpt-piirros paperi" id="etukuva"></div></div>
     </details>
 
-    <div class="kpt-kortti vaatii-mitat">
+    <div class="kpt-kortti">
       <div class="kpt-kortti-otsikko">Piippu sivulta</div>
       <div class="kpt-piirros paperi">
         <svg id="piippu-svg" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
@@ -392,7 +390,7 @@
     </div>
 
     <!-- Peltilista ja lähetys tilaukseen samassa kortissa (R2b: ennen nappi oli sivun pohjalla kaistojen jälkeen) -->
-    <div class="kpt-kortti vaatii-mitat" id="peltilista-kortti">
+    <div class="kpt-kortti" id="peltilista-kortti">
       <div class="kpt-kortti-otsikko">Peltilista</div>
       <div class="luettelo-grid">
         <div class="luettelo-osa">
@@ -413,18 +411,18 @@
     </div>
 
     <!-- Kansi ja reiät oletuksena kiinni (Tomi 24.11.2026); aukeaa muokattaessa, jos kannessa on reikiä -->
-    <details class="kpt-kortti vaatii-mitat" id="kansi-kortti">
+    <details class="kpt-kortti" id="kansi-kortti">
       <summary>Kansi ja reiät</summary>
       <div class="k-sisalto" id="kansi-sisalto"></div>
     </details>
 
-    <div class="kpt-kortti vaatii-mitat" id="levitys-card" style="display:none;">
+    <div class="kpt-kortti" id="levitys-card" style="display:none;">
       <div class="kpt-kortti-otsikko">Hupun levityskuvat</div>
       <div id="levityskuvat"></div>
     </div>
 
     <!-- Kaistat ja rullan menekki (yhteinen menekki.js, vaihe 8.3 24.11.2026): hupun palat kaistoiksi, oletuksena kiinni -->
-    <details class="kpt-kortti vaatii-mitat" id="kaista-kortti" style="display:none;">
+    <details class="kpt-kortti" id="kaista-kortti" style="display:none;">
       <summary>Kaistat ja menekki</summary>
       <div class="k-sisalto" id="kaista-sisalto"></div>
     </details>
@@ -536,16 +534,19 @@ function setTakaKpl(n) {
 }
 function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
 
-// Mitattavat kentät (Tomi 26.11.2026): uudessa piipussa tyhjinä, jotta mikään mitta ei jää vahingossa oletusarvoon.
-// Kolmas arvo = entinen oletus, jolla vanhan tilauksen puuttuva kenttä täytetään muokattaessa (piippu ei muutu).
+// Mitattavat kentät (Tomi 26.11.2026): uudessa piipussa oletusmitat, mutta muuttamattomat näkyvät oranssilla reunalla ja
+// listassa (#mitat-puuttuu), kunnes kenttään kirjoittaa. Muokattaessa tilauksen mitat ovat valmiiksi kunnossa.
 const MITTAKENTAT = [['leveys', 'piipun leveys', 400], ['suora', 'suora mitta', 600], ['etukork', 'etukorkeus', 1000], ['takakork', 'takakorkeus', 800],
   ['k24', 'eteen piipusta', 200], ['j25', 'alas', 15], ['vasen', 'vasen', 150], ['oikea', 'oikea', 100], ['poimu', 'uraan', 20], ['harjalle', 'takareunasta harjalle', 1050]];
-function puuttuvatMitat() { return MITTAKENTAT.filter(([id]) => String(document.getElementById(id).value).trim() === '').map(([, nimi]) => nimi); }
-function naytaPuuttuvat(lista) {
-  document.body.classList.toggle('mitat-puuttuu', lista.length > 0);
-  document.getElementById('mitat-puuttuu').innerHTML = lista.length
-    ? '<b>Täytä mitat:</b> ' + lista.join(', ') + '. Kuvat, peltilista ja Lisää tilaukseen tulevat näkyviin, kun kaikki mitat on annettu.' : '';
+function muuttamattomat() { return MITTAKENTAT.filter(([id]) => document.getElementById(id).classList.contains('oletus')).map(([, nimi]) => nimi); }
+function naytaMuuttamattomat() {
+  const lista = muuttamattomat();
+  document.getElementById('mitat-puuttuu').innerHTML = lista.length ? '<b>Muuttamatta (oletusmitta):</b> ' + lista.join(', ') : '';
 }
+function merkitseOletukset() { MITTAKENTAT.forEach(([id]) => document.getElementById(id).classList.add('oletus')); naytaMuuttamattomat(); }
+document.addEventListener('input', e => {
+  if (e.target && e.target.classList && e.target.classList.contains('mitta') && e.target.classList.contains('oletus')) { e.target.classList.remove('oletus'); naytaMuuttamattomat(); }
+}, true);
 
 // Ulkoasuremontti R2b (26.11.2026): kuvat piirretään ruudun väreillä kuten ennen ja muunnetaan vaalealle paperille
 // (pellit.js paperiVarit, sama kuin Huuvassa). Selitteen värit samoiksi kuin kuvissa.
@@ -641,7 +642,6 @@ function palautaMuokattava() {
   LASKENTA_KENTAT.forEach(([nimi, id]) => aseta(id, v[nimi]));
   aseta('v-harjakulma', v.harjakulma);
   if (v.harjakulma === undefined || v.harjakulma === null || v.harjakulma === '') aseta('v-harjakulma', 90);   // vanha tilaus: kulma oli oletuksena 90
-  MITTAKENTAT.forEach(([id, , vanha]) => { const e = document.getElementById(id); if (e && String(e.value).trim() === '') e.value = vanha; });
   aseta('v-huomio', v.huomio || '');
   if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
   KIILA_KENTAT.forEach(n => aseta('k-' + n, v[n] === null || v[n] === undefined ? '' : v[n]));
@@ -690,8 +690,6 @@ function palautaMuokattava() {
 
 async function lisaaTilaukseen() {
   const korvaa = lisaysNapinTeksti() !== 'Lisää tilaukseen';
-  const puuttuvat = puuttuvatMitat();
-  if (puuttuvat.length) { lahetysIlmoitus('Täytä mitat ensin: ' + puuttuvat.join(', '), 'virhe'); return; }
   const ma = MATERIAALI.arvo(), puuttuuMat = MATERIAALI.puuttuu();
   const materiaali = ma.material || '', vari = ma.color || '', paksuus = ma.thickness ? String(ma.thickness) : '';
   const status = document.getElementById('lisays-status');
@@ -871,9 +869,6 @@ const kansiArvo = () => kansiKortti ? kansiKortti.arvo() : {};
 function piirraKansi(k, vals) { if (kansiKortti) kansiKortti.piirra(k, vals); }
 
 function laske() {
-  const puuttuu = puuttuvatMitat();
-  naytaPuuttuvat(puuttuu);
-  if (puuttuu.length) { paivitaYhteenvedot(); return; }   // ei laskentaa puolikkailla mitoilla
   const piippukpl = Math.max(1, gv('v-piippukpl') || 1);
   const hasHuppu  = chk('chk-huppu');
 
@@ -1198,6 +1193,7 @@ function piirraKuva(leveys, suora, etukork, takakork, k24, j25, harjalle, vinomi
 
 function r(n) { return Math.round(n); }
 palautaMuokattava();
+if (!muokattava) merkitseOletukset();   // uusi piippu (myös toisen tyypin ryhmä): mitat oletuksissa
 laske();
 
 // ── Avaa Tuotannossa (vaihe 6c, 20.11.2026) ───────────────────────────────────
