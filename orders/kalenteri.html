@@ -6,75 +6,35 @@
 <title>Kalenteri — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+     rakenne ja skripti ennallaan (oma valikkokoodi pois). Tilausten värit samat kuin Tilaukset-listassa (Tomi 26.11.). -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <style>
-  :root{
-    --bg: #1e2a30;
-    --bg-panel: #253540;
-    --bg-card: #2b3d48;
-    --bg-dim: #1a2429;
-    --border: #374b56;
-    --text: #e8edf0;
-    --text-dim: #9fb0b8;
-    --accent: #6366f1;
-    --accent-dim: #4f46e5;
-    --accent-glow: rgba(99,102,241,0.15);
-    --today-bg: rgba(99,102,241,0.10);
-    --high: #ef4444;
-    --normal: #eab308;
-    --low: #22c55e;
-    --radius: 4px;
+  /* Vanhat värinimet → yhteiset --kpt-värit (R6b). Tehtävien kiireellisyys: punainen / keltainen / vihreä. */
+  :root, html[data-teema]{
+    --bg: var(--kpt-tausta);
+    --bg-panel: var(--kpt-paneeli);
+    --bg-card: var(--kpt-paneeli2);
+    --bg-dim: color-mix(in srgb, var(--kpt-paneeli2) 70%, var(--kpt-tausta));
+    --border: var(--kpt-reuna);
+    --text: var(--kpt-teksti);
+    --text-dim: var(--kpt-himmea);
+    --accent: var(--kpt-korostus);
+    --accent-dim: color-mix(in srgb, var(--kpt-korostus) 82%, #000);
+    --accent-glow: var(--kpt-korostus-tausta);
+    --today-bg: var(--kpt-korostus-tausta);
+    --high: var(--kpt-virhe);
+    --normal: var(--kpt-huom);
+    --low: var(--kpt-ok);
+    --radius: 6px;
+    /* Tilausten tilat: samat värit kuin Tilaukset-listassa (Tomi 26.11.2026) */
+    --t-luonnos: var(--kpt-himmea); --t-kesken: var(--kpt-v-tilaukset); --t-tarjottu: var(--kpt-v-ajat);
+    --t-tilattu: var(--kpt-v-tilaukset); --t-tyon-alla: var(--kpt-huom); --t-valmis: var(--kpt-ok);
+    --t-laskutettu: var(--kpt-ok); --t-arkisto: var(--kpt-heikko);
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'IBM Plex Sans', sans-serif;
-    min-height:100vh;
-  }
-
-  /* HEADER — sama rakenne kuin muilla sivuilla */
-  header {
-    background: #241e30;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: #3a3545; border: 1px solid #585568;
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: #4a4558; }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: #3a3545; border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; width: 100%; text-align: left;
-    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; color: var(--text); background: none;
-    border: none; cursor: pointer; text-decoration: none;
-    transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
   .btn{
     background:var(--bg-card);color:var(--text);border:1px solid var(--border);
@@ -82,8 +42,8 @@
     font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;
   }
   .btn:hover{border-color:var(--accent);color:var(--accent);}
-  .btn-accent{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .btn-accent:hover{background:var(--accent-dim);border-color:var(--accent-dim);color:#fff;}
+  .btn-accent{background:var(--accent);color:var(--kpt-teksti-korostuksella);border-color:var(--accent);}
+  .btn-accent:hover{background:var(--accent-dim);border-color:var(--accent-dim);color:var(--kpt-teksti-korostuksella);}
 
   main{max-width:1100px;margin:0 auto;padding:20px;}
 
@@ -124,7 +84,7 @@
     font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
     color:var(--text-dim);
   }
-  .cal-weekday.weekend{color:#6b7c85;}
+  .cal-weekday.weekend{color:var(--kpt-heikko);}
 
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
   .cal-day{
@@ -134,7 +94,7 @@
   .cal-day:nth-child(7n){border-right:none;}
   .cal-day.other-month{background:var(--bg-dim);opacity:.5;}
   .cal-day.today{background:var(--today-bg);}
-  .cal-day.weekend{background:#233039;}
+  .cal-day.weekend{background:color-mix(in srgb, var(--kpt-himmea) 7%, transparent);}
   .cal-day.weekend.other-month{background:var(--bg-dim);}
 
   .day-number{
@@ -152,14 +112,14 @@
     display:flex;align-items:center;justify-content:center;
     font-family:'IBM Plex Mono',monospace;
   }
-  .add-day-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .add-day-btn:hover{background:var(--accent);border-color:var(--accent);color:var(--kpt-teksti-korostuksella);}
   .mobile-add{
     width:22px;height:22px;border-radius:4px;flex-shrink:0;align-self:flex-start;
     background:var(--bg-panel);border:1px solid var(--border);color:var(--text-dim);
     font-size:14px;line-height:1;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
   }
-  .mobile-add:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .mobile-add:hover{background:var(--accent);border-color:var(--accent);color:var(--kpt-teksti-korostuksella);}
 
   .event{
     display:block;padding:3px 6px;border-radius:3px;font-size:11px;font-weight:500;
@@ -173,14 +133,21 @@
   }
   .event-more:hover{color:var(--accent);}
 
-  /* Tilausväreillä samat kuin tilaukset.html */
-  .event-draft{background:#333340;color:var(--text-dim);}
-  .event-active{background:#0e2535;color:#0ea5e9;}
-  .event-quoted{background:#1e1535;color:#a855f7;}
-  .event-production{background:#2a2010;color:#e8a020;}
-  .event-done{background:#1a3028;color:#3dba6e;}
-  .event-invoiced{background:#1a3028;color:#3dba6e;}
-  .event-archived{background:#2a2a2a;color:#666;}
+  /* Tilausten värit samat kuin Tilaukset-listassa (R6b, Tomi 26.11.2026). Luokan nimi STATUS_CLASS-taulusta:
+     active = Kesken ja Tilattu, production = Työn alla. */
+  .event-draft{--v:var(--t-luonnos);}
+  .event-active{--v:var(--t-tilattu);}
+  .event-quoted{--v:var(--t-tarjottu);}
+  .event-production{--v:var(--t-tyon-alla);}
+  .event-done{--v:var(--t-valmis);}
+  .event-invoiced{--v:var(--t-laskutettu);}
+  .event-archived{--v:var(--t-arkisto);}
+  .event-draft, .event-active, .event-quoted, .event-production, .event-done, .event-invoiced, .event-archived{
+    color:var(--v);background:color-mix(in srgb, var(--v) 15%, transparent);border-left-color:var(--v);
+  }
+  .tag.event-draft, .tag.event-active, .tag.event-quoted, .tag.event-production, .tag.event-done, .tag.event-invoiced, .tag.event-archived{
+    border-color:color-mix(in srgb, var(--v) 35%, transparent);
+  }
 
   /* Tehtäväväreillä prioriteetti */
   .event-todo{background:var(--bg-card);color:var(--text);}
@@ -197,7 +164,7 @@
     border-left:3px solid transparent;
     padding:10px 14px;margin-bottom:4px;
   }
-  .day-row.weekend{background:#263540;}
+  .day-row.weekend{background:color-mix(in srgb, var(--kpt-paneeli2) 70%, var(--kpt-tausta));}
   .day-row.empty-day{opacity:.55;}
   .day-row.today{border-left-color:var(--accent);background:var(--accent-glow);}
   .day-label{
@@ -254,13 +221,13 @@
     padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;
     font-family:'IBM Plex Mono',monospace;
   }
-  .badge-pill.prio-high{background:#3a1a1a;color:var(--high);}
-  .badge-pill.prio-normal{background:#3a3110;color:var(--normal);}
-  .badge-pill.prio-low{background:#153a1e;color:var(--low);}
-  .badge-pill.shared{background:#1e1535;color:#a855f7;}
-  .badge-pill.own{background:#2b3d48;color:var(--text-dim);}
-  .badge-pill.done{background:#1a3028;color:#3dba6e;}
-  .badge-pill.notdone{background:#333340;color:var(--text-dim);}
+  .badge-pill.prio-high{background:color-mix(in srgb, var(--high) 15%, transparent);color:var(--high);}
+  .badge-pill.prio-normal{background:color-mix(in srgb, var(--normal) 15%, transparent);color:var(--normal);}
+  .badge-pill.prio-low{background:color-mix(in srgb, var(--low) 15%, transparent);color:var(--low);}
+  .badge-pill.shared{background:var(--kpt-korostus-tausta);color:var(--kpt-korostus);}
+  .badge-pill.own{background:var(--kpt-paneeli2);color:var(--text-dim);}
+  .badge-pill.done{background:color-mix(in srgb, var(--kpt-ok) 15%, transparent);color:var(--kpt-ok);}
+  .badge-pill.notdone{background:var(--kpt-paneeli2);color:var(--text-dim);}
   .modal-actions{
     display:flex;justify-content:flex-end;gap:10px;margin-top:16px;
   }
@@ -275,25 +242,49 @@
   }
   .toast.show{display:block;}
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+
+  /* ---------- R6b: uusi ulkoasu ja puhelin (26.11.2026) ---------- */
+  .btn{min-height:36px;font-family:var(--kpt-fontti);}
+  .kpt-sivu a.event, .kpt-sivu a.tag{color:var(--v);}                 /* tyyli.css värittää linkit korostusvärillä */
+  .kpt-sivu a.btn{color:var(--text);text-decoration:none;}
+  .kpt-sivu a.btn-accent{color:var(--kpt-teksti-korostuksella);}
+  .month-nav button{min-height:40px;min-width:44px;}
+  .modal{box-shadow:var(--kpt-varjo);}
+  .cal-wrap{border-radius:var(--kpt-pyoristys);}
+  .day-row{border:1px solid var(--border);border-left-width:3px;}
+  .day-row.today{border-color:var(--accent);}
+  @media (max-width:640px){
+    .kpt-yla{position:static;}
+    .month-nav{width:100%;justify-content:space-between;}
+    .month-nav button{min-height:44px;min-width:52px;}
+    .day-row{padding:9px 12px;}
+    .tag{padding:8px 12px;font-size:14px;}
+    .tag-order .tag-status{font-size:11px;}
+    .tag-todo input[type=checkbox]{width:20px;height:20px;}
+    .mobile-add{width:32px;height:32px;font-size:17px;}
+    .modal-actions .btn{min-height:44px;flex:1;display:inline-flex;align-items:center;justify-content:center;}
+  }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Kalenteri</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Kalenteri</h1></div>
   <div class="header-right">
     <button class="btn" id="todayBtn">Tänään</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
@@ -403,13 +394,7 @@
   let todosByDate = {};
 
   // ---------- Nav-valikko ----------
-  window.toggleNav = function(e){
-    e.stopPropagation();
-    document.getElementById("navDropdown").classList.toggle("open");
-  };
-  document.addEventListener("click", function(){
-    document.getElementById("navDropdown").classList.remove("open");
-  });
+  // Valikko: nav.js hoitaa (R6, oma toggleNav poistettu)
 
   // ---------- Auth helpers ----------
   async function getAuthHeaders(){
