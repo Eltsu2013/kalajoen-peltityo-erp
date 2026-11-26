@@ -84,7 +84,6 @@
   .mk-ryhma { margin-bottom: 18px; overflow-x: auto; }
   .mk-ryhma .kpt-piirros { margin-bottom: 8px; }
   .mk-nimi { font-family: var(--kpt-mono); font-size: 13px; font-weight: 600; color: var(--kpt-teksti); margin-bottom: 6px; }
-  .kaista-valinta { font-size: 13px; color: var(--kpt-himmea); margin: 6px 0 10px; }
   #kaista-sisalto { overflow-x: auto; }
   .pt-wrap { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
   .pt-table { border-collapse: collapse; font-family: var(--kpt-mono); font-size: 12px; margin-bottom: 6px; }
@@ -338,12 +337,11 @@
       </div></details>
 
       <details id="k-kaista" data-kortti class="kpt-kortti" open><summary>Kaistat (pelti rullasta) <span class="yv" id="ky-kaista"></span></summary><div class="k-sisalto">
+        <!-- 8.4d (26.11.2026): rullan leveys, asettelu, enimmäispituus ja kaistat yhteisestä kortista (KPT_MENEKKI.sivuKortti,
+             sama kuin Piipussa ja Kartiossa, asetukset muistetaan selaimessa). Paksuus jää Huuvan omaksi kentäksi (Tomi). -->
         <div class="kpt-kentat">
           <div class="kpt-kentta"><label>Pellin paksuus mm</label><input id="in-paksuus" type="number" value="0.6" step="0.1" min="0.1" oninput="renderAll()"></div>
-          <div class="kpt-kentta"><label>Rullan leveys mm</label><input id="in-rulla" type="number" value="1250" oninput="renderAll()"></div>
-          <div class="kpt-kentta"><label>Asettelu</label><select id="sel-asettelu" onchange="renderAll()"><option value="auto">Automaattinen</option><option value="lomitus">Lomitettu</option><option value="suora">Suora</option></select></div>
         </div>
-        <div class="kpt-kentta"><label>Kaistan enimmäispituus mm (tyhjä = ei rajaa)</label><input id="in-maxpit" type="number" value="5000" step="100" oninput="renderAll()"></div>
         <div id="kaista-sisalto"></div>
         <p class="kpt-vihje">Kaistan leveys = aihion korkeus, pituus = aihiot peräkkäin. Ohut pelti (enintään 0,8 mm) lomitetaan: joka toinen kappale käännetään 180°, ja kappaleet erotetaan yhdellä suoralla (viistolla) giljotiinileikkauksella. Leikkausten kohdat mitataan kaistan vasemmasta päästä, alareunasta ja yläreunasta. Alku ja Loppu ovat kaistan päiden leikkaukset. Harmaa kappale on käännetty. Paksu pelti leikataan suorina aihioina.</p>
       </div></details>
@@ -353,7 +351,7 @@
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=4"></script>
-<script src="menekki.js?v=3"></script>
+<script src="menekki.js?v=4"></script>
 <script src="tyokortti.js?v=5"></script>
 <script>
   // Yhteiset työkalut (vaihe 1, 20.11.2026): geometria orders/geom.js ja pelti-osat orders/pellit.js.
@@ -700,51 +698,44 @@
   function kaistaTeemaRuudulle() { return vaaleaUlkoasu() ? Object.assign({}, TEEMA_PAPERI_VARI, { leikkaus: '#dc2626' }) : TEEMA_RUUTU_KAISTA; }
 
 
-  // Kaistat-kortin luku ruudun kentistä
-  let kaistaKplValinta = {};   // käyttäjän valinta: ryhmän nimi -> kappaletta per kaista (0 / puuttuu = tasainen jako)
-  function asetaKaistaKpl(g, v) { kaistaKplValinta[decodeURIComponent(g)] = parseInt(v, 10) || 0; renderAll(); }
-
-  function lueKaistaAsetukset() {
-    const g = id => document.getElementById(id);
-    const paks = parseFloat(g('in-paksuus') && g('in-paksuus').value);
-    const rulla = parseFloat(g('in-rulla') && g('in-rulla').value);
-    const valinta = g('sel-asettelu') ? g('sel-asettelu').value : 'auto';
-    const paksuus = isNaN(paks) ? 0.6 : paks;
-    const mp = g('in-maxpit') ? parseFloat(g('in-maxpit').value) : NaN;
-    const maxPit = g('in-maxpit') && g('in-maxpit').value === '' ? 0 : (isNaN(mp) ? KAISTA_MAX_PITUUS : mp);   // tyhjä kenttä = ei rajaa
-    return { paksuus, rulla: isNaN(rulla) || rulla <= 0 ? RULLA_LEVEYS_OLETUS : rulla, tila: kaistaTila(paksuus, valinta), valinta, maxPit, kplKaistalle: kaistaKplValinta };
+  // Kaistat-kortti (8.4d, 26.11.2026): yhteinen KPT_MENEKKI.sivuKortti kuten Piipussa ja Kartiossa. Rullan leveys, asettelu,
+  // enimmäispituus ja "kappaletta kaistalle" ovat kortissa (selain muistaa ne yhteisesti), paksuus Huuvan omassa kentässä.
+  // Kortti luodaan vasta ensimmäisellä piirrolla, koska testien feikki-DOMissa sitä ei voi luoda (silloin oletusasetukset).
+  let kaistaKortti = null, kaistaPiirtaa = false;
+  function huuvanPaksuus() {
+    const p = parseFloat(document.getElementById('in-paksuus') && document.getElementById('in-paksuus').value);
+    return isNaN(p) ? 0.6 : p;
   }
-
-  const KAISTA_HANKALA_PIT = 4000, KAISTA_HANKALA_LEV = 600;   // mm: tästä alkaen näytetään käsittelyvinkki
-
-  // "Kappaletta kaistalle" -valinta yhdelle palaryhmälle (vain jos kappaleita on yli yksi)
-  function kaistaValinta(r) {
-    if (!r || r.kpl < 2) return '';
-    let o = '<option value="0"' + (!r.valinta ? ' selected' : '') + '>tasainen jako (' + jaaKaistoihin(r.kpl, r.kapasiteetti, 0).join(' + ') + ')</option>';
-    for (let m = 1; m <= r.kapasiteetti; m++) o += '<option value="' + m + '"' + (r.valinta === m ? ' selected' : '') + '>' + m + ' kpl (' + jaaKaistoihin(r.kpl, r.kapasiteetti, m).join(' + ') + ')</option>';
-    return '<div class="kaista-valinta"><span>' + esc(r.nimi) + ': ' + r.kpl + ' kpl, kaistalle mahtuu ' + r.kapasiteetti + '. Kappaletta kaistalle:</span> <select class="sel-mini" data-g="' + encodeURIComponent(r.nimi) + '" onchange="asetaKaistaKpl(this.dataset.g, this.value)">' + o + '</select></div>';
-  }
-
-  // Näyttö ruudulla
-  function paivitaKaistat(panels) {
-    const cont = document.getElementById('kaista-sisalto');
-    if (!cont) return null;
-    if (!panels || !panels.length) { cont.innerHTML = ''; return null; }
-    const a = lueKaistaAsetukset();
-    const kr = laskeKaistat(panels, a);
-    let html = '<p class="hint" style="margin-top:0">Asettelu: <b>' + (kr.tila === 'lomitus' ? 'lomitettu' : 'suora') + '</b>'
-      + (a.valinta === 'auto' ? ' (paksuus ' + String(a.paksuus).replace('.', ',') + ' mm → ' + (a.paksuus <= KAISTA_LOMITUS_MAX_PAKS ? 'ohut, lomitus' : 'paksu, suora') + ')' : ' (valittu käsin)') + '</p>';
-    kr.kaistat.forEach((k, i) => {
-      if (k.osa === 1) html += kaistaValinta(kr.ryhmat.find(r => r.nimi === k.nimi));
-      const vbH = Math.round(Math.min(330, Math.max(110, 520 * k.h / k.pituus + 60)));
-      html += '<div class="mk-ryhma"><div class="mk-nimi">' + esc(kaistaOtsikko(k, i + 1)) + '</div>'
-        + (k.pituus >= KAISTA_HANKALA_PIT && k.h >= KAISTA_HANKALA_LEV ? '<p class="hint" style="margin:0 0 4px">Pitkä ja leveä kaista on hankala käsitellä. Voit vähentää kappaleita kaistalle tai pienentää enimmäispituutta.</p>' : '')
-        + '<div class="kpt-piirros' + (vaaleaUlkoasu() ? ' paperi' : '') + '"><svg viewBox="0 0 520 ' + vbH + '" xmlns="http://www.w3.org/2000/svg">' + kaistaSvgSisalto(k, 520, vbH, kaistaTeemaRuudulle()) + '</svg></div>'
-        + kaistaLeikkausTaulu(k, 'pt-table') + '</div>';
+  function kaistaKorttiLuo() {
+    if (kaistaKortti) return kaistaKortti;
+    const el = document.getElementById('kaista-sisalto');
+    if (!el || typeof el.querySelector !== 'function' || !globalThis.KPT_MENEKKI.sivuKortti) return null;
+    kaistaKortti = globalThis.KPT_MENEKKI.sivuKortti(el, {
+      paksuus: () => huuvanPaksuus(),
+      // Kortin asetuksen muutos vaikuttaa myös merkintäsivujen "Palat kaistalla" -taulukkoon ja yhteenvetoon: koko sivu uudelleen
+      muutos: () => { if (!kaistaPiirtaa) renderAll(); },
     });
-    html += kaistaYhteenveto(kr, 'pt-table');
-    cont.innerHTML = html;
-    return kr;
+    return kaistaKortti;
+  }
+
+  // Asetukset laskennalle ja työkortille (sama muoto kuin ennen: paksuus, rulla, tila, valinta, maxPit, kplKaistalle)
+  function lueKaistaAsetukset() {
+    const k = kaistaKorttiLuo();
+    if (k && k.asetukset) return k.asetukset();   // paksuus kortille tulee huuvanPaksuus()-funktiosta
+    const paksuus = huuvanPaksuus();
+    return { paksuus, rulla: RULLA_LEVEYS_OLETUS, tila: kaistaTila(paksuus, 'auto'), valinta: 'auto', maxPit: 0, kplKaistalle: {} };
+  }
+
+  // Näyttö ruudulla: yhteinen kortti piirtää kaistat Huuvan paloista; palauttaa kaistat (yhteenveto, testit)
+  function paivitaKaistat(panels) {
+    const k = kaistaKorttiLuo();
+    const kappaleet = panels && panels.length ? globalThis.KPT_MENEKKI.pellitKappaleiksi(panels, p => aihioPisteet(p)) : null;
+    if (k) {
+      kaistaPiirtaa = true;
+      try { k.piirra(kappaleet); } finally { kaistaPiirtaa = false; }
+      return kappaleet ? k.tulos() : null;
+    }
+    return kappaleet ? laskeKaistat(panels, lueKaistaAsetukset()) : null;
   }
 
   // ---------- Tulostettavat työkortit ----------
@@ -1032,7 +1023,7 @@ function huuvaSyotteet() {
   return {
     tyyppi: 'huuva', versio: 1, nimi: document.getElementById('k-nimi').value, kentat,
     tila: { tyyppiState, nurkkaSivu, sijaintiState, panelOn: kopio(panelOn), ylaTyyppi: kopio(ylaTyyppi), loveusOn,
-            reunaTyyppi: kopio(reunaTyyppi), seinaSuunta: kopio(seinaSuunta), kaistaKplValinta: kopio(kaistaKplValinta) },
+            reunaTyyppi: kopio(reunaTyyppi), seinaSuunta: kopio(seinaSuunta) },
   };
 }
 function tilausStatus(teksti, tyyppi) {
@@ -1055,7 +1046,6 @@ function palautaHuuva(v) {
   if (t.ylaTyyppi) ylaTyyppi = kopio(t.ylaTyyppi);
   if (t.reunaTyyppi) reunaTyyppi = kopio(t.reunaTyyppi);
   if (t.seinaSuunta) seinaSuunta = kopio(t.seinaSuunta);
-  kaistaKplValinta = t.kaistaKplValinta ? kopio(t.kaistaKplValinta) : {};
   Object.keys(v.kentat || {}).forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;

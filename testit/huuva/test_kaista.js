@@ -303,6 +303,8 @@ ominaisuudet('leveät taitokset', sA, mk('kouru', 'sisaan', { sideW: { Etu:{L:40
   ok(r5.rivit.every(r => r.leveys <= 1250 + 1e-9) && sum(r5.rivit.map(r => r.kaistat.length)) === r5.kaistat.length, '8h: kaikki kaistat sijoitettu riveille');
   // otsikko, valintakenttä, työkortti
   ok(kaistaOtsikko(e5[1], 2).indexOf('(osa 2/2)') >= 0, '8i: otsikossa osa 2/2');
+  // 8.4d (26.11.2026): valinta tulee yhteisestä kortista (KPT_MENEKKI.kplValintaHtml), sama sisältö kuin Huuvan entisessä kaistaValinta-funktiossa
+  const kaistaValinta = globalThis.KPT_MENEKKI.kplValintaHtml;
   const kv = kaistaValinta(r5.ryhmat[0]);
   ok(kv.indexOf('tasainen jako (5 + 5)') >= 0 && kv.indexOf('<option value="7"') >= 0 && kv.indexOf('<option value="8"') < 0 && kv.indexOf('mahtuu 7') >= 0, '8i: valintakentässä tasainen jako ja 1...7 kpl');
   ok(kaistaValinta({ nimi: 'X', kpl: 1, kapasiteetti: 1, valinta: 0 }) === '', '8i: yhden kappaleen ryhmälle ei valintaa');

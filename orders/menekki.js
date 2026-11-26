@@ -14,6 +14,8 @@
 // Vaatii geom.js:n (kupera kuori, kuorten erotus, leikkaus puolitasolla, mm-muotoilu).
 // MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
 //
+// v4 (26.11.2026, vaihe 8.4d): sivuKortti palauttaa myös asetukset() = { paksuus, rulla, valinta, tila, maxPit, kplKaistalle }
+//   (Huuva tulostaa kaistasivun ja merkintäsivujen palat kaistalla kortin asetuksilla). Puhelimella kortin kentät 16 px.
 // v3 (24.11.2026, ulkoasuremontti R2a): vaaleassa ulkoasussa kaistakuva värillisellä paperiteemalla (pellit.js v4 TEEMA_PAPERI_VARI).
 // v2 (24.11.2026, ulkoasuremontti R1): sivukortti käyttää uuden ulkoasun värejä (--kpt-*) ja vaaleassa ulkoasussa paperiteemaa.
 // Vaihe 8.3 (24.11.2026): siirretty Huuvasta (orders/huuva.html, v16) sellaisenaan. Ainoa muutos: laskeKaistat ottaa
@@ -426,6 +428,10 @@
 .kmk-taulu th, .kmk-taulu td { border:1px solid var(--kpt-reuna2, var(--border, #56442e)); padding:3px 7px; text-align:left; }
 .kmk-taulu th { color:var(--kpt-himmea, var(--text2, #9595a0)); font-weight:500; }
 .kmk-taulu-wrap { overflow-x:auto; }
+@media (max-width:700px) {   /* v4: puhelimella kentät 16 px, ettei iPhone zoomaa niihin kirjoitettaessa */
+  .kmk-asetukset input, .kmk-asetukset select, .kmk-valinta select { font-size:16px; min-height:40px; }
+  .kmk-asetukset input { width:100px; }
+}
 `;
   function lisaaCss() {
     if (typeof document === 'undefined' || document.getElementById('kmk-tyylit')) return;
@@ -515,7 +521,14 @@
         sis.innerHTML = '<p class="kmk-varoitus">Kaistojen laskenta epäonnistui.</p>';
       }
     }
-    return { piirra, paivita: () => piirra(viim), tulos: () => kr };
+    // Nykyiset asetukset samassa muodossa kuin laskeKaistat ottaa ne (+ paksuus ja valinta), esim. sivun työkortille (8.4d)
+    function asetukset() {
+      const pk = luku(typeof o.paksuus === 'function' ? o.paksuus() : '');
+      const paksuus = pk > 0 ? pk : PAKSUUS_OLETUS;
+      return { paksuus, rulla: as.rulla, valinta: as.asettelu, tila: kaistaTila(paksuus, as.asettelu),
+        maxPit: as.maxPit === '' ? 0 : as.maxPit, kplKaistalle: Object.assign({}, kplValinta) };
+    }
+    return { piirra, paivita: () => piirra(viim), tulos: () => kr, asetukset };
   }
 
   const KPT_MENEKKI = {
