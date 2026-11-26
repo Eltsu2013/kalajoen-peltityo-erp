@@ -302,13 +302,16 @@
         <div class="kpt-kentta"><label for="j25_1">Alas (mm)</label><input type="number" id="j25_1" class="mitta" value="15" min="0" oninput="laske()"></div>
         <div class="kpt-kentta"><label for="j25_2">Alas (mm)</label><input type="number" id="j25_2" class="mitta" value="15" min="0" oninput="laske()"></div>
       </div>
+      <!-- Sivumitat (Tomi 26.11.2026): rivi kerrallaan etu 1 vasen | oikea, sitten etu 2 vasen | oikea (ennen sarakkeittain puolittain) -->
       <div class="alaotsikko">Sivumitat: matka ehjän harjan yli</div>
+      <div class="puoli-otsikko">Etu 1</div>
       <div class="puolet">
         <div class="kpt-kentta"><label for="ylit1V">Vasen (mm)</label><input type="number" id="ylit1V" class="mitta" value="150" min="0" oninput="laske()"></div>
-        <div class="kpt-kentta"><label for="ylit2V">Vasen (mm)</label><input type="number" id="ylit2V" class="mitta" value="150" min="0" oninput="laske()"></div>
-      </div>
-      <div class="puolet">
         <div class="kpt-kentta"><label for="ylit1O">Oikea (mm)</label><input type="number" id="ylit1O" class="mitta" value="150" min="0" oninput="laske()"></div>
+      </div>
+      <div class="puoli-otsikko">Etu 2</div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="ylit2V">Vasen (mm)</label><input type="number" id="ylit2V" class="mitta" value="150" min="0" oninput="laske()"></div>
         <div class="kpt-kentta"><label for="ylit2O">Oikea (mm)</label><input type="number" id="ylit2O" class="mitta" value="150" min="0" oninput="laske()"></div>
       </div>
       <div class="puolet">
@@ -452,7 +455,7 @@
 function gv(id) { return parseFloat(document.getElementById(id).value) || 0; }
 // Mitattavat kentät (Tomi 26.11.2026): uudessa piipussa oletusmitat, mutta muuttamattomat näkyvät oranssilla reunalla ja
 // listassa (#mitat-puuttuu), kunnes kenttään kirjoittaa. Muokattaessa tilauksen mitat ovat valmiiksi kunnossa.
-const MITTAKENTAT = [['lev1', 'leveys (puoli 1)', 400], ['koko', 'kokonaismitta etu 1 ↔ etu 2', 1200], ['suora1', 'suora mitta harjalle', 450], ['korkH', 'korkeus harjan kohdalla', 550], ['kork1', 'korkeus etureunassa', 760], ['k24_1', 'eteen piipusta (puoli 1)', 200], ['k24_2', 'eteen piipusta (puoli 2)', 200], ['j25_1', 'alas (puoli 1)', 15], ['j25_2', 'alas (puoli 2)', 15], ['ylit1V', 'vasen (puoli 1)', 150], ['ylit2V', 'vasen (puoli 2)', 150], ['ylit1O', 'oikea (puoli 1)', 150], ['ylit2O', 'oikea (puoli 2)', 150], ['poimu', 'uraan', 20]];
+const MITTAKENTAT = [['lev1', 'leveys (puoli 1)', 400], ['koko', 'kokonaismitta etu 1 ↔ etu 2', 1200], ['suora1', 'suora mitta harjalle', 450], ['korkH', 'korkeus harjan kohdalla', 550], ['kork1', 'korkeus etureunassa', 760], ['k24_1', 'eteen piipusta (puoli 1)', 200], ['k24_2', 'eteen piipusta (puoli 2)', 200], ['j25_1', 'alas (puoli 1)', 15], ['j25_2', 'alas (puoli 2)', 15], ['ylit1V', 'etu 1 vasen', 150], ['ylit1O', 'etu 1 oikea', 150], ['ylit2V', 'etu 2 vasen', 150], ['ylit2O', 'etu 2 oikea', 150], ['poimu', 'uraan', 20]];
 function muuttamattomat() { return MITTAKENTAT.filter(([id]) => document.getElementById(id).classList.contains('oletus')).map(([, nimi]) => nimi); }
 function naytaMuuttamattomat() {
   const lista = muuttamattomat();
