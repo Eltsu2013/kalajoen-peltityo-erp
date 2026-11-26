@@ -3,9 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#1a1d27">
+  <meta name="theme-color" content="#1c2532">
   <title>Varastotyö — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Ulkoasuremontti R5d (26.11.2026): värit yhteisestä tyylistä (tyyli.css + teema.js), oma tiivis yläreuna säilyy. -->
+  <link rel="stylesheet" href="tyyli.css?v=2">
+  <script src="teema.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     // QR-linkin ?paikka= talteen ennen kirjautumistarkistusta: auth-guard ohjaa login-sivulle
@@ -19,26 +22,28 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Samat värit kuin varasto.html:ssä */
-    :root {
-      --bg:       #0f1117;
-      --surface:  #1a1d27;
-      --surface2: #222636;
-      --border:   #2a2d3a;
-      --text:     #e8eaf0;
-      --muted:    #7a7f96;
-      --accent:   #eab308;
-      --accent2:  #ca9a06;
-      --danger:   #ef4444;
-      --ok:       #22c55e;
+    /* Sivun vanhat muuttujanimet kytketty yhteisiin (R5d); tumma ja vaalea ulkoasu tyyli.css:stä */
+    :root, html[data-teema] {
+      --bg:       var(--kpt-tausta);
+      --surface:  var(--kpt-paneeli);
+      --surface2: var(--kpt-paneeli2);
+      --border:   var(--kpt-reuna);
+      --text:     var(--kpt-teksti);
+      --muted:    var(--kpt-himmea);
+      --accent:   var(--kpt-korostus);
+      --accent2:  color-mix(in srgb, var(--kpt-korostus) 70%, var(--kpt-reuna));
+      --danger:   var(--kpt-virhe);
+      --ok:       var(--kpt-ok);
+      --napin-teksti: var(--kpt-teksti-korostuksella);
     }
 
     html, body { background: var(--bg); }
-    body {
+    body, body.kpt-sivu {
       font-family: 'IBM Plex Sans', sans-serif;
       color: var(--text);
       min-height: 100vh;
       font-size: 16px;
+      line-height: normal;
       -webkit-tap-highlight-color: transparent;
     }
     button { font-family: inherit; color: inherit; }
@@ -48,7 +53,8 @@
     .topbar {
       position: sticky; top: 0; z-index: 100;
       background: var(--surface);
-      border-bottom: 2px solid var(--accent);
+      border-top: 3px solid var(--accent);
+      border-bottom: 1px solid var(--border);
       padding: 8px 12px 10px;
     }
     .topbar-row {
@@ -71,7 +77,7 @@
       color: var(--muted);
       cursor: pointer;
     }
-    .mode-btn.active { background: var(--accent); color: #000; }
+    .mode-btn.active { background: var(--accent); color: var(--napin-teksti); }
 
     .place-bar {
       width: 100%;
@@ -242,9 +248,9 @@
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 18px;
     }
-    .level-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .level-btn:active { background: var(--accent); color: var(--napin-teksti); border-color: var(--accent); }
     .level-btn .lcode { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); font-weight: 400; }
-    .level-btn:active .lcode { color: #000; }
+    .level-btn:active .lcode { color: var(--napin-teksti); }
 
     .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .num-btn {
@@ -256,7 +262,7 @@
       font-family: 'IBM Plex Mono', monospace;
       cursor: pointer;
     }
-    .num-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .num-btn:active { background: var(--accent); color: var(--napin-teksti); border-color: var(--accent); }
     .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     /* Ruutu 2 -paikanpitäjä */
@@ -279,8 +285,8 @@
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
       padding: 2px 6px; border-radius: 4px; white-space: nowrap;
     }
-    .laji-pelti   { background: #14371f; color: #22c55e; }
-    .laji-tarvike { background: #2d1845; color: #a855f7; }
+    .laji-pelti   { background: color-mix(in srgb, var(--kpt-ok) 18%, transparent);     color: var(--kpt-ok); }
+    .laji-tarvike { background: color-mix(in srgb, var(--kpt-v-ajat) 18%, transparent); color: var(--kpt-v-ajat); }
 
     .here-box { margin-top: 22px; }
     .here-toggle {
@@ -310,14 +316,14 @@
     .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .seg button { background: var(--surface); border: none; min-height: 52px; font-size: 17px; font-weight: 600; color: var(--muted); cursor: pointer; }
     .seg button + button { border-left: 1px solid var(--border); }
-    .seg button.active { background: var(--accent); color: #000; }
+    .seg button.active { background: var(--accent); color: var(--napin-teksti); }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip {
       min-height: 46px; min-width: 64px; padding: 0 14px;
       background: var(--surface); border: 1px solid var(--border); border-radius: 23px;
       font-size: 15px; font-weight: 500; cursor: pointer;
     }
-    .chip.selected { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
+    .chip.selected { background: var(--accent); border-color: var(--accent); color: var(--napin-teksti); font-weight: 600; }
     .chip.chip-muted { color: var(--muted); }
     .np-chips-gap { margin-bottom: 8px; }
     .np-preview {
@@ -329,7 +335,7 @@
     .np-preview .np-dup { color: var(--accent); }
     .primary-btn {
       width: 100%; min-height: 60px; margin-top: 14px;
-      background: var(--accent); color: #000; border: none; border-radius: 8px;
+      background: var(--accent); color: var(--napin-teksti); border: none; border-radius: 8px;
       font-size: 18px; font-weight: 600; cursor: pointer;
     }
     .primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -354,7 +360,7 @@
       background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
       font-size: 24px; font-weight: 600; cursor: pointer;
     }
-    .qty-btn:active { background: var(--accent); color: #000; border-color: var(--accent); }
+    .qty-btn:active { background: var(--accent); color: var(--napin-teksti); border-color: var(--accent); }
     .qty-btn.wide { min-width: 92px; font-size: 17px; }
     .qty-row.big { margin-top: 10px; }
     .qty-row.big .qty-btn { flex: 1; min-height: 62px; }
@@ -412,6 +418,8 @@
       background: none; border: 1px solid var(--border); border-radius: 6px;
       padding: 8px 12px; font-size: 13px; color: var(--muted); cursor: pointer;
     }
+    .footer-napit { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .page-footer .kpt-teema-kytkin { min-height: 0; padding: 8px 12px; font-size: 13px; }
 
     /* ── RUUTU 4: INVENTOI ── */
     .inv-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
@@ -444,8 +452,8 @@
       min-height: 48px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
       font-size: 15px; font-weight: 500; cursor: pointer;
     }
-    .inv-btn.on-found   { background: var(--ok); border-color: var(--ok); color: #000; }
-    .inv-btn.on-missing { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .inv-btn.on-found   { background: var(--ok); border-color: var(--ok); color: var(--napin-teksti); }
+    .inv-btn.on-missing { background: var(--danger); border-color: var(--danger); color: var(--napin-teksti); }
     .inv-edit { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
     .inv-edit .form-label { margin-top: 8px; }
     .inv-edit-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
@@ -478,12 +486,9 @@
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .toast.success { border-color: var(--ok); color: var(--ok); }
     .toast.error   { border-color: var(--danger); color: var(--danger); }
-  
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+    </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
 <header class="topbar">
   <div class="topbar-row">
@@ -496,7 +501,7 @@
       </div>
       <script src="nav.js?v=5"></script>
     </div>
-      <a class="logo" href="varasto.html" title="Varasto (pöytäkone)"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="100" height="34"></a>
+      <a class="logo" href="varasto.html" title="Varasto (pöytäkone)"><img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="100" height="34"><img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="100" height="34"></a>
     </div>
     <div class="mode-toggle">
       <button class="mode-btn active" type="button" data-mode="lisaa">Lisää</button>
@@ -681,8 +686,8 @@
   </section>
 
   <div class="page-footer">
-    <span><span id="footerUser"></span><br><span class="mono" style="font-size:11px">varastotyo v2.3 · 17.11.2026</span></span>
-    <button type="button" id="logoutBtn">Kirjaudu ulos</button>
+    <span><span id="footerUser"></span><br><span class="mono" style="font-size:11px">varastotyo v2.4 · 26.11.2026</span></span>
+    <span class="footer-napit"><button class="kpt-teema-kytkin" type="button"></button><button type="button" id="logoutBtn">Kirjaudu ulos</button></span>
   </div>
 </main>
 
