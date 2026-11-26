@@ -6,286 +6,251 @@
 <title>Etusivu — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Etusivu uudessa ulkoasussa (ulkoasuremontti R3a, 26.11.2026, suunnitelma projektin claude/ulkoasu_remontti_suunnitelma.md
+     kohta 2): Tuotanto isona ylhäällä, pikanapit, kategoriaruudut valikosta (window.KPT_VALIKKO, joten uusi sivu
+     ilmestyy tänne itsestään) ja tilannekuva kuten ennen. Sivun omissa tyyleissä vain --kpt-muuttujia. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <style>
-  :root{
-    --bg: #1e2a30;
-    --bg-panel: #253540;
-    --bg-card: #2b3d48;
-    --bg-dim: #1a2429;
-    --border: #374b56;
-    --text: #e8edf0;
-    --text-dim: #9fb0b8;
-    --accent: #14b8a6;
-    --accent-dim: #0d9488;
-    --accent-glow: rgba(20,184,166,0.15);
-    --danger: #ef4444;
-    --danger-glow: rgba(239,68,68,0.12);
-    --warn: #e8a020;
-    --warn-glow: rgba(232,160,32,0.12);
-    --stale: #8b9aa5;
-    --stale-glow: rgba(139,154,165,0.10);
-    --high: #ef4444;
-    --normal: #eab308;
-    --low: #22c55e;
-    --radius: 4px;
+  /* ---------- Asettelu: tietokoneella kaksi saraketta (vasemmalla napit ja ruudut, oikealla tilannekuva) ---------- */
+  .etu-ruudukko { display: grid; grid-template-columns: 1fr; gap: 24px; align-items: start; }
+  @media (min-width: 1000px) { .etu-ruudukko { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 28px; } }
+  .etu-sarake { min-width: 0; }
+  .etu-sarake > section { margin-bottom: 24px; }
+  /* Puhelimella ja tabletilla yksi pino: tilannekuva ennen sivuruutuja (sivut löytyvät myös valikosta) */
+  @media (max-width: 999px) {
+    .etu-ruudukko { display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+    .etu-sarake { display: contents; }
+    .etu-ruudukko section { margin-bottom: 22px; }
+    .o-tuotanto { order: 1; } .o-pika { order: 2; } .o-kanta { order: 3; } .o-toimet { order: 4; } .o-paivat { order: 5; } .o-sivut { order: 6; }
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'IBM Plex Sans', sans-serif;
-    min-height:100vh;
+  .osio-otsikko {
+    font-family: var(--kpt-mono); font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--kpt-himmea); margin: 0 0 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
   }
+  .osio-otsikko a { color: var(--kpt-himmea); text-decoration: none; letter-spacing: .04em; }
+  .osio-otsikko a:hover { color: var(--kpt-teksti); text-decoration: underline; }
 
-  /* HEADER — sama rakenne kuin muilla sivuilla */
-  header {
-    background: #241e30;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
+  /* ---------- Tuotanto isona ---------- */
+  .tuotanto-iso {
+    display: flex; align-items: center; gap: 16px; text-decoration: none !important;
+    background: color-mix(in srgb, var(--kpt-v-tuotanto) 14%, var(--kpt-paneeli));
+    border: 1px solid color-mix(in srgb, var(--kpt-v-tuotanto) 45%, var(--kpt-reuna));
+    border-left: 6px solid var(--kpt-v-tuotanto); border-radius: var(--kpt-pyoristys);
+    padding: 18px 20px; color: var(--kpt-teksti) !important; transition: transform .1s, border-color .15s;
   }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .tuotanto-iso:hover { transform: translateY(-1px); border-color: var(--kpt-v-tuotanto); }
+  .tuotanto-iso .ikoni { font-size: 34px; line-height: 1; }
+  .tuotanto-iso .teksti { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .tuotanto-iso .nimi { font-size: 22px; font-weight: 600; color: var(--kpt-v-tuotanto); line-height: 1.2; }
+  .tuotanto-iso .tila { font-family: var(--kpt-mono); font-size: 13px; color: var(--kpt-himmea); margin-top: 4px; }
+  .tuotanto-iso .tila b { color: var(--kpt-teksti); font-weight: 600; }
+  .tuotanto-iso .nuoli { font-size: 22px; color: var(--kpt-v-tuotanto); }
 
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: #3a3545; border: 1px solid #585568;
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
+  /* ---------- Pikanapit (väri = sivun kategoria) ---------- */
+  .pikanapit { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .pikanappi {
+    --v: var(--kpt-v-neutraali);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;
+    min-height: 74px; padding: 10px 6px; border-radius: var(--kpt-pyoristys); text-decoration: none !important;
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-top: 3px solid var(--v);
+    color: var(--kpt-teksti) !important; transition: transform .1s, border-color .15s;
   }
-  .nav-btn:hover { background: #4a4558; }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: #3a3545; border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; width: 100%; text-align: left;
-    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; color: var(--text); background: none;
-    border: none; cursor: pointer; text-decoration: none;
-    transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  .pikanappi:hover { transform: translateY(-1px); border-color: var(--v); }
+  .pikanappi .ikoni { font-size: 22px; line-height: 1; }
+  .pikanappi .nimi { font-size: 13px; font-weight: 600; line-height: 1.2; }
+  .pikanappi.ensisijainen { background: var(--v); border-color: var(--v); color: var(--kpt-teksti-korostuksella) !important; }
 
-  main{max-width:1280px;margin:0 auto;padding:20px;}
+  /* ---------- Kategoriaruudut (luetaan valikosta) ---------- */
+  .kategoriat { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 10px; }
+  .kat-ruutu {
+    --v: var(--kpt-v-neutraali);
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-left: 4px solid var(--v);
+    border-radius: var(--kpt-pyoristys); padding: 12px 14px 10px;
+  }
+  .kat-ruutu h2 {
+    font-family: var(--kpt-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--v); margin: 0 0 6px !important;
+  }
+  .kat-ruutu a {
+    display: block; padding: 7px 8px; margin: 0 -8px; border-radius: 6px; font-size: 14px;
+    color: var(--kpt-teksti) !important; text-decoration: none;
+  }
+  .kat-ruutu a:hover { background: color-mix(in srgb, var(--v) 14%, transparent); }
+  .kat-ruutu[data-kat="tilaukset"], .pikanappi[data-kat="tilaukset"] { --v: var(--kpt-v-tilaukset); }
+  .kat-ruutu[data-kat="mallisto"],  .pikanappi[data-kat="mallisto"]  { --v: var(--kpt-v-mallisto); }
+  .kat-ruutu[data-kat="varasto"],   .pikanappi[data-kat="varasto"]   { --v: var(--kpt-v-varasto); }
+  .kat-ruutu[data-kat="ajat"],      .pikanappi[data-kat="ajat"]      { --v: var(--kpt-v-ajat); }
+  .kat-ruutu[data-kat="toimisto"],  .pikanappi[data-kat="toimisto"]  { --v: var(--kpt-v-toimisto); }
 
-  section{margin-bottom:28px;}
-  .section-title{
-    font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
-    color:var(--text-dim);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;
-    display:flex;align-items:center;justify-content:space-between;
+  /* ---------- Tilauskanta ---------- */
+  .status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .status-card {
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys);
+    padding: 10px 6px; text-align: center; text-decoration: none !important; color: var(--kpt-teksti) !important;
+    transition: border-color .15s;
   }
-  .section-title a{color:var(--accent);text-decoration:none;font-size:12px;}
-  .section-title a:hover{text-decoration:underline;}
-
-  /* ---------- Pikanapit ---------- */
-  .quick-actions{display:flex;flex-wrap:wrap;gap:8px;}
-  .qa-btn{
-    flex:1;min-width:100px;
-    background:var(--bg-card);border:1px solid var(--border);color:var(--text);
-    padding:11px 8px;border-radius:6px;text-decoration:none;
-    display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;
-    transition:border-color .15s,transform .1s;
-  }
-  .qa-btn:hover{border-color:var(--accent);transform:translateY(-1px);}
-  .qa-btn .qa-icon{font-size:18px;}
-  .qa-btn .qa-label{font-weight:600;font-size:12px;}
-  .qa-btn.primary{background:var(--accent);border-color:var(--accent);color:#0a1e1c;}
-  .qa-btn.primary:hover{background:var(--accent-dim);}
-
-  /* ---------- Status-kortit ---------- */
-  .status-grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;
-  }
-  .status-card{
-    background:var(--bg-card);border:1px solid var(--border);border-radius:6px;
-    padding:12px;text-align:center;cursor:pointer;text-decoration:none;color:var(--text);
-    transition:border-color .15s;
-  }
-  .status-card:hover{border-color:var(--accent);}
-  .status-count{font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;}
-  .status-name{font-size:11px;color:var(--text-dim);margin-top:2px;}
+  .status-card:hover { border-color: var(--kpt-v-tilaukset); }
+  .status-card.nolla { opacity: .55; }
+  .status-count { font-size: 22px; font-weight: 600; font-family: var(--kpt-mono); line-height: 1.2; }
+  .status-name { font-size: 11.5px; color: var(--kpt-himmea); margin-top: 2px; }
 
   /* ---------- Vaatii toimenpiteitä ---------- */
-  .action-list{
-    display:grid;grid-template-columns:1fr;gap:8px;
-    align-items:start;
+  .action-list { display: grid; grid-template-columns: 1fr; gap: 8px; align-items: start; }
+  @media (min-width: 640px) and (max-width: 999px) { .action-list { grid-template-columns: 1fr 1fr; } }
+  /* Alaotsikot ("🔴 Myöhässä" jne.) vievät aina koko leveyden */
+  .action-subgroup-label {
+    grid-column: 1 / -1; font-size: 11px; color: var(--kpt-himmea); text-transform: uppercase; letter-spacing: .05em;
+    margin: 10px 0 0; font-family: var(--kpt-mono);
   }
-  @media (min-width:640px){
-    .action-list{grid-template-columns:1fr 1fr;}
+  .action-subgroup-label:first-child { margin-top: 0; }
+  .action-item {
+    --v: var(--kpt-reuna);
+    display: flex; align-items: center; gap: 12px; text-decoration: none !important; color: var(--kpt-teksti) !important;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--v) 14%, transparent), transparent 30%), var(--kpt-paneeli);
+    border: 1px solid var(--kpt-reuna); border-left: 3px solid var(--v); border-radius: 6px; padding: 10px 14px;
   }
-  @media (min-width:1000px){
-    .action-list{grid-template-columns:1fr 1fr 1fr;}
-  }
-  /* Alaotsikot ("🔴 Myöhässä" jne.) vievät aina koko leveyden, jotta ne toimivat
-     selkeinä väliotsikkoina eivätkä vain yhtenä ruudukon soluna muiden joukossa. */
-  .action-subgroup-label{grid-column:1 / -1;}
-  .action-item{
-    display:flex;align-items:center;gap:12px;
-    background:var(--bg-card);border-left:3px solid var(--border);border-radius:var(--radius);
-    padding:10px 14px;text-decoration:none;color:var(--text);
-    transition:background .1s;
-  }
-  .action-item:hover{filter:brightness(1.15);}
-  .action-item.overdue{border-left-color:var(--danger);background:linear-gradient(90deg, var(--danger-glow), var(--bg-card) 20%);}
-  .action-item.unbilled{border-left-color:var(--warn);background:linear-gradient(90deg, var(--warn-glow), var(--bg-card) 20%);}
-  .action-item.stale{border-left-color:var(--stale);background:linear-gradient(90deg, var(--stale-glow), var(--bg-card) 20%);}
-  .action-icon{font-size:16px;flex-shrink:0;}
-  .action-body{flex:1;min-width:0;}
-  .action-name{font-weight:600;font-size:14px;}
-  .action-meta{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
-  .action-subgroup-label{
-    font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;
-    margin:14px 0 6px;font-family:'IBM Plex Mono',monospace;
-  }
-  .action-subgroup-label:first-child{margin-top:0;}
-  .all-clear{
-    grid-column:1 / -1;
-    background:var(--bg-card);border:1px dashed var(--border);border-radius:var(--radius);
-    padding:20px;text-align:center;color:var(--text-dim);font-size:14px;
+  .action-item:hover { border-color: var(--v); }
+  .action-item.overdue  { --v: var(--kpt-virhe); }
+  .action-item.unbilled { --v: var(--kpt-huom); }
+  .action-item.stale    { --v: var(--kpt-heikko); }
+  .action-icon { font-size: 16px; flex-shrink: 0; }
+  .action-body { flex: 1; min-width: 0; }
+  .action-name { font-weight: 600; font-size: 14px; }
+  .action-meta { font-size: 12px; color: var(--kpt-himmea); font-family: var(--kpt-mono); margin-top: 2px; }
+  .all-clear {
+    grid-column: 1 / -1; background: var(--kpt-paneeli); border: 1px dashed var(--kpt-reuna); border-radius: 6px;
+    padding: 18px; text-align: center; color: var(--kpt-himmea); font-size: 14px;
   }
 
-  /* ---------- Agenda ---------- */
-  #agendaList{
-    display:grid;grid-template-columns:1fr;gap:8px;align-items:start;
+  /* ---------- Lähipäivät ---------- */
+  #agendaList { display: grid; grid-template-columns: 1fr; gap: 6px; align-items: start; }
+  @media (min-width: 640px) and (max-width: 999px) { #agendaList { grid-template-columns: 1fr 1fr; } }
+  .day-row {
+    display: flex; gap: 14px; align-items: flex-start; background: var(--kpt-paneeli);
+    border: 1px solid var(--kpt-reuna); border-left: 3px solid transparent; border-radius: 6px; padding: 9px 14px;
   }
-  @media (min-width:640px){
-    #agendaList{grid-template-columns:1fr 1fr;}
+  .day-row.today { border-left-color: var(--kpt-v-tuotanto); background: color-mix(in srgb, var(--kpt-v-tuotanto) 10%, var(--kpt-paneeli)); }
+  .day-row.empty-day { opacity: .55; padding-top: 6px; padding-bottom: 6px; }
+  .day-label { flex-shrink: 0; width: 78px; font-family: var(--kpt-mono); display: flex; flex-direction: column; line-height: 1.3; padding-top: 2px; }
+  .day-name { font-size: 11px; color: var(--kpt-himmea); text-transform: uppercase; letter-spacing: .05em; }
+  .day-num { font-size: 15px; font-weight: 600; }
+  .day-row.today .day-num { color: var(--kpt-v-tuotanto); }
+  .day-tags { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+  .day-empty { color: var(--kpt-himmea); font-size: 13px; flex: 1; padding-top: 3px; }
+  .tag {
+    --v: var(--kpt-himmea);
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 12px; font-size: 12px;
+    text-decoration: none !important; line-height: 1.2; color: var(--v) !important;
+    background: color-mix(in srgb, var(--v) 15%, transparent); border: 1px solid color-mix(in srgb, var(--v) 30%, transparent);
   }
-  @media (min-width:1000px){
-    #agendaList{grid-template-columns:1fr 1fr 1fr;}
-  }
-  .day-row{
-    display:flex;gap:14px;align-items:flex-start;
-    background:var(--bg-card);border-radius:var(--radius);
-    border-left:3px solid transparent;
-    padding:10px 14px;margin-bottom:0;
-  }
-  .day-row.today{border-left-color:var(--accent);background:var(--accent-glow);}
-  .day-row.empty-day{opacity:.5;}
-  .day-label{
-    flex-shrink:0;width:78px;font-family:'IBM Plex Mono',monospace;
-    display:flex;flex-direction:column;line-height:1.3;padding-top:2px;
-  }
-  .day-name{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
-  .day-num{font-size:15px;font-weight:600;}
-  .day-row.today .day-num{color:var(--accent);}
-  .day-tags{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-  .day-empty{color:var(--text-dim);font-size:13px;flex:1;padding-top:3px;}
-  .tag{
-    display:inline-flex;align-items:center;gap:6px;
-    padding:5px 10px;border-radius:12px;font-size:12px;
-    text-decoration:none;border:1px solid transparent;line-height:1.2;
-  }
-  .tag-order{cursor:pointer;font-weight:600;}
-  .tag-order .tag-status{font-size:10px;font-weight:400;opacity:.8;font-family:'IBM Plex Mono',monospace;}
-  .event-draft{background:#333340;color:var(--text-dim);}
-  .event-active{background:#0e2535;color:#0ea5e9;}
-  .event-quoted{background:#1e1535;color:#a855f7;}
-  .event-production{background:#2a2010;color:#e8a020;}
-  .event-done{background:#1a3028;color:#3dba6e;}
-  .event-invoiced{background:#1a3028;color:#3dba6e;}
-  .event-archived{background:#2a2a2a;color:#666;}
-  .tag-todo{background:var(--bg-panel);color:var(--text);border-left:3px solid var(--normal);}
-  .tag-todo.prio-high{border-left-color:var(--high);}
-  .tag-todo.prio-normal{border-left-color:var(--normal);}
-  .tag-todo.prio-low{border-left-color:var(--low);}
-  .tag-todo.is-done{opacity:.5;text-decoration:line-through;}
+  .tag-order { font-weight: 600; }
+  .tag-order .tag-status { font-size: 10px; font-weight: 400; opacity: .85; font-family: var(--kpt-mono); }
+  .event-active     { --v: var(--kpt-v-tilaukset); }
+  .event-quoted     { --v: var(--kpt-v-ajat); }
+  .event-production { --v: var(--kpt-huom); }
+  .event-done, .event-invoiced { --v: var(--kpt-ok); }
+  .event-archived   { --v: var(--kpt-heikko); }
+  .tag-todo { --v: var(--kpt-teksti); border-left: 3px solid var(--kpt-huom); border-radius: 6px; font-weight: 500; }
+  .tag-todo.prio-high { border-left-color: var(--kpt-virhe); }
+  .tag-todo.prio-low  { border-left-color: var(--kpt-ok); }
+  .tag-todo.is-done { opacity: .5; text-decoration: line-through !important; }
 
-  .loading{grid-column:1 / -1;color:var(--text-dim);font-size:13px;padding:10px 0;}
+  .loading { grid-column: 1 / -1; color: var(--kpt-himmea); font-size: 13px; padding: 10px 0; }
 
-  @media (max-width:640px){
-    main{padding:14px;}
-    .qa-btn{min-width:100%;}
-    .day-row{flex-direction:column;gap:6px;}
-    .day-label{flex-direction:row;gap:8px;width:auto;align-items:baseline;}
+  @media (max-width: 640px) {
+    .tuotanto-iso { padding: 16px; gap: 12px; }
+    .tuotanto-iso .ikoni { font-size: 28px; }
+    .tuotanto-iso .nimi { font-size: 20px; }
+    .pikanapit { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pikanappi { min-height: 64px; flex-direction: row; justify-content: flex-start; gap: 10px; padding: 10px 12px; text-align: left; }
+    .kat-ruutu { padding: 10px 12px 8px; }
+    .kat-ruutu .linkit { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; }
+    .kat-ruutu a { font-size: 13.5px; padding: 7px 6px; margin: 0 -6px; }
+    .status-card { padding: 8px 4px; }
+    .status-count { font-size: 19px; }
+    .status-name { font-size: 10.5px; }
+    .day-row { flex-direction: column; gap: 4px; }
+    .day-row.empty-day { flex-direction: row; align-items: baseline; }
+    .day-label { flex-direction: row; gap: 8px; width: auto; align-items: baseline; }
   }
-
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+</style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Etusivu</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Etusivu</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
 </header>
 
-<main>
+<main class="kpt-sisalto">
+<div class="etu-ruudukko">
 
-  <section>
-    <div class="quick-actions">
-      <a class="qa-btn primary" href="tilaus.html">
-        <span class="qa-icon">✏️</span>
-        <span class="qa-label">Uusi tilaus</span>
+  <div class="etu-sarake">
+    <section class="o-tuotanto">
+      <a class="tuotanto-iso" href="tuotanto.html">
+        <span class="ikoni">⚙️</span>
+        <span class="teksti">
+          <span class="nimi">Tuotanto</span>
+          <span class="tila" id="tuotantoTila">Ladataan…</span>
+        </span>
+        <span class="nuoli">→</span>
       </a>
-      <a class="qa-btn" href="asiakkaat.html">
-        <span class="qa-icon">👤</span>
-        <span class="qa-label">Uusi asiakas</span>
-      </a>
-      <a class="qa-btn" href="tilaukset.html">
-        <span class="qa-icon">📋</span>
-        <span class="qa-label">Tilaukset</span>
-      </a>
-      <a class="qa-btn" href="tuotanto.html">
-        <span class="qa-icon">⚙️</span>
-        <span class="qa-label">Tuotanto</span>
-      </a>
-      <a class="qa-btn" href="ajanseuranta.html">
-        <span class="qa-icon">⏲</span>
-        <span class="qa-label">Ajanseuranta</span>
-      </a>
-    </div>
-  </section>
+    </section>
 
+    <section class="o-pika">
+      <div class="pikanapit">
+        <a class="pikanappi ensisijainen" data-kat="tilaukset" href="tilaus.html"><span class="ikoni">✏️</span><span class="nimi">Uusi tilaus</span></a>
+        <a class="pikanappi" data-kat="ajat" href="ajanseuranta.html"><span class="ikoni">⏲</span><span class="nimi">Ajanseuranta</span></a>
+        <a class="pikanappi" data-kat="varasto" href="varastotyo.html"><span class="ikoni">📱</span><span class="nimi">Varastotyö</span></a>
+        <a class="pikanappi" data-kat="tilaukset" href="asiakkaat.html"><span class="ikoni">👤</span><span class="nimi">Asiakkaat</span></a>
+      </div>
+    </section>
 
-  <section>
-    <div class="section-title">Tilauskanta</div>
-    <div class="status-grid" id="statusGrid">
-      <div class="loading">Ladataan…</div>
-    </div>
-  </section>
+    <section class="o-sivut">
+      <div class="osio-otsikko">Sivut</div>
+      <div class="kategoriat" id="kategoriat"></div>
+    </section>
+  </div>
 
-  <section>
-    <div class="section-title">⚠️ Vaatii toimenpiteitä</div>
-    <div class="action-list" id="actionList">
-      <div class="loading">Ladataan…</div>
-    </div>
-  </section>
+  <div class="etu-sarake">
+    <section class="o-kanta">
+      <div class="osio-otsikko">Tilauskanta <a href="tilaukset.html">Kaikki tilaukset →</a></div>
+      <div class="status-grid" id="statusGrid">
+        <div class="loading">Ladataan…</div>
+      </div>
+    </section>
 
-  <section>
-    <div class="section-title">
-      Lähipäivät
-      <a href="kalenteri.html">Avaa koko kalenteri →</a>
-    </div>
-    <div id="agendaList">
-      <div class="loading">Ladataan…</div>
-    </div>
-  </section>
+    <section class="o-toimet">
+      <div class="osio-otsikko">⚠️ Vaatii toimenpiteitä</div>
+      <div class="action-list" id="actionList">
+        <div class="loading">Ladataan…</div>
+      </div>
+    </section>
 
+    <section class="o-paivat">
+      <div class="osio-otsikko">Lähipäivät <a href="kalenteri.html">Avaa koko kalenteri →</a></div>
+      <div id="agendaList">
+        <div class="loading">Ladataan…</div>
+      </div>
+    </section>
+  </div>
+
+</div>
 </main>
 
 <script>
@@ -312,14 +277,17 @@
   const AGENDA_DAYS = 7;
   const DAYS_SHORT_FI = ['Su','Ma','Ti','Ke','To','Pe','La'];
 
-  // ---------- Nav-valikko ----------
-  window.toggleNav = function(e){
-    e.stopPropagation();
-    document.getElementById("navDropdown").classList.toggle("open");
-  };
-  document.addEventListener("click", function(){
-    document.getElementById("navDropdown").classList.remove("open");
-  });
+  // ---------- Kategoriaruudut valikosta (nav.js: window.KPT_VALIKKO), joten uusi sivu ilmestyy tänne itsestään ----------
+  function renderKategoriat(){
+    const el = document.getElementById("kategoriat");
+    const V = window.KPT_VALIKKO;
+    if(!el || !V || !V.VALIKKO){ if(el) el.closest("section").style.display = "none"; return; }
+    el.innerHTML = V.VALIKKO.map(function(k){
+      return '<div class="kat-ruutu" data-kat="' + escapeHtml(k.id) + '"><h2>' + escapeHtml(k.nimi) + '</h2>'
+        + '<div class="linkit">' + k.sivut.map(function(s){ return '<a href="' + escapeHtml(s.href) + '">' + escapeHtml(s.label) + '</a>'; }).join("")
+        + '</div></div>';
+    }).join("");
+  }
 
   // ---------- Auth helpers ----------
   async function getAuthHeaders(){
@@ -377,15 +345,27 @@
       const orders = await ordersRes.json();
       const todos = await todosRes.json();
 
+      renderTuotanto(orders);
       renderStatusGrid(orders);
       renderActionList(orders, todayStr);
       renderAgenda(orders, todos, todayStr);
     }catch(err){
       console.error(err);
       document.getElementById("statusGrid").innerHTML = '<div class="loading">Lataus epäonnistui</div>';
+      document.getElementById("tuotantoTila").textContent = "Avaa tuotanto";
       document.getElementById("actionList").innerHTML = '<div class="loading">Lataus epäonnistui</div>';
       document.getElementById("agendaList").innerHTML = '<div class="loading">Lataus epäonnistui</div>';
     }
+  }
+
+  // ---------- Tuotanto isona: montako tilausta on työn alla ja tilattu (sama haku kuin tilauskannalla) ----------
+  function renderTuotanto(orders){
+    const n = function(s){ return orders.filter(function(o){ return o.status === s; }).length; };
+    const tyon = n('IN_PRODUCTION'), tilattu = n('ORDERED');
+    const osat = [];
+    if(tyon) osat.push('<b>' + tyon + '</b> työn alla');
+    if(tilattu) osat.push('<b>' + tilattu + '</b> tilattu');
+    document.getElementById("tuotantoTila").innerHTML = osat.length ? osat.join(' · ') : 'Ei tilauksia tuotannossa';
   }
 
   // ---------- Status-kortit ----------
@@ -397,7 +377,7 @@
     });
 
     const html = STATUS_ORDER.map(function(s){
-      return '<a class="status-card" href="tilaukset.html?filter=' + s + '">'
+      return '<a class="status-card' + (counts[s] ? '' : ' nolla') + '" href="tilaukset.html?filter=' + s + '">'
         + '<div class="status-count">' + counts[s] + '</div>'
         + '<div class="status-name">' + STATUS_FI[s] + '</div>'
         + '</a>';
@@ -539,6 +519,7 @@
   }
 
   // ---------- Init ----------
+  renderKategoriat();
   window._authReady.then(function(){
     loadDashboard();
   });
