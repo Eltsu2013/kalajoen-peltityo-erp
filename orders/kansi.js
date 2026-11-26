@@ -15,6 +15,8 @@
 // Kuva: tasoaihio, ETU vasemmalla ja VASEN alhaalla (kuten piippusivuilla; kansi alapuolelta katsottuna, Tomi 23.11.).
 // Versiot: v1 23.11.2026. v2 24.11.2026: karvauksen profiilikuvake ei pieneen reikään (reiän muoto näkyy).
 //          v3 24.11.2026: reikien mitat oletuksena muuratusta piipusta (Tomi), hupun pinta kuvaan omana viivanaan.
+//          v5 26.11.2026 (ulkoasuremontti R2b): tyylit uuden ulkoasun muuttujilla (--kpt-*) vanhat varalla; sivuKortti(el, { kuvaMuunnos })
+//             = kuvan SVG sivun muunnoksen läpi (Piippu: värillinen paperi). Ilman niitä (Tuotanto, Harjapiippu) ennallaan.
 //          v4 24.11.2026: piippusivujen kortti kiinni oletuksena, reikien määrä otsikossa, aukeaa muokattaessa jos reikiä.
 (function () {
   const PI = globalThis.KPT_PIIPPU || (typeof require === 'function' ? require('./piippu-laskenta.js') : null);
@@ -25,29 +27,29 @@
   const CSS = `
   .kpk-lomake { font-size: 13px; }
   .kpk-rivi { display: flex; align-items: center; gap: 8px; margin: 5px 0; flex-wrap: wrap; }
-  .kpk-rivi > label { flex: 1 1 150px; color: var(--text2, #6b8fa8); font-size: 12px; }
-  .kpk-lomake input[type=number] { width: 76px; background: var(--bg, #0a0f1a); color: var(--text, #e2eef5); border: 1px solid var(--border, #1e3a4a); border-radius: 3px; padding: 5px 6px; font-size: 13px; }
-  .kpk-lomake select { background: var(--bg, #0a0f1a); color: var(--text, #e2eef5); border: 1px solid var(--border, #1e3a4a); border-radius: 3px; padding: 5px 6px; font-size: 12px; max-width: 100%; }
-  .kpk-reika { background: var(--bg3, #1a2332); border: 1px solid var(--border, #1e3a4a); border-radius: 4px; padding: 6px 8px; margin: 6px 0; }
+  .kpk-rivi > label { flex: 1 1 150px; color: var(--kpt-himmea, var(--text2, #6b8fa8)); font-size: 12px; }
+  .kpk-lomake input[type=number] { width: 76px; background: var(--kpt-kentta, var(--bg, #0a0f1a)); color: var(--kpt-teksti, var(--text, #e2eef5)); border: 1px solid var(--kpt-reuna2, var(--border, #1e3a4a)); border-radius: 3px; padding: 5px 6px; font-size: 13px; }
+  .kpk-lomake select { background: var(--kpt-kentta, var(--bg, #0a0f1a)); color: var(--kpt-teksti, var(--text, #e2eef5)); border: 1px solid var(--kpt-reuna2, var(--border, #1e3a4a)); border-radius: 3px; padding: 5px 6px; font-size: 12px; max-width: 100%; }
+  .kpk-reika { background: var(--kpt-paneeli2, var(--bg3, #1a2332)); border: 1px solid var(--kpt-reuna2, var(--border, #1e3a4a)); border-radius: 4px; padding: 6px 8px; margin: 6px 0; }
   .kpk-reika .kpk-rivi > label { flex: 0 0 82px; }
   .kpk-reika-otsikko { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-weight: 600; font-size: 12px; }
-  .kpk-nappi { background: var(--bg3, #1a2332); color: var(--text, #e2eef5); border: 1px solid var(--border, #1e3a4a); border-radius: 3px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
-  .kpk-nappi:hover { border-color: var(--accent, #22c55e); }
-  .kpk-poista { color: #ef4444; padding: 3px 8px; }
-  .kpk-vihje { color: var(--text2, #6b8fa8); font-size: 11px; margin: 3px 0; }
+  .kpk-nappi { background: var(--kpt-paneeli2, var(--bg3, #1a2332)); color: var(--kpt-teksti, var(--text, #e2eef5)); border: 1px solid var(--kpt-reuna2, var(--border, #1e3a4a)); border-radius: 3px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+  .kpk-nappi:hover { border-color: var(--kpt-korostus, var(--accent, #22c55e)); }
+  .kpk-poista { color: var(--kpt-virhe, #ef4444); padding: 3px 8px; }
+  .kpk-vihje { color: var(--kpt-himmea, var(--text2, #6b8fa8)); font-size: 11px; margin: 3px 0; }
   .kpk-kuva svg { width: 100%; height: auto; display: block; margin: 0 auto; }
-  .kpk-kuva .kpk-alle { color: var(--text2, #6b8fa8); font-size: 11px; text-align: center; margin: 2px 0; }
+  .kpk-kuva .kpk-alle { color: var(--kpt-himmea, var(--text2, #6b8fa8)); font-size: 11px; text-align: center; margin: 2px 0; }
   .kpk-taulu { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .kpk-taulu th, .kpk-taulu td { border-bottom: 1px solid var(--border, #1e3a4a); padding: 4px 5px; text-align: right; white-space: nowrap; }
+  .kpk-taulu th, .kpk-taulu td { border-bottom: 1px solid var(--kpt-reuna2, var(--border, #1e3a4a)); padding: 4px 5px; text-align: right; white-space: nowrap; }
   .kpk-taulu th:first-child, .kpk-taulu td:first-child { text-align: left; }
-  .kpk-taulu th { color: var(--text2, #6b8fa8); font-weight: 600; }
-  .kpk-taulu th.kpk-ryhma { text-align: center; color: var(--text, #e2eef5); }
-  .kpk-taulu td.kpk-iso { font-weight: 700; color: var(--accent, #22c55e); }
+  .kpk-taulu th { color: var(--kpt-himmea, var(--text2, #6b8fa8)); font-weight: 600; }
+  .kpk-taulu th.kpk-ryhma { text-align: center; color: var(--kpt-teksti, var(--text, #e2eef5)); }
+  .kpk-taulu td.kpk-iso { font-weight: 700; color: var(--kpt-korostus, var(--accent, #22c55e)); }
   .kpk-taulu-vieritys { overflow-x: auto; }
-  .kpk-varoitus { color: #f59e0b; font-size: 12px; margin: 4px 0; }
+  .kpk-varoitus { color: var(--kpt-huom, #f59e0b); font-size: 12px; margin: 4px 0; }
   .kpk-grid { display: grid; grid-template-columns: minmax(240px, 330px) minmax(0, 1fr); gap: 14px; margin-top: 10px; align-items: start; }
   @media (max-width: 900px) { .kpk-grid { grid-template-columns: minmax(0, 1fr); } }
-  .kpk-mitattu { margin: 6px 0; padding: 6px 8px; border: 1px solid #f59e0b; border-radius: 4px; font-size: 12px; color: #fcd34d; }
+  .kpk-mitattu { margin: 6px 0; padding: 6px 8px; border: 1px solid var(--kpt-huom, #f59e0b); border-radius: 4px; font-size: 12px; color: var(--kpt-huom, #fcd34d); }
   `;
   function lisaaCss() {
     if (typeof document === 'undefined' || document.getElementById('kpk-css')) return;
@@ -331,7 +333,7 @@
           q('kpk-mitattu-paikka').innerHTML = mitattu
             ? '<div class="kpk-mitattu">Tuotannossa mitattu piipun ulkomitta on käytössä (etu–taka ' + (mitattu.syv || '–') + ', vasen–oikea ' + (mitattu.lev || '–') + ' mm). ' +
               '<button type="button" class="kpk-nappi" data-poista-mitattu="1">Poista mitattu</button></div>' : '';
-          q('kpk-kuva').innerHTML = kuva(k) + '<div class="kpk-alle">' + alateksti() + '</div>';
+          q('kpk-kuva').innerHTML = (typeof o.kuvaMuunnos === 'function' ? o.kuvaMuunnos(kuva(k)) : kuva(k)) + '<div class="kpk-alle">' + alateksti() + '</div>';
           q('kpk-varoitukset').innerHTML = k.varoitukset.map(t => '<div class="kpk-varoitus">⚠ ' + esc(t) + '</div>').join('');
           q('kpk-taulu-paikka').innerHTML = reikaTaulu(k);
         } catch (e) { console.error('Kansi:', e); q('kpk-kuva').innerHTML = '<p class="kpk-vihje">Kannen kuvan piirto epäonnistui.</p>'; }

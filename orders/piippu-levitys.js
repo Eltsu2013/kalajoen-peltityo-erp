@@ -23,6 +23,8 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v20 (26.11.2026, ulkoasuremontti R2b): palojen korttien tyylit uuden ulkoasun muuttujilla (--kpt-*), vanhat värit varalla,
+//      joten sivut ilman tyyli.css:ää (Tuotanto, Harjapiippu) näyttävät ennallaan; kuvien tausta paperi, kun sivulla on --kpt-paperi.
 // v19 (24.11.2026): kaistaKappaleet (hupun palat kaistoille, menekki.js, vaihe 8.3; peilikuvapari samalle kaistalle vuorotellen).
 // v18 (24.11.2026): lapepiipun kiilassa tyhjät vasemmat korkeudet katon tasosta (LASKETTU), kiero katto -varoitus.
 // v17 (24.11.2026): kiilaSivukuva (lapepiipun sivukuva oikeasta sivusta kiilan kanssa, vaihe 5c).
@@ -422,19 +424,19 @@
   }
 
   // Sivun tyylit (lisätään kerran, kun ensimmäinen pala piirretään)
-  const CSS = '.plv-pala{border:1px solid #1e3a4a;border-radius:6px;margin:0 0 10px;background:#111827}'
+  const CSS = '.plv-pala{border:1px solid var(--kpt-reuna,#1e3a4a);border-radius:6px;margin:0 0 10px;background:var(--kpt-paneeli2,#111827)}'
     + '.plv-pala>summary{cursor:pointer;padding:10px 12px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;list-style:none}'
-    + '.plv-pala>summary::-webkit-details-marker{display:none}.plv-pala>summary::before{content:"▸";color:#22c55e;width:10px}.plv-pala[open]>summary::before{content:"▾"}'
-    + '.plv-nimi{font-weight:600;font-size:14px}.plv-meta{font-family:"IBM Plex Mono",monospace;font-size:12px;color:#6b8fa8}'
+    + '.plv-pala>summary::-webkit-details-marker{display:none}.plv-pala>summary::before{content:"▸";color:var(--kpt-korostus,#22c55e);width:10px}.plv-pala[open]>summary::before{content:"▾"}'
+    + '.plv-nimi{font-weight:600;font-size:14px}.plv-meta{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--kpt-himmea,#6b8fa8)}'
     + '.plv-sisus{padding:0 12px 12px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}@media(max-width:900px){.plv-sisus{grid-template-columns:minmax(0,1fr)}}'
-    + '.plv-sisus svg{width:100%;height:auto;display:block;background:#1a2332;border-radius:6px}'
+    + '.plv-sisus svg{width:100%;height:auto;display:block;background:var(--kpt-paperi,#1a2332);border-radius:6px}'
     + '.plv-taulu{border-collapse:collapse;font:12px "IBM Plex Mono",monospace;margin-top:8px;width:100%;table-layout:fixed}'
-    + '.plv-taulu th,.plv-taulu td{border:1px solid #1e3a4a;padding:3px 6px;text-align:left;overflow-wrap:anywhere;vertical-align:top}.plv-taulu th{color:#6b8fa8}'
+    + '.plv-taulu th,.plv-taulu td{border:1px solid var(--kpt-reuna,#1e3a4a);padding:3px 6px;text-align:left;overflow-wrap:anywhere;vertical-align:top}.plv-taulu th{color:var(--kpt-himmea,#6b8fa8)}'
     + '.plv-taulu th:nth-child(1){width:21%}.plv-taulu th:nth-child(2){width:15%}.plv-taulu th:nth-child(3){width:17%}.plv-taulu th:nth-child(4){width:14%}'
     + '@media(max-width:520px){.plv-taulu{font-size:10.5px}.plv-taulu th,.plv-taulu td{padding:2px 3px}.plv-sisus{padding:0 6px 10px}}'
-    + '.plv-lisa>summary{cursor:pointer;color:#6b8fa8;font-size:12px;margin:4px 0}.plv-kulmat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}'
-    + '.plv-pala .pt-wrap{display:flex;gap:10px;flex-wrap:wrap}.plv-pala .pt-table{border-collapse:collapse;font:12px "IBM Plex Mono",monospace;margin-top:6px}.plv-pala .pt-table th,.plv-pala .pt-table td{border:1px solid #1e3a4a;padding:2px 8px;text-align:right}'
-    + '.plv-selite{font-size:11px;color:#6b8fa8;line-height:1.5;margin:6px 0 10px}';
+    + '.plv-lisa>summary{cursor:pointer;color:var(--kpt-himmea,#6b8fa8);font-size:12px;margin:4px 0}.plv-kulmat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:6px}'
+    + '.plv-pala .pt-wrap{display:flex;gap:10px;flex-wrap:wrap}.plv-pala .pt-table{border-collapse:collapse;font:12px "IBM Plex Mono",monospace;margin-top:6px}.plv-pala .pt-table th,.plv-pala .pt-table td{border:1px solid var(--kpt-reuna,#1e3a4a);padding:2px 8px;text-align:right}'
+    + '.plv-selite{font-size:11px;color:var(--kpt-himmea,#6b8fa8);line-height:1.5;margin:6px 0 10px}';
   function lisaaTyylit() {
     if (typeof document === 'undefined' || document.getElementById('plv-tyylit')) return;
     const st = document.createElement('style');

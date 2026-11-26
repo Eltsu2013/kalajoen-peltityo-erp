@@ -7,7 +7,7 @@
  * Kaksi ulkoasua: tumma (oletus) ja vaalea, html[data-teema="vaalea"]. Valinta: teema.js (ladataan <head>issa).
  *
  * Käyttö sivulla:
- *   <head> ... <link rel="stylesheet" href="tyyli.css?v=1"> <script src="teema.js?v=1"></script>
+ *   <head> ... <link rel="stylesheet" href="tyyli.css?v=2"> <script src="teema.js?v=1"></script>
  *   <body class="kpt-sivu"> ... yläpalkki <header class="kpt-yla"> (malli: testit/ulkoasu-mallit.html)
  * Kaikki luokat alkavat kpt-, jotta ne eivät sekoitu sivujen vanhoihin tyyleihin siirtymäaikana.
  * Sivun omissa tyyleissä käytetään näitä muuttujia (--kpt-...), ei kiinteitä värejä, jotta vaalea ulkoasu toimii.
@@ -18,6 +18,9 @@
 :root {
   color-scheme: dark;
   --kpt-tausta: #151c26;
+  /* Piirrosten paperi (sama molemmissa ulkoasuissa, R2b 26.11.2026: myös yhteisten tiedostojen kuville) */
+  --kpt-paperi: #f7f5f0;
+  --kpt-paperi-reuna: #d9d4c8;
   --kpt-paneeli: #1c2532;
   --kpt-paneeli2: #243042;
   --kpt-kentta: #111821;
@@ -270,7 +273,7 @@ details.kpt-kortti[open] > summary::before { content: '▾ '; }
 
 /* Piirrosalue (SVG). .paperi = aina vaalea paperipohja (mustat viivat), kummassakin ulkoasussa */
 .kpt-piirros { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); border-radius: 6px; padding: 8px; }
-.kpt-piirros.paperi { background: #f7f5f0; border-color: #d9d4c8; }
+.kpt-piirros.paperi { background: var(--kpt-paperi); border-color: var(--kpt-paperi-reuna); }
 .kpt-piirros svg { display: block; width: 100%; height: auto; }
 
 /* ---------- Puhelin ---------- */
