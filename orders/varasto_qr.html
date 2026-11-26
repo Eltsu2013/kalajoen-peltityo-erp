@@ -5,26 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>QR-tarrat — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <!-- Ulkoasuremontti R5a (26.11.2026): yhteinen yläpalkki ja värit (tyyli.css + teema.js). Tarrojen tuloste ennallaan. -->
+  <link rel="stylesheet" href="tyyli.css?v=2">
+  <script src="teema.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
   <script src="auth-guard.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #0f1117; --surface: #1a1d27; --surface2: #222636; --border: #2a2d3a;
-      --text: #e8eaf0; --muted: #7a7f96; --accent: #eab308;
+    :root, html[data-teema] {
+      --bg: var(--kpt-kentta); --surface: var(--kpt-paneeli); --surface2: var(--kpt-paneeli2); --border: var(--kpt-reuna);
+      --text: var(--kpt-teksti); --muted: var(--kpt-himmea); --accent: var(--kpt-korostus);
     }
-    body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 15px; }
+    body { font-size: 15px; }
     .mono { font-family: 'IBM Plex Mono', monospace; }
 
     /* ── Ohjauspaneeli (ei tulostu) ── */
     .toolbar {
-      position: sticky; top: 0; z-index: 10;
-      background: var(--surface); border-bottom: 2px solid var(--accent);
-      padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center;
     }
-    .toolbar img { height: 32px; }
-    .toolbar h1 { font-size: 16px; font-weight: 600; margin-right: auto; }
     .toolbar label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; max-width: 100%; min-width: 0; }
     .toolbar input[type=text] { min-width: 0; max-width: 100%; flex: 1 1 auto; }
     .toolbar select, .toolbar input[type=text] {
@@ -32,11 +32,18 @@
       padding: 7px 10px; font-family: inherit; font-size: 14px;
     }
     .toolbar input[type=text] { min-width: 300px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+    .toolbar label:first-child { flex: 1 1 360px; }
+    @media (max-width: 700px) {
+      .toolbar input[type=text] { min-width: 0; font-size: 16px; }   /* mahtuu ruudulle, iPhone ei zoomaa */
+      .toolbar label:first-child { flex-basis: 100%; }
+      .toolbar select { font-size: 16px; }
+      .btn { min-height: 42px; }
+    }
     .btn {
       background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
       padding: 8px 14px; font-family: inherit; font-size: 14px; cursor: pointer;
     }
-    .btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+    .btn.primary { background: var(--accent); color: var(--kpt-teksti-korostuksella); border-color: var(--accent); font-weight: 600; }
     .hint { padding: 10px 16px; color: var(--muted); font-size: 13px; }
 
     /* ── Valintalista ── */
@@ -76,73 +83,35 @@
     .preview-wrap { padding: 20px 16px 40px; overflow-x: auto; }
     .state { padding: 40px; text-align: center; color: var(--muted); }
 
-    /* ── Valikko (sama kuin varasto.html) ── */
-    .nav-menu-wrap { position: relative; }
-    .nav-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; font-weight: 600;
-      padding: 6px 12px; border-radius: 4px;
-      cursor: pointer; letter-spacing: 0.04em;
-    }
-    .nav-btn:hover { background: var(--border); }
-    .nav-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 6px);
-      left: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      min-width: 200px;
-      z-index: 999;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      overflow: hidden;
-    }
-    .nav-dropdown.open { display: block; }
-    .nav-section-label {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--muted); padding: 8px 14px 4px;
-    }
-    .nav-item {
-      display: block; width: 100%; text-align: left;
-      padding: 8px 14px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; color: var(--text);
-      background: none; border: none; cursor: pointer;
-      text-decoration: none; transition: background 0.1s;
-    }
-    .nav-item:hover { background: var(--border); color: var(--accent); }
-    .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
     @media print {
       body { background: #fff; }
-      .toolbar, .hint, .picker, .state { display: none !important; }
+      .kpt-yla, .toolbar, .hint, .picker, .state { display: none !important; }
       .preview-wrap { padding: 0; overflow: visible; }
       .sheet { width: auto; padding: 0; margin: 0; }
       @page { size: A4; margin: 10mm; }
     }
   
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<div class="toolbar">
-  <a href="varasto.html"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö"></a>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" id="navBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Valikko">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>QR-tarrat varastopaikoille</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>QR-tarrat varastopaikoille</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
+</header>
+<div class="toolbar">
   <label>Osoite: <input type="text" id="baseUrl" spellcheck="false"></label>
   <label>Koko:
     <select id="size">
@@ -296,21 +265,7 @@
     renderPicker();
     renderLabels();
   }
-  // ─── Valikko ─────────────────────────────────────────
-  (function () {
-    const btn = document.getElementById('navBtn');
-    const dd  = document.getElementById('navDropdown');
-    btn.addEventListener('click', e => {
-      e.stopPropagation();
-      const auki = dd.classList.toggle('open');
-      btn.setAttribute('aria-expanded', auki ? 'true' : 'false');
-    });
-    dd.addEventListener('click', e => e.stopPropagation());
-    const sulje = () => { dd.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); };
-    document.addEventListener('click', sulje);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') sulje(); });
-  })();
-
+  // Valikon avaa ja sulkee nav.js (uusi ulkoasu, R5a)
   window._authReady.then(init);
 </script>
 </body>
