@@ -3,16 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Verstaspohja – mitoitettu</title>
+<title>Varastokartta — Kalajoen Peltityö</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<!-- Ulkoasuremontti R5b (26.11.2026): yhteinen yläpalkki ja valikko (../orders/), sivupalkki uuden ulkoasun väreillä.
+     Itse karttapiirros pysyy tummana kummassakin ulkoasussa (Tomi 26.11.2026); samaa SVG:tä käyttää varasto.html. -->
+<link rel="stylesheet" href="../orders/tyyli.css?v=2">
+<script src="../orders/teema.js?v=1"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&display=swap');
 * { box-sizing:border-box; margin:0; padding:0; }
-body { background:#16191c; display:flex; flex-direction:row; flex-wrap:wrap; min-height:100vh; font-family:'IBM Plex Mono',monospace; color:#c8cdd3; }
-@media (max-width:600px) { body { flex-direction:column; } #map-container { width:100% !important; } #panel-container { width:100% !important; } }
-.map-wrap { flex:1; display:flex; flex-direction:column; align-items:center; padding:20px; overflow:auto; }
-h1 { font-size:13px; letter-spacing:0.12em; color:#d4921a; margin-bottom:4px; }
-.sub { font-size:10px; color:#5a6370; margin-bottom:14px; }
-svg { background:#1a1e24; border:1px solid #2a3038; border-radius:4px; }
+.kartta-sivu { display:flex; flex-direction:row; flex-wrap:wrap; min-height:calc(100vh - 60px); font-family:'IBM Plex Mono',monospace; }
+@media (max-width:600px) { .kartta-sivu { flex-direction:column; } #map-container { width:100% !important; } #panel-container { width:100% !important; } }
+.map-wrap { flex:1; display:flex; flex-direction:column; align-items:center; padding:20px; overflow:auto; min-width:0; }
+.map-wrap h2.otsikko { font-size:13px; letter-spacing:0.12em; color:var(--kpt-korostus); margin-bottom:4px; }
+.sub { font-size:11px; color:var(--kpt-himmea); margin-bottom:14px; text-align:center; }
+/* Karttapiirros on tumma kummassakin ulkoasussa */
+svg { background:#1a1e24; border:1px solid #2a3038; border-radius:6px; }
 .dim { font-family:'IBM Plex Mono',monospace; font-size:9px; fill:#3a8fe8; text-anchor:middle; dominant-baseline:middle; }
 .diml { font-family:'IBM Plex Mono',monospace; font-size:9px; fill:#3a8fe8; text-anchor:middle; dominant-baseline:middle; writing-mode:tb; }
 .loc { cursor:pointer; }
@@ -21,25 +27,47 @@ svg { background:#1a1e24; border:1px solid #2a3038; border-radius:4px; }
 .loc.highlight > rect { filter:brightness(2.2); stroke-width:2.5 !important; }
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 .loc.sel > rect { animation: pulse 1.5s infinite; }
-.sidebar { width:220px; min-width:220px; background:#1e2226; border-left:1px solid #2a3038; padding:16px; display:flex; flex-direction:column; gap:14px; position:sticky; top:0; height:100vh; overflow-y:auto; }
-.sidebar h2 { font-size:10px; letter-spacing:0.12em; color:#5a6370; text-transform:uppercase; }
-.info-panel { background:#16191c; border:1px solid #2a3038; border-radius:5px; padding:12px; min-height:110px; }
+.sidebar { width:240px; min-width:240px; background:var(--kpt-paneeli); border-left:1px solid var(--kpt-reuna); padding:16px; display:flex; flex-direction:column; gap:14px; position:sticky; top:0; max-height:100vh; overflow-y:auto; }
+@media (max-width:600px) { .sidebar { width:auto; min-width:0; position:static; max-height:none; border-left:none; border-top:1px solid var(--kpt-reuna); } }
+.sidebar h2 { font-size:10.5px; letter-spacing:0.12em; color:var(--kpt-himmea); text-transform:uppercase; margin-bottom:6px; }
+.info-panel { background:var(--kpt-kentta); border:1px solid var(--kpt-reuna); border-radius:6px; padding:12px; min-height:110px; }
 .info-code { font-size:14px; font-weight:600; margin-bottom:5px; }
-.info-name { font-size:11px; margin-bottom:4px; color:#c8cdd3; line-height:1.5; }
-.info-type { font-size:10px; color:#5a6370; }
-.info-empty { font-size:11px; color:#5a6370; font-style:italic; }
+.info-name { font-size:12px; margin-bottom:4px; color:var(--kpt-teksti); line-height:1.5; }
+.info-type { font-size:11px; color:var(--kpt-himmea); }
+.info-empty { font-size:12px; color:var(--kpt-himmea); font-style:italic; }
+.info-pieni { margin-top:8px; font-size:10px; color:var(--kpt-himmea); }
+.info-taso { font-size:10px; color:var(--kpt-teksti); padding:2px 0; }
 .legend { display:flex; flex-direction:column; gap:6px; }
-.rel-link { display:block; width:100%; text-align:left; margin-top:3px; padding:8px 10px; font:inherit; font-size:10px; color:#7be0a0; background:#0e2218; border:1px dashed #3dba6e; border-radius:4px; cursor:pointer; }
+.rel-link { display:block; width:100%; text-align:left; margin-top:3px; padding:8px 10px; font:inherit; font-size:10.5px; color:#7be0a0; background:#0e2218; border:1px dashed #3dba6e; border-radius:4px; cursor:pointer; }
 .rel-link:hover { background:#1d4a30; }
 /* Koko kartta mahtuu ruudulle myös läppärillä (18.11.2026); yksityiskohdat zoomaamalla */
-.map-wrap .kz-kehys { width:min(100%, 620px, calc((100vh - 110px) * 620 / 870)); }
-.leg { display:flex; align-items:center; gap:7px; font-size:10px; color:#5a6370; }
+.map-wrap .kz-kehys { width:min(100%, 620px, calc((100vh - 170px) * 620 / 870)); }
+@media (max-width:600px) { .map-wrap .kz-kehys { width:100%; } .map-wrap { padding:12px; } }
+.leg { display:flex; align-items:center; gap:7px; font-size:11px; color:var(--kpt-himmea); }
 .dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+.versio { font-size:10px; color:var(--kpt-heikko); line-height:1.6; }
 </style>
 </head>
-<body>
+<body class="kpt-sivu">
+<header class="kpt-yla">
+  <a class="kpt-logo" href="../orders/etusivu.html">
+    <img class="kpt-vain-tumma" src="../orders/logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="../orders/logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
+  <div class="nav-menu-wrap">
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
+      <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
+      <a class="nav-item" href="../orders/etusivu.html">🏠 Etusivu</a>
+    </div>
+    <script src="../orders/nav.js?v=6" data-pohja="../orders/"></script>
+  </div>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Varastokartta</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
+</header>
+<div class="kartta-sivu">
 <div class="map-wrap">
-<h1>VERSTASPOHJA — MITOITETTU</h1>
+<h2 class="otsikko">VERSTASPOHJA — MITOITETTU</h2>
 <div class="sub">Skaala 1:25 (1px=25mm) · Klikkaa aluetta lisätiedoille · Zoomaa napeista, nipistämällä tai Ctrl + rulla</div>
 
 <!--
@@ -119,10 +147,16 @@ IN-R-10 (vaihtuva rulla):
 <polygon points="50,650 50,75 346,75 346,271 547,271 547,650"
   fill="#1e2228" stroke="#4a5560" stroke-width="2.5"/>
 
-<!-- Väliseinä -->
-<rect x="348" y="20" width="280" height="249" fill="#0d1014" stroke="#1a2028" stroke-width="1"/>
-<text x="488" y="140" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:#1e2830;text-anchor:middle">Väliseinä</text>
-<text x="488" y="155" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:#1e2830;text-anchor:middle">Toinen yritys</text>
+<!-- Naapurin tila väliseinän takana (Tomi 26.11.2026: ennen irrallinen tumma laatikko rakennuksen ulkopuolella).
+     Rakennuksen rajoissa: yläseinästä (y=75) väliseinän alakohtaan (y=271), väliseinästä (x=346) oikeaan seinään (x=547). -->
+<defs>
+  <pattern id="naapuri-viivoitus" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+    <line x1="0" y1="0" x2="0" y2="8" stroke="#2a323c" stroke-width="2"/>
+  </pattern>
+</defs>
+<rect x="347" y="76" width="199" height="194" fill="url(#naapuri-viivoitus)" stroke="#3a4450" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="446" y="168" style="font-family:'IBM Plex Mono',monospace;font-size:10px;fill:#6b7684;text-anchor:middle">Naapurin tila</text>
+<text x="446" y="182" style="font-family:'IBM Plex Mono',monospace;font-size:9px;fill:#56606c;text-anchor:middle">(väliseinän takana)</text>
 
 <!-- ═══ KOPIT ═══ -->
 <!-- Tekninen tila: y=578..650 -->
@@ -396,17 +430,18 @@ IN-R-10 (vaihtuva rulla):
       <div class="leg"><div class="dot" style="background:#3dba6e33;border:1px solid #3dba6e"></div>IN-L · Seinähyllyt</div>
       <div class="leg"><div class="dot" style="background:#d4921a33;border:1px solid #d4921a"></div>IN-C · Koneiden ymp.</div>
       <div class="leg"><div class="dot" style="background:#252c35;border:1px solid #5a6a7a"></div>Kone</div>
-      <div style="margin-top:8px;font-size:9px;color:#3a4a40;letter-spacing:0.08em">TYYPPI</div>
+      <div style="margin-top:8px;font-size:10px;color:var(--kpt-himmea);letter-spacing:0.08em">TYYPPI</div>
       <div class="leg"><div class="dot" style="background:#0b1c12;border:1px solid #3dba6e"></div>Lattia</div>
       <div class="leg"><div class="dot" style="background:#0a2018;border:1px solid #2aaa88"></div>Hylly</div>
       <div class="leg"><div class="dot" style="background:#0e2218;border:1px solid #5de88a"></div>Piikki</div>
       <div class="leg"><div class="dot" style="background:#1d4a30;border:1px dashed #7be0a0"></div>▲ Seinähylly lattia-alueen yläpuolella</div>
     </div>
   </div>
-  <div style="margin-top:auto;padding-top:10px;border-top:1px solid #2a3038">
-    <p style="font-size:9px;color:#2a3038;line-height:1.6">v9.5 · 18.11.2026 (seinähyllyt kaistoina)<br>1px = 25mm</p>
+  <div style="margin-top:auto;padding-top:10px;border-top:1px solid var(--kpt-reuna)">
+    <p class="versio">v9.6 · 26.11.2026 (naapurin tila väliseinän takana)<br>1px = 25mm</p>
   </div>
 </div>
+</div><!-- /kartta-sivu -->
 
 <script src="kartta-zoom.js?v=2"></script>
 <script>
@@ -509,7 +544,7 @@ function highlightLocation(locationCode) {
           `<div class="info-code" style="color:${c}">${d.code}</div>
            <div class="info-name">${d.name}</div>
            <div class="info-type">${d.type}</div>
-           <div style="margin-top:8px;font-size:9px;color:#e8a020">▲ Valittu Retoolista</div>`;
+           <div class="info-pieni" style="color:var(--kpt-huom)">▲ Valittu</div>`;
       }
     }
   });
@@ -533,9 +568,9 @@ document.querySelectorAll('[data-loc]').forEach(el => {
     const c = zc[d.zone] || '#aaa';
     let levelsHtml = '';
     if (d.levels) {
-      levelsHtml = '<div style="margin-top:8px;font-size:9px;color:#aaa;border-top:1px solid #2a3038;padding-top:6px">TASOT:</div>';
+      levelsHtml = '<div class="info-pieni" style="border-top:1px solid var(--kpt-reuna);padding-top:6px">TASOT:</div>';
       d.levels.forEach(l => {
-        levelsHtml += `<div style="font-size:9px;color:#c8cdd3;padding:2px 0">${l}</div>`;
+        levelsHtml += `<div class="info-taso">${l}</div>`;
       });
     }
     // Ristiviittaukset: seinähylly lattia-alueen yläpuolella ja päinvastoin
@@ -543,7 +578,7 @@ document.querySelectorAll('[data-loc]').forEach(el => {
     const rel = (keys, otsikko) => {
       const k2 = (keys || []).filter(k => locs[k]);
       if (!k2.length) return;
-      relHtml += `<div style="margin-top:8px;font-size:9px;color:#aaa">${otsikko}</div>`;
+      relHtml += `<div class="info-pieni">${otsikko}</div>`;
       k2.forEach(k => { relHtml += `<button type="button" class="rel-link" data-goto="${k}">${locs[k].code} ${locs[k].name} ▸</button>`; });
     };
     rel(d.ylla, '▲ SEINÄLLÄ YLÄPUOLELLA:');

@@ -16,6 +16,9 @@
  */
 (function () {
   'use strict';
+  // Sivut muissa kansioissa (maps/verstaspohja_mitoitettu.html) antavat linkkien alun: <script src="../orders/nav.js" data-pohja="../orders/">
+  // Ilman sitä linkit ovat kuten ennen (orders-kansion sivut). (R5b, 26.11.2026)
+  const POHJA = (document.currentScript && document.currentScript.dataset && document.currentScript.dataset.pohja) || '';
 
   const ETUSIVU = { href: 'etusivu.html', label: '🏠 Etusivu' };
   // Tuotanto on oma kohtansa heti Etusivun alla, aina näkyvissä (Tomi 24.11.2026: puhelimella helposti auki)
@@ -73,7 +76,9 @@
   const sivuHrefilla = href => kaikki.find(s => s.href === href);
 
   const tiedosto = (location.pathname.split('/').pop() || 'etusivu.html').toLowerCase();
-  const nykyinen = ALISIVUT[tiedosto] || tiedosto;
+  // Muun kansion sivu tunnistetaan tiedostonimestä (valikossa '../maps/…')
+  const omaHref = sivuHrefilla(tiedosto) ? tiedosto : ((kaikki.find(s => s.href.split('/').pop() === tiedosto) || {}).href || tiedosto);
+  const nykyinen = ALISIVUT[tiedosto] || omaHref;
   const onAlisivu = !!ALISIVUT[tiedosto];
 
   // Sivun kategoria → html[data-kategoria], josta tyyli.css antaa korostusvärin (vain sivuilla, jotka käyttävät tyyli.css:ää)
@@ -141,7 +146,7 @@
   // ── Piirto ──
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const linkki = s =>
-    `<a class="nav-item${s.href === nykyinen ? ' current' : ''}" href="${esc(s.href)}">${esc(s.label)}</a>`;
+    `<a class="nav-item${s.href === nykyinen ? ' current' : ''}" href="${esc(POHJA + s.href)}">${esc(s.label)}</a>`;
 
   function piirra() {
     let h = linkki(ETUSIVU) + linkki(TUOTANTO);
