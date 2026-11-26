@@ -597,7 +597,25 @@ function palautaMuokattava() {
       + '<b>Tämän ryhmän piippu on harjapiippu.</b> Tallennus korvaa sen tällä lapepiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.</div>');
     return;
   }
-  if (!muokattava) return;
+  if (!muokattava) {
+    // Osoitteessa on tilauksen ryhmä, mutta sen piippua ei löytynyt (Tomin testi 26.11.2026: paluu Harjapiipusta toi
+    // oletusmitat). Kerrotaan se näkyvästi, ettei oletusmittoja tallenneta vahingossa tilauksen piipun päälle.
+    // Pieni tunnisterivi kertoo vianetsintään, mitä selaimen muistissa oli.
+    if (targetGroupId) {
+      let syy = 'ei tietoja';
+      try {
+        const m = JSON.parse(localStorage.getItem(MUOKKAUS_AVAIN) || 'null');
+        if (m) syy = (m.groupId === targetGroupId ? 'sama ryhmä' : 'eri ryhmä ' + String(m.groupId).slice(-8)) + ', mitat ' + (m.vals ? 'on' : 'puuttuu')
+          + (m.vals && m.vals.tyyppi ? ', tyyppi ' + m.vals.tyyppi : '');
+      } catch (e) { syy = 'lukuvirhe'; }
+      const sb1 = document.getElementById('ilmo-paikka');
+      if (sb1) sb1.insertAdjacentHTML('beforeend', '<div id="muokkaus-ilmo" class="kpt-ilmoitus huom">'
+        + '<b>Tälle tilauksen ryhmälle ei löytynyt tallennettua piippua</b>, joten sivulla on oletusmitat. Jos ryhmässä on jo piippu, '
+        + 'älä tallenna, vaan avaa se uudelleen tilauksen <b>✏️ Muokkaa piippua</b> -napista.'
+        + '<div style="font-size:11px;opacity:.75;margin-top:4px;">Vianetsintä: ryhmä …' + String(targetGroupId).slice(-8) + ' · muisti: ' + syy + '</div></div>');
+    }
+    return;
+  }
   const v = muokattava.vals;
   const items = muokattava.items || [];
   const aseta = (id, x) => { const e = document.getElementById(id); if (e && x !== undefined && x !== null) e.value = x; };
