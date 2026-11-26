@@ -4,323 +4,182 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Asiakkaat — Kalajoen Peltityö</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<!-- Ulkoasuremontti R4b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js), venytys pois (lista ja tiedot vierivät
+     erikseen), puhelimella tiedot koko ruudulle listan päälle. Toiminnot ennallaan. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-  :root {
-    --bg: #2e2838;
-    --panel: #3a3545;
-    --border: #585568;
-    --accent: #a855f7;
-    --accent-dim: #7c3aed;
-    --accent-glow: rgba(168,85,247,0.15);
-    --text: #ededf0;
-    --text-dim: #9595a0;
-    --input-bg: #3e3a4a;
-    --success: #3dba6e;
-    --danger: #e84040;
-    --warn: #e8a020;
+  /* Ulkoasuremontti R4b (26.11.2026): yhteinen tyyli.css, sivun omissa tyyleissä vain --kpt-muuttujia.
+     Vanhat muuttujanimet kytketty uusiin, koska skripti tuottaa niillä inline-tyylejä. */
+  :root, html[data-teema] {
+    --bg: var(--kpt-tausta); --panel: var(--kpt-paneeli); --border: var(--kpt-reuna);
+    --accent: var(--kpt-korostus); --accent-glow: var(--kpt-korostus-tausta);
+    --text: var(--kpt-teksti); --text-dim: var(--kpt-himmea); --input-bg: var(--kpt-kentta);
+    --success: var(--kpt-ok); --danger: var(--kpt-virhe); --warn: var(--kpt-huom);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
 
-  /* HEADER */
-  header {
-    background: #241e30;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  /* LAYOUT */
-  .main {
-    display: grid;
-    grid-template-columns: var(--sidebar-width, 340px) 1fr;
-    height: calc(100vh - 62px);
-  }
+  /* Asettelu: lista ja tiedot vierivät erikseen (yläpalkin korkeudesta riippumatta) */
+  body.kpt-sivu { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  .main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr); }
   .left-panel {
-    background: var(--panel);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    display: flex; flex-direction: column;
-    position: relative;
+    background: var(--kpt-paneeli); border-right: 1px solid var(--kpt-reuna);
+    min-height: 0; overflow-y: auto; display: flex; flex-direction: column;
   }
-  .sidebar-resizer {
-    position: absolute; top: 0; right: 0; width: 5px; height: 100%;
-    cursor: col-resize; z-index: 10; background: transparent;
-  }
-  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
-  .right-panel { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .right-panel { min-height: 0; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
 
-  /* SEARCH BAR */
-  .search-bar {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex; gap: 8px; align-items: center;
-    background: #2a2535;
+  /* Haku ja välilehdet */
+  .search-bar { padding: 12px 14px; border-bottom: 1px solid var(--kpt-reuna); display: flex; gap: 8px; align-items: center; }
+  .search-bar input { flex: 1; }
+  .filter-tabs { display: flex; border-bottom: 1px solid var(--kpt-reuna); }
+  .filter-tab {
+    flex: 1; padding: 10px 4px; min-height: 40px; font: 600 12.5px var(--kpt-fontti);
+    background: none; border: none; border-bottom: 2px solid transparent; color: var(--kpt-himmea); cursor: pointer;
   }
-  .search-bar input {
-    flex: 1; background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px; padding: 7px 10px; border-radius: 4px;
-  }
-  .search-bar input:focus { outline: none; border-color: var(--accent); }
-  .search-bar input::placeholder { color: var(--text-dim); }
+  .filter-tab:hover { color: var(--kpt-teksti); }
+  .filter-tab.active { color: var(--kpt-korostus); border-bottom-color: var(--kpt-korostus); }
 
-  /* ASIAKASLISTA */
+  /* Asiakaslista */
   .customer-list { flex: 1; overflow-y: auto; }
   .customer-item {
-    padding: 11px 16px;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    display: flex; flex-direction: column; gap: 2px;
-    transition: background 0.1s;
+    padding: 11px 16px; border-bottom: 1px solid var(--kpt-reuna); border-left: 3px solid transparent;
+    cursor: pointer; display: flex; flex-direction: column; gap: 2px;
   }
-  .customer-item:hover { background: var(--accent-glow); }
-  .customer-item.active {
-    background: var(--accent-glow);
-    border-left: 3px solid var(--accent);
-    padding-left: 13px;
-  }
-  .customer-item.inactive { opacity: 0.45; }
-  .customer-name { font-size: 13px; font-weight: 500; color: var(--text); }
-  .customer-meta { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
-  .customer-num { font-size: 10px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-weight: 600; }
+  .customer-item:hover { background: var(--kpt-korostus-tausta); }
+  .customer-item.active { background: var(--kpt-korostus-tausta); border-left-color: var(--kpt-korostus); }
+  .customer-item.inactive { opacity: 0.5; }
+  .customer-name { font-size: 14px; font-weight: 500; color: var(--kpt-teksti); }
+  .customer-meta { font-size: 12px; color: var(--kpt-himmea); font-family: var(--kpt-mono); }
+  .customer-num { font-size: 11px; color: var(--kpt-korostus); font-family: var(--kpt-mono); font-weight: 600; }
+  .list-footer { padding: 10px 14px; border-top: 1px solid var(--kpt-reuna); display: flex; gap: 8px; }
 
-  /* LISTA-FOOTER */
-  .list-footer {
-    padding: 10px 16px;
-    border-top: 1px solid var(--border);
-    background: #2a2535;
-    display: flex; gap: 8px;
-  }
-
-  /* SECTIONS */
-  .section {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 16px;
-  }
-  .section-title {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; font-weight: 600;
-    color: var(--accent);
-    letter-spacing: 0.08em; text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  /* ASIAKAS-KORTTI */
-  .customer-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-  }
+  /* Asiakaskortti */
+  .customer-card { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); }
+  .customer-card + .customer-card { margin-top: 16px; }
   .card-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 12px;
-    background: #312b3f;
-    border-radius: 6px 6px 0 0;
+    padding: 14px 20px; border-bottom: 1px solid var(--kpt-reuna); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
   }
-  .card-header h2 { font-size: 18px; font-weight: 600; color: var(--text); flex: 1; }
+  .card-header h2 { font-size: 18px; font-weight: 600; color: var(--kpt-teksti); flex: 1; }
   .customer-badge {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; font-weight: 600;
-    color: var(--accent);
-    background: var(--accent-glow);
-    border: 1px solid var(--accent);
-    border-radius: 3px;
-    padding: 2px 8px;
+    font-family: var(--kpt-mono); font-size: 11.5px; font-weight: 600; color: var(--kpt-korostus);
+    background: var(--kpt-korostus-tausta); border: 1px solid var(--kpt-korostus); border-radius: 5px; padding: 2px 8px;
   }
   .inactive-badge {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; color: var(--danger);
-    background: rgba(232,64,64,0.1);
-    border: 1px solid var(--danger);
-    border-radius: 3px; padding: 2px 8px;
+    font-family: var(--kpt-mono); font-size: 11.5px; color: var(--kpt-virhe);
+    background: color-mix(in srgb, var(--kpt-virhe) 12%, transparent); border: 1px solid var(--kpt-virhe); border-radius: 5px; padding: 2px 8px;
   }
   .card-body { padding: 20px; }
+  .section-title {
+    font-family: var(--kpt-mono); font-size: 11.5px; font-weight: 600; color: var(--kpt-himmea);
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px;
+  }
 
-  /* NAV MENU */
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: #3a3545; border: 1px solid #585568;
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: #4a4558; }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: #3a3545; border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; width: 100%; text-align: left;
-    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; color: var(--text); background: none;
-    border: none; cursor: pointer; text-decoration: none;
-    transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-
-  /* FILTER TABS */
-  .filter-tabs {
-    display: flex; border-bottom: 1px solid var(--border);
-    background: #2a2535;
-  }
-  .filter-tab {
-    flex: 1; padding: 7px 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; font-weight: 600;
-    background: none; border: none; color: var(--text-dim);
-    cursor: pointer; letter-spacing: 0.04em;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  .filter-tab:hover { color: var(--text); }
-  .filter-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-  /* GRID KENTÄT */
+  /* Kentät */
   .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
   .field-grid.cols4 { grid-template-columns: 2fr 1fr 2fr 1fr; }
   .field-grid.cols4-addr { grid-template-columns: 3fr 1fr 2fr 1fr; }
   .field-grid.cols4-contact { grid-template-columns: 1fr 2fr 2fr 2fr; }
-  .field-grid.wide { grid-template-columns: 1fr; }
-  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .field.full { grid-column: 1 / -1; }
-  label {
-    font-size: 11px; color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-  }
+  label { font-size: 12px; color: var(--kpt-himmea); font-family: var(--kpt-mono); }
   input, select, textarea {
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px; padding: 7px 9px; border-radius: 4px; width: 100%;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); color: var(--kpt-teksti);
+    font: 14px var(--kpt-fontti); padding: 8px 10px; border-radius: 6px; width: 100%; min-height: 38px;
   }
-  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
-  input[readonly] {
-    color: var(--text); cursor: default;
-    border-color: transparent; background: transparent; padding-left: 0;
-    font-size: 15px;
-  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--kpt-korostus); box-shadow: 0 0 0 3px var(--kpt-korostus-tausta); }
+  input::placeholder, textarea::placeholder { color: var(--kpt-heikko); }
+  /* Katselutilassa kentät tekstinä */
+  input[readonly], textarea[readonly] { color: var(--kpt-teksti); cursor: default; border-color: transparent; background: transparent; padding-left: 0; font-size: 15px; box-shadow: none; }
   textarea { resize: vertical; min-height: 60px; }
-  select option { background: var(--panel); }
+  .divider { border: none; border-top: 1px solid var(--kpt-reuna); margin: 16px 0; }
 
-  /* MOBIILI */
-  .mobile-back {
-    display: none; padding: 10px 16px;
-    border-bottom: 1px solid var(--border); background: #2a2535;
-  }
-  .mobile-back button {
-    background: none; border: none; color: var(--accent);
-    font-family: 'IBM Plex Mono', monospace; font-size: 13px; cursor: pointer; padding: 0;
-  }
-  @media (max-width: 700px) {
-    .main { grid-template-columns: 1fr !important; }
-    .left-panel { height: calc(100vh - 62px); border-right: none; }
-    .right-panel { display: none; position: fixed; top: 62px; left: 0; right: 0; bottom: 0;
-      background: var(--bg); z-index: 100; overflow-y: auto; padding: 0; }
-    .right-panel.mobile-open { display: flex; }
-    .mobile-back { display: block; }
-    .field-grid.cols4, .field-grid.cols4-addr,
-    .field-grid.cols4-contact { grid-template-columns: 1fr 1fr; }
-    .card-header { flex-wrap: wrap; gap: 8px; }
-  }
-
-  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
-
-  /* NAPIT */
+  /* Napit */
   .btn {
-    padding: 8px 14px; border: none; border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600;
-    cursor: pointer; letter-spacing: 0.04em;
+    padding: 8px 14px; min-height: 38px; border: 1px solid transparent; border-radius: 8px;
+    font: 600 13px var(--kpt-fontti); cursor: pointer;
   }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent-dim); }
-  .btn-secondary { background: var(--border); color: var(--text); }
-  .btn-secondary:hover { background: #686578; }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover { background: #ff5555; }
-  .btn-warn { background: var(--warn); color: #1a1a1a; }
-  .btn-warn:hover { background: #f0b030; }
-  .btn-sm { padding: 5px 10px; font-size: 11px; }
-  .row { display: flex; gap: 8px; align-items: center; }
+  .btn-primary { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-secondary { background: var(--kpt-paneeli2); border-color: var(--kpt-reuna2); color: var(--kpt-teksti); }
+  .btn-secondary:hover { border-color: var(--kpt-himmea); }
+  .btn-danger { background: transparent; border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
+  .btn-danger:hover { background: color-mix(in srgb, var(--kpt-virhe) 12%, transparent); }
+  .btn-warn { background: var(--kpt-huom); color: var(--kpt-teksti-korostuksella); }
+  .btn-warn:hover { filter: brightness(1.08); }
+  .btn-sm { padding: 5px 10px; min-height: 32px; font-size: 12.5px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-  /* TILAUSHISTORIA */
-  .order-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 9px 12px;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-  }
+  /* Tilaushistoria */
+  .order-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--kpt-reuna); font-size: 14px; cursor: pointer; }
   .order-row:last-child { border-bottom: none; }
-  .order-row:hover { background: var(--accent-glow); cursor: pointer; }
+  .order-row:hover { background: var(--kpt-korostus-tausta); }
   .copy-order-btn {
-    margin-left: auto; background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; padding: 2px 7px; border-radius: 3px; cursor: pointer;
-    white-space: nowrap; flex-shrink: 0;
+    margin-left: auto; background: none; border: 1px solid var(--kpt-reuna); color: var(--kpt-himmea); font-family: var(--kpt-mono);
+    font-size: 11px; padding: 5px 9px; border-radius: 6px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
   }
-  .copy-order-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .order-date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 90px; }
-  .order-desc { flex: 1; color: var(--text); }
-  .order-kohde { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); min-width: 80px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .order-status {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    padding: 2px 7px; border-radius: 3px;
+  .copy-order-btn:hover { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
+  .order-date { font-family: var(--kpt-mono); font-size: 12px; color: var(--kpt-himmea); min-width: 90px; }
+  .order-desc { flex: 1; color: var(--kpt-teksti); min-width: 0; }
+  .order-kohde { font-size: 13px; color: var(--kpt-himmea); min-width: 80px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .order-status { --v: var(--kpt-himmea); font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 5px; color: var(--v); background: color-mix(in srgb, var(--v) 15%, transparent); white-space: nowrap; }
+  .status-draft { --v: var(--kpt-himmea); }
+  .status-active { --v: var(--kpt-v-tilaukset); }
+  .status-done { --v: var(--kpt-ok); }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--kpt-himmea); font-size: 14px; }
+  .empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.35; }
+  .saving { font-size: 12px; color: var(--kpt-himmea); font-family: var(--kpt-mono); }
+  .saving.ok { color: var(--kpt-ok); }
+  .saving.err { color: var(--kpt-virhe); }
+
+  /* Puhelin: lista koko ruudulla, asiakkaan tiedot avautuvat sen päälle (← Takaisin listaan) */
+  .mobile-back { display: none; padding: 10px 14px; border-bottom: 1px solid var(--kpt-reuna); background: var(--kpt-paneeli); position: sticky; top: 0; z-index: 2; }
+  .mobile-back button { background: none; border: none; color: var(--kpt-korostus); font: 600 15px var(--kpt-fontti); cursor: pointer; padding: 6px 0; min-height: 36px; }
+  @media (max-width: 700px) {
+    .main { grid-template-columns: minmax(0, 1fr); }
+    .left-panel { border-right: none; }
+    .kpt-yla .uusi-ylhaalla { display: none; }   /* sama nappi listan alalaidassa */
+    .right-panel { display: none; position: fixed; inset: 0; background: var(--kpt-tausta); z-index: 300; padding: 0 0 24px; gap: 0; }
+    .right-panel.mobile-open { display: flex; }
+    .right-panel > #emptyState, .right-panel > #customerCard, .right-panel > #newCustomerForm { margin: 12px; }
+    .mobile-back { display: block; }
+    .field-grid.cols4, .field-grid.cols4-addr, .field-grid.cols4-contact { grid-template-columns: 1fr 1fr; }
+    .field-grid.cols4 > .field:first-child, .field-grid.cols4-addr > .field:first-child { grid-column: 1 / -1; }   /* nimi ja katuosoite koko leveydelle */
+    .card-header { padding: 12px 14px; }
+    .card-body { padding: 14px; }
+    input, select, textarea { font-size: 16px; min-height: 44px; }   /* iPhone ei zoomaa kenttään */
+    input[readonly] { min-height: 0; }
+    .btn { min-height: 44px; }
+    .order-row { flex-wrap: wrap; gap: 4px 10px; }
+    .order-desc { flex-basis: 100%; order: 5; font-size: 13px; color: var(--kpt-himmea); }
+    .order-desc:empty { display: none; }
   }
-  .status-draft { background: #44444f; color: var(--text-dim); }
-  .status-active { background: #1e3d2e; color: var(--success); }
-  .status-done { background: #1e2d3d; color: #5aabee; }
-
-  /* EMPTY STATE */
-  .empty-state {
-    text-align: center; padding: 48px 20px;
-    color: var(--text-dim); font-size: 13px;
-  }
-  .empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.3; }
-
-  /* SAVING INDICATOR */
-  .saving { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
-  .saving.ok { color: var(--success); }
-  .saving.err { color: var(--danger); }
-
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Asiakkaat</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Asiakkaat</h1></div>
   <div class="header-right">
     <span class="saving" id="saveStatus"></span>
-    <button class="btn btn-primary" onclick="uusiAsiakas()">+ Uusi asiakas</button>
+    <button class="kpt-nappi ensisijainen pieni uusi-ylhaalla" type="button" onclick="uusiAsiakas()">+ Uusi asiakas</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
@@ -328,7 +187,6 @@
 
   <!-- VASEN: asiakaslista -->
   <div class="left-panel" id="leftPanel">
-    <div class="sidebar-resizer" id="sidebarResizer"></div>
 
     <!-- Haku -->
     <div class="search-bar">
@@ -461,7 +319,7 @@
       <!-- TILAUSHISTORIA -->
       <div class="customer-card">
         <div class="card-header" style="padding:12px 20px;">
-          <h2 style="font-size:14px;">Tilaushistoria</h2>
+          <h2 style="font-size:15px;">Tilaushistoria</h2>
           <span class="customer-badge" id="orderCount" style="margin-left:0;">0 tilausta</span>
           <div style="margin-left:auto;">
             <button class="btn btn-warn btn-sm" onclick="uusiTilaus()">+ Uusi tilaus</button>
@@ -938,44 +796,9 @@ function kopioi(orderId, keepCustomer) {
 }
 
 // =============================================
-// SIDEBAR RESIZE
-// =============================================
-(function() {
-  const resizer = document.getElementById('sidebarResizer');
-  const main = document.getElementById('mainGrid');
-  const STORAGE_KEY = 'asiakkaat_sidebar_width';
-  let saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) main.style.gridTemplateColumns = `${saved}px 1fr`;
-
-  resizer.addEventListener('mousedown', e => {
-    e.preventDefault();
-    resizer.classList.add('dragging');
-    const onMove = e2 => {
-      const w = Math.max(240, Math.min(600, e2.clientX));
-      main.style.gridTemplateColumns = `${w}px 1fr`;
-    };
-    const onUp = e2 => {
-      resizer.classList.remove('dragging');
-      const w = Math.max(240, Math.min(600, e2.clientX));
-      localStorage.setItem(STORAGE_KEY, w);
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  });
-})();
-
-// =============================================
 // NAVIGAATIO
 // =============================================
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-document.addEventListener('click', function() {
-  document.getElementById('navDropdown').classList.remove('open');
-});
+// Valikon avaa ja sulkee nav.js (uusi ulkoasu, R4b)
 
 // =============================================
 // INIT
