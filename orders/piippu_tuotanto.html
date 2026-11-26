@@ -4,173 +4,201 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Piippu — Tuotanto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<!-- Ulkoasuremontti R3b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js), kuvat värillisinä vaalealla paperilla kuten
+     Piippu-sivulla (pellit.js paperiVarit), isommat vaihenapit. Työkortti (paperi) ennallaan. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-  :root {
-    --bg: #1e2d20; --panel: #253028; --panel2: #2e3a30;
-    --border: #3a5540; --accent: #22c55e; --accent-dim: #16a34a;
-    --text: #ededf0; --text-dim: #9595a0;
-    --warn: #e8a020; --blue: #3a8fe8; --danger: #e84040;
-    --bg2: #2e2e38; --bg3: #3a3a48; --text1: #ededf0; --text2: #9595a0;
+  /* Ulkoasuremontti R3b (26.11.2026): yhteinen tyyli.css, sivun omissa tyyleissä vain --kpt-muuttujia.
+     Vanhat muuttujanimet on kytketty uusiin, koska skripti tuottaa niillä inline-tyylejä. */
+  :root, html[data-teema] {
+    --bg: var(--kpt-kentta); --panel: var(--kpt-paneeli); --panel2: var(--kpt-paneeli2, var(--kpt-kentta));
+    --border: var(--kpt-reuna); --accent: var(--kpt-korostus); --accent-dim: var(--kpt-korostus);
+    --text: var(--kpt-teksti); --text-dim: var(--kpt-himmea); --text1: var(--kpt-teksti); --text2: var(--kpt-himmea);
+    --warn: var(--kpt-huom); --blue: var(--kpt-v-tilaukset); --danger: var(--kpt-virhe); --red: var(--kpt-virhe);
+    --bg2: var(--kpt-paneeli); --bg3: var(--kpt-kentta);
+    --tila-violetti: var(--kpt-v-ajat);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+  .sivu { max-width: 1240px; margin: 0 auto; padding: 16px 16px 64px; }
 
-  header { background: #162018; border-bottom: 1px solid var(--border); padding: 0 16px; height: 52px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); margin-left: 8px; }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  .nav-menu-wrap { position: relative; }
-  .nav-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; }
-  .nav-btn:hover { background: var(--panel2); }
-  .nav-dropdown { display: none; position: absolute; top: 100%; left: 0; background: var(--panel); border: 1px solid var(--border); border-radius: 4px; min-width: 200px; z-index: 200; margin-top: 4px; padding: 4px 0; }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 12px 2px; }
-  .nav-item { display: block; padding: 7px 12px; color: var(--text-dim); text-decoration: none; font-size: 13px; }
-  .nav-item:hover { background: var(--panel2); color: var(--text); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-
-  .page { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
-
-  .piippu-header { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 14px 18px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-  .piippu-header h2 { font-size: 18px; font-weight: 600; color: var(--accent); flex: 1; }
-  .piippu-meta { font-size: 13px; color: var(--text-dim); }
-  .piippu-meta strong { color: var(--text); }
-  .huomio-box { background: #2a1f0a; border: 1px solid var(--warn); border-radius: 4px; padding: 8px 12px; font-size: 13px; color: var(--warn); margin-bottom: 12px; }
-
-  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
-  /* Puhelin: yläpalkki rivittyy, napit omalle rivilleen, ettei sivu veny ruutua leveämmäksi (20.11.2026) */
-  @media (max-width: 700px) {
-    header { flex-wrap: wrap; gap: 8px; padding: 6px 12px; height: auto; min-height: 52px; }
-    header h1 { font-size: 14px; }
-    .header-right { margin-left: 0; width: 100%; flex-wrap: wrap; }
+  .piippu-header {
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-left: 4px solid var(--kpt-korostus);
+    border-radius: var(--kpt-pyoristys); padding: 12px 16px; margin-bottom: 12px;
+    display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline;
   }
+  .piippu-header h2 { font-size: 20px; font-weight: 600; color: var(--kpt-teksti); flex: 1 1 100%; }
+  .piippu-meta { font-size: 14px; color: var(--kpt-himmea); }
+  .piippu-meta strong { color: var(--kpt-teksti); }
+  .huomio-box { margin-bottom: 12px; }
 
-  .section-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
-  .section-card h3 { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; background: var(--panel2); border-bottom: 1px solid var(--border); }
-  /* Kaistat ja menekki: avattava kortti, otsikko kuten h3 (24.11.2026) */
-  .kaista-tuotanto > summary { font-size: 13px; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 14px; background: var(--panel2); cursor: pointer; list-style: none; }
+  /* Juuret ja huppu allekkain, jotta vaihenapit mahtuvat yhdelle riville */
+  .two-col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 16px; align-items: start; }
+
+  .section-card { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); overflow: hidden; min-width: 0; }
+  .section-card h3, .kaista-tuotanto > summary {
+    font-family: var(--kpt-mono); font-size: 11.5px; font-weight: 600; color: var(--kpt-himmea);
+    text-transform: uppercase; letter-spacing: 0.08em; padding: 11px 14px; border-bottom: 1px solid var(--kpt-reuna);
+  }
+  .section-card h3 strong { color: var(--kpt-teksti); }
+  /* Kaistat ja menekki: avattava kortti */
+  .kaista-tuotanto > summary { cursor: pointer; list-style: none; border-bottom: none; }
   .kaista-tuotanto > summary::-webkit-details-marker { display: none; }
-  .kaista-tuotanto > summary::before { content: "▸ "; }
-  .kaista-tuotanto[open] > summary { border-bottom: 1px solid var(--border); }
+  .kaista-tuotanto > summary::before { content: "▸ "; color: var(--kpt-korostus); }
+  .kaista-tuotanto[open] > summary { border-bottom: 1px solid var(--kpt-reuna); }
   .kaista-tuotanto[open] > summary::before { content: "▾ "; }
 
-  table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
-  thead th { background: var(--panel2); color: var(--text-dim); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
-  tbody tr { border-bottom: 1px solid var(--border); }
-  tbody tr:last-child { border-bottom: none; }
-  tbody td { padding: 7px 8px; vertical-align: middle; }
-  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
-  .td-osa { font-weight: 600; }
+  .taulu-vieritys { overflow-x: auto; }
+  .sivu .section-card table { width: 100%; border-collapse: collapse; font-family: var(--kpt-mono); font-size: 13px; }
+  .sivu .section-card thead th { color: var(--kpt-himmea); font-weight: 600; font-size: 11.5px; padding: 8px 8px; text-align: left; border-bottom: 1px solid var(--kpt-reuna); white-space: nowrap; }
+  .sivu .section-card tbody tr { border-bottom: 1px solid var(--kpt-reuna); }
+  .sivu .section-card tbody tr:last-child { border-bottom: none; }
+  .sivu .section-card tbody td { padding: 8px 8px; vertical-align: middle; }
+  .sivu .section-card th:first-child, .sivu .section-card td:first-child { padding-left: 14px; }
+  .sivu .section-card th:last-child, .sivu .section-card td:last-child { padding-right: 14px; }
+  .sivu .td-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sivu .td-osa { font-weight: 600; font-family: var(--kpt-fontti); }
 
-  /* Statusnapit — leveä näyttö */
-  .step-btns { display: flex; gap: 3px; flex-wrap: wrap; }
-  .step-btn { padding: 3px 7px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--panel2); color: var(--text-dim); transition: all 0.15s; white-space: nowrap; }
-  .step-btn.active { font-weight: 700; }
-  .step-btn.passed { opacity: 0.5; }
-  .step-btn[data-key="WAITING"].active { background: var(--border); color: var(--text); border-color: var(--text-dim); }
-  .step-btn[data-key="CUT"].active { background: #1a3a5a; color: var(--blue); border-color: var(--blue); }
-  .step-btn[data-key="BENT"].active { background: #2a1f0a; color: var(--warn); border-color: var(--warn); }
-  .step-btn[data-key="EXTRA"].active { background: #2a1a3a; color: #a855f7; border-color: #a855f7; }
-  .step-btn[data-key="DONE"].active { background: #162018; color: var(--accent); border-color: var(--accent); }
-  tr.row-done td { opacity: 0.5; }
+  /* Vaihenapit (Tomi 26.11.2026: isommat, ettei verstaalla osu viereiseen). Leveällä näytöllä kaikki vaiheet,
+     puhelimella yksi iso nappi, joka siirtää seuraavaan vaiheeseen. */
+  .step-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .step-btn, .step-btn-mobile {
+    --v: var(--kpt-himmea);
+    min-height: 36px; padding: 6px 10px; font-size: 12px; font-family: var(--kpt-mono); white-space: nowrap;
+    border: 1px solid var(--kpt-reuna); border-radius: 6px; cursor: pointer;
+    background: var(--kpt-kentta); color: var(--kpt-himmea); transition: border-color .15s, background .15s;
+  }
+  .step-btn:hover:not(:disabled), .step-btn-mobile:hover:not(:disabled) { border-color: var(--v); color: var(--kpt-teksti); }
+  .step-btn[data-key="WAITING"], .step-btn-mobile.status-WAITING { --v: var(--kpt-himmea); }
+  .step-btn[data-key="CUT"],     .step-btn-mobile.status-CUT     { --v: var(--kpt-v-tilaukset); }
+  .step-btn[data-key="BENT"],    .step-btn-mobile.status-BENT    { --v: var(--kpt-huom); }
+  .step-btn[data-key="EXTRA"],   .step-btn-mobile.status-EXTRA   { --v: var(--kpt-v-ajat); }
+  .step-btn[data-key="DONE"],    .step-btn-mobile.status-DONE    { --v: var(--kpt-ok); }
+  .step-btn.active { font-weight: 700; color: var(--v); border-color: var(--v); background: color-mix(in srgb, var(--v) 16%, transparent); }
+  .step-btn.passed { opacity: 0.45; }
+  .step-btn:disabled, .step-btn-mobile:disabled { cursor: default; opacity: .5; }
+  tr.row-done td { opacity: 0.55; }
+  tr.row-done td:last-child { opacity: 1; }
 
-  /* Mobiili kompakti vaihenappi */
-  .step-btn-mobile { display: none; padding: 4px 10px; font-size: 11px; font-family: 'IBM Plex Mono', monospace; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; background: var(--panel2); color: var(--text-dim); white-space: nowrap; }
-  .step-btn-mobile.status-WAITING { border-color: var(--text-dim); color: var(--text); }
-  .step-btn-mobile.status-CUT  { border-color: var(--blue);   color: var(--blue); }
-  .step-btn-mobile.status-BENT { border-color: var(--warn);   color: var(--warn); }
-  .step-btn-mobile.status-EXTRA{ border-color: #a855f7;       color: #a855f7; }
-  .step-btn-mobile.status-DONE { border-color: var(--accent); color: var(--accent); }
+  .step-btn-mobile { display: none; min-height: 44px; width: 100%; font-weight: 600; color: var(--v); border-color: var(--v);
+    background: color-mix(in srgb, var(--v) 12%, transparent); }
 
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     .step-btns { display: none; }
-    .step-btn-mobile { display: inline-block; }
-    /* Taulukon vaihe-sarake leveämmäksi mobiilissa */
-    table { font-size: 11px; }
+    .step-btn-mobile { display: block; }
+    .sivu .section-card table { font-size: 12.5px; }
+    .sivu .section-card thead th, .sivu .section-card tbody td { padding: 8px 5px; }
+    .sivu .section-card td:last-child { min-width: 140px; }
+    .sivu .section-card th:nth-child(3), .sivu .section-card tbody td:nth-child(3):not([colspan]) { display: none; }   /* pelkkä × */
+    .step-btn-mobile { font-size: 11.5px; padding: 6px 6px; }
+    .sivu .section-card th:first-child, .sivu .section-card td:first-child { padding-left: 12px; }
+    .sivu .section-card th:last-child, .sivu .section-card td:last-child { padding-right: 12px; }
   }
 
-  /* SVG-kuva */
-  .svg-wrap { padding: 12px; background: var(--panel2); }
+  /* Kuvat vaalealla paperilla (sama muunnos kuin Piippu-sivulla) */
+  .svg-wrap { padding: 12px; }
   .svg-wrap svg { display: block; width: 100%; height: auto; }
-  .kuvat-rinn { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); gap: 16px; align-items: center; }   /* sivukuva + etukuva (23.11.2026) */
+  .kuvat-rinn { display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr); gap: 12px; align-items: stretch; }
+  .kuvat-rinn > .kpt-piirros { display: flex; align-items: center; }
   @media (max-width: 900px) { .kuvat-rinn { grid-template-columns: minmax(0,1fr); } }
+  .kortti-sisalto { padding: 12px 14px; }
 
-  /* Mitat-lista */
-  .mitat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; padding: 12px 14px; }
-  .mitta-row { font-size: 12px; font-family: 'IBM Plex Mono', monospace; display: flex; justify-content: space-between; gap: 8px; }
-  .mitta-label { color: var(--text-dim); }
-  .mitta-val { color: var(--text); font-weight: 600; }
+  /* Mitat */
+  .sivu .mitta-row { font-size: 13px; font-family: var(--kpt-mono); display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+  .sivu .mitta-label { color: var(--kpt-himmea); }
+  .sivu .mitta-val { color: var(--kpt-teksti); font-weight: 600; white-space: nowrap; }
+  @media (max-width: 600px) { .mitat-sisalto > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; gap: 12px !important; } }
 
   /* Yhteenveto */
-  .summary-bar { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 12px 18px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 16px; }
-  .summary-item { font-size: 13px; }
-  .summary-item strong { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 15px; }
+  .summary-bar {
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys);
+    padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; margin-bottom: 16px;
+  }
+  .summary-item { font-size: 13.5px; color: var(--kpt-himmea); }
+  .summary-item strong { color: var(--kpt-teksti); font-family: var(--kpt-mono); font-size: 15px; }
+  .summary-item:first-child strong { color: var(--kpt-korostus); font-size: 18px; }
 
-  /* Takaisin-nappi */
-  .back-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; font-family: 'IBM Plex Sans', sans-serif; }
-  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .loading { text-align: center; padding: 60px; color: var(--kpt-himmea); font-size: 15px; }
+  .sivu .badge { display: inline-block; font-size: 10px; font-family: var(--kpt-mono); padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+  .sivu .badge-done { color: var(--kpt-ok); border: 1px solid var(--kpt-ok); }
+  .sivu .badge-waiting { color: var(--kpt-himmea); border: 1px solid var(--kpt-reuna); }
 
-  .loading { text-align: center; padding: 60px; color: var(--text-dim); font-size: 15px; }
-  .badge { display: inline-block; font-size: 10px; font-family: 'IBM Plex Mono', monospace; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
-  .badge-done { background: #162018; color: var(--accent); border: 1px solid var(--accent); }
-  .badge-waiting { background: var(--panel2); color: var(--text-dim); border: 1px solid var(--border); }
+  /* Kannen mittakentät ja valinta (inline-tyylit skriptissä käyttävät vanhoja nimiä, tässä uuden ulkoasun kentät) */
+  #kansi-tuotanto input, #kansi-tuotanto select { background: var(--kpt-kentta) !important; color: var(--kpt-teksti) !important; border: 1px solid var(--kpt-reuna) !important; border-radius: 6px !important; min-height: 36px; font-size: 14px; }
+  #kansi-tuotanto .kpk-kuva { max-width: 820px; }
+  @media (max-width: 700px) { #kansi-tuotanto input, #kansi-tuotanto select { min-height: 44px; font-size: 16px; } }
 
-  /* TULOSTUS */
-  @media print {
-    body { background: #fff; color: #000; }
-    header, .back-btn, .step-btns, .step-btn-mobile, .btn-print { display: none !important; }
-    .page { padding: 0; max-width: 100%; }
-    .piippu-header { background: #f5f5f5; border: 1px solid #ccc; }
-    .piippu-header h2 { color: #000; }
-    .piippu-meta { color: #444; }
-    .section-card { border: 1px solid #ccc; break-inside: avoid; }
-    .section-card h3 { background: #eee; color: #333; }
-    thead th { background: #eee; color: #333; }
-    tbody td { color: #000; }
-    .svg-wrap { background: #fff; }
-    /* Piipun pääviivat mustiksi tulostuksessa */
-    svg line[stroke="#f1f5f9"] { stroke: #000 !important; }
-    svg polyline { stroke: #000 !important; }
-    /* Apuviivat (mitat, vinomitta) harmaaksi */
-    svg line[stroke="#64748b"] { stroke: #666 !important; }
-    svg text { fill: #000 !important; }
-    .mitat-grid { columns: 2; }
-    .summary-bar { background: #f5f5f5; border: 1px solid #ccc; }
-    .summary-item { color: #000; }
-    .summary-item strong { color: #000; }
-    .huomio-box { background: #fff8e1; border: 1px solid #f0a020; color: #a06000; }
-    .mitta-label { color: #666; }
-    .mitta-val { color: #000; }
-    .two-col { grid-template-columns: 1fr 1fr; }
+  /* Yläpalkin napit puhelimella omalle rivilleen */
+  @media (max-width: 700px) {
+    .kpt-yla { position: static; }   /* ei kellu: neljä nappia veisi puhelimella liikaa ruutua */
+    .kpt-yla .header-right { width: 100%; margin-left: 0; }
+    .kpt-yla .header-right .kpt-nappi { flex: 1 1 auto; }
   }
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+  /* Työkortti (#tkk) ennallaan: vanhan ulkoasun yleiset tyylit (taulukot, mittalista, tulostusvärit) vaikuttivat myös
+     korttiin, joten ne on säilytetty kortille sellaisinaan. :where() = ei ohita tyokortti.js:n omia tyylejä.
+     Selaimen oletuskoko ja riviväli, koska kpt-sivu muuttaa niitä. */
+  :where(#tkk) { font-size: 16px; line-height: normal; }
+  .kpt-sivu :where(#tkk) h1, .kpt-sivu :where(#tkk) h2, .kpt-sivu :where(#tkk) h3 { line-height: inherit; font-weight: bold; }
+  .kpt-sivu :where(#tkk) a { color: inherit; }
+  :where(#tkk), :where(#tkk) * { box-sizing: border-box; margin: 0; padding: 0; }
+  :where(#tkk) { font-family: 'IBM Plex Sans', sans-serif; }
+  :where(#tkk) table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  :where(#tkk) thead th { background: var(--panel2); color: var(--text-dim); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  :where(#tkk) tbody tr { border-bottom: 1px solid var(--border); }
+  :where(#tkk) tbody tr:last-child { border-bottom: none; }
+  :where(#tkk) tbody td { padding: 7px 8px; vertical-align: middle; }
+  :where(#tkk) .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  :where(#tkk) .td-osa { font-weight: 600; }
+  @media (max-width: 600px) {
+    :where(#tkk) table { font-size: 11px; }
+  }
+  :where(#tkk) .mitat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; padding: 12px 14px; }
+  :where(#tkk) .mitta-row { font-size: 12px; font-family: 'IBM Plex Mono', monospace; display: flex; justify-content: space-between; gap: 8px; }
+  :where(#tkk) .mitta-label { color: var(--text-dim); }
+  :where(#tkk) .mitta-val { color: var(--text); font-weight: 600; }
+  :where(#tkk) .badge { display: inline-block; font-size: 10px; font-family: 'IBM Plex Mono', monospace; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
+  :where(#tkk) .badge-done { background: #162018; color: var(--accent); border: 1px solid var(--accent); }
+  :where(#tkk) .badge-waiting { background: var(--panel2); color: var(--text-dim); border: 1px solid var(--border); }
+  @media print {
+    :where(#tkk) thead th { background: #eee; color: #333; }
+    :where(#tkk) tbody td { color: #000; }
+    :where(#tkk) svg line[stroke="#f1f5f9"] { stroke: #000 !important; }
+    :where(#tkk) svg polyline { stroke: #000 !important; }
+    :where(#tkk) svg line[stroke="#64748b"] { stroke: #666 !important; }
+    :where(#tkk) svg text { fill: #000 !important; }
+    :where(#tkk) .mitat-grid { columns: 2; }
+    :where(#tkk) .mitta-label { color: #666; }
+    :where(#tkk) .mitta-val { color: #000; }
+  }
+</style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Piippu — Tuotanto</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Piippu</h1></div>
   <div class="header-right">
-    <button class="back-btn" onclick="history.back()">← Takaisin</button>
-    <button class="back-btn" onclick="muokkaaPiippua()" title="Avaa tilaus ja muokkaa tätä piippua">✏ Muokkaa</button>
-    <button class="back-btn btn-print" onclick="KPT_TYOKORTTI.tulostaKysyen()" title="Tulosta piipun työkortti (A4)">🖨 Tulosta</button>
+    <button class="kpt-nappi pieni" type="button" onclick="history.back()">← Takaisin</button>
+    <button class="kpt-nappi pieni" type="button" onclick="muokkaaPiippua()" title="Avaa tilaus ja muokkaa tätä piippua">✏ Muokkaa</button>
+    <button class="kpt-nappi pieni btn-print" type="button" onclick="KPT_TYOKORTTI.tulostaKysyen()" title="Tulosta piipun työkortti (A4)">🖨 Tulosta</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
-<div class="page">
+<div class="sivu">
   <div id="loading" class="loading">Ladataan piippua...</div>
   <div id="content" style="display:none"></div>
 </div>
@@ -200,11 +228,14 @@ const STEP_COLORS = { WAITING:'var(--border)', CUT:'var(--blue)', BENT:'var(--wa
 
 function r(n) { return Math.round(n); }
 
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
+// Kuvat piirretään ruudun väreillä ja muunnetaan vaalealle paperille (pellit.js paperiVarit, sama kuin Piippu-sivulla).
+// Työkortti käyttää omaa mustavalkoista muunnostaan (tyokortti.js paperille), joten tuloste ei muutu.
+function paperille(html) { return window.KPT_PELLIT && KPT_PELLIT.paperiVarit ? KPT_PELLIT.paperiVarit(html) : html; }
+function paperiSelite(html) {
+  const PV = (window.KPT_PELLIT && KPT_PELLIT.PAPERI_VARIT) || {};
+  return String(html || '').replace(/color:\s*(#[0-9a-fA-F]{3,6})/g, (m, c) => 'color:' + (PV[c.toLowerCase()] || c));
 }
-document.addEventListener('click', () => document.getElementById('navDropdown').classList.remove('open'));
+const paperiKuva = (svg, tyyli) => svg ? `<div class="kpt-piirros paperi"${tyyli ? ` style="${tyyli}"` : ''}>${paperille(svg)}</div>` : '';
 
 // ── Lataa data ────────────────────────────────────────────
 async function load() {
@@ -262,13 +293,13 @@ function kiilaHtml(v) {
     if (harja) t.virhe = (t.virheet || [])[0];
     if (!t.kiila && !t.virhe) return '';
     const kuva = harja ? L.harjaKuvaYlhaalta(v) : L.kuvaYlhaalta(v);
-    const varoit = (t.varoitukset || []).map(x => `<p style="color:${/^LASKETTU/.test(x) ? 'var(--red,#ef4444);font-weight:600' : '#f59e0b'}">⚠ ${x.replace(/</g, '&lt;')}</p>`).join('');
+    const varoit = (t.varoitukset || []).map(x => `<p style="color:${/^LASKETTU/.test(x) ? 'var(--kpt-virhe);font-weight:600' : 'var(--kpt-huom)'}">⚠ ${x.replace(/</g, '&lt;')}</p>`).join('');
     return `<div class="section-card" style="margin-bottom:16px">
       <h3>Kiila / mutkapiippu</h3>
       <div style="padding:12px 14px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
-        ${kuva ? `<div style="flex:0 1 320px;min-width:0;max-width:100%">${kuva}</div>` : ''}
+        ${kuva ? `<div style="flex:0 1 320px;min-width:0;max-width:100%">${paperiKuva(kuva)}</div>` : ''}
         <div style="flex:1 1 220px;font-size:13px;line-height:1.5">
-          ${t.virhe ? `<p style="color:var(--red,#ef4444)">${t.virhe}</p>` : ''}${varoit}
+          ${t.virhe ? `<p style="color:var(--kpt-virhe)">${t.virhe}</p>` : ''}${varoit}
           <p>Hupun palat on laskettu piipun todellisesta muodosta. Kansi ja hattu leveimmän ja pisimmän kohdan mukaan.</p>
           <p><b>Juuret</b> on laskettu pisimmän sivun mukaan: muotoile ja mittaa ne piipun mukaan.</p>
         </div>
@@ -503,17 +534,17 @@ function renderTauluStatus(pellit, label) {
 
   return `<div class="section-card">
     <h3>${label}</h3>
-    <table>
+    <div class="taulu-vieritys"><table>
       <thead><tr>
         <th>Osa</th><th class="td-num">Lev</th><th></th>
         <th class="td-num">Pit</th><th class="td-num">Kpl</th>
         <th>Vaihe</th>
       </tr></thead>
       <tbody>${rows}
-        <tr><td colspan="4" style="color:var(--text-dim);font-size:11px;padding-top:6px">Yhteensä</td>
-        <td colspan="2" style="text-align:right;font-family:'IBM Plex Mono',monospace;color:var(--accent)">${tot.toFixed(3)} m²</td></tr>
+        <tr><td colspan="4" style="color:var(--kpt-himmea);font-size:11.5px">Yhteensä</td>
+        <td colspan="2" style="text-align:right;font-weight:600;color:var(--kpt-korostus)">${tot.toFixed(3)} m²</td></tr>
       </tbody>
-    </table>
+    </table></div>
   </div>`;
 }
 
@@ -671,7 +702,7 @@ function levityskuvatHtml(v, muut) {
     if (!palat.length) return '';
     return `<div class="section-card" style="margin-bottom:16px">
       <h3>Hupun levityskuvat</h3>
-      <div style="padding:12px 14px">${L.SELITE}${palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl })).join('')}</div>
+      <div class="kortti-sisalto">${paperiSelite(L.SELITE)}${palat.map(pa => paperille(L.palaHtml(pa, { kpl: pa.kpl }))).join('')}</div>
     </div>`;
   } catch (e) {
     console.error('Levityskuvat:', e);
@@ -740,7 +771,7 @@ function render(items, order) {
       ${piippukpl>1?`<div class="piippu-meta"><strong>${piippukpl} kpl</strong></div>`:''}
     </div>
 
-    ${huomio?`<div class="huomio-box">⚠ ${huomio}</div>`:''}
+    ${huomio?`<div class="huomio-box kpt-ilmoitus huom">⚠ ${huomio}</div>`:''}
 
     <div class="summary-bar">
       <div class="summary-item">Peltejä yhteensä: <strong>${totalM2.toFixed(3)} m²</strong></div>
@@ -767,7 +798,7 @@ function render(items, order) {
             Kaltevuus: <strong style="font-family:'IBM Plex Mono',monospace">1:${((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1)).toFixed(1)}</strong>
           </span>`:''}
       </h3>
-      <div class="svg-wrap kuvat-rinn" style="padding:16px"><div>${svgHtml}</div><div>${etukuvaSvg(v)}</div></div>
+      <div class="svg-wrap kuvat-rinn">${paperiKuva(svgHtml)}${paperiKuva(etukuvaSvg(v))}</div>
     </div>`:''}
 
     ${kiilaHtml(v)}
@@ -779,13 +810,13 @@ function render(items, order) {
 
     ${levityskuvatHtml(v, muut)}
 
-    ${window.KPT_MENEKKI && tilatutHupunPalat(v, muut).length ? `<details class="section-card kaista-tuotanto" id="kaista-tuotanto-kortti" style="margin-bottom:16px"><summary>Kaistat ja menekki</summary><div id="kaista-tuotanto" style="padding:12px 14px"></div></details>` : ''}
+    ${window.KPT_MENEKKI && tilatutHupunPalat(v, muut).length ? `<details class="section-card kaista-tuotanto" id="kaista-tuotanto-kortti" style="margin-bottom:16px"><summary>Kaistat ja menekki</summary><div id="kaista-tuotanto" class="kortti-sisalto"></div></details>` : ''}
 
-    ${kansi ? `<div class="section-card" style="margin-bottom:16px"><h3>Kansi ja reiät</h3><div id="kansi-tuotanto" style="padding:12px 14px"></div></div>` : ''}
+    ${kansi ? `<div class="section-card" style="margin-bottom:16px"><h3>Kansi ja reiät</h3><div id="kansi-tuotanto" class="kortti-sisalto"></div></div>` : ''}
 
     <div class="section-card">
       <h3>Mitat</h3>
-      <div style="padding:14px 18px">${mittalista(v)}</div>
+      <div class="kortti-sisalto mitat-sisalto">${mittalista(v)}</div>
     </div>
   `;
   piirraKansiTuotanto();
@@ -794,11 +825,15 @@ function render(items, order) {
 
 // ── Kaistat ja menekki (vaihe 8.3, 24.11.2026) ─────────────
 // Tilatut hupun palat kaistoiksi rullasta (yhteinen menekki.js). Asettelu paksuuden mukaan, asetukset muistetaan selaimessa.
+let kaistaKortti = null;
+// Kaistakuva on tummassa ulkoasussa tumma ja vaaleassa paperilla (menekki.js), joten ulkoasun vaihto piirtää sen uudelleen
+document.addEventListener('kpt-teema', () => { try { if (kaistaKortti) kaistaKortti.paivita(); } catch (e) { console.error('Kaistat:', e); } });
 function piirraKaistatTuotanto(v, muut, paksuus) {
   const el = document.getElementById('kaista-tuotanto');
   if (!el || !window.KPT_MENEKKI) return;
   try {
     const kortti = KPT_MENEKKI.sivuKortti(el, { kortti: document.getElementById('kaista-tuotanto-kortti'), paksuus: () => paksuus || '' });
+    kaistaKortti = kortti;
     kortti.piirra(KPT_PIIPPU_LEVITYS.kaistaKappaleet(tilatutHupunPalat(v, muut), 1));
   } catch (e) { console.error('Kaistat:', e); el.innerHTML = '<p class="empty-msg">Kaistojen laskenta epäonnistui.</p>'; }
 }
@@ -829,7 +864,7 @@ function piirraKansiTuotanto() {
         <option value="leikkuu"${kansiMista === 'leikkuu' ? ' selected' : ''}>tasoaihion leikkuureunasta</option>
         <option value="taitettu"${kansiMista === 'taitettu' ? ' selected' : ''}>taitetun kannen reunasta</option>
       </select></div>
-    <div class="kpk-kuva" style="max-width:820px">${KPT_KANSI.kuva(k, { mista: kansiMista })}<div class="kpk-alle">${KPT_KANSI.alateksti({ mista: kansiMista })}</div></div>
+    <div class="kpk-kuva">${paperiKuva(KPT_KANSI.kuva(k, { mista: kansiMista }), 'margin-bottom:4px')}<div class="kpk-alle">${KPT_KANSI.alateksti({ mista: kansiMista })}</div></div>
     ${k.varoitukset.map(t => `<div class="kpk-varoitus">⚠ ${t}</div>`).join('')}
     ${KPT_KANSI.reikaTaulu(k, { mista: kansiMista })}`;
 }
