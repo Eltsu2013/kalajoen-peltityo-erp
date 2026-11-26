@@ -37,6 +37,7 @@
   .k-sisalto { margin-top: 14px; }
   .alaotsikko { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kpt-himmea); border-top: 1px solid var(--kpt-reuna); padding-top: 12px; margin: 4px 0 10px; }
   .kpt-kentta select { padding-right: 6px; }
+  .alaotsikko.eka { border-top: 0; padding-top: 0; }
 
   /* Osat (ruksit) */
   .osat { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 10px; }
@@ -166,6 +167,10 @@
     <div id="ilmo-paikka"></div>
 
     <details id="k-piippu" data-kortti class="kpt-kortti" open><summary>Piippu ja tilaus <span class="yv" id="ky-piippu"></span></summary><div class="k-sisalto">
+      <!-- Materiaali ylimpänä (Tomi 26.11.2026) -->
+      <div class="alaotsikko eka">Materiaali</div>
+      <div id="materiaali-valinta"></div>
+      <div class="alaotsikko">Osat</div>
       <div class="osat">
         <label class="chk-row"><input type="checkbox" id="chk-juuret" checked onchange="laske()"> Juuret</label>
         <label class="chk-row"><input type="checkbox" id="chk-huppu" checked onchange="laske()"> Huppu</label>
@@ -182,8 +187,6 @@
       <div class="kpt-kentat">
         <div class="kpt-kentta"><label for="v-piippukpl">Piippuja kpl</label><input type="number" id="v-piippukpl" value="1" min="1" oninput="laske()"></div>
       </div>
-      <div class="alaotsikko">Materiaali</div>
-      <div id="materiaali-valinta"></div>
       <div class="kpt-kentta">
         <label for="v-huomio">Huomio</label>
         <textarea id="v-huomio" rows="2" placeholder="Esim. piipussa lunssi, kootaan paikan päällä... Näkyy tilauksen huomioissa."></textarea>
@@ -531,7 +534,7 @@ function paivitaYhteenvedot() {
   const val = id => (document.getElementById(id) || {}).value || '';
   const osat = [['chk-juuret', 'juuret'], ['chk-huppu', 'huppu'], ['chk-kansi', 'kansi'], ['chk-hattu', 'hattu']].filter(([id]) => chk(id)).map(([, n]) => n);
   const ma = window.MATERIAALI ? MATERIAALI.arvo() : {};
-  t('ky-piippu', [osat.join(', ') || 'ei osia', (val('v-piippukpl') || 1) + ' kpl', [ma.color, ma.material, ma.thickness].filter(Boolean).join(' ')].filter(Boolean).join(' · '));
+  t('ky-piippu', [[ma.color, ma.material, ma.thickness].filter(Boolean).join(' '), osat.join(', ') || 'ei osia', (val('v-piippukpl') || 1) + ' kpl'].filter(Boolean).join(' · '));
   t('ky-mitat', val('leveys') + ' × ' + val('suora') + ' · etu ' + val('etukork') + ' · taka ' + val('takakork'));
   t('ky-kiila', kiilaPaalla ? 'päällä' : 'pois');
   t('ky-juuri', 'eteen ' + val('k24') + ' · vasen ' + val('vasen') + ' · oikea ' + val('oikea') + ' · harjalle ' + val('harjalle'));
