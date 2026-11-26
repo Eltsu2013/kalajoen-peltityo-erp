@@ -4,578 +4,166 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Peltilistat — Kalajoen Peltityö</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Uusi ulkoasu (ulkoasuremontti R2d, 26.11.2026): sama pohja kuin Piippusivuilla (tyyli.css + teema.js). Tilauspalkki (T2)
+     ylimpänä, mallinvalinta, syötöt vasemmalla korteissa, oikealla yhteenveto (aihioleveys isona, Tomi 26.11.), piirros,
+     asento, levityskuva ja leikkauslista. Piirros, levityskuva ja leikkauslista ovat jo valmiiksi paperilla (profiilit.js),
+     joten piirtoon ei kosketa. Puhelimella piirros ylimpänä ja kelluu yläreunassa, kun profiilimittoja muokataan (kuten ennen).
+     Venytys poistettu (Tomi: ei käytössä). Kenttien id:t ja tilaukseen lähtevä tieto ennallaan. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+  /* Peltilistojen omat tyylit: vain tyyli.css:n muuttujia. Paperikortit (piirros, levityskuva, leikkauslista) ovat aina
+     vaaleita, joten niiden tummat tekstivärit ovat kiinteitä kuten ennen. */
+  .kpt-sivu {
+    /* Vanhat nimet uusiin, koska osa skriptin tuottamasta HTML:stä käyttää niitä (turvaverkko) */
+    --panel: var(--kpt-paneeli); --border: var(--kpt-reuna2); --input-bg: var(--kpt-kentta);
+    --text: var(--kpt-teksti); --text-dim: var(--kpt-himmea); --accent: var(--kpt-korostus);
+    /* Peltilistojen paperi pysyy entisessä sävyssä: piirtokoodi reunustaa tekstit tällä värillä (teema.tausta #f4f1ea) */
+    --paperi: #f4f1ea; --paperi-reuna: #d8d1c2;
+  }
+  .kpt-sisalto.pelti-sisalto { max-width: 1600px; }
 
-  :root {
-    --bg: #2a2e3a;
-    --panel: #353a47;
-    --border: #555563;
-    --accent: #e8a020;
-    --accent2: #3a8fe8;
-    --text: #ededf0;
-    --text-dim: #9595a0;
-    --input-bg: #3e4250;
-    --success: #3dba6e;
-    --danger: #e84040;
+  /* ── Tilauspalkki (T2): näkyy aina; tilaus auki = vihertävä ── */
+  #tilaus-bar {
+    display: none; align-items: center; gap: 8px 16px; flex-wrap: wrap; padding: 8px 16px;
+    background: var(--kpt-paneeli); border-bottom: 1px solid var(--kpt-reuna);
+    font-family: var(--kpt-mono); font-size: 13px;
   }
+  #tilaus-bar.auki { background: var(--kpt-paneeli); background: color-mix(in srgb, var(--kpt-ok) 14%, var(--kpt-paneeli)); border-bottom-color: var(--kpt-ok); }
+  #tilaus-tila { font-weight: 600; color: var(--kpt-himmea); }
+  #tilaus-bar.auki #tilaus-tila { color: var(--kpt-ok); }
+  #tilaus-ryhmä { color: var(--kpt-teksti); }
+  #tilaus-nimike { color: var(--kpt-korostus); font-weight: 600; }
+  #tilaus-lukko { color: var(--kpt-ok); font-size: 12px; transition: color 0.2s; }
+  #tilaus-lukko.huomio { color: var(--kpt-huom); font-weight: 600; }
+  #tilaus-ilmoitus { margin-left: auto; }
+  #tilaus-ilmoitus.ok { color: var(--kpt-ok); } #tilaus-ilmoitus.huom { color: var(--kpt-huom); } #tilaus-ilmoitus.virhe { color: var(--kpt-virhe); } #tilaus-ilmoitus.odota { color: var(--kpt-himmea); }
+  #tilaus-bar .kpt-nappi { min-height: 38px; }
 
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: var(--panel); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: var(--input-bg); }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: var(--panel); border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; width: 100%; text-align: left;
-    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; color: var(--text); background: none;
-    border: none; cursor: pointer; text-decoration: none; transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow, rgba(232,160,32,0.12)); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'IBM Plex Sans', sans-serif;
-    min-height: 100vh;
-  }
-
-  header {
-    background: var(--panel);
-    border-bottom: 2px solid var(--accent);
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  header .logo {
-    font-family: 'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 13px;
-    color: var(--accent);
-    letter-spacing: 0.05em;
-  }
-
-  header h1 {
-    font-size: 16px;
-    font-weight: 500;
-    color: var(--text);
-  }
-
-  .type-bar {
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 0 16px;
-    display: flex;
-    gap: 0;
-    overflow-x: auto;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .type-group {
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-
-  .type-group-label {
-    font-size: 10px;
-    font-family: 'IBM Plex Mono', monospace;
-    color: var(--text-dim);
-    padding: 0 8px 0 12px;
-    white-space: nowrap;
-    opacity: 0.6;
-    border-left: 1px solid var(--border);
-    margin-left: 4px;
-  }
-
-  .type-group:first-child .type-group-label {
-    border-left: none;
-    margin-left: 0;
-    padding-left: 0;
-  }
-
+  /* ── Mallinvalinta ── */
+  .type-bar { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; }
+  .type-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .type-group-label { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--kpt-himmea); margin-right: 4px; }
   .type-btn {
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    color: var(--text-dim);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 13px;
-    padding: 10px 16px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s;
+    min-height: 38px; padding: 6px 14px; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 8px;
+    color: var(--kpt-teksti); font-family: var(--kpt-fontti); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap;
   }
-
-  .type-btn:hover { color: var(--text); }
-
-  .type-btn.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
-
-  .main {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    height: calc(100vh - 90px);
-  }
-
-  .left-panel {
-    background: var(--panel);
-    border-right: 1px solid var(--border);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-
-  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
-  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
-  /* Kaksi saraketta kun sidebar tarpeeksi leveä */
-  .left-panel.wide .section { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: start; }
-  .left-panel.wide .section .section-title { grid-column: 1 / -1; }
-  .left-panel.wide .section .btn-add { grid-column: 1 / -1; }
-  .left-panel.wide .section .table-wrap { grid-column: 1 / -1; }
-  .left-panel.wide .summary-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-
-  .section {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .section-title {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-  }
-
-  .field-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(80px, 1fr));
-    gap: 6px;
-  }
-
-  /* Kolme saraketta leveällä sidebarilla */
-  .left-panel.wide .field-grid {
-    grid-template-columns: repeat(3, minmax(80px, 1fr));
-  }
-
-  /* Neljä saraketta erittäin leveällä */
-  .left-panel.xwide .field-grid {
-    grid-template-columns: repeat(4, minmax(80px, 1fr));
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .field label {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .field input {
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    padding: 7px 10px;
-    border-radius: 3px;
-    width: 100%;
-    transition: border-color 0.15s;
-  }
-
-  /* Kompaktimmat kentät leveällä sidebarilla */
-  .left-panel.wide .field input,
-  .left-panel.wide .field select {
-    padding: 5px 7px;
-    font-size: 13px;
-  }
-  .left-panel.wide .field label { font-size: 10px; }
-
-  .field input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  .field input.angle {
-    border-color: #3a5a8a;
-    color: #7ab3e8;
-  }
-
-  .field input.angle:focus {
-    border-color: #3a8fe8;
-  }
-
-  .field label.angle-label {
-    color: #7ab3e8;
-  }
-
-  /* Segments editor */
-  .segments-list {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .segment-row {
-    display: grid;
-    grid-template-columns: 1fr 80px 28px;
-    gap: 6px;
-    align-items: center;
-  }
-
-  .segment-row .seg-label {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    padding: 0 4px;
-  }
-
-  .btn-remove {
-    background: none;
-    border: 1px solid #444;
-    color: var(--text-dim);
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 14px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s;
-  }
-
-  .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
-
-  .btn-add {
-    background: none;
-    border: 1px dashed var(--border);
-    color: var(--text-dim);
-    font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 12px;
-    padding: 8px;
-    border-radius: 3px;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 8px;
-    transition: all 0.15s;
-  }
-
-  .btn-add:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* Pituustaulukko */
-  .table-wrap {
-    width: 100%;
-  }
-
-  .table-header {
-    display: grid;
-    grid-template-columns: 75px 60px 60px 45px 1fr 28px;
-    gap: 4px;
-    margin-bottom: 4px;
-  }
-
-  .table-header span {
-    font-size: 10px;
-    color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-    text-transform: uppercase;
-    padding: 0 4px;
-  }
-
-  .table-rows {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .table-row {
-    display: grid;
-    grid-template-columns: 75px 60px 60px 45px 1fr 28px;
-    gap: 4px;
-    align-items: center;
-  }
-
-  .table-row input {
-    background: var(--input-bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px;
-    padding: 5px 6px;
-    border-radius: 3px;
-    width: 100%;
-  }
-
-  .table-row input:focus {
-    outline: none;
-    border-color: var(--accent2);
-  }
-
-  .table-row input.huomio { color: #ffaa44; }
-
-  .summary-bar {
-    background: #1e1e1e;
-    border-top: 1px solid var(--border);
-    padding: 12px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .summary-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
-  .summary-label {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: 'IBM Plex Mono', monospace;
-  }
-
-  .summary-value {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--accent2);
-  }
-
-  .summary-value.aihio {
-    font-size: 14px;
-    color: var(--accent);
-  }
-
-  /* SVG panel */
-  .right-panel {
-    background: #f5f5f0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 24px;
-    overflow: auto;
-  }
-
-  .drawing-area {
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-    max-width: 700px;
-  }
-
-  /* Muokkaustilassa (pelti avattu tilauksesta) mallia ei voi vaihtaa */
+  .type-btn:hover { border-color: var(--kpt-korostus); }
+  .type-btn.active { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
   body.malli-lukittu .type-btn:not(.active) { opacity: 0.35; cursor: not-allowed; }
-  #tilaus-lukko { color: #9fd8b5; font-size: 11px; transition: color 0.2s; }
-  #tilaus-lukko.huomio { color: #ffb347; font-weight: 600; }
 
-  .asento-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; max-width: 700px; margin-top: 10px; }
-  .asento-bar > span { display: inline-flex; gap: 8px; }
-  .asento-bar button {
-    min-height: 40px; padding: 0 12px; background: #fff; color: #222; border: 1px solid #b5b5b5; border-radius: 4px;
-    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer;
+  /* ── Sarakkeet: tietokoneella erillinen vieritys (kuten Piippusivuilla) ── */
+  .pelti-ruudukko { align-items: start; }
+  #left-panel, .oikea { min-width: 0; }
+  @media (min-width: 1100px) {
+    body.kpt-sivu { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    main.pelti-sisalto { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; padding-bottom: 0; }
+    .pelti-ruudukko { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(400px, 5fr) minmax(0, 7fr); align-items: stretch; }
+    #left-panel, .oikea { overflow-y: auto; min-height: 0; padding: 0 6px 48px 0; }
   }
-  .asento-bar button.on { background: #e8a020; border-color: #e8a020; color: #1a1a1a; }
-  .asento-vihje { flex-basis: 100%; font-size: 12px; color: #777; font-family: 'IBM Plex Sans', sans-serif; }
+  .oikea { display: flex; flex-direction: column; gap: 12px; }
+  .oikea > * { flex-shrink: 0; }
+  /* Leveä merkkausmittataulukko vierii kortin sisällä eikä saa venyttää sivua (puhelimella sivu leveni 665 px:iin) */
+  .pelti-ruudukko > *, .oikea > * { min-width: 0; max-width: 100%; }
 
-  .cut-list {
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 16px 20px;
-    width: 100%;
-    max-width: 700px;
-    margin-top: 12px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+  /* ── Kentät ── */
+  .field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px 12px; }
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; margin-bottom: 10px; }
+  .field-grid .field { margin-bottom: 0; }
+  .field label { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 13px; color: var(--kpt-himmea); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .field input, .field select, .nimike-input {
+    width: 100%; min-height: 40px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px;
+    padding: 0 10px; font: 15px var(--kpt-mono);
   }
-
-  .cut-list h3 {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #666;
-    margin-bottom: 10px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 6px;
+  .field input:focus, .field select:focus, .nimike-input:focus { outline: none; border-color: var(--kpt-korostus); box-shadow: 0 0 0 2px var(--kpt-korostus-tausta); }
+  .field input.angle { border-color: var(--kpt-info); color: var(--kpt-info); }
+  .field input.angle:focus { border-color: var(--kpt-info); }
+  .field label.angle-label { color: var(--kpt-info); }
+  .kiila-btn {
+    flex: 0 0 auto; background: transparent; border: 1px dashed var(--kpt-reuna2); color: var(--kpt-himmea); border-radius: 5px;
+    font-family: var(--kpt-mono); font-size: 11px; padding: 2px 7px; cursor: pointer; line-height: 1.3;
   }
+  .kiila-btn.on { border-style: solid; border-color: var(--kpt-korostus); background: var(--kpt-korostus-tausta); color: var(--kpt-korostus); }
+  .field input.kiila-b { margin-top: 4px; border-color: var(--kpt-korostus); }
+  .valinnat { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .valinta-rivi { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--kpt-himmea); cursor: pointer; }
+  .valinta-rivi input { width: 18px; height: 18px; accent-color: var(--kpt-korostus); margin: 0; }
+  .nimike-rivi { margin-top: 14px; border-top: 1px solid var(--kpt-reuna); padding-top: 12px; }
+  .nimike-rivi label { display: block; font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--kpt-himmea); margin-bottom: 6px; }
+  .nimike-input { font-family: var(--kpt-fontti); }
 
-  .cut-row {
-    padding: 4px 0;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    gap: 16px;
-    align-items: baseline;
-  }
+  /* Materiaalin hakulistat */
+  .pm-haku { position: relative; }
+  .pm-dd { position: absolute; top: 100%; left: 0; right: 0; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-top: none;
+    max-height: 220px; overflow-y: auto; z-index: 100; border-radius: 0 0 6px 6px; box-shadow: var(--kpt-varjo); }
+  .pm-vaihtoehto { padding: 10px 12px; cursor: pointer; font-size: 14px; border-bottom: 1px solid var(--kpt-reuna); }
+  .pm-vaihtoehto:hover { background: var(--kpt-korostus-tausta); }
 
-  .cut-row .kpl { color: #333; font-weight: 600; min-width: 50px; }
-  .cut-row .mitta { color: #222; flex: 1; }
-  .cut-row .huomio-text { color: #cc4400; font-size: 11px; }
+  /* Vapaa profiili */
+  .segments-list { display: flex; flex-direction: column; gap: 6px; }
+  .segment-row { display: grid; grid-template-columns: minmax(0, 1fr) 90px 40px; gap: 6px; align-items: center; }
+  .segment-row input { min-height: 40px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 0 8px; font: 15px var(--kpt-mono); width: 100%; }
+  .segment-row input.angle { border-color: var(--kpt-info); color: var(--kpt-info); }
+  .btn-remove { min-height: 40px; background: none; border: 1px solid var(--kpt-reuna2); color: var(--kpt-himmea); border-radius: 6px; cursor: pointer; font-size: 16px; }
+  .btn-remove:hover { border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
+  .btn-add { width: 100%; margin-top: 10px; min-height: 40px; background: none; border: 1px dashed var(--kpt-reuna2); color: var(--kpt-himmea); border-radius: 6px; cursor: pointer; font: 14px var(--kpt-fontti); }
+  .btn-add:hover { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
 
-  .cut-total {
-    margin-top: 10px;
-    padding-top: 8px;
-    border-top: 2px solid #333;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
+  /* Pituudet */
+  .table-header, .table-row { display: grid; grid-template-columns: minmax(64px, 1.2fr) minmax(52px, 1fr) minmax(52px, 1fr) minmax(40px, .7fr) minmax(0, 1.6fr) 36px; gap: 5px; align-items: center; }
+  .table-header { margin-bottom: 4px; }
+  .table-header span { font-family: var(--kpt-mono); font-size: 11px; color: var(--kpt-himmea); text-transform: uppercase; padding: 0 4px; }
+  .table-rows { display: flex; flex-direction: column; gap: 5px; }
+  .table-row input { width: 100%; min-height: 38px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 0 6px; font: 14px var(--kpt-mono); }
+  .table-row input:focus { outline: none; border-color: var(--kpt-korostus); }
+  .table-row input.kok { color: var(--kpt-korostus); cursor: default; }
+  .table-row input[type=number] { -moz-appearance: textfield; appearance: textfield; }   /* ei nuolinappeja: luku mahtuu kapeaan sarakkeeseen */
+  .table-row input::-webkit-outer-spin-button, .table-row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .table-row input.huomio { color: var(--kpt-huom); }
+  .table-row .btn-remove { min-height: 38px; }
 
-  .cut-total .label { font-size: 11px; color: #666; }
-  .cut-total .value { font-size: 20px; font-weight: 600; color: #1a6fc4; }
+  /* Työaika */
+  .tyoaika-kentat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .tyoaika-vihje { font-size: 12px; color: var(--kpt-himmea); line-height: 1.5; }
 
-  /* ── Puhelinasettelu (alle 800 px): kuva ylhäällä kiinni, kentät sen alla, leikkauslista viimeisenä ── */
-  @media (max-width: 800px) {
-    .main, .main.with-tilausbar { display: flex; flex-direction: column; height: auto; }
-    .left-panel { overflow: visible; border-right: none; }
-    .sidebar-resizer { display: none; }
-    .right-panel { display: contents; }
-    /* Kuva on sivun alussa. Se nousee kellumaan yläreunaan vain, kun profiilin mittoja
-       muokataan (luokka .telakoitu, ks. focusin/focusout). Paikka sivulla säilyy, joten
-       sisältö ei hypi. */
-    .drawing-area {
-      order: -1; z-index: 20;
-      width: calc(100% - 16px); max-width: none; margin: 8px; max-height: 34vh;
-    }
-    .drawing-area.telakoitu { position: sticky; top: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
-    /* Valittu kenttä ei saa jäädä kelluvan kuvan alle */
-    #profile-fields input { scroll-margin-top: calc(34vh + 28px); }
-    .asento-bar { order: -1; width: calc(100% - 16px); max-width: none; margin: 0 8px 8px; }
-    .asento-bar button { min-height: 44px; }
-    .asento-vihje { color: var(--text-dim); }
-    .cut-list { order: 2; width: calc(100% - 16px); max-width: none; margin: 12px 8px; }
-    /* Tilauspalkki (muokkaustila) rivittyy eikä venytä sivua */
-    #tilaus-bar { flex-wrap: wrap !important; padding: 8px 12px !important; gap: 8px !important; }
-    header { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
-  }
+  /* ── Yhteenveto: aihioleveys isona, muut pieninä (Tomi 26.11.2026: ennen vasemman sarakkeen pohjalla) ── */
+  .yhteenveto { padding: 12px 16px; }
+  .yhteenveto .kpt-avainluku { margin-bottom: 8px; }
+  .yv-rivit { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+  .yv-rivit .summary-row { display: flex; gap: 6px; align-items: baseline; }
+  .summary-label { font-family: var(--kpt-mono); font-size: 11px; color: var(--kpt-himmea); letter-spacing: 0.04em; }
+  .summary-value { font-family: var(--kpt-mono); font-size: 15px; font-weight: 600; color: var(--kpt-teksti); }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     KASVOJENKOHOTUS 13.11.2026 (Mallisto + Vakiomallit, mockup v2:n ilme)
-     Tämä lohko vain korvaa värejä ja muotoja. Jos lohkon poistaa, vanha ilme palaa.
-     ═══════════════════════════════════════════════════════════════════ */
-  :root {
-    --bg: #1c1f26; --panel: #262a33; --border: #3d4350; --input-bg: #1c1f26;
-    --text: #eef0f3; --text-dim: #a9afbb; --accent: #f0a429;
-    --kortti: #2f3440; --paperi: #f4f1ea; --paperi-reuna: #d8d1c2;
-  }
-  header { background: #15171c; }
-
-  /* Mallivalinta: napit välilehtien sijaan */
-  .type-bar { background: #1f232b; padding: 8px 16px; gap: 6px 4px; }
-  .type-group { gap: 6px; flex-wrap: wrap; }
-  .type-group-label { opacity: 1; color: var(--text-dim); letter-spacing: 0.08em; }
-  .type-btn {
-    background: var(--kortti); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--text); padding: 8px 14px; min-height: 38px; font-weight: 500;
-  }
-  .type-btn:hover { border-color: #6b7386; }
-  /* Vakiomallien Yläpelti/Alapelti-rivi (tyylit on kirjoitettu elementtiin, siksi !important) */
-  #ikkuna-subbar { background: #1f232b !important; padding: 0 16px 8px !important; gap: 6px !important; border-bottom-color: var(--border) !important; }
-  .type-btn.active { background: var(--accent); border-color: var(--accent); color: #1c1f26; }
-
-  /* Kentät */
-  .section-title { letter-spacing: 0.12em; }
-  .field input, .field select, .nimike-input, .table-row input {
-    border-radius: 6px;
-  }
-  .field select {
-    background: var(--input-bg); color: var(--text); border: 1px solid var(--border);
-    font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 7px 10px; width: 100%;
-  }
-  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(240,164,41,0.18); }
-  .field input.angle:focus { border-color: #3a8fe8; box-shadow: 0 0 0 2px rgba(58,143,232,0.22); }
-  .summary-bar { background: #15171c; }
-
-  /* Kuva-alue: tumma pohja, kuva ja leikkauslista vaalealla "paperilla" */
-  .right-panel { background: var(--bg); }
+  /* ── Piirros (paperi ja ruudukko kuten ennen) ── */
   .drawing-area {
+    width: 100%; display: block; border: 1px solid var(--paperi-reuna); border-radius: 10px;
     background-color: var(--paperi);
     background-image: linear-gradient(#e6e0d3 1px, transparent 1px), linear-gradient(90deg, #e6e0d3 1px, transparent 1px);
     background-size: 24px 24px;
-    border: 1px solid var(--paperi-reuna); border-radius: 10px;
   }
-  /* Vakiomallien kuva piirtää itse valkoisen taustan: tehdään siitä läpinäkyvä, jotta paperi näkyy */
-  #svgEl > rect:first-child { fill: transparent; }
-  .cut-list { background: var(--paperi); border: 1px solid var(--paperi-reuna); border-radius: 10px; color: #1c1f26; }
-  .cut-list h3 { color: #5b6170; border-bottom-color: var(--paperi-reuna); }
-  .cut-row { border-bottom-color: #e6e0d3; }
-
-  /* Kuvan asento -napit */
+  .asento-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .asento-bar > span { display: inline-flex; gap: 8px; }
   .asento-bar button {
-    background: var(--kortti); color: var(--text); border: 1px solid #4a5160; border-radius: 8px;
-    min-height: 44px; padding: 0 14px; font-size: 14px;
+    min-height: 44px; padding: 0 14px; background: var(--kpt-paneeli); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 8px;
+    font: 500 14px var(--kpt-fontti); cursor: pointer;
   }
-  .asento-bar button:hover { border-color: #6b7386; }
-  .asento-bar button.on { background: var(--accent); border-color: var(--accent); color: #1c1f26; }
-  .asento-vihje { color: var(--text-dim); }
+  .asento-bar button:hover { border-color: var(--kpt-korostus); }
+  .asento-bar button.on { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+  .asento-vihje { flex-basis: 100%; font-size: 13px; color: var(--kpt-himmea); }
 
-  @media (max-width: 800px) {
-    /* Mallit yhdelle sivuttain vieritettävälle riville */
-    .type-bar { flex-wrap: nowrap; overflow-x: auto; padding: 8px 10px; -webkit-overflow-scrolling: touch; }
-    .type-group { flex-wrap: nowrap; flex-shrink: 0; }
-    .type-btn { min-height: 44px; flex-shrink: 0; }
-    /* Isommat kentät sormelle; 16 px estää selainta zoomaamasta kenttään */
-    .field input, .field select { min-height: 44px; font-size: 16px; }
-  }
-  /* Kiilanappi ja pään B kenttä */
-  .field label { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-  .kiila-btn {
-    flex: 0 0 auto; background: transparent; border: 1px dashed #6b7386; color: var(--text-dim); border-radius: 5px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 6px; cursor: pointer; line-height: 1.3;
-  }
-  .kiila-btn.on { border-style: solid; border-color: var(--accent); background: rgba(240,164,41,0.16); color: var(--accent); }
-  .field input.kiila-b { margin-top: 4px; border-color: var(--accent); }
-
-  /* Oikean palstan osat eivät saa kutistua, kun sisältöä on paljon (muuten kuva litistyy) */
-  .right-panel > * { flex-shrink: 0; }
-
-  /* Levityskuva ja merkkausmitat */
-  .lev-kortti { background: var(--paperi); border: 1px solid var(--paperi-reuna); border-radius: 10px; color: #1c1f26;
-    padding: 12px 16px; width: 100%; max-width: 700px; margin-top: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+  /* ── Levityskuva ja leikkauslista: paperikortit kuten ennen (kiinteät tummat tekstit paperilla) ── */
+  .lev-kortti, .cut-list { background: var(--paperi); border: 1px solid var(--paperi-reuna); border-radius: 10px; color: #1c1f26;
+    padding: 14px 18px; font-family: var(--kpt-mono); font-size: 13px; }
   .lev-otsikko { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .lev-otsikko h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #5b6170; margin: 0; font-weight: 600; flex: 1 1 auto; }
+  .lev-otsikko h3, .cut-list h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #5b6170; margin: 0; font-weight: 600; flex: 1 1 auto; }
   .lev-otsikko button { min-height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #b9b2a2; background: #fffdf8; color: #1c1f26;
-    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; }
+    font-family: var(--kpt-fontti); font-size: 13px; font-weight: 500; cursor: pointer; }
   .kiila-merkki { background: #f0a429; color: #1c1f26; font-weight: 600; font-size: 12px; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 5px; }
-  .lev-valinnat { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 8px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; }
+  .lev-valinnat { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 12px 0 8px; font-family: var(--kpt-fontti); font-size: 12px; color: #5b6170; }
   .lev-valinnat label { display: flex; flex-direction: column; gap: 3px; flex: 1 1 180px; min-width: 0; }
-  .lev-valinnat select { min-height: 36px; border-radius: 6px; border: 1px solid #b9b2a2; background: #fffdf8; color: #1c1f26;
-    font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 0 8px; width: 100%; }
+  .lev-valinnat select { min-height: 36px; border-radius: 6px; border: 1px solid #b9b2a2; background: #fffdf8; color: #1c1f26; font-family: var(--kpt-mono); font-size: 14px; padding: 0 8px; width: 100%; }
   .lev-svg { display: block; width: 100%; height: auto; background: #fbf9f4; border: 1px solid #e0d9ca; border-radius: 6px; }
   .lev-luvut { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 10px 0 4px; color: #5b6170; }
   .lev-luvut b { color: #1c1f26; }
@@ -585,62 +173,87 @@
   .lev-taulu th { color: #5b6170; font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
   .lev-taulu .lev-kulma { color: #c0392b; }
   .lev-taulu .lev-b { color: #8a4b00; font-weight: 600; }
-  .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; color: #5b6170; margin: 8px 0 0; }
+  .lev-vihje, .lev-huom { font-family: var(--kpt-fontti); font-size: 12px; color: #5b6170; margin: 8px 0 0; }
   .lev-huom { color: #8a4b00; }
-
-  /* Työaika-arvio */
-  .tyoaika-kentat { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .tyoaika-vihje { margin-top: 8px; font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; line-height: 1.5; }
   .lev-laput { margin-top: 10px; padding-top: 8px; border-top: 1px solid #e0d9ca; }
   .lev-laput b { color: #1c1f26; }
   .lev-laput > div { margin-top: 2px; }
-  .lev-suora { font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600; color: #1d6b3a; background: #e3f1e6; border: 1px solid #a9d3b4; border-radius: 6px; padding: 6px 10px; margin: 8px 0 0; }
+  .lev-suora { font-family: var(--kpt-fontti); font-size: 13px; font-weight: 600; color: #1d6b3a; background: #e3f1e6; border: 1px solid #a9d3b4; border-radius: 6px; padding: 6px 10px; margin: 8px 0 0; }
+  .cut-list h3 { border-bottom: 1px solid var(--paperi-reuna); padding-bottom: 6px; margin-bottom: 10px; }
+  .cut-otsikko { font-size: 11px; color: #5b6170; margin-bottom: 6px; }
+  .cut-row { padding: 4px 0; border-bottom: 1px solid #e6e0d3; display: flex; gap: 16px; align-items: baseline; }
+  .cut-row .kpl { color: #333; font-weight: 600; min-width: 50px; }
+  .cut-row .mitta { color: #222; flex: 1; }
+  .cut-row .huomio-text { color: #cc4400; font-size: 11px; }
+  .cut-lisa { margin-top: 8px; padding-top: 6px; border-top: 1px solid #e0d9ca; font-size: 11px; color: #5b6170; }
+  .cut-lisa.tyo { margin-top: 6px; padding-top: 0; border-top: 0; }
+
+  /* ── Puhelin (alle 800 px): piirros ylhäällä ja kelluu yläreunassa, kun profiilin mittoja muokataan (.telakoitu) ── */
   @media (max-width: 800px) {
-    .lev-kortti { order: 1; width: calc(100% - 16px); max-width: none; margin: 12px 8px 0; }
+    .kpt-yla { position: static; }   /* yläpalkki ei kellu, jotta kuva mahtuu ruudun yläreunaan */
+    .pelti-ruudukko { display: flex; flex-direction: column; gap: 12px; }
+    .oikea { display: contents; }
+    .yhteenveto { order: -3; }
+    .drawing-area { order: -2; z-index: 20; max-height: 34vh; }
+    .drawing-area.telakoitu { position: sticky; top: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+    #profile-fields input { scroll-margin-top: calc(34vh + 28px); }
+    .asento-bar { order: -1; }
+    #left-panel { order: 0; }
+    .lev-kortti { order: 1; }
+    .cut-list { order: 2; }
+    /* Mallit yhdelle sivuttain vieritettävälle riville (kuten ennen) */
+    .type-bar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .type-group { flex-wrap: nowrap; flex-shrink: 0; }
+    .type-btn { min-height: 44px; flex-shrink: 0; }
+    .field input, .field select, .nimike-input, .table-row input, .segment-row input { min-height: 44px; font-size: 16px; }
+    .table-header, .table-row { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, 1fr) 32px; gap: 5px; }
+    .table-row input { padding: 0 5px; }
+    .table-header span { padding: 0 2px; font-size: 10px; }
     .lev-otsikko button, .lev-valinnat select { min-height: 44px; }
     .kiila-btn { font-size: 12px; padding: 5px 10px; }
+    #tilaus-bar { padding: 8px 12px; }
+    #tilaus-ilmoitus { margin-left: 0; flex-basis: 100%; }
   }
   @media print {
     .drawing-area, .cut-list, .lev-kortti { background: #fff !important; background-image: none !important; }
   }
-
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <script src="profiilit.js?v=20261113m"></script>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Peltilistat</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Peltilistat</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
 </header>
 
-<!-- Tilausyhteys-palkki — näkyy vain kun avattu tilauslomakkeelta -->
-<div id="tilaus-bar" style="display:none; background:#1e3d2e; border-bottom:1px solid #2a6a4a; padding:8px 24px; align-items:center; gap:16px; font-family:'IBM Plex Mono',monospace; font-size:12px;">
-  <span id="tilaus-tila" style="color:#3dba6e; font-weight:600">● TILAUS AUKI</span>
-  <span id="tilaus-ryhmä" style="color:#e8e8e8"></span>
-  <span id="tilaus-nimike" style="color:#e8a020; font-weight:600"></span>
+<!-- Tilauspalkki (T2): "Ei tilausta auki" tai tilauksesta avattu (ryhmä, nimike, muokkauksessa lukitus). Lisää-nappi on palkin
+     ensimmäinen nappi (muokkaustila vaihtaa sen tekstin). -->
+<div id="tilaus-bar">
+  <span id="tilaus-tila">● TILAUS AUKI</span>
+  <span id="tilaus-ryhmä"></span>
+  <span id="tilaus-nimike"></span>
   <span id="tilaus-lukko" style="display:none">Mallia ei voi vaihtaa muokatessa. Poista pelti ja lisää uusi, jos malli on väärä.</span>
-  <span id="tilaus-ilmoitus" style="margin-left:auto"></span>
-  <button id="tilaus-laheta-nappi" onclick="lisaaTilaukseen()" style="background:#3dba6e; color:#1a1a1a; border:none; border-radius:4px; padding:6px 16px; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer;">
-    ✓ Lisää tilaukseen
-  </button>
-  <button id="tilaus-peruuta" onclick="peruutaTilaus()" style="background:#333; color:#aaa; border:none; border-radius:4px; padding:6px 10px; font-family:'IBM Plex Mono',monospace; font-size:12px; cursor:pointer;">
-    Peruuta
-  </button>
+  <span id="tilaus-ilmoitus"></span>
+  <button type="button" id="tilaus-laheta-nappi" class="kpt-nappi ensisijainen" onclick="lisaaTilaukseen()">✓ Lisää tilaukseen</button>
+  <button type="button" id="tilaus-peruuta" class="kpt-nappi pieni" onclick="peruutaTilaus()">Peruuta</button>
 </div>
 
+<main class="kpt-sisalto pelti-sisalto">
 <div class="type-bar">
   <div class="type-group">
     <span class="type-group-label">MUUT</span>
@@ -667,135 +280,87 @@
   </div>
 </div>
 
-<div class="main">
-  <div class="left-panel" id="left-panel">
-    <div class="sidebar-resizer" id="sidebar-resizer"></div>
+<div class="kpt-ruudukko pelti-ruudukko">
+  <!-- VASEN: syötöt -->
+  <div id="left-panel">
 
-    <!-- Materiaali -->
-    <div class="section" id="material-section">
-      <div class="section-title">Materiaali</div>
+    <div class="kpt-kortti" id="material-section">
+      <div class="kpt-kortti-otsikko">Materiaali</div>
       <div class="field">
-        <label>Tuoteryhmä</label>
-        <div style="position:relative">
-          <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off"
-            oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)" style="width:100%">
-          <div id="pm-group-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
-            background:var(--panel);border:1px solid var(--border);border-top:none;
-            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+        <label for="pm-group-search">Tuoteryhmä</label>
+        <div class="pm-haku">
+          <input type="text" id="pm-group-search" placeholder="Hae..." autocomplete="off" oninput="pmFilterGroup(this.value)" onfocus="pmFilterGroup(this.value)">
+          <div id="pm-group-dd" class="pm-dd" style="display:none"></div>
           <input type="hidden" id="pm-group">
         </div>
       </div>
       <div class="field" id="pm-color-row">
-        <label>Väri</label>
-        <div style="position:relative">
-          <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off"
-            oninput="pmFilterColor(this.value)" onfocus="pmFilterColor(this.value)" style="width:100%">
-          <div id="pm-color-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
-            background:var(--panel);border:1px solid var(--border);border-top:none;
-            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+        <label for="pm-color-search">Väri</label>
+        <div class="pm-haku">
+          <input type="text" id="pm-color-search" placeholder="Hae..." autocomplete="off" oninput="pmFilterColor(this.value)" onfocus="pmFilterColor(this.value)">
+          <div id="pm-color-dd" class="pm-dd" style="display:none"></div>
           <input type="hidden" id="pm-color">
         </div>
       </div>
       <div class="field">
-        <label>Materiaali</label>
-        <div style="position:relative">
-          <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
-            oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)" style="width:100%">
-          <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
-            background:var(--panel);border:1px solid var(--border);border-top:none;
-            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+        <label for="pm-mat-search">Materiaali</label>
+        <div class="pm-haku">
+          <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off" oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)">
+          <div id="pm-mat-dd" class="pm-dd" style="display:none"></div>
           <input type="hidden" id="pm-mat">
         </div>
       </div>
       <div class="field">
-        <label>Paksuus</label>
-        <select id="pm-thick">
-          <option value="">— valitse —</option>
-        </select>
+        <label for="pm-thick">Paksuus</label>
+        <select id="pm-thick"><option value="">— valitse —</option></select>
       </div>
     </div>
 
-    <!-- Profiilimitat -->
-    <div class="section" id="profile-section">
-      <div class="section-title">Profiilimitat</div>
+    <div class="kpt-kortti" id="profile-section">
+      <div class="kpt-kortti-otsikko">Profiilimitat</div>
       <div id="profile-fields"></div>
     </div>
 
     <!-- Vapaa segmenttieditori (piilotettu vakioprofiileilla) -->
-    <div class="section" id="free-section" style="display:none">
-      <div class="section-title">Taitokset</div>
+    <div class="kpt-kortti" id="free-section" style="display:none">
+      <div class="kpt-kortti-otsikko">Taitokset</div>
       <div class="segments-list" id="segments-list"></div>
-      <button class="btn-add" onclick="addSegment()">+ Lisää taitos</button>
+      <button type="button" class="btn-add" onclick="addSegment()">+ Lisää taitos</button>
     </div>
 
-    <!-- Pituustaulukko -->
-    <div class="section">
-      <div class="section-title">Pituudet</div>
+    <div class="kpt-kortti">
+      <div class="kpt-kortti-otsikko">Pituudet</div>
       <div class="table-wrap">
-        <div class="table-header">
-          <span>Mitta mm</span>
-          <span>Päät mm</span>
-          <span>Kok mm</span>
-          <span>Kpl</span>
-          <span>Huomio</span>
-          <span></span>
-        </div>
+        <div class="table-header"><span>Mitta mm</span><span>Päät mm</span><span>Kok mm</span><span>Kpl</span><span>Huomio</span><span></span></div>
         <div class="table-rows" id="length-rows"></div>
       </div>
-      <button class="btn-add" onclick="addRow()">+ Lisää rivi</button>
+      <button type="button" class="btn-add" onclick="addRow()">+ Lisää rivi</button>
     </div>
 
-    <!-- Työaika-arvio: koskee koko nimikettä, ei kappaletta. Suunnittelu tehdään
-         yleensä eri aikaan kuin itse pelti, siksi omana lukunaan. -->
-    <div class="section" id="tyoaika-section">
-      <div class="section-title">Työaika-arvio</div>
+    <!-- Työaika-arvio: koskee koko nimikettä, ei kappaletta. Suunnittelu tehdään yleensä eri aikaan kuin itse pelti. -->
+    <div class="kpt-kortti" id="tyoaika-section">
+      <div class="kpt-kortti-otsikko">Työaika-arvio</div>
       <div class="tyoaika-kentat">
-        <div class="field">
-          <label for="tyo-suunnittelu">Suunnitteluaika min</label>
-          <input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—" oninput="redraw()">
-        </div>
-        <div class="field">
-          <label for="tyo-tyo">Työaika min</label>
-          <input type="number" id="tyo-tyo" min="0" step="1" placeholder="—" oninput="redraw()">
-        </div>
+        <div class="field"><label for="tyo-suunnittelu">Suunnitteluaika min</label><input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—" oninput="redraw()"></div>
+        <div class="field"><label for="tyo-tyo">Työaika min</label><input type="number" id="tyo-tyo" min="0" step="1" placeholder="—" oninput="redraw()"></div>
       </div>
       <div class="tyoaika-vihje">Molemmat koko nimikkeelle, ei per kappale. Jätä tyhjäksi, jos aikaa ei arvioida.</div>
     </div>
-
-    <!-- Yhteenveto -->
-    <div class="summary-bar">
-      <div class="summary-row">
-        <span class="summary-label">AIHIOLEVEYS</span>
-        <span class="summary-value aihio" id="aihio-val">— mm</span>
-      </div>
-      <div id="kaato-row" class="summary-row" style="display:none">
-        <span class="summary-label">KAATO</span>
-        <span class="summary-value aihio" id="kaato-val">— mm</span>
-      </div>
-      <div id="etenemä-row" class="summary-row" style="display:none">
-        <span class="summary-label">ETENEMÄ</span>
-        <span class="summary-value aihio" id="etenemä-val">— mm</span>
-      </div>
-      <div id="kok-row" class="summary-row" style="display:none">
-        <span class="summary-label">KOK MITTA</span>
-        <span class="summary-value aihio" id="kok-val">— mm</span>
-      </div>
-      <div class="summary-row" id="tyoaika-row" style="display:none">
-        <span class="summary-label">TYÖAIKA</span>
-        <span class="summary-value aihio" id="tyoaika-val">—</span>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">TAITOKSET</span>
-        <span class="summary-value aihio" id="taitokset-val">—</span>
-      </div>
-      <div class="summary-row">
-        <span class="summary-label">YHTEENSÄ</span>
-        <span class="summary-value" id="total-m2">0.00 m²</span>
-      </div>
-    </div>
   </div>
 
-  <div class="right-panel">
+  <!-- OIKEA: yhteenveto, piirros, asento, levityskuva, leikkauslista -->
+  <div class="oikea right-panel">
+    <div class="kpt-kortti yhteenveto" id="yhteenveto">
+      <div class="kpt-avainluku"><span class="nimi">Aihioleveys</span><span class="arvo" id="aihio-val">— mm</span></div>
+      <div class="yv-rivit">
+        <div id="kaato-row" class="summary-row" style="display:none"><span class="summary-label">KAATO</span><span class="summary-value" id="kaato-val">— mm</span></div>
+        <div id="etenemä-row" class="summary-row" style="display:none"><span class="summary-label">ETENEMÄ</span><span class="summary-value" id="etenemä-val">— mm</span></div>
+        <div id="kok-row" class="summary-row" style="display:none"><span class="summary-label">KOK MITTA</span><span class="summary-value" id="kok-val">— mm</span></div>
+        <div class="summary-row" id="tyoaika-row" style="display:none"><span class="summary-label">TYÖAIKA</span><span class="summary-value" id="tyoaika-val">—</span></div>
+        <div class="summary-row"><span class="summary-label">TAITOKSET</span><span class="summary-value" id="taitokset-val">—</span></div>
+        <div class="summary-row"><span class="summary-label">YHTEENSÄ</span><span class="summary-value" id="total-m2">0.00 m²</span></div>
+      </div>
+    </div>
     <svg id="drawing" class="drawing-area" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg"></svg>
     <div class="asento-bar" id="asento-bar">
       <button type="button" onclick="asentoKaanna()" title="Käännä kuvaa 90 astetta">&#10227; Käännä 90°</button>
@@ -829,10 +394,11 @@
     </div>
   </div>
 </div>
+</main>
 
 <script src="materiaali.js?v=5"></script>
 <script src="lahetys.js?v=3"></script>
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ─── Profiilityypit ───────────────────────────────────────────────
 // Profiilien kaavat ovat yhteisessä tiedostossa profiilit.js (siirretty 13.11.2026)
 if (!window.KPT_PROFIILIT) {
@@ -905,9 +471,7 @@ function pmShowDropdown(ddId, items, onClickFn) {
   items.forEach(v => {
     const div = document.createElement('div');
     div.textContent = v;
-    div.style.cssText = 'padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)';
-    div.onmouseover = () => div.style.background = 'var(--input-bg)';
-    div.onmouseout = () => div.style.background = '';
+    div.className = 'pm-vaihtoehto';   // R2d: ulkoasu tyyleistä
     div.onclick = () => onClickFn(v);
     dd.appendChild(div);
   });
@@ -1002,54 +566,7 @@ document.addEventListener('click', e => {
 
 pmValmis = fetchPmProducts();
 
-// ── Sidebar resize ────────────────────────────────────────────────
-(function() {
-  const STORAGE_KEY = 'kpt_mallisto_sidebar_width';
-  const MIN_WIDTH = 280;
-  const MAX_WIDTH = 800;
-  const WIDE_THRESHOLD = 480;
-  const XWIDE_THRESHOLD = 640;
-
-  const panel = document.getElementById('left-panel');
-  const resizer = document.getElementById('sidebar-resizer');
-  const main = document.querySelector('.main');
-
-  const saved = parseInt(localStorage.getItem(STORAGE_KEY));
-  if (saved && saved >= MIN_WIDTH) {
-    main.style.gridTemplateColumns = saved + 'px 1fr';
-    if (saved >= XWIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.add('xwide'); }
-    else if (saved >= WIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.remove('xwide'); }
-  }
-
-  let startX, startW;
-  resizer.addEventListener('mousedown', e => {
-    startX = e.clientX;
-    startW = panel.offsetWidth;
-    resizer.classList.add('dragging');
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-
-    function onMove(e) {
-      const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (e.clientX - startX)));
-      main.style.gridTemplateColumns = w + 'px 1fr';
-      if (w >= XWIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.add('xwide'); }
-      else if (w >= WIDE_THRESHOLD) { panel.classList.add('wide'); panel.classList.remove('xwide'); }
-      else { panel.classList.remove('wide'); panel.classList.remove('xwide'); }
-    }
-
-    function onUp() {
-      localStorage.setItem(STORAGE_KEY, panel.offsetWidth);
-      resizer.classList.remove('dragging');
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    }
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  });
-})();
+// Sivupalkin venytys poistettu (R2d, 26.11.2026, Tomi: ei käytössä)
 
 function renderProfileFields() {
   const type = TYPES[activeType];
@@ -1080,14 +597,14 @@ function renderProfileFields() {
   // Valinnaiset checkboxit jos tyypillä on options
   if (type.options) {
     const optDiv = document.createElement('div');
-    optDiv.style.cssText = 'margin-top:12px; display:flex; flex-direction:column; gap:6px;';
+    optDiv.className = 'valinnat';
     type.options.forEach(opt => {
       const row = document.createElement('label');
-      row.style.cssText = 'display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-dim); cursor:pointer;';
+      row.className = 'valinta-rivi';
       const existing = document.getElementById('opt_' + opt.id);
       const checked = existing ? existing.checked : false;
       row.innerHTML = `
-        <input type="checkbox" id="opt_${opt.id}" ${checked ? 'checked' : ''} onchange="redraw()" style="accent-color:var(--accent);">
+        <input type="checkbox" id="opt_${opt.id}" ${checked ? 'checked' : ''} onchange="redraw()">
         ${opt.label}
       `;
       optDiv.appendChild(row);
@@ -1097,14 +614,11 @@ function renderProfileFields() {
 
   // Nimike-kenttä aina näkyvissä
   const nDiv = document.createElement('div');
-  nDiv.style.cssText = 'margin-top:12px; border-top:1px solid var(--border); padding-top:10px;';
+  nDiv.className = 'nimike-rivi';
   const currentNimike = (typeof tilausContext !== 'undefined' && tilausContext?.nimike) || type.name || '';
   nDiv.innerHTML = `
-    <label style="font-size:11px;color:var(--text-dim);font-family:IBM Plex Mono,monospace">NIMIKE</label>
-    <input type="text" id="profile-nimike" value="${currentNimike}"
-      style="background:var(--input-bg);border:1px solid var(--border);color:var(--text);
-             font-family:IBM Plex Mono,monospace;font-size:13px;padding:6px 8px;
-             border-radius:4px;width:100%;margin-top:4px;"
+    <label for="profile-nimike">NIMIKE</label>
+    <input type="text" id="profile-nimike" class="nimike-input" value="${currentNimike}"
       oninput="if(typeof tilausContext !== 'undefined' && tilausContext) tilausContext.nimike=this.value">
   `;
   el.appendChild(nDiv);
@@ -1120,7 +634,7 @@ function renderFreeSegments() {
     row.innerHTML = `
       <input type="number" value="${seg.len}" placeholder="mm" oninput="freeSegments[${i}].len=+this.value;redraw()">
       <input type="number" value="${seg.angle}" placeholder="°" class="angle" oninput="freeSegments[${i}].angle=+this.value;redraw()">
-      <button class="btn-remove" onclick="removeSegment(${i})">×</button>
+      <button type="button" class="btn-remove" onclick="removeSegment(${i})" title="Poista taitos">×</button>
     `;
     list.appendChild(row);
   });
@@ -1148,10 +662,10 @@ function renderLengthRows() {
     row.innerHTML = `
       <input type="number" value="${r.mitta}" placeholder="1000" oninput="lengthRows[${i}].mitta=+this.value;redraw()">
       <input type="number" value="${r.paat}" placeholder="0" oninput="lengthRows[${i}].paat=+this.value;redraw()">
-      <input type="number" value="${(r.mitta||0)+(r.paat||0)}" placeholder="—" readonly style="color:var(--accent);cursor:default;" id="kok_${i}">
+      <input type="number" value="${(r.mitta||0)+(r.paat||0)}" placeholder="—" readonly class="kok" id="kok_${i}">
       <input type="number" value="${r.kpl}" placeholder="1" oninput="lengthRows[${i}].kpl=+this.value;redraw()">
       <input type="text" value="${r.huomio}" placeholder="—" class="${r.huomio ? 'huomio' : ''}" oninput="lengthRows[${i}].huomio=this.value;this.className=this.value?'huomio':'';redraw()">
-      <button class="btn-remove" onclick="removeRow(${i})">×</button>
+      <button type="button" class="btn-remove" onclick="removeRow(${i})" title="Poista rivi">×</button>
     `;
     container.appendChild(row);
   });
@@ -1522,15 +1036,15 @@ function redraw() {
   // Leikkauslista HTML
   const listEl = document.getElementById('cut-list-rows');
   const nimike = document.getElementById('nimike')?.value || TYPES[activeType]?.name || '';
-  listEl.innerHTML = `<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;font-family:IBM Plex Mono,monospace">${nimike} — aihio ${aihio.toFixed(0)} mm</div>` + cutRows.map(r => `
+  listEl.innerHTML = `<div class="cut-otsikko">${nimike} — aihio ${aihio.toFixed(0)} mm</div>` + cutRows.map(r => `
     <div class="cut-row">
       <span class="mitta">${r.paat > 0 ? `${r.mitta}+${r.paat} = ` : ''}<strong>${r.kok} mm</strong></span>
       <span class="kpl">${r.kpl} kpl</span>
       ${r.huomio ? `<span class="huomio-text">⚠ ${r.huomio}</span>` : ''}
     </div>
-  `).join('') + (lappuM2 > 0 ? `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #e0d9ca;font-size:11px;color:#5b6170;font-family:IBM Plex Mono,monospace">
+  `).join('') + (lappuM2 > 0 ? `<div class="cut-lisa">
       Päätylaput erillistä peltiä: ${(TYPES[activeType].paatylaput(vals2, opts2, kiilaPituus()) || []).map(x => `${kplYht} × ${window.KPT_PROFIILIT.muotoile(x.leveys)}×${window.KPT_PROFIILIT.muotoile(x.korkeus)} mm (${x.nimi})`).join(' + ')} = ${lappuM2.toFixed(2)} m²
-    </div>` : '') + (tyo ? `<div style="margin-top:6px;font-size:11px;color:#5b6170;font-family:IBM Plex Mono,monospace">
+    </div>` : '') + (tyo ? `<div class="cut-lisa tyo">
       Työaika-arvio: ${tyo.suunnittelu_min > 0 ? `suunnittelu ${window.KPT_PROFIILIT.muotoile(tyo.suunnittelu_min)} min` : ''}${tyo.suunnittelu_min > 0 && tyo.tyo_min > 0 ? ' + ' : ''}${tyo.tyo_min > 0 ? `työ ${window.KPT_PROFIILIT.muotoile(tyo.tyo_min)} min` : ''}${tyo.suunnittelu_min > 0 && tyo.tyo_min > 0 ? ` = <strong>${window.KPT_PROFIILIT.muotoile(tyo.yhteensa_min)} min</strong>` : ''}
     </div>` : '');
 }
@@ -1920,18 +1434,16 @@ function lisaaTilaukseen() {
 // joka tapauksessa, jolloin pelti saattoi kadota), suoraan avattu sivu jää auki seuraavaa peltiä varten.
 function tilausIlmoitus(teksti, tyyppi) {
   const el = document.getElementById('tilaus-ilmoitus');
-  if (el) { el.textContent = teksti; el.style.color = ({ odota: '#9aa5b1', ok: '#3dba6e', huom: '#f5b942', virhe: '#f87171' })[tyyppi] || ''; }
+  if (el) { el.textContent = teksti; el.className = ['odota', 'ok', 'huom', 'virhe'].includes(tyyppi) ? tyyppi : ''; }   // värit tyyleistä (R2d)
   const nappi = document.getElementById('tilaus-laheta-nappi');
   if (nappi) nappi.disabled = tyyppi === 'odota';
 }
 function tilausPalkkiTila(auki) {
   const bar = document.getElementById('tilaus-bar');
   bar.style.display = 'flex';
-  bar.style.background = auki ? '#1e3d2e' : '#1c2532';
-  bar.style.borderBottomColor = auki ? '#2a6a4a' : '#2a3442';
+  bar.classList.toggle('auki', !!auki);   // R2d: värit tyyleistä (tilaus auki = vihertävä)
   const tila = document.getElementById('tilaus-tila');
   tila.textContent = auki ? '● TILAUS AUKI' : '○ EI TILAUSTA AUKI';
-  tila.style.color = auki ? '#3dba6e' : '#9aa5b1';
   const peruuta = document.getElementById('tilaus-peruuta');
   if (peruuta) peruuta.style.display = auki ? '' : 'none';
 }
@@ -1954,13 +1466,6 @@ function peruutaTilaus() {
   if (window.opener && !window.opener.closed) window.close();
 }
 
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-document.addEventListener('click', function() {
-  document.getElementById('navDropdown').classList.remove('open');
-});
 </script>
 </body>
 </html>
