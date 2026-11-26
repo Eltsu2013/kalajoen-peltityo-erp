@@ -7,6 +7,7 @@ const path = require('path');
 require('../../orders/geom.js');
 require('../../orders/pellit.js');
 require('../../orders/menekki.js');
+require('../../orders/dxf.js');
 globalThis.KPT_TYOKORTTI = require('../../orders/tyokortti.js');
 
 module.exports = function lataa() {

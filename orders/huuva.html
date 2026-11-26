@@ -85,6 +85,8 @@
   .mk-ryhma .kpt-piirros { margin-bottom: 8px; }
   .mk-nimi { font-family: var(--kpt-mono); font-size: 13px; font-weight: 600; color: var(--kpt-teksti); margin-bottom: 6px; }
   #kaista-sisalto { overflow-x: auto; }
+  .dxf-rivi { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 4px; }
+  .dxf-rivi .kpt-vihje { margin: 0; flex: 1 1 260px; }
   .pt-wrap { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
   .pt-table { border-collapse: collapse; font-family: var(--kpt-mono); font-size: 12px; margin-bottom: 6px; }
   .pt-table th, .pt-table td { border: 1px solid var(--kpt-reuna); padding: 3px 10px; text-align: right; }
@@ -329,6 +331,9 @@
       <details id="k-levitys" data-kortti class="kpt-kortti" open><summary>Levityskuva (laskettu) <span class="yv" id="ky-levitys"></span></summary><div class="k-sisalto">
         <div class="kpt-piirros paperi"><svg id="svg-levitys" viewBox="0 0 520 330"></svg></div>
         <p class="kpt-vihje">Oranssi = paneeli, keltainen = taitos (leveys · kanttausluku). Piirretty ulkopuolelta katsottuna.</p>
+        <!-- DXF (vaihe 8.5 D2, 26.11.2026): kaikki palat samaan tiedostoon, ulkopinta ylöspäin (Tomi) -->
+        <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaHuuvaDxf()">⬇ DXF-tiedosto (kaikki palat)</button>
+          <span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin.</span></div>
       </div></details>
 
       <details id="k-merkinta" data-kortti class="kpt-kortti" open><summary>Merkintäpisteet (aihion vasemmasta alakulmasta) <span class="yv" id="ky-merkinta"></span></summary><div class="k-sisalto">
@@ -353,6 +358,7 @@
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
 <script src="tyokortti.js?v=5"></script>
+<script src="dxf.js?v=1"></script>
 <script>
   // Yhteiset työkalut (vaihe 1, 20.11.2026): geometria orders/geom.js ja pelti-osat orders/pellit.js.
   // Funktiot otetaan käyttöön samoilla nimillä kuin ennen, joten alla oleva Huuvan koodi ei muuttunut.
@@ -736,6 +742,50 @@
       return kappaleet ? k.tulos() : null;
     }
     return kappaleet ? laskeKaistat(panels, lueKaistaAsetukset()) : null;
+  }
+
+  // ---------- DXF (vaihe 8.5 D2, 26.11.2026) ----------
+  // Kaikki palaryhmät samaan tiedostoon vierekkäin (väli 50 mm), ulkopinta ylöspäin (Tomi 26.11.: aina, ei peilikuvaa).
+  // Ääriviiva = merkintäpisteiden ääriviiva (aihioPisteet), joten DXF vastaa paperia. TAITOS-tasolle paneelin reunat, jotka
+  // eivät ole ääriviivalla (taitokset sivuihin, ylä- ja alareunaan), ja alareunan taitosviivat. Koordinaatit aihion vasemmasta alakulmasta.
+  const DXF_VALI = 50, DXF_TEKSTI = 12;   // mm
+  function reunaAariviivalla(a, b, pisteet) {
+    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], n = pisteet.length;
+    for (let i = 0; i < n; i++) {
+      const s0 = [pisteet[i].x, pisteet[i].y], s1 = [pisteet[(i + 1) % n].x, pisteet[(i + 1) % n].y];
+      const vx = s1[0] - s0[0], vy = s1[1] - s0[1], L = Math.hypot(vx, vy);
+      if (L < 1e-9) continue;
+      const etai = q => Math.abs((q[0] - s0[0]) * vy - (q[1] - s0[1]) * vx) / L;
+      const t = ((m[0] - s0[0]) * vx + (m[1] - s0[1]) * vy) / (L * L);
+      if (etai(a) < 0.05 && etai(b) < 0.05 && t > -1e-6 && t < 1 + 1e-6) return true;
+    }
+    return false;
+  }
+  function huuvaDxf(panels, nimi) {
+    const D = globalThis.KPT_DXF;
+    if (!D || !panels || !panels.length) return null;
+    const d = D.uusi();
+    let x0 = 0;
+    panels.forEach(p => {
+      const r = aihioPisteet(p, false);
+      if (!r.pisteet.length) return;
+      d.monikulmio(r.pisteet.map(q => [x0 + q.x, q.y]), 'LEIKKAUS');
+      const reuna = (p.paneeli || [p.A2, p.B2, p.C2, p.D2]).map(q => [q[0] - p.minX, q[1] - p.minY]);
+      reuna.forEach((a, i) => {
+        const b = reuna[(i + 1) % reuna.length];
+        if (!reunaAariviivalla(a, b, r.pisteet)) d.viiva(x0 + a[0], a[1], x0 + b[0], b[1], 'TAITOS');
+      });
+      p.flanges.forEach(f => (f.foldLines || []).forEach(fl => d.viiva(x0 + fl.p[0] - p.minX, fl.p[1] - p.minY, x0 + fl.q[0] - p.minX, fl.q[1] - p.minY, 'TAITOS')));
+      d.teksti(x0, p.h + 15, DXF_TEKSTI, (nimi ? nimi + ' · ' : '') + p.name + kplTeksti(p) + ' · aihio ' + aihioMm(p.w) + ' × ' + aihioMm(p.h) + ' mm', 'TEKSTI');
+      x0 += p.w + DXF_VALI;
+    });
+    return d.tyhja() ? null : d;
+  }
+  function lataaHuuvaDxf() {
+    const nimi = (document.getElementById('k-nimi') || {}).value || 'Huuva';
+    const d = viimeisinLasku && huuvaDxf(viimeisinLasku.panels, nimi);
+    if (!d) { alert('Syötä huuvan mitat ensin.'); return; }
+    d.lataa(nimi + '.dxf');
   }
 
   // ---------- Tulostettavat työkortit ----------
