@@ -16,7 +16,7 @@ ok(M.teksti({ material: 'Pelti', color: 'RR33', thickness: 0.5 }) === 'Pelti RR3
 const S = T.concat([{ material: 'Stucco alumiini', color: null, thickness_mm: 0.7 }, { material: 'Stucco alumiini', color: '', thickness_mm: 1.0 }]);
 ok(M.varit(S, 'Stucco alumiini').length === 0 && JSON.stringify(M.paksuudet(S, 'Stucco alumiini', null)) === '[0.7,1]', '6: väritön materiaali: ei värejä, paksuudet ilman väriä');
 ok(M.puuttuu(S, { material: 'Stucco alumiini', color: null, thickness: 0.7 }) === null, '7: värittömältä ei vaadita väriä (ennen herjasi "valitse väri")');
-ok(M.puuttuu(S, { material: 'Pelti', thickness: 0.5 }) === 'väri' && M.puuttuu(S, { material: 'Pelti', color: 'RR33' }) === 'paksuus' && M.puuttuu(S, {}) === 'materiaali', '8: värillinen vaatii värin ja paksuuden');
+ok(M.puuttuu(S, { material: 'Pelti', thickness: 0.5 }) === 'väri' && M.puuttuu(S, { material: 'Pelti', color: 'RR33' }) === 'paksuus' && M.puuttuu(S, {}) === 'väri' && M.puuttuu([{ material: 'Stucco', color: null }], {}) === 'materiaali', '8: värillinen vaatii värin ja paksuuden');
 ok(JSON.stringify(M.suodata(M.materiaalit(S), 'STU')) === '["Stucco alumiini"]' && M.suodata(['a', 'b'], '').length === 2, '9: haku kirjoittamalla, kirjainkoko ei haittaa');
 // v3 (Tomi 26.11.2026): tuoteryhmä, väri ennen materiaalia, kirjoitusasujen tupla
 const R = [

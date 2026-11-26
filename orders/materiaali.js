@@ -12,7 +12,8 @@
 //   Tuoteryhmä → Väri → Materiaali → Paksuus: väri rajaa materiaalit (RR20 → lähes aina Glossy) ja materiaali värit.
 //   Tuoteryhmät verrataan kirjainkoosta välittämättä ("Pinnoitettu teräs" = "Pinnoitettu Teräs"), oletus Pinnoitettu teräs.
 //   listat(tuotteet, { ryhma, vari, materiaali }) → { varit, materiaalit, paksuudet, ryhmallaVareja }, ryhmat(), oletusRyhma(),
-//   ryhmaTuotteelle(). Käyttäjät: peltipiirturi.html, vakiomallit.html (valitsin() tulee ryhmän kanssa myöhemmin).
+//   ryhmaTuotteelle(). Käyttäjät: peltipiirturi.html, vakiomallit.html; valitsin() samassa järjestyksessä (Huuva, Kartio),
+//   oletus Pinnoitettu teräs, ei enää edellisen valinnan muistia (avain-asetus jätetään huomiotta).
 // Käyttäjät: huuva.html, kartio.html, peltipiirturi.html, vakiomallit.html. MUISTA: nosta ?v=-numeroa sivuilla, jotka lataavat tämän.
 (function () {
   'use strict';
@@ -32,9 +33,11 @@
     const h = String(haku || '').trim().toLowerCase();
     return h ? lista.filter(v => String(v).toLowerCase().indexOf(h) >= 0) : lista;
   }
+  // v3: väri kysytään ennen materiaalia (järjestys Väri → Materiaali), väri vain jos ryhmällä / materiaalilla on värejä
   function puuttuu(tuotteet, a) {
-    if (!a || !a.material) return 'materiaali';
-    if (!a.color && varit(tuotteet, a.material).length) return 'väri';
+    a = a || {};
+    if (!a.material) return (!a.color && listat(tuotteet, { ryhma: a.group }).ryhmallaVareja) ? 'väri' : 'materiaali';
+    if (!a.color && listat(tuotteet, { ryhma: a.group, materiaali: a.material }).varit.length) return 'väri';
     if (!a.thickness) return 'paksuus';
     return null;
   }
@@ -83,7 +86,7 @@
   let tuotteetLupaus = null;
   function haeTuotteet() {
     if (!tuotteetLupaus) {
-      tuotteetLupaus = fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m%C2%B2&select=material,color,thickness_mm&order=material,color',
+      tuotteetLupaus = fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m%C2%B2&select=product_group,material,color,thickness_mm&order=material,color',
         { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } })
         .then(r => r.ok ? r.json() : [])
         .catch(() => []);
@@ -151,57 +154,83 @@
     };
   }
 
+  // v3: Tuoteryhmä → Väri → Materiaali → Paksuus, uudella työllä oletus Pinnoitettu teräs (ei enää edellisen valinnan muistia,
+  // Tomi 26.11.2026). arvo() = { group, material, color, thickness }. aseta(a): ryhmä päätellään materiaalista, jos se puuttuu.
   function valitsin(el, o) {
     o = o || {};
     tyylit();
-    const avain = o.avain || 'kpt_materiaali';
     let tuotteet = [];
+    let tila = { group: '', color: null, material: null, thickness: null };
     el.innerHTML = '<div class="kpt-kentat">'
-      + '<div class="kpt-kentta" data-m="material"></div>'
+      + '<div class="kpt-kentta" data-m="group"></div>'
       + '<div class="kpt-kentta" data-m="color"></div>'
+      + '<div class="kpt-kentta" data-m="material"></div>'
       + '<div class="kpt-kentta"><label>Paksuus</label><select data-m="thickness"><option value="">Paksuus</option></select></div>'
       + '</div>';
     const pk = el.querySelector('select[data-m="thickness"]');
-    const kMat = hakuKentta(el.querySelector('[data-m="material"]'), 'Materiaali', { valittu: m => muutos('material', { material: m, color: null, thickness: null }) });
-    const kVari = hakuKentta(el.querySelector('[data-m="color"]'), 'Väri', { valittu: v => muutos('color', { material: kMat.arvo(), color: v, thickness: null }) });
+    const kRyhma = hakuKentta(el.querySelector('[data-m="group"]'), 'Tuoteryhmä', { valittu: g => {
+      muutos('group', samaRyhma(g, tila.group) ? Object.assign({}, tila, { group: g }) : { group: g, color: null, material: null, thickness: null });
+    } });
+    const kVari = hakuKentta(el.querySelector('[data-m="color"]'), 'Väri', { valittu: v => {
+      const a = Object.assign({}, tila, { color: v || null });
+      const mats = listat(tuotteet, { ryhma: a.group, vari: a.color }).materiaalit;
+      if (a.material && mats.indexOf(a.material) < 0) a.material = null;   // materiaali ei käy uudelle värille
+      if (!a.material && mats.length === 1) a.material = mats[0];         // vain yksi materiaali tässä värissä
+      muutos('color', a);
+    } });
+    const kMat = hakuKentta(el.querySelector('[data-m="material"]'), 'Materiaali', { valittu: m => {
+      const a = Object.assign({}, tila, { material: m || null });
+      if (a.color && listat(tuotteet, { ryhma: a.group, materiaali: a.material }).varit.indexOf(a.color) < 0) a.color = null;
+      muutos('material', a);
+    } });
+    const lisaa = (lista, x) => x ? uniikit(lista.concat([x])) : lista;   // tallennettu, poistunut tuote näkyy silti
     function arvo() {
       const t = parseFloat(pk.value);
-      return { material: kMat.arvo() || null, color: kVari.arvo() || null, thickness: t > 0 ? t : null };
+      return { group: tila.group || null, material: tila.material || null, color: tila.color || null, thickness: t > 0 ? t : null };
     }
     function tayta(a) {
-      a = a || {};
-      kMat.vaihtoehdot(uniikit(materiaalit(tuotteet).concat(a.material ? [a.material] : [])).sort(jarj), 'Haetaan…');   // tallennettu, poistunut tuote näkyy silti
-      kMat.aseta(a.material);
-      const v = a.material ? uniikit(varit(tuotteet, a.material).concat(a.color ? [a.color] : [])).sort(jarj) : [];
-      kVari.vaihtoehdot(v, a.material ? 'Ei värejä' : 'Valitse materiaali');
-      kVari.aseta(a.color);
-      const pks = a.material ? uniikit(paksuudet(tuotteet, a.material, a.color).concat(a.thickness ? [Number(a.thickness)] : [])).sort((x, y) => x - y) : [];
+      tila = { group: a.group || '', color: a.color || null, material: a.material || null, thickness: a.thickness || null };
+      const lad = !tuotteet.length;
+      kRyhma.vaihtoehdot(lisaa(ryhmat(tuotteet), tila.group).sort(jarj), lad ? 'Haetaan…' : 'Ei tuoteryhmiä');
+      kRyhma.aseta(tila.group);
+      const varitR = lisaa(listat(tuotteet, { ryhma: tila.group }).varit, tila.color).sort(jarj);
+      kVari.vaihtoehdot(varitR, lad ? 'Haetaan…' : 'Ei värejä');
+      kVari.aseta(tila.color);
+      const L = listat(tuotteet, { ryhma: tila.group, vari: tila.color, materiaali: tila.material });
+      kMat.vaihtoehdot(lisaa(L.materiaalit, tila.material).sort(jarj), lad ? 'Haetaan…' : 'Ei materiaaleja');
+      kMat.aseta(tila.material);
+      const pks = lisaa(L.paksuudet, tila.thickness ? Number(tila.thickness) : null).sort((x, y) => x - y);
       pk.innerHTML = '<option value="">Paksuus</option>' + pks.map(x => '<option value="' + x + '">' + String(x).replace('.', ',') + ' mm</option>').join('');
-      pk.value = a.thickness ? String(Number(a.thickness)) : '';
+      pk.value = tila.thickness ? String(Number(tila.thickness)) : '';
     }
-    function muista() { try { localStorage.setItem(avain, JSON.stringify(arvo())); } catch (e) { /* ei tallennusta */ } }
     function muutos(mika, a) {
-      // Ainoa paksuus valitaan valmiiksi, kun väri on valittu tai materiaalilla ei ole värejä
-      if (mika !== 'thickness' && a.material && (a.color || !varit(tuotteet, a.material).length)) {
-        const pks = paksuudet(tuotteet, a.material, a.color);
-        if (pks.length === 1) a.thickness = pks[0];
-      }
+      // Ainoa paksuus valitaan valmiiksi, kun materiaali on valittu (ja väri, jos sillä on värejä); kelpaava paksuus säilyy
+      if (mika !== 'thickness' && a.material) {
+        const L = listat(tuotteet, { ryhma: a.group, vari: a.color, materiaali: a.material });
+        const variTarvitaan = !a.color && listat(tuotteet, { ryhma: a.group, materiaali: a.material }).varit.length;
+        if (a.thickness && L.paksuudet.indexOf(Number(a.thickness)) < 0) a.thickness = null;
+        if (!a.thickness && !variTarvitaan && L.paksuudet.length === 1) a.thickness = L.paksuudet[0];
+      } else if (mika !== 'thickness') a.thickness = null;
       tayta(a);
-      muista();
       if (o.muutos) o.muutos(arvo(), mika);
     }
-    pk.addEventListener('change', () => muutos('thickness', arvo()));
+    pk.addEventListener('change', () => { tila.thickness = parseFloat(pk.value) || null; muutos('thickness', Object.assign({}, tila)); });
     tayta({});
     const valmis = haeTuotteet().then(t => {
       tuotteet = Array.isArray(t) ? t : [];
-      let muistettu = null;
-      try { muistettu = JSON.parse(localStorage.getItem(avain) || 'null'); } catch (e) { /* ei muistettua */ }
-      tayta(muistettu || {});
+      if (!tila.group && !tila.material) tayta({ group: oletusRyhma(tuotteet) });
+      else tayta(tila);
       if (o.muutos) o.muutos(arvo(), 'alku');
     });
+    function aseta(a) {
+      a = Object.assign({}, a || {});
+      if (!a.group && a.material) a.group = ryhmaTuotteelle(tuotteet, a.material, a.color);
+      if (a.group) a.group = ryhmat(tuotteet).find(g => samaRyhma(g, a.group)) || a.group;
+      tayta(a);
+    }
     return {
       arvo, valmis,
-      aseta: a => valmis.then(() => { tayta(a); }),
+      aseta: a => valmis.then(() => aseta(a)),
       puuttuu: () => puuttuu(tuotteet, arvo()),
       teksti: () => teksti(arvo()),
     };
