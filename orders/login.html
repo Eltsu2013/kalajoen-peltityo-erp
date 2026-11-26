@@ -5,30 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kirjaudu — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Ulkoasuremontti R6c (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Ei kategoriaväriä (neutraali), ulkoasu
+       viimeksi valitun mukaan (kytkimen muisti), logo ulkoasun mukaan, toistuva yritysnimi logon alta pois (Tomi 26.11.).
+       Rakenne, id:t ja kirjautumisen skripti ennallaan. -->
+  <link rel="stylesheet" href="tyyli.css?v=2">
+  <script src="teema.js?v=1"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Kirjautumissivulla ei ole valikkoa eikä kategoriaa: korostus neutraali */
+    :root, html[data-teema] { --kpt-korostus: var(--kpt-v-neutraali); }
 
-    :root {
-      --accent: #0ea5e9;
-      --accent-light: #38bdf8;
-      --accent-dark: #0284c7;
-      --bg: #0a0e12;
-      --surface: #111827;
-      --surface2: #1a2332;
-      --border: #1e3a4a;
-      --text: #e2eef5;
-      --text-muted: #6b8fa8;
-      --error: #ef4444;
-      --success: #22c55e;
-    }
-
-    html, body {
-      height: 100%;
-      font-family: 'IBM Plex Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-
+    html, body { height: 100%; }
     body {
       display: flex;
       align-items: center;
@@ -45,49 +32,25 @@
       position: fixed;
       inset: 0;
       background:
-        repeating-linear-gradient(
-          90deg,
-          transparent 0px,
-          transparent 60px,
-          rgba(14,165,233,0.015) 60px,
-          rgba(14,165,233,0.015) 61px
-        ),
-        repeating-linear-gradient(
-          180deg,
-          transparent 0px,
-          transparent 60px,
-          rgba(14,165,233,0.015) 60px,
-          rgba(14,165,233,0.015) 61px
-        );
-      pointer-events: none;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      top: -200px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 800px;
-      height: 500px;
-      background: radial-gradient(ellipse, rgba(14,165,233,0.06) 0%, transparent 70%);
+        repeating-linear-gradient(90deg, transparent 0px, transparent 60px,
+          color-mix(in srgb, var(--kpt-teksti) 3%, transparent) 60px, color-mix(in srgb, var(--kpt-teksti) 3%, transparent) 61px),
+        repeating-linear-gradient(180deg, transparent 0px, transparent 60px,
+          color-mix(in srgb, var(--kpt-teksti) 3%, transparent) 60px, color-mix(in srgb, var(--kpt-teksti) 3%, transparent) 61px);
       pointer-events: none;
     }
 
     .login-card {
       position: relative;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
+      border-top: 3px solid var(--kpt-korostus);
+      border-radius: var(--kpt-pyoristys);
       padding: 2.5rem;
       width: 100%;
       max-width: 400px;
-      box-shadow:
-        0 0 0 1px rgba(14,165,233,0.05),
-        0 20px 60px rgba(0,0,0,0.6);
+      box-shadow: var(--kpt-varjo);
       animation: fadeUp 0.4s ease;
     }
-
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
       to   { opacity: 1; transform: translateY(0); }
@@ -97,143 +60,95 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.75rem;
       margin-bottom: 2rem;
       padding-bottom: 2rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--kpt-reuna);
     }
+    .logo-area img { height: 48px; width: auto; display: block; }
 
-    .logo-area img {
-      height: 48px;
-      width: auto;
-      filter: brightness(0) invert(1);
-    }
+    .login-card h1 { font-size: 1.15rem; font-weight: 600; margin-bottom: 1.5rem; }
 
-    .logo-area .company-name {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
-    h1 {
-      font-size: 1.1rem;
-      font-weight: 500;
-      margin-bottom: 1.5rem;
-      color: var(--text);
-    }
-
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      margin-bottom: 0.4rem;
-    }
-
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 13px; color: var(--kpt-himmea); margin-bottom: 0.4rem; }
     input[type="email"],
     input[type="password"] {
       width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 3px;
-      padding: 0.65rem 0.9rem;
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 0.95rem;
-      color: var(--text);
+      min-height: 46px;
+      background: var(--kpt-kentta);
+      border: 1px solid var(--kpt-reuna2);
+      border-radius: 6px;
+      padding: 0 0.9rem;
+      font: 16px var(--kpt-fontti);      /* 16 px: iPhone ei zoomaa kenttään */
+      color: var(--kpt-teksti);
       outline: none;
-      transition: border-color 0.15s;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-
     input[type="email"]:focus,
-    input[type="password"]:focus {
-      border-color: var(--accent);
-    }
-
-    input::placeholder { color: var(--text-muted); opacity: 0.5; }
+    input[type="password"]:focus { border-color: var(--kpt-korostus); box-shadow: 0 0 0 3px var(--kpt-korostus-tausta); }
+    input::placeholder { color: var(--kpt-himmea); opacity: 0.6; }
 
     .btn-primary {
       width: 100%;
+      min-height: 48px;
       margin-top: 1.5rem;
-      padding: 0.75rem;
-      background: var(--accent);
-      color: #fff;
+      padding: 0 0.75rem;
+      background: var(--kpt-korostus);
+      color: var(--kpt-teksti-korostuksella);
       border: none;
-      border-radius: 3px;
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 600;
+      border-radius: 6px;
+      font: 600 16px var(--kpt-fontti);
       cursor: pointer;
-      letter-spacing: 0.03em;
-      transition: background 0.15s, transform 0.1s;
+      transition: filter 0.15s, transform 0.1s;
     }
-
-    .btn-primary:hover  { background: var(--accent-light); }
+    .btn-primary:hover  { filter: brightness(1.08); }
     .btn-primary:active { transform: scale(0.99); }
     .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
     .message {
       margin-top: 1rem;
       padding: 0.65rem 0.9rem;
-      border-radius: 3px;
-      font-size: 0.85rem;
+      border-radius: 6px;
+      font-size: 14px;
       display: none;
     }
-    .message.error   { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; display: block; }
-    .message.success { background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #86efac; display: block; }
+    .message.error   { background: color-mix(in srgb, var(--kpt-virhe) 10%, transparent); border: 1px solid color-mix(in srgb, var(--kpt-virhe) 45%, transparent); color: var(--kpt-virhe); display: block; }
+    .message.success { background: color-mix(in srgb, var(--kpt-ok) 10%, transparent); border: 1px solid color-mix(in srgb, var(--kpt-ok) 45%, transparent); color: var(--kpt-ok); display: block; }
 
-    .forgot-link {
-      display: block;
-      text-align: right;
-      margin-top: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+    .forgot-link, .back-link {
+      font-size: 14px;
+      color: var(--kpt-himmea) !important;
       text-decoration: none;
       cursor: pointer;
     }
-    .forgot-link:hover { color: var(--accent); }
-
+    .forgot-link { display: block; text-align: right; margin-top: 0.6rem; padding: 4px 0; }
+    .back-link { display: inline-flex; align-items: center; gap: 0.3rem; margin-bottom: 1rem; padding: 4px 0; }
+    .forgot-link:hover, .back-link:hover { color: var(--kpt-teksti) !important; text-decoration: underline; }
     #reset-view { display: none; }
     #login-view { display: block; }
-
-    .back-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      margin-bottom: 1rem;
-      text-decoration: none;
-    }
-    .back-link:hover { color: var(--accent); }
 
     .spinner {
       display: inline-block;
       width: 14px; height: 14px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+      border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+      border-top-color: currentColor;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
       margin-right: 6px;
       vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 420px) {
+      .login-card { padding: 1.75rem 1.25rem; }
+    }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
 <div class="login-card">
   <div class="logo-area">
-    <div style="height:44px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="130" height="44" style="height:44px;width:auto;display:block"></div>
-    <span class="company-name">Kalajoen Peltityö</span>
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="141" height="48">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="141" height="48">
   </div>
 
   <!-- Kirjautumisnäkymä -->
