@@ -5,104 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Varasto — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Ulkoasuremontti R5c (26.11.2026): yhteinen yläpalkki ja värit (tyyli.css + teema.js), suodattimet "Suodata ▾" -napin taakse. -->
+  <link rel="stylesheet" href="tyyli.css?v=2">
+  <script src="teema.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth-guard.js"></script>
   <script src="../maps/kartta-zoom.js?v=2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:       #0f1117;
-      --surface:  #1a1d27;
-      --border:   #2a2d3a;
-      --text:     #e8eaf0;
-      --muted:    #7a7f96;
-      --accent:   #eab308;
-      --accent2:  #ca9a06;
-      --danger:   #ef4444;
-      --danger-bg:#2d1212;
-      --roll:     #3b82f6;
-      --sheet:    #22c55e;
-      --offcut:   #f97316;
-      --item:     #a855f7;
-      --bulk:     #06b6d4;
+    /* Sivun vanhat muuttujanimet kytketty yhteisiin (R5c) */
+    :root, html[data-teema] {
+      --bg:       var(--kpt-kentta);
+      --surface:  var(--kpt-paneeli);
+      --border:   var(--kpt-reuna);
+      --text:     var(--kpt-teksti);
+      --muted:    var(--kpt-himmea);
+      --accent:   var(--kpt-korostus);
+      --accent2:  color-mix(in srgb, var(--kpt-korostus) 82%, var(--kpt-teksti));
+      --danger:   var(--kpt-virhe);
+      --danger-bg:color-mix(in srgb, var(--kpt-virhe) 14%, transparent);
+      --roll:     #60a5fa;
+      --sheet:    var(--kpt-ok);
+      --offcut:   #fb923c;
+      --item:     #c084fc;
+      --bulk:     #22d3ee;
     }
-
-    body {
-      font-family: 'IBM Plex Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
+    html[data-teema="vaalea"] {
+      --roll:     #1d4ed8;
+      --offcut:   #c2410c;
+      --item:     #7e22ce;
+      --bulk:     #0e7490;
     }
-
-    /* ── NAV ── */
-    nav {
-      background: var(--surface);
-      border-bottom: 2px solid var(--accent);
-      padding: 10px 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 300;
-    }
-    nav h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-    .nav-logo-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      text-decoration: none;
-    }
-    .nav-page-title {
-      font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 1rem;
-      font-weight: 600;
-      color: var(--accent);
-      white-space: nowrap;
-    }
-    .nav-menu-wrap { position: relative; }
-    .nav-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; font-weight: 600;
-      padding: 6px 12px; border-radius: 4px;
-      cursor: pointer; letter-spacing: 0.04em;
-    }
-    .nav-btn:hover { background: var(--border); }
-    .nav-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 6px);
-      right: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      min-width: 200px;
-      z-index: 999;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      overflow: hidden;
-    }
-    .nav-dropdown.open { display: block; }
-    .nav-section-label {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--muted); padding: 8px 14px 4px;
-    }
-    .nav-item {
-      display: block; width: 100%; text-align: left;
-      padding: 8px 14px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; color: var(--text);
-      background: none; border: none; cursor: pointer;
-      text-decoration: none; transition: background 0.1s;
-    }
-    .nav-item:hover { background: var(--border); color: var(--accent); }
-    .nav-item.current { color: var(--accent); font-weight: 600; }
-    .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
     /* ── TABS ── */
     .tabs {
@@ -161,36 +95,49 @@
       color: var(--muted);
     }
 
-    /* ── FILTERS ── */
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.6rem;
-      margin-bottom: 1rem;
+    /* ── SUODATTIMET: "Suodata ▾" -nappi ja paneeli (R5c, kuten Tilauksissa) ── */
+    .suodatin-rivi { position: relative; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+    .suodatin-nappi {
+      display: inline-flex; align-items: center; gap: 10px; min-height: 40px; max-width: 100%; padding: 6px 14px; cursor: pointer;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 8px;
+      color: var(--kpt-teksti); font: 600 15px var(--kpt-fontti);
     }
-    .filters select, .filters input {
-      background: var(--surface);
+    .suodatin-nappi:hover { border-color: var(--kpt-korostus); }
+    .suodatin-nappi.paalla { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+    .suodatin-nappi .valitut { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .suodatin-nappi .nuoli { font-size: 12px; transition: transform .15s; }
+    .suodatin-nappi[aria-expanded="true"] .nuoli { transform: rotate(180deg); }
+    .suodatin-paneeli {
+      position: absolute; top: calc(100% + 6px); left: 0; z-index: 250; width: min(620px, 100%);
+      padding: 12px; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 10px;
+      box-shadow: var(--kpt-varjo);
+    }
+    .suodatin-paneeli[hidden] { display: none; }
+    .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.6rem; }
+    .filters label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--muted); }
+    .filters select {
+      background: var(--bg);
       border: 1px solid var(--border);
       color: var(--text);
       font-family: 'IBM Plex Sans', sans-serif;
-      font-size: 0.85rem;
-      padding: 0.4rem 0.65rem;
-      border-radius: 4px;
-      min-width: 130px;
+      font-size: 0.88rem;
+      padding: 0.45rem 0.6rem;
+      border-radius: 6px;
+      min-height: 38px;
     }
-    .filters select:focus, .filters input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
+    .filters select:focus { outline: none; border-color: var(--accent); }
+    .filters select.valittu { border-color: var(--accent); }
+    .suodatin-alarivi { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.75rem; }
     .btn-clear {
       background: none;
       border: 1px solid var(--border);
       color: var(--muted);
       font-family: inherit;
-      font-size: 0.82rem;
-      padding: 0.4rem 0.75rem;
-      border-radius: 4px;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
       cursor: pointer;
+      min-height: 38px;
     }
     .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -230,7 +177,7 @@
       transition: background 0.12s;
     }
     tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: #1f2335; }
+    tbody tr:hover { background: var(--kpt-korostus-tausta); }
     tbody td {
       padding: 0.55rem 0.75rem;
       vertical-align: middle;
@@ -247,11 +194,11 @@
       font-weight: 500;
       font-family: 'IBM Plex Mono', monospace;
     }
-    .type-ROLL   { background: #1e3a5f; color: var(--roll); }
-    .type-SHEET  { background: #14371f; color: var(--sheet); }
-    .type-OFFCUT { background: #3d2010; color: var(--offcut); }
-    .type-ITEM   { background: #2d1845; color: var(--item); }
-    .type-BULK   { background: #0c2e35; color: var(--bulk); }
+    .type-ROLL   { background: color-mix(in srgb, var(--roll) 18%, transparent);   color: var(--roll); }
+    .type-SHEET  { background: color-mix(in srgb, var(--sheet) 18%, transparent);  color: var(--sheet); }
+    .type-OFFCUT { background: color-mix(in srgb, var(--offcut) 18%, transparent); color: var(--offcut); }
+    .type-ITEM   { background: color-mix(in srgb, var(--item) 18%, transparent);   color: var(--item); }
+    .type-BULK   { background: color-mix(in srgb, var(--bulk) 18%, transparent);   color: var(--bulk); }
 
     .dim { color: var(--muted); }
 
@@ -404,7 +351,7 @@
       gap: 0.6rem;
     }
     .loc-option:hover { background: var(--border); }
-    .loc-option.selected { background: #1e2a0a; color: var(--accent); }
+    .loc-option.selected { background: var(--kpt-korostus-tausta); color: var(--accent); }
     .loc-option-code {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.75rem;
@@ -434,7 +381,7 @@
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-primary {
       background: var(--accent);
-      color: #000;
+      color: var(--kpt-teksti-korostuksella);
       border-color: var(--accent);
     }
     .btn-primary:hover:not(:disabled) { background: var(--accent2); }
@@ -605,6 +552,8 @@
       overflow-y: auto;
     }
     .map-panel-body svg { width: 100%; height: auto; display: block; }
+    /* Karttapiirros on tumma kummassakin ulkoasussa (kuten Varastokartta-sivulla, R5b) */
+    .map-panel-body svg, #mapTabBody svg { background: #1a1e24; border-radius: 4px; }
     /* Kartan korostustyylit — vaalea = suodatusosuma, kirkas = täppävalinta */
     .map-panel-body .loc-filter,
     .map-panel-body g.loc-filter > rect,
@@ -637,7 +586,7 @@
     input[type=checkbox] { accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px; }
     .btn-map-mobile {
       display: none;
-      margin: 0.5rem 0 0;
+      margin: 0;
       background: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
@@ -666,7 +615,17 @@
 
       /* Karttapaneeli piiloon mobiilissa — käytetään Kartta-välilehteä */
       .map-panel { display: none; }
-      .btn-map-mobile { display: inline-block; }
+      .btn-map-mobile { display: inline-block; min-height: 40px; }
+
+      /* Kentät 16 px, ettei iPhone zoomaa; suodatinpaneeli koko leveydelle */
+      .form-input, .form-select, .loc-search-input, .filters select { font-size: 16px; }
+      .suodatin-paneeli { width: 100%; }
+      .filters { grid-template-columns: 1fr 1fr; }
+      .filters label { min-width: 0; }
+      .filters select { width: 100%; min-width: 0; }
+      .resize-handle { display: none; }
+      .suodatin-nappi { flex: 1 1 auto; }
+      .page { padding: 1rem 0.75rem 3rem; }
     }
 
     /* Kortin tyyli */
@@ -731,32 +690,40 @@
 
     /* ── PRINT ── */
     @media print {
-      nav, .tabs, .filters, .modal-backdrop { display: none !important; }
-      body { background: #fff; color: #000; }
+      /* Tuloste = mustavalkoinen lista koko leveydellä (R5c: kartta, napit ja suodattimet pois) */
+      .kpt-yla, .tabs, .suodatin-rivi, .modal-backdrop, .map-panel, .resize-handle, .panel-header a { display: none !important; }
+      html { color-scheme: light; }
+      body, body.kpt-sivu { background: #fff; color: #000; }
+      * { transition: none !important; }
+      .panel-header h2, .badge-count { color: #000 !important; background: none !important; }
+      .table-wrap tbody *, .location-chip { color: #000 !important; background: none !important; }
+      .location-chip { border-color: #999; }
+      .cb-col { display: none; }
+      tbody tr { border-color: #ccc; }
       .table-wrap { border: 1px solid #ccc; }
       thead th { background: #f0f0f0; color: #333; }
       .type-badge { border: 1px solid #ccc; background: none !important; color: #333 !important; }
     }
-  
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+    </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<!-- NAV -->
-<nav>
-  <div class="logo-img" style="height:56px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="165" height="56" style="height:56px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Varasto</h1>
-</nav>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Varasto</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
+</header>
 
 <!-- TABS -->
 <div class="tabs">
@@ -779,28 +746,37 @@
       </span>
     </div>
 
-    <div class="filters">
-      <select id="filterMaterial"><option value="">Kaikki materiaalit</option></select>
-      <select id="filterColor"><option value="">Kaikki värit</option></select>
-      <select id="filterType">
-        <option value="">Kaikki tyypit</option>
-        <option value="ROLL">Rulla</option>
-        <option value="SHEET">Levy</option>
-        <option value="OFFCUT">Siivu</option>
-        <option value="ITEM">Kpl</option>
-        <option value="BULK">Metri</option>
-      </select>
-      <select id="filterThickness"><option value="">Kaikki paksuudet</option></select>
-      <select id="filterChecked">
-        <option value="">Inventointi: kaikki</option>
-        <option value="no">Ei inventoitu</option>
-        <option value="yes">Inventoitu</option>
-        <option value="old">Inventoitu yli 90 pv sitten</option>
-      </select>
-      <button class="btn-clear" id="clearFilters">✕ Tyhjennä</button>
+    <div class="suodatin-rivi" id="suodatin-rivi">
+      <button type="button" id="suodatin-nappi" class="suodatin-nappi" onclick="avaaSuodattimet()" aria-expanded="false" aria-controls="suodatin-paneeli">
+        <span>Suodata</span><span class="valitut" id="suodatin-valitut">kaikki</span><span class="nuoli">▾</span>
+      </button>
+      <button class="btn-map-mobile" onclick="switchTab('kartta')">🗺 Näytä kartalla</button>
+      <div class="suodatin-paneeli" id="suodatin-paneeli" hidden>
+        <div class="filters">
+          <label>Materiaali<select id="filterMaterial"><option value="">Kaikki materiaalit</option></select></label>
+          <label>Väri<select id="filterColor"><option value="">Kaikki värit</option></select></label>
+          <label>Tyyppi<select id="filterType">
+            <option value="">Kaikki tyypit</option>
+            <option value="ROLL">Rulla</option>
+            <option value="SHEET">Levy</option>
+            <option value="OFFCUT">Siivu</option>
+            <option value="ITEM">Kpl</option>
+            <option value="BULK">Metri</option>
+          </select></label>
+          <label>Paksuus<select id="filterThickness"><option value="">Kaikki paksuudet</option></select></label>
+          <label>Inventointi<select id="filterChecked">
+            <option value="">Kaikki</option>
+            <option value="no">Ei inventoitu</option>
+            <option value="yes">Inventoitu</option>
+            <option value="old">Inventoitu yli 90 pv sitten</option>
+          </select></label>
+        </div>
+        <div class="suodatin-alarivi">
+          <button class="btn-clear" id="clearFilters">✕ Tyhjennä</button>
+          <button class="btn btn-secondary" type="button" onclick="avaaSuodattimet(false)">Valmis</button>
+        </div>
+      </div>
     </div>
-
-    <button class="btn-map-mobile" onclick="switchTab('kartta')">🗺 Näytä kartalla</button>
 
     <div class="selaa-layout">
       <div class="selaa-list" id="selaaList">
@@ -1187,14 +1163,30 @@
     { label: 'Ulkohylly',                     prefix: 'ULKOHYL' },
   ];
 
-  // ─── Nav dropdown ────────────────────────────────────
-  function toggleNav(e) {
-    e.stopPropagation();
-    document.getElementById('navDropdown').classList.toggle('open');
+  // ─── Suodatinpaneeli (R5c) ───────────────────────────
+  const SUODATTIMET = ['filterMaterial','filterColor','filterType','filterThickness','filterChecked'];
+  function avaaSuodattimet(auki) {
+    const p = document.getElementById('suodatin-paneeli'), n = document.getElementById('suodatin-nappi');
+    if (auki === undefined) auki = p.hidden;
+    p.hidden = !auki;
+    n.setAttribute('aria-expanded', auki ? 'true' : 'false');
   }
-  document.addEventListener('click', () => {
-    document.getElementById('navDropdown').classList.remove('open');
-  });
+  // Napissa näkyvät valitut suodattimet tekstinä, jotta näkee, mitä lista näyttää
+  function paivitaSuodatinNappi() {
+    const valitut = [];
+    SUODATTIMET.forEach(id => {
+      const sel = document.getElementById(id);
+      sel.classList.toggle('valittu', !!sel.value);
+      if (!sel.value) return;
+      let teksti = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : sel.value;
+      if (id === 'filterThickness') teksti += ' mm';
+      valitut.push(teksti);
+    });
+    document.getElementById('suodatin-valitut').textContent = valitut.length ? valitut.join(' · ') : 'kaikki';
+    document.getElementById('suodatin-nappi').classList.toggle('paalla', valitut.length > 0);
+  }
+  document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('#suodatin-rivi')) avaaSuodattimet(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') avaaSuodattimet(false); });
 
   // ─── Tabs ────────────────────────────────────────────
   function switchTab(tab) {
@@ -1313,6 +1305,7 @@
 
   // ─── Render table ────────────────────────────────────
   function renderTable() {
+    paivitaSuodatinNappi();
     const f = {
       material:  document.getElementById('filterMaterial').value,
       color:     document.getElementById('filterColor').value,
@@ -1340,6 +1333,8 @@
     if (!filtered.length) {
       document.getElementById('stockBody').innerHTML =
         '<tr><td colspan="9" class="state-msg">Ei tuloksia.</td></tr>';
+      // Puhelimen korttilista tyhjäksi myös (ennen jäi näkyviin edellinen lista)
+      document.getElementById('cardList').innerHTML = '<div class="state-msg">Ei tuloksia.</div>';
       updateMapHighlights([]);
       return;
     }
@@ -2242,7 +2237,7 @@
     });
 
     const typeColors = { ROLL: 'var(--roll)', SHEET: 'var(--sheet)', OFFCUT: 'var(--offcut)', ITEM: 'var(--item)', BULK: 'var(--bulk)' };
-    const typeBg     = { ROLL: '#1e3a5f', SHEET: '#14371f', OFFCUT: '#3d2010', ITEM: '#2d1845', BULK: '#0c2e35' };
+    const typeBg     = {}; Object.keys(typeColors).forEach(t => { typeBg[t] = 'color-mix(in srgb, ' + typeColors[t] + ' 18%, transparent)'; });
 
     const sorted = Object.values(groups).sort((a, b) =>
       (a.mat + a.col + String(a.thick)).localeCompare(b.mat + b.col + String(b.thick))
@@ -2276,6 +2271,7 @@
     document.getElementById('filterThickness').value = thick;
     document.getElementById('filterType').value      = '';
     document.getElementById('filterChecked').value   = '';
+    paivitaSuodatinNappi();
     // Vaihdetaan Selaa-välilehdelle
     switchTab('selaa');
     // Scrollataan ylös
