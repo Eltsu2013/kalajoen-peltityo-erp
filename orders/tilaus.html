@@ -23,8 +23,20 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   /* Tietokoneella sarakkeet vierivät erikseen yläpalkin korkeudesta riippumatta (venytys poistettu, R4d) */
   body.kpt-sivu { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  .main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr); }
+  .main { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 460px minmax(0, 1fr); }
   .left-panel { background: var(--kpt-paneeli); border-right: 1px solid var(--kpt-reuna); overflow-y: auto; min-height: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative; }
+  /* Tomi 26.11.2026: kapea paneeli vaati paljon vieritystä → oletuksena leveämpi, kentät kahdessa sarakkeessa,
+     ja leveyttä voi taas säätää vetämällä reunasta (leveys muistetaan selaimessa kuten ennen) */
+  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 6px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
+  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--kpt-korostus); opacity: 0.5; }
+  .left-panel.wide .section { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; align-items: start; }
+  .left-panel.wide .section .divider { display: none; }   /* Nimike ja Lisää ryhmään rinnakkain */
+  .left-panel.wide .section .section-title, .left-panel.wide .section > button,
+  .left-panel.wide .section > .lisaa-napit, .left-panel.wide .section > #kappale-form { grid-column: 1 / -1; }
+  .left-panel.wide .section > .field:has(#customer-search), .left-panel.wide .section > .field:has(#order-site-address), .left-panel.wide .section > .field:has(#order-kohde),
+  .left-panel.wide .section > .field:has(textarea) { grid-column: 1 / -1; }
+  .lisaa-napit { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; }
+  .lisaa-napit .btn { padding: 8px 8px; font-size: 12px; letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .right-panel { overflow-y: auto; min-height: 0; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .section { background: var(--kpt-paneeli2); border: 1px solid var(--border); border-radius: 6px; padding: 14px; }
   .section-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
@@ -156,6 +168,11 @@
     .left-panel.mobile-collapsed { display: none; }
     #desktop-ohjeet-btn { display: none !important; } /* mobiilissa nappi on yhteenvetorivillä */
 
+    .sidebar-resizer { display: none; }
+    .left-panel.wide .section { display: block; }   /* kentät allekkain puhelimella */
+    .left-panel.wide .section .divider { display: block; }
+    .lisaa-napit { grid-template-columns: 1fr 1fr; }
+    .lisaa-napit .btn { min-height: 42px; font-size: 13px; }
     /* Puhelimella sivu vierii kokonaisena, yläpalkki ei kellu (napit veisivät liikaa ruutua) */
     body.kpt-sivu { height: auto; overflow: visible; display: block; }
     .kpt-yla { position: static; }
@@ -258,6 +275,7 @@
 
   <!-- VASEN PANEELI: Tilauksen tiedot + uusi profiili -->
   <div class="left-panel mobile-collapsed" id="left-panel">
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
 
     <!-- Tilauksen perustiedot -->
     <div class="section">
@@ -413,18 +431,15 @@
           <option value="__new__">+ Luo uusi ryhmä</option>
         </select>
       </div>
-      <button class="btn btn-primary" style="width:100%" onclick="openMallisto()">
-        Avaa Peltilistat →
-      </button>
-      <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="openVakiomallit()">
-        Avaa Vakiomallit →
-      </button>
-      <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="toggleKappaleForm()">
-        + Kappaletavara
-      </button>
-      <button class="btn btn-secondary" style="width:100%;margin-top:4px" onclick="avaapiippu()">
-        🏭 Avaa Piippu →
-      </button>
+      <!-- Kaikki tilattavat (Tomi 26.11.2026: myös huuva ja kartio, pienemmät napit rinnakkain) -->
+      <div class="lisaa-napit">
+        <button class="btn btn-primary" onclick="openMallisto()">🔨 Peltilistat →</button>
+        <button class="btn btn-secondary" onclick="openVakiomallit()">🔧 Vakiomallit →</button>
+        <button class="btn btn-secondary" onclick="avaapiippu()">🏭 Piippu →</button>
+        <button class="btn btn-secondary" onclick="avaaSovite('huuva')">🔥 Huuva →</button>
+        <button class="btn btn-secondary" onclick="avaaSovite('kartio')">📐 Kartio →</button>
+        <button class="btn btn-secondary" onclick="toggleKappaleForm()">+ Kappaletavara</button>
+      </div>
 
       <!-- Kappaletavara-lomake -->
       <div id="kappale-form" style="display:none;border:1px solid var(--border);border-radius:4px;padding:10px;margin-top:4px;display:none">
@@ -2495,7 +2510,67 @@ if (openOrderId) {
 }
 Promise.resolve(alustus).catch(e => console.warn('Tilauksen alustus', e)).then(() => { if (LAHETYS) LAHETYS.aloita(); });
 
-// Valikon avaa ja sulkee nav.js; sivupalkin venytys poistettu (R4d)
+// Valikon avaa ja sulkee nav.js (R4d)
+
+// ── Huuva ja kartio tilauksesta (Tomi 26.11.2026) ─────────────────
+// Kuten piippu: valittu ryhmä (muokkaus, jos ryhmässä on jo sama sovite) tai uusi ryhmä, ja sivu lähettää ryhmän rivit takaisin.
+async function avaaSovite(tyyppi) {
+  let groupId = document.getElementById('group-select').value;
+  if (!groupId || groupId === '__new__') {
+    if (!document.getElementById('new-group-name').value && !confirm('Ryhmälle ei ole annettu nimeä. Tehdäänkö ryhmä ilman nimeä?')) return;
+    if (!currentOrderId) await createOrder();
+    _addGroup();
+    groupId = groups[groups.length - 1].id;
+    try { localStorage.removeItem('kpt_sovite_muokkaa'); } catch (e) { /* ei tallennusta */ }
+  } else {
+    soviteMuokkausTiedot(groupId);
+  }
+  window.open(`${tyyppi}.html?groupId=${groupId}`, '_blank');
+}
+
+// ── Sivupalkin leveys: vetämällä reunasta, muistetaan selaimessa (palautettu R4d:n jälkeen, Tomi 26.11.2026) ──
+(function() {
+  const STORAGE_KEY = 'kpt_sidebar_width';
+  const MIN_WIDTH = 300, MAX_WIDTH = 760, WIDE_THRESHOLD = 440, OLETUS = 460;
+  const panel = document.getElementById('left-panel');
+  const resizer = document.getElementById('sidebar-resizer');
+  const main = document.querySelector('.main');
+  if (!panel || !resizer || !main) return;
+  const aseta = w => { main.style.gridTemplateColumns = w + 'px minmax(0, 1fr)'; panel.classList.toggle('wide', w >= WIDE_THRESHOLD); };
+  const saved = parseInt(localStorage.getItem(STORAGE_KEY));
+  aseta(saved && saved >= MIN_WIDTH ? Math.min(MAX_WIDTH, saved) : OLETUS);
+  resizer.addEventListener('mousedown', e => {
+    const startX = e.clientX, startW = panel.offsetWidth;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+    function onMove(ev) { aseta(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX)))); }
+    function onUp() {
+      try { localStorage.setItem(STORAGE_KEY, panel.offsetWidth); } catch (err) { /* ei tallennusta */ }
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = ''; document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+  });
+})();
+
+// ── Sama tilaus toisessa välilehdessä (Tomi 26.11.2026: lisätty pelti näkyi vasta, kun tilauksen avasi uudelleen) ──
+// Lähetyksen ottaa vastaan vain yksi välilehti (ettei tallennu kahdesti). Kun toinen välilehti tallentaa tähän samaan
+// tilaukseen, haetaan rivit uudelleen, jotta lista on ajan tasalla.
+let _paivitysAjastin = null;
+window.addEventListener('storage', e => {
+  if (e.key !== 'kpt_lahetys_kuittaus' || !e.newValue || !currentOrderId) return;
+  let k; try { k = JSON.parse(e.newValue); } catch (err) { return; }
+  if (!k || k.vaihe !== 'tallennettu' || k.orderId !== currentOrderId) return;
+  clearTimeout(_paivitysAjastin);
+  _paivitysAjastin = setTimeout(async () => {
+    try {
+      await loadOrderById(currentOrderId);
+      updateGroupSelect(); renderGroups(); updateSummary();
+      setSaveStatus('ok', 'Päivitetty: rivi lisättiin toisessa välilehdessä');
+    } catch (err) { console.warn('Tilauksen päivitys', err); }
+  }, 400);
+});
 </script>
 <div id="tuloste"></div>
 </body>
