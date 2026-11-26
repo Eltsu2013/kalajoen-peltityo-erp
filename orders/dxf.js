@@ -1,4 +1,4 @@
-// Kalajoen Peltityö ERP — DXF-tiedostot (orders/dxf.js), vaihe 8.5 D1 (26.11.2026)
+// Kalajoen Peltityö ERP — DXF-tiedostot (orders/dxf.js), vaihe 8.5 D1 (26.11.2026), v3 D3 Kartio: kaaripätkät ääriviivaan
 //
 // Leikattavien palojen muodot DXF-tiedostoksi CAD-ohjelmaan ja laserille (Tomi 26.11.2026: "CAD-ohjelma ja joskus laser").
 // Muoto DXF R12 (AC1009): vanhin ja yleisin, käytännössä kaikki ohjelmat ja koneet lukevat sen. Yksiköt millimetreinä.
@@ -8,6 +8,7 @@
 // Käyttö:
 //   const d = KPT_DXF.uusi();
 //   d.monikulmio([[0,0],[800,0],[800,600],[0,600]], 'LEIKKAUS');   // suljettu ääriviiva
+//   d.monikulmio([[0,0,KPT_DXF.kaarevuus(90)],[100,100],[0,100]]);  // ensimmäinen pätkä 90° kaari (vastapäivään)
 //   d.viiva(0, 100, 800, 100, 'TAITOS');
 //   d.kaari(cx, cy, r, alkuAste, loppuAste, 'LEIKKAUS');            // vastapäivään alkukulmasta loppukulmaan
 //   d.teksti(0, 620, 12, 'Etu + Taka · 2 kpl', 'TEKSTI');                 // tiedostoon: Etu + Taka - 2 kpl
@@ -32,12 +33,32 @@
     return s === '' ? '0' : s;
   }
 
+  // Kaarevuus (bulge) tarkemmin: neljän desimaalin pyöristys heitti 850 mm säteen 0,2 mm (testattu ezdxf:llä), 10 desimaalia riittää
+  function nb(v) {
+    if (!isFinite(v)) throw new Error('DXF: virheellinen kaarevuus ' + v);
+    const s = v.toFixed(10).replace(/\.?0+$/, '');
+    return s === '-0' || s === '' ? '0' : s;
+  }
+
   function uusi() {
     const ent = [];                 // entiteettien rivit (ryhmäkoodi, arvo)
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     const laajenna = (x, y) => { minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y); };
     const lisaa = (...pareja) => { for (let i = 0; i < pareja.length; i += 2) ent.push([pareja[i], pareja[i + 1]]); };
     const taso = t => (TASOT.some(x => x[0] === t) ? t : '0');
+    // Kaaripätkän (p → q, kaarevuus b) uloimmat kohdat rajoihin: keskipiste ja säde kaarevuudesta, pääsuunnat kaaren sisältä
+    const kaarenRajat = (p, q, b) => {
+      const th = 4 * Math.atan(b), L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+      if (!(L > 1e-12) || Math.abs(th) < 1e-12) return;
+      const r = L / (2 * Math.sin(Math.abs(th) / 2));
+      const mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2, ux = (q[0] - p[0]) / L, uy = (q[1] - p[1]) / L;
+      const h = (L / 2) / Math.tan(th / 2);            // keskipisteen etäisyys jänteen keskeltä, vasemmalle plus
+      const cx = mx - uy * h, cy = my + ux * h;
+      const a0 = Math.atan2(p[1] - cy, p[0] - cx) * 180 / Math.PI;
+      const pit = th * 180 / Math.PI;                  // plus = vastapäivään
+      const alku = pit >= 0 ? a0 : a0 + pit, loppu = alku + Math.abs(pit);
+      for (let s = Math.ceil(alku / 90) * 90; s < loppu; s += 90) laajenna(cx + r * Math.cos(s * Math.PI / 180), cy + r * Math.sin(s * Math.PI / 180));
+    };
 
     const d = {
       viiva(x1, y1, x2, y2, t) {
@@ -45,11 +66,20 @@
         laajenna(x1, y1); laajenna(x2, y2);
         return d;
       },
-      // Monikulmio pisteistä [[x, y], ...]; suljettu oletuksena (viimeisestä pisteestä takaisin ensimmäiseen)
+      // Monikulmio pisteistä [[x, y], ...]; suljettu oletuksena (viimeisestä pisteestä takaisin ensimmäiseen).
+      // v3 (D3 Kartio): piste voi olla [x, y, kaarevuus]: pätkä tästä pisteestä seuraavaan on silloin kaari (DXF:n "bulge",
+      // ryhmäkoodi 42 = tan(kaaren kulma / 4), plus = vastapäivään). Näin kaaret ja suorat ovat yksi suljettu ääriviiva.
       monikulmio(pisteet, t, suljettu) {
         if (!pisteet || pisteet.length < 2) return d;
-        lisaa(0, 'POLYLINE', 8, taso(t), 66, '1', 10, '0', 20, '0', 30, '0', 70, suljettu === false ? '0' : '1');
-        pisteet.forEach(q => { lisaa(0, 'VERTEX', 8, taso(t), 10, n(q[0]), 20, n(q[1]), 30, '0'); laajenna(q[0], q[1]); });
+        const kiinni = suljettu !== false;
+        lisaa(0, 'POLYLINE', 8, taso(t), 66, '1', 10, '0', 20, '0', 30, '0', 70, kiinni ? '1' : '0');
+        pisteet.forEach((q, i) => {
+          const b = q[2] || 0, seur = pisteet[(i + 1) % pisteet.length];
+          if (b) lisaa(0, 'VERTEX', 8, taso(t), 10, n(q[0]), 20, n(q[1]), 30, '0', 42, nb(b));
+          else lisaa(0, 'VERTEX', 8, taso(t), 10, n(q[0]), 20, n(q[1]), 30, '0');
+          laajenna(q[0], q[1]);
+          if (b && (kiinni || i < pisteet.length - 1)) kaarenRajat(q, seur, b);
+        });
         lisaa(0, 'SEQEND', 8, taso(t));
         return d;
       },
@@ -143,7 +173,10 @@
     return s;
   }
 
-  const KPT_DXF = { uusi, koodaa, turvallinenNimi, tekstiCadille, TASOT };
+  // Kaarevuus (bulge) kaaren kulmasta asteina: plus = vastapäivään. Yli 180° kaaret kannattaa jakaa kahteen pätkään.
+  function kaarevuus(kulma) { return Math.tan(kulma * Math.PI / 180 / 4); }
+
+  const KPT_DXF = { uusi, koodaa, turvallinenNimi, tekstiCadille, kaarevuus, TASOT };
   globalThis.KPT_DXF = KPT_DXF;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_DXF;
 })();

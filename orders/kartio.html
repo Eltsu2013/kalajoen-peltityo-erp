@@ -20,6 +20,8 @@
   .kartio-ryhma { font-family: var(--kpt-mono); font-size: 13px; color: var(--kpt-korostus); margin: 0 0 10px; }
   .kpt-tulos b small { font-size: 12px; color: var(--kpt-himmea); font-weight: 400; }
   .kartio-harppi { margin: 0 0 12px; }
+  .dxf-rivi { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 10px; }
+  .dxf-rivi .kpt-vihje { margin: 0; flex: 1 1 260px; }
   .kartio-harppi .kpt-tulos > b { font-size: 16px; }
   .sauma-rivi { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0 10px; padding-top: 10px; border-top: 1px solid var(--kpt-reuna); }
   .sauma-rivi:first-child { border-top: 0; padding-top: 0; }
@@ -220,6 +222,7 @@
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
 <script src="tyokortti.js?v=5"></script>
+<script src="dxf.js?v=3"></script>
 <script>
 
 'use strict';
@@ -1132,6 +1135,104 @@ function kartioHarppi(o, sj, askel) {
   return { karki: T([0, 0]), Rb: o.Rb, Rs: o.Rs, RbLeikkaus: o.Rb + hb, RsLeikkaus: o.Rs - hs, iso: iso, pieni: pieni, rivit: rivit, askel: a };
 }
 
+// ====================================================================
+//  DXF (vaihe 8.5 D3, 26.11.2026): kaikki palat samaan tiedostoon CAD-ohjelmaan ja laserille
+// ====================================================================
+// Palat samassa asennossa kuin levityskuva ruudulla (Tomi 26.11.), eli ulkopinta ylöspäin. SVG:ssä y kasvaa alaspäin ja
+// DXF:ssä ylöspäin, joten y käännetään (muuten tiedostoon tulisi peilikuva = väärä pinta ylöspäin). Pyöreän kartion kaaret
+// ovat oikeita kaaria (DXF:n kaarevuus, 'bulge') samassa suljetussa ääriviivassa saumalisien kanssa. TAITOS-tasolle saumalisän ja
+// huulloksen taitokset sekä nelikulmion taitosviivat (sivun keskiviiva ei ole taitos). Yksi pala kustakin samanlaisten ryhmästä,
+// kappalemäärä tekstissä. Vaatii orders/dxf.js:n (KPT_DXF). Testit: testit/kartio/test_dxf_kartio.js.
+
+// Nelikulmion levityskuvan asento (myös siirtymaSvg): kierto, jolla kappale on matalimmillaan
+function vaakaKierto(pts) {
+  var best = 0, bh = Infinity, a;
+  for (a = 0; a < 180; a += 1) { var b = rajat(kierraPisteet(pts, a)); if (b.h < bh - 1e-9) { bh = b.h; best = a; } }
+  return best;
+}
+
+var DXF_VALI = 50, DXF_TEKSTI = 12;   // mm
+function dxfPeili(p) { return [p[0], -p[1]]; }
+
+// Pyöreän kartion osa DXF-koordinaatteina (kärki origossa): { leikkaus: [[x, y, kaarevuus], ...], viivat: [[p, q]], kaaret: [{ r, a0, a1 }] }
+function kartioDxfPala(o) {
+  var D = globalThis.KPT_DXF, rot = o.kuva.kierto, th = o.theta, a1 = o.a1, a2 = o.a2;
+  var hb = o.huul ? o.huul.iso.h : 0, hs = o.huul ? o.huul.pieni.h : 0, Rb = o.Rb, Rs = o.Rs;
+  var e1 = [0, -1], e2 = [-Math.sin(rad(th)), Math.cos(rad(th))];
+  var plus = function (p, e, k) { return [p[0] + e[0] * k, p[1] + e[1] * k]; };
+  var P1b = napa(Rb, 0), P1s = napa(Rs, 0), P2b = napa(Rb, th), P2s = napa(Rs, th);
+  // solmut kiertämättöminä kuten kartioPisteet; kaari = pätkä tästä solmusta seuraavaan on kaari (säde r, kulmasta f0 kulmaan f1)
+  var solmut = [], N = function (p, kaari) { solmut.push({ p: p, kaari: kaari || null }); };
+  N(plus(P1s, e1, a1)); N(plus(P1b, e1, a1));
+  if (hb > 0) { if (a1 > 0) N(P1b); N(napa(Rb + hb, 0), { r: Rb + hb, f0: 0, f1: th }); N(napa(Rb + hb, th)); if (a2 > 0) N(P2b); }
+  else { N(P1b, { r: Rb, f0: 0, f1: th }); N(P2b); }
+  N(plus(P2b, e2, a2)); N(plus(P2s, e2, a2));
+  if (hs > 0) { if (a2 > 0) N(P2s); N(napa(Rs - hs, th), { r: Rs - hs, f0: th, f1: 0 }); N(napa(Rs - hs, 0)); if (a1 > 0) N(P1s); }
+  else if (Rs > 0) { N(P2s, { r: Rs, f0: th, f1: 0 }); N(P1s); }
+  else N([0, 0]);
+  // samaan kohtaan osuvat solmut (saumalisä 0, kärki) yhteen: nollapätkä pois, seuraavan pätkän kaari jää
+  var ss = [];
+  solmut.forEach(function (x) { var ed = ss[ss.length - 1]; if (ed && dist2(ed.p, x.p) < 1e-6) { ed.kaari = x.kaari; return; } ss.push({ p: x.p, kaari: x.kaari }); });
+  if (ss.length > 1 && dist2(ss[ss.length - 1].p, ss[0].p) < 1e-6) ss.pop();
+  // kierto ruudun asentoon ja peilaus DXF:ään: kulma φ → −(φ + kierto), joten kaaren suunta vaihtuu. Yli 90° kaaret osiin.
+  var leikkaus = [];
+  ss.forEach(function (x) {
+    if (!x.kaari) { leikkaus.push(dxfPeili(kierraPisteet([x.p], rot)[0])); return; }
+    var h0 = -(x.kaari.f0 + rot), pit = -(x.kaari.f1 - x.kaari.f0), m = Math.max(1, Math.ceil(Math.abs(pit) / 90 - 1e-9)), j;
+    for (j = 0; j < m; j++) {
+      var h = h0 + pit * j / m;
+      leikkaus.push([x.kaari.r * Math.cos(rad(h)), x.kaari.r * Math.sin(rad(h)), D.kaarevuus(pit / m)]);
+    }
+  });
+  var Rp = function (p) { return dxfPeili(kierraPisteet([p], rot)[0]); };
+  var viivat = [], kaaret = [];
+  if (a1 > 0) viivat.push([Rp(P1s), Rp(P1b)]);
+  if (a2 > 0) viivat.push([Rp(P2s), Rp(P2b)]);
+  if (hb > 0) kaaret.push({ r: Rb, a0: -(th + rot), a1: -rot });
+  if (hs > 0 && Rs > 0) kaaret.push({ r: Rs, a0: -(th + rot), a1: -rot });
+  return { leikkaus: leikkaus, viivat: viivat, kaaret: kaaret, avoimet: [] };
+}
+
+// Nelikulmio → pyöreä: ääriviiva ja taitokset siirtymaSvg:n asennossa
+function nelioDxfPala(o, k) {
+  var kv = o.kuva, rot = vaakaKierto(kv.ulko), hl = kv.huul;
+  var Rp = function (p) { return dxfPeili(kierraPisteet([p], rot)[0]); };
+  var viivat = [], avoimet = [], m = kv.viivat.length;
+  kv.viivat.forEach(function (v, j) {
+    var reuna = j === 0 || j === m - 1;
+    if (reuna ? !((j === 0 ? o.a1 : o.a2) > 0) : ((v.ia % 2 === 0) && (v.ib % (k.N - 1) === 0))) return;   // leikkausreuna / sivun keskiviiva
+    viivat.push([Rp(v.a), Rp(v.b)]);
+  });
+  if (hl && hl.A) hl.A.runs.forEach(function (r) { viivat.push([Rp(r.P), Rp(r.Q)]); });
+  if (hl && hl.B) avoimet.push(kv.Bp.map(function (x) { return Rp(x.p); }));
+  return { leikkaus: kv.ulko.map(Rp), viivat: viivat, kaaret: [], avoimet: avoimet };
+}
+
+// Koko kartio: k = laske(s), nimi = tiedoston / työn nimi, maara = kartioiden määrä. null, jos laskenta ei onnistu.
+function kartioDxf(k, nimi, maara) {
+  var D = globalThis.KPT_DXF;
+  if (!D || !k || (k.virheet && k.virheet.length) || !k.osat || !k.ryhmat) return null;
+  var d = D.uusi(), x0 = 0, n = k.osat.length, kk = Math.max(1, Math.round(maara || 1));
+  k.ryhmat.forEach(function (r) {
+    var o = r.osa, pala = o.tyyppi === 'nelio' ? nelioDxfPala(o, k) : kartioDxfPala(o);
+    var piirra = function (dd, dx, dy) {
+      var S = function (p) { return [p[0] + dx, p[1] + dy]; };
+      dd.monikulmio(pala.leikkaus.map(function (p) { var q = S(p); if (p[2]) q.push(p[2]); return q; }), 'LEIKKAUS');
+      pala.viivat.forEach(function (v) { var a = S(v[0]), b = S(v[1]); dd.viiva(a[0], a[1], b[0], b[1], 'TAITOS'); });
+      pala.kaaret.forEach(function (c) { dd.kaari(dx, dy, c.r, c.a0, c.a1, 'TAITOS'); });
+      pala.avoimet.forEach(function (pts) { dd.monikulmio(pts.map(S), 'TAITOS', false); });
+    };
+    var koe = D.uusi(); piirra(koe, 0, 0);
+    var b = koe.rajat(), dx = x0 - b.minX, dy = -b.minY;
+    piirra(d, dx, dy);
+    var osa = n > 1 ? 'Osa ' + r.nrot.join(', ') : '';
+    var teksti = [nimi || '', osa, (r.kpl * kk) + ' kpl', 'pala ' + fmt(o.sijoitus.w, 0) + ' × ' + fmt(o.sijoitus.h, 0) + ' mm'].filter(Boolean).join(' · ');
+    d.teksti(x0, b.maxY - b.minY + 15, DXF_TEKSTI, teksti, 'TEKSTI');
+    x0 += b.maxX - b.minX + DXF_VALI;
+  });
+  return d.tyhja() ? null : d;
+}
+
 // ==== UI ====
 // Ruudun kuvat värillisinä (ulkoasuremontti R2a, 24.11.2026): kappaleen ääriviiva oranssi, saumalisä ja huullos keltaisella
 // sävytyksellä. Vain ruudulla: työkortti käyttää samoja kuvafunktioita ilman tätä, joten paperi pysyy mustavalkoisena.
@@ -1448,12 +1549,6 @@ var viimeisin = null;
 //  NELIKULMIO → PYÖREÄ: kuva, tulossivu ja työkortti
 // ====================================================================
 // Kierto, jolla kappale on mahdollisimman matala (leveä kuva lukee paremmin)
-function vaakaKierto(pts) {
-  var best = 0, bh = Infinity, a;
-  for (a = 0; a < 180; a += 1) { var b = rajat(kierraPisteet(pts, a)); if (b.h < bh - 1e-9) { bh = b.h; best = a; } }
-  return best;
-}
-
 function siirtymaSvg(o, k) {
   var kv = o.kuva, rot = vaakaKierto(kv.ulko);
   var R = function (p) { return kierraPisteet([p], rot)[0]; };
@@ -1738,6 +1833,18 @@ var TK = window.KPT_TYOKORTTI;
 var SOVITE_NIMI = { ei: 'ei sovitetta', paalle: 'putken päälle', sisaan: 'putken sisään' };
 function kplKartioita(s) { return Math.max(1, Math.round(luku(s.kpl, 1)) || 1); }
 function mm0(x) { return fmt(x, 0); }
+// DXF (vaihe 8.5 D3, 26.11.2026): nappi ensimmäisen levityskuvan alle, tiedostoon kaikki palat (kartioDxf laskentaosassa)
+function dxfRivi(osia, nelio) {
+  return '<div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaKartioDxf()">⬇ DXF-tiedosto' + (osia > 1 ? ' (kaikki palat)' : '') + '</button>' +
+    '<span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva, ' + (nelio ? 'yläreuna murtoviivana merkintäpisteiden kautta' : 'kaaret oikeina kaarina') + '), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin, asento kuten levityskuvassa.</span></div>';
+}
+function lataaKartioDxf() {
+  var s = viimeisin && viimeisin.s, k = viimeisin && viimeisin.k;
+  var nimi = ($('k-nimi').value || '').trim() || 'Kartio';
+  var d = s && k ? kartioDxf(k, nimi, kplKartioita(s)) : null;
+  if (!d) { alert('Korjaa ensin syötteet.'); return; }
+  d.lataa(nimi + '.dxf');
+}
 function palaTeksti(sj) { return mm0(sj.w) + ' × ' + mm0(sj.h); }
 
 // Tarvittava pala isolla (Tomi 24.11.2026: palan koko selvästi näkyviin, levityskuvan yläpuolelle)
@@ -1895,7 +2002,7 @@ function renderAll() {
   T.innerHTML = h;
 
   var kuvat = '';
-  k.ryhmat.forEach(function (r) {
+  k.ryhmat.forEach(function (r, ri) {
     var o = r.osa, nimi = ryhmanNimi(r, n);
     kuvat += '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>';
     if (n > 1) {
@@ -1903,7 +2010,7 @@ function renderAll() {
       kuvat += '<div class="kpt-avainluku"><span class="nimi">Tarvittava pala' + (r.kpl * kplKartioita(s) > 1 ? ' · ' + r.kpl * kplKartioita(s) + ' kpl' : '') + '</span><span class="arvo">' + palaTeksti(o.sijoitus) + '</span><span class="yks">mm</span></div>';
       kuvat += '<div class="kartio-harppi">' + res('Harpin kärki', esc(karkiTeksti(kartioHarppi(o, o.sijoitus, kaariAskel()), o.sijoitus)), '') + '</div>';
     }
-    kuvat += '<div class="kpt-piirros paperi">' + ruudulle(levitysSvg(o)) + '</div></div>';
+    kuvat += '<div class="kpt-piirros paperi">' + ruudulle(levitysSvg(o)) + '</div>' + (ri === 0 ? dxfRivi(n) : '') + '</div>';
     kuvat += karkiKuvaan(sijoitusKortti(s, r, n, nimi), o);
     kuvat += kaaretKortti(s, r, n, nimi);
   });
@@ -1934,14 +2041,14 @@ function renderNelio(s, k) {
   h += '<details class="kpt-kortti" style="margin:12px 0 0;padding:12px 14px;background:transparent"><summary style="margin:-12px -14px;padding:12px 14px">Laskennan lisätiedot</summary><div style="margin-top:12px">' + l + '</div></details>';
   T.innerHTML = h;
   var kuvat = '';
-  k.ryhmat.forEach(function (r) {
+  k.ryhmat.forEach(function (r, ri) {
     var o = r.osa, nimi = nelioRyhmanNimi(r, n);
     kuvat += '<div class="kpt-kortti"><div class="kpt-kortti-otsikko">Levityskuva' + (n > 1 ? ' · ' + esc(nimi) : '') + '</div>' +
       '<div class="kartio-ryhma">' + esc(nelioPaikkaTeksti(o)) + ' · saumalisät ' + fmt(o.a1, 1) + ' + ' + fmt(o.a2, 1) + ' mm</div>' +
       (n > 1 ? '<div class="kpt-avainluku"><span class="nimi">Tarvittava pala</span><span class="arvo">' + palaTeksti(o.sijoitus) + '</span><span class="yks">mm</span></div>' : '') +
       '<div class="kpt-piirros paperi">' + ruudulle(siirtymaSvg(o, k)) + '</div>' +
       '<p class="kpt-vihje" style="margin:10px 0 0">Kuva on katsottu ulkopinnalta. Lihavat viivat ovat alareuna (suorat sivut) ja yläreuna (kaari). Ohuet viivat ovat taite- ja merkintäviivoja, pisteviiva = sivun keskiviiva. Tumma harmaa alue = saumalisä' + (k.huul.onko ? ', vaalea alue = huullos, pitkä katkoviiva = huulloksen taitoslinja' : '') + '.</p>' +
-      (k.huul.onko ? '<div class="kpt-taulu-wrap" style="margin-top:10px">' + nelioHuullosTaulukko(o).replace('class="tk-table"', 'class="mtab"') + '</div>' : '') + '</div>';
+      (k.huul.onko ? '<div class="kpt-taulu-wrap" style="margin-top:10px">' + nelioHuullosTaulukko(o).replace('class="tk-table"', 'class="mtab"') + '</div>' : '') + (ri === 0 ? dxfRivi(n, true) : '') + '</div>';
     kuvat += sijoitusKortti(s, r, n, nimi);
     kuvat += kulmaKortti(s, r, n, nimi);
     kuvat += merkintaKortti(o, nimi, n, s.puolikas);

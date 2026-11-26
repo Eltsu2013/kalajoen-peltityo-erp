@@ -67,5 +67,28 @@ const { parit, entiteetit, arvo, arvot } = require('./lue_dxf.js');
   ok(KPT_DXF.uusi().viiva(0, 0, 1, 1, 'EIOLE').sisalto().indexOf('\r\n8\r\n0\r\n') > 0, '3f: tuntematon taso → taso 0');
 })();
 
+// ---------- 4. Kaaripätkät ääriviivassa (v3, D3 Kartio): VERTEX + ryhmäkoodi 42 (bulge)
+(function () {
+  const d = KPT_DXF.uusi();
+  ok(Math.abs(KPT_DXF.kaarevuus(180) - 1) < 1e-12 && Math.abs(KPT_DXF.kaarevuus(90) - Math.tan(Math.PI / 8)) < 1e-12, '4a: kaarevuus = tan(kulma / 4): 180° → 1');
+  // puoliympyrä (100,0) → (-100,0) vastapäivään keskipisteen (0,0) ympäri, sitten suora takaisin: ylin kohta y = 100
+  d.monikulmio([[100, 0, KPT_DXF.kaarevuus(180)], [-100, 0]], 'LEIKKAUS');
+  const e = entiteetit(parit(d.sisalto()).p);
+  const v = e.filter(x => x.tyyppi === 'VERTEX');
+  ok(arvo(v[0], 42) === '1' && arvo(v[1], 42) === undefined, '4b: kaaripätkän alkupisteessä 42 = 1, suoran pätkän pisteessä ei koodia');
+  const b = d.rajat();
+  ok(Math.abs(b.maxY - 100) < 1e-9 && b.minY === 0 && b.minX === -100 && b.maxX === 100, '4c: rajoissa kaaren ylin kohta (y = 100)');
+  // myötäpäivään (miinus): kaari kulkee alapuolelta
+  const d2 = KPT_DXF.uusi().monikulmio([[100, 0, -KPT_DXF.kaarevuus(180)], [-100, 0]], 'LEIKKAUS');
+  ok(Math.abs(d2.rajat().minY + 100) < 1e-9 && d2.rajat().maxY === 0, '4d: miinus = myötäpäivään, kaari alapuolella');
+  // 90° kaari (r = 1000, kulmat 30°–120°): ylittää 90°:n → ylin kohta y = 1000
+  const P = a => [1000 * Math.cos(a * Math.PI / 180), 1000 * Math.sin(a * Math.PI / 180)];
+  const d3 = KPT_DXF.uusi().monikulmio([P(30).concat(KPT_DXF.kaarevuus(90)), P(120)], 'LEIKKAUS', false);
+  ok(Math.abs(d3.rajat().maxY - 1000) < 1e-6, '4e: 30°–120° kaaren ylin kohta 1000');
+  // avoimen viivan viimeisen pisteen kaarevuus ei vaikuta (ei pätkää)
+  const d4 = KPT_DXF.uusi().monikulmio([[0, 0], [10, 0, 1]], 'LEIKKAUS', false);
+  ok(d4.rajat().minY === 0 && d4.rajat().maxY === 0, '4f: avoimen viivan viimeinen piste: ei kaarta rajoihin');
+})();
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;
