@@ -4,67 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tuotanto — Kalajoen Peltityö</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<!-- Ulkoasuremontti R3c (26.11.2026): uusi ulkoasu (tyyli.css + teema.js), rakenne ja toiminnot ennallaan, isommat
+     vaihenapit. Tulosteet (tilauslista, yhteislista, työkortti) ennallaan. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-  :root {
-    --bg: #1e2d20;
-    --panel: #253028;
-    --panel2: #2e3a30;
-    --border: #3a5540;
-    --accent: #22c55e;
-    --accent-dim: #16a34a;
-    --accent-glow: rgba(34,197,94,0.12);
-    --text: #ededf0;
-    --text-dim: #9595a0;
-    --input-bg: #2a3a2c;
-    --success: #22c55e;
-    --danger: #e84040;
-    --warn: #e8a020;
-    --blue: #3a8fe8;
+  /* Ulkoasuremontti R3c (26.11.2026): yhteinen tyyli.css. Sivun vanhat muuttujanimet on kytketty uusiin, joten
+     rakenne ja luokat pysyivät ennallaan (myös skriptin inline-tyylit). Tulostusohjeet (@media print) ennallaan. */
+  :root, html[data-teema] {
+    --bg: var(--kpt-tausta);
+    --panel: var(--kpt-paneeli);
+    --panel2: var(--kpt-paneeli2);
+    --border: var(--kpt-reuna);
+    --accent: var(--kpt-korostus);
+    --accent-dim: var(--kpt-korostus);
+    --accent-glow: var(--kpt-korostus-tausta);
+    --text: var(--kpt-teksti);
+    --text-dim: var(--kpt-himmea);
+    --input-bg: var(--kpt-kentta);
+    --success: var(--kpt-ok);
+    --danger: var(--kpt-virhe);
+    --warn: var(--kpt-huom);
+    --blue: var(--kpt-v-tilaukset);
+    --lisatyo: var(--kpt-v-ajat);
+    --napin-teksti: var(--kpt-teksti-korostuksella);   /* teksti vihreällä napilla */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
-
-  /* HEADER */
-  header {
-    background: #162018;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  /* NAV */
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: var(--panel2); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: var(--input-bg); }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; padding: 8px 14px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    color: var(--text); text-decoration: none; transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  body { min-height: 100vh; }
 
   /* SISÄLTÖ */
   .page { padding: 0; }
@@ -102,12 +70,12 @@
     background: var(--accent-glow); border-color: var(--accent);
     color: var(--accent); font-weight: 600;
   }
-  .status-filter-btn[data-status="ORDERED"].active { border-color: var(--blue); color: var(--blue); background: rgba(58,143,232,0.12); }
-  .status-filter-btn[data-status="IN_PRODUCTION"].active { border-color: var(--warn); color: var(--warn); background: rgba(232,160,32,0.12); }
-  .status-filter-btn[data-status="IN_PROGRESS"].active { border-color: var(--text-dim); color: var(--text); background: rgba(149,149,160,0.12); }
-  .status-filter-btn[data-status="QUOTED"].active { border-color: #a855f7; color: #a855f7; background: rgba(168,85,247,0.12); }
+  .status-filter-btn[data-status="ORDERED"].active { border-color: var(--blue); color: var(--blue); background: color-mix(in srgb, var(--blue) 14%, transparent); }
+  .status-filter-btn[data-status="IN_PRODUCTION"].active { border-color: var(--warn); color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
+  .status-filter-btn[data-status="IN_PROGRESS"].active { border-color: var(--text-dim); color: var(--text); background: color-mix(in srgb, var(--text-dim) 14%, transparent); }
+  .status-filter-btn[data-status="QUOTED"].active { border-color: var(--lisatyo); color: var(--lisatyo); background: color-mix(in srgb, var(--lisatyo) 14%, transparent); }
   .status-filter-btn[data-status="DRAFT"] { border-style: dashed; }
-  .status-filter-btn[data-status="DRAFT"].active { border-color: #9aa3b5; color: #dfe3ec; background: rgba(154,163,181,0.16); }
+  .status-filter-btn[data-status="DRAFT"].active { border-color: var(--kpt-himmea); color: var(--kpt-teksti); background: color-mix(in srgb, var(--kpt-himmea) 16%, transparent); }
   .status-filter-btn[data-status="COMPLETED"].active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
   .filter-select option { background: var(--panel2); }
   .filter-clear {
@@ -127,7 +95,7 @@
     transition: all 0.15s;
   }
   .filter-list-btn:hover, .filter-list-btn.active {
-    background: var(--accent); color: #000; font-weight: 600;
+    background: var(--accent); color: var(--napin-teksti); font-weight: 600;
   }
 
   /* Yhteislista */
@@ -174,7 +142,7 @@
   .combined-pituusrivi .cs.DONE { border-color: var(--accent); color: var(--accent); }
   .combined-pituusrivi .cs.CUT { border-color: var(--blue); color: var(--blue); }
   .combined-pituusrivi .cs.BENT { border-color: var(--warn); color: var(--warn); }
-  .combined-pituusrivi .cs.EXTRA { border-color: #a855f7; color: #a855f7; }
+  .combined-pituusrivi .cs.EXTRA { border-color: var(--lisatyo); color: var(--lisatyo); }
 
   @media print {
     .combined-order-block { break-inside: avoid; }
@@ -222,7 +190,7 @@
   .kiila-merkki { display: inline-block; background: #f0a429; color: #1c1f26; font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11px; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 5px; vertical-align: middle; }
   .lev-nappi { display: block; margin: 8px auto 0; min-height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; }
   .lev-nappi.kiila { border-color: #f0a429; color: #f0a429; }
-  .lev-alue { width: 100%; min-width: 0; box-sizing: border-box; align-self: stretch; overflow: hidden; background: #fff; color: #1c1f26; border-radius: 6px; padding: 10px; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .lev-alue { border: 1px solid var(--kpt-paperi-reuna); width: 100%; min-width: 0; box-sizing: border-box; align-self: stretch; overflow: hidden; background: #fff; color: #1c1f26; border-radius: 6px; padding: 10px; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .lev-pituus { font-weight: 600; margin: 6px 0; }
   .lev-laput { margin-top: 8px; padding-top: 6px; border-top: 1px solid #ddd; }
   .lev-laput > div { margin-top: 2px; }
@@ -235,13 +203,13 @@
   .lev-taulu .lev-b { font-weight: 600; }
   .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; color: #555; margin: 8px 0 0; }
   @media print { .lev-nappi { display: none !important; } .lev-kehys { overflow: visible; } .lev-taulu { min-width: 0; font-size: 10px; } .lev-taulu th, .lev-taulu td { padding: 3px 4px; } }
-  .badge-DRAFT        { color: #9aa3b5; border-color: #9aa3b5; border-style: dashed; }
+  .badge-DRAFT        { color: var(--kpt-himmea); border-color: var(--kpt-himmea); border-style: dashed; }
   .badge-IN_PROGRESS  { color: var(--text-dim); border-color: var(--border); }
-  .badge-QUOTED       { color: #a855f7; border-color: #a855f7; }
+  .badge-QUOTED       { color: var(--lisatyo); border-color: var(--lisatyo); }
   .badge-ORDERED      { color: var(--blue); border-color: var(--blue); }
   .badge-IN_PRODUCTION{ color: var(--warn); border-color: var(--warn); }
   .badge-COMPLETED    { color: var(--accent); border-color: var(--accent); }
-  .badge-INVOICED     { color: #22d3ee; border-color: #22d3ee; }
+  .badge-INVOICED     { color: var(--kpt-info); border-color: var(--kpt-info); }
   .card-status-mini {
     background: var(--input-bg); border: 1px solid var(--border);
     color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
@@ -386,6 +354,7 @@
   /* KANTTAUS-lohko */
   .kanttaus-block {
     background: #fff;
+    border: 1px solid var(--kpt-paperi-reuna);
     border-radius: 4px;
     padding: 8px;
     display: inline-block;
@@ -420,7 +389,7 @@
     cursor: pointer; text-align: center; transition: all 0.15s; white-space: nowrap;
   }
   .status-step:hover { border-color: var(--text-dim); color: var(--text); }
-  .status-step.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .status-step.active { background: var(--accent); border-color: var(--accent); color: var(--napin-teksti); font-weight: 600; }
   .status-step.passed { background: var(--panel); border-color: var(--accent); color: var(--accent); }
 
   .cut-row { border-left: 3px solid var(--row-color, var(--border)); }
@@ -443,7 +412,7 @@
     cursor: pointer; white-space: nowrap; transition: all 0.1s;
   }
   .row-status-btn:hover { border-color: var(--text-dim); color: var(--text); }
-  .row-status-btn.ractive { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .row-status-btn.ractive { background: var(--accent); border-color: var(--accent); color: var(--napin-teksti); font-weight: 600; }
   .row-status-btn.rpassed { border-color: var(--accent); color: var(--accent); }
 
   /* done_qty kenttä */
@@ -485,7 +454,7 @@
   .kap-steps .row-status-btn { padding: 8px 18px; font-size: 12px; }
   .kap-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .kap-qty-input {
-    width: 80px; background: var(--bg, #1a1f1b); border: 1px solid var(--border); color: var(--text);
+    width: 80px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
     border-radius: 4px; padding: 7px 8px; font-family: inherit; font-size: 13px;
   }
   .kap-qty-input:focus { outline: none; border-color: var(--accent); }
@@ -493,11 +462,11 @@
     background: var(--panel2); border: 1px solid var(--accent); color: var(--accent);
     border-radius: 4px; padding: 7px 12px; font-family: inherit; font-size: 12px; cursor: pointer;
   }
-  .kap-add-btn:hover { background: var(--accent); color: #fff; }
+  .kap-add-btn:hover { background: var(--accent); color: var(--napin-teksti); }
   .kap-log { display: flex; flex-direction: column; gap: 2px; color: var(--text-dim); font-size: 11px; }
   .kap-log-row { display: flex; gap: 10px; align-items: center; }
   .kap-log-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 0 4px; }
-  .kap-log-del:hover { color: #e55; }
+  .kap-log-del:hover { color: var(--danger); }
 
   /* Kortin materiaalisuodatin */
   .card-filter-bar { display: none; gap: 6px; flex-wrap: wrap; padding: 12px 24px 0; }
@@ -511,11 +480,10 @@
   @media (max-width: 700px) {
     .card-filter-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }
     .all-done-banner { margin: 12px 24px 0; }
-    /* Puhelimella yläpalkki ei saa levittää sivua (Tulosta-nappi pois, väli tiiviimmäksi) */
-    header { padding: 8px 12px; gap: 8px; flex-wrap: wrap; }
+    /* Puhelimella Tulosta-nappi pois (tulostus tehdään koneelta) */
     .btn-print { display: none; }
     /* Käyttäjän sähköposti ja Kirjaudu ulos rivittyvät tarvittaessa omalle rivilleen (23.11.2026) */
-    .header-right { min-width: 0; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
+    .kpt-yla .header-right { min-width: 0; max-width: 100%; flex-wrap: wrap; justify-content: flex-end; }
     #auth-user-info { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
     #auth-user-info > span { max-width: 160px !important; }
   }
@@ -531,12 +499,12 @@
   .time-total.none { font-size: 12px; font-weight: 400; color: var(--text-dim); }
   .time-cat { border: 1px solid var(--border); border-radius: 3px; padding: 2px 8px; color: var(--text); white-space: nowrap; }
   .time-running { color: var(--warn); white-space: nowrap; }
-  .time-warn { color: #e55; white-space: nowrap; }
+  .time-warn { color: var(--danger); white-space: nowrap; }
   .time-link, .time-start {
     background: var(--panel2); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px;
     padding: 6px 12px; font-family: inherit; font-size: 12px; cursor: pointer; text-decoration: none; white-space: nowrap;
   }
-  .time-link:hover, .time-start:hover { background: var(--accent); color: #fff; }
+  .time-link:hover, .time-start:hover { background: var(--accent); color: var(--napin-teksti); }
   .time-start:disabled { opacity: 0.5; cursor: default; }
   .time-spacer { flex: 1 1 auto; }
   .time-chip { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: nowrap; }
@@ -548,7 +516,7 @@
     background: var(--panel2); border: 1px dashed var(--accent); color: var(--accent);
     border-radius: 4px; padding: 7px 14px; font-family: inherit; font-size: 12px; cursor: pointer;
   }
-  .add-row-toggle:hover { background: var(--accent); color: #fff; }
+  .add-row-toggle:hover { background: var(--accent); color: var(--napin-teksti); }
   .add-row-form {
     margin-top: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 4px;
     background: var(--panel); max-width: 720px;
@@ -558,14 +526,14 @@
   .add-row-f { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-dim); }
   .add-row-f-wide { flex: 1 1 220px; }
   .add-row-f input, .add-row-f select {
-    background: var(--input-bg, #1a1f1b); border: 1px solid var(--border); color: var(--text);
+    background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
     border-radius: 4px; padding: 8px; font-family: inherit; font-size: 13px; min-width: 0; width: 100%;
   }
   .add-row-f:not(.add-row-f-wide) { flex: 0 0 90px; }
   .add-row-f input:focus, .add-row-f select:focus { outline: none; border-color: var(--accent); }
   .add-row-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
   .add-row-save {
-    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 4px;
+    background: var(--accent); color: var(--napin-teksti); border: 1px solid var(--accent); border-radius: 4px;
     padding: 8px 16px; font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
   }
   .add-row-save:disabled { opacity: 0.5; cursor: default; }
@@ -589,7 +557,7 @@
     background: var(--accent-glow); font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text);
   }
   .all-done-banner button {
-    background: var(--accent); color: #fff; border: 1px solid var(--accent); border-radius: 4px;
+    background: var(--accent); color: var(--napin-teksti); border: 1px solid var(--accent); border-radius: 4px;
     padding: 7px 14px; font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
   }
   .all-done-banner button.ghost { background: none; color: var(--text-dim); border-color: var(--border); font-weight: 400; }
@@ -694,8 +662,38 @@
     .cut-row-top .done-qty-cell { display: none; }
   }
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+  /* ── R3c: uuden ulkoasun lisäykset ja isommat napit (Tomi 26.11.2026: verstaalla sormella ei saa osua viereiseen) ── */
+  .filter-bar, .card-view-header { background: var(--kpt-paneeli); }
+  .status-filter-btn { min-height: 32px; padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+  .filter-select, .filter-clear, .filter-list-btn { min-height: 34px; border-radius: 6px; }
+  .card-status-mini { min-height: 28px; font-size: 11px; border-radius: 6px; }
+  .back-btn { min-height: 36px; border-radius: 6px; }
+  /* Rivin vaihenapit tasaleveinä koko rivin leveydeltä */
+  .cut-row-bottom > .row-steps { flex: 1 1 auto; }
+  .row-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .row-status-btn { min-height: 34px; font-size: 11px; padding: 4px 4px; border-radius: 6px; }
+  .kap-steps { display: flex; }
+  .kap-steps .row-status-btn { min-height: 42px; }
+  .status-step { min-height: 38px; font-size: 11px; border-radius: 6px; }
+  .done-qty-input { min-height: 32px; width: 60px; font-size: 13px; border-radius: 6px; }
+  .kap-qty-input, .kap-add-btn, .add-row-toggle, .time-link, .time-start { min-height: 38px; border-radius: 6px; }
+  @media (max-width: 700px) {
+    /* Puhelimella viisi nappia rinnakkain: kapeampi fontti, jotta "Leikattu" ja "Lisätyöt" mahtuvat */
+    .row-steps { gap: 3px; }
+    .row-status-btn { min-height: 42px; padding: 4px 0; font-family: var(--kpt-fontti); font-size: 12px; font-weight: 500; }
+    .status-filter-btn { min-height: 38px; }
+    .card-status-mini { min-height: 36px; font-size: 13px; }
+    .back-btn { min-height: 42px; }
+    /* 16 px: iPhone ei zoomaa kenttään */
+    .filter-select, .done-qty-input, .kap-qty-input, .add-row-f input, .add-row-f select { font-size: 16px; min-height: 42px; }
+    .done-qty-input { width: 64px; }
+    .kap-qty-input, .kap-add-btn, .add-row-toggle, .time-link, .time-start { min-height: 44px; }
+  }
+  /* Tulosteet ennallaan: selaimen oletuskoko ja riviväli kuten ennen uutta ulkoasua (kpt-sivu muuttaa niitä ruudulla) */
+  @media print { body.kpt-sivu { font-size: 16px; line-height: normal; } }
+  :where(#tkk) { font-size: 16px; line-height: normal; }
+  .kpt-sivu :where(#tkk) h1, .kpt-sivu :where(#tkk) h2, .kpt-sivu :where(#tkk) h3 { line-height: inherit; font-weight: bold; }
+  .kpt-sivu :where(#tkk) a { color: inherit; }
   </style>
 <script>
   // Työkortin QR-koodi avaa tilauksen: tuotanto.html?tilaus=<id>. Talteen ennen auth-guardia,
@@ -708,28 +706,25 @@
 <script src="tyokortti.js?v=5"></script>
 <script src="profiilit.js?v=20261113k"></script>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Tuotanto</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Tuotanto</h1></div>
   <div class="header-right">
-    <button class="btn-print" onclick="tulosta()"
-      style="background:none;border:1px solid var(--border);color:var(--text-dim);
-             font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 12px;
-             border-radius:4px;cursor:pointer;"
-      onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
-      onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-dim)'">
-      🖨 Tulosta
-    </button>
+    <button class="kpt-nappi pieni btn-print" type="button" onclick="tulosta()">🖨 Tulosta</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
@@ -800,7 +795,7 @@
         <option value="COMPLETED">Valmis</option>
         <option value="INVOICED">Laskutettu</option>
       </select>
-      <button class="nav-btn" onclick="openInTilaus()" title="Avaa tilaus muokattavaksi" style="font-size:11px;padding:5px 10px">✏️ Muokkaa</button>
+      <button class="back-btn" onclick="openInTilaus()" title="Avaa tilaus muokattavaksi">✏️ Muokkaa</button>
     </div>
   </div>
 
@@ -1428,7 +1423,7 @@ const STEP_COLORS = {
   WAITING: 'var(--border)',
   CUT: 'var(--blue)',
   BENT: 'var(--warn)',
-  EXTRA: '#a855f7',
+  EXTRA: 'var(--lisatyo)',
   DONE: 'var(--accent)',
   PARTIAL: 'var(--warn)'
 };
@@ -2214,14 +2209,7 @@ function drawKanttausSVG(profileType, vals, opts, asento, vari, kiila) {
 // buildValsTable ei enää tarvita — kaikki näkyy kuvassa
 function buildValsTable() { return ''; }
 
-// ── Nav ───────────────────────────────────────────────────────────
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-document.addEventListener('click', () => {
-  document.getElementById('navDropdown').classList.remove('open');
-});
+// Valikon avaa ja sulkee nav.js (uusi ulkoasu, R3c)
 
 
 // ── TYÖKORTTI: tulostus avoimesta tilauksesta ────────────────────
