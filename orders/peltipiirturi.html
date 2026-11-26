@@ -42,12 +42,28 @@
   #tilaus-ilmoitus.ok { color: var(--kpt-ok); } #tilaus-ilmoitus.huom { color: var(--kpt-huom); } #tilaus-ilmoitus.virhe { color: var(--kpt-virhe); } #tilaus-ilmoitus.odota { color: var(--kpt-himmea); }
   #tilaus-bar .kpt-nappi { min-height: 38px; }
 
-  /* ── Mallinvalinta ── */
-  .type-bar { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; }
+  /* ── Mallinvalinta: yksi rivi + avautuva paneeli (Tomi 26.11.2026: palkki vei turhaa tilaa) ── */
+  .malli-rivi { position: relative; display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .malli-otsikko { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kpt-himmea); }
+  .malli-nappi {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 42px; padding: 6px 14px; cursor: pointer;
+    background: var(--kpt-korostus); border: 1px solid var(--kpt-korostus); border-radius: 8px;
+    color: var(--kpt-teksti-korostuksella); font: 600 15px var(--kpt-fontti);
+  }
+  .malli-nuoli { font-size: 12px; transition: transform .15s; }
+  .malli-nappi[aria-expanded="true"] .malli-nuoli { transform: rotate(180deg); }
+  body.malli-lukittu .malli-nappi { cursor: not-allowed; }
+  body.malli-lukittu .malli-nuoli { display: none; }
+  .type-bar {
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 60;
+    display: flex; flex-direction: column; gap: 12px; padding: 14px 16px;
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 10px; box-shadow: var(--kpt-varjo), 0 10px 30px rgba(0,0,0,.25);
+  }
+  .type-bar[hidden] { display: none; }
   .type-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-  .type-group-label { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--kpt-himmea); margin-right: 4px; }
+  .type-group-label { flex-basis: 100%; font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--kpt-himmea); }
   .type-btn {
-    min-height: 38px; padding: 6px 14px; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 8px;
+    min-height: 40px; padding: 6px 14px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); border-radius: 8px;
     color: var(--kpt-teksti); font-family: var(--kpt-fontti); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap;
   }
   .type-btn:hover { border-color: var(--kpt-korostus); }
@@ -201,10 +217,8 @@
     #left-panel { order: 0; }
     .lev-kortti { order: 1; }
     .cut-list { order: 2; }
-    /* Mallit yhdelle sivuttain vieritettävälle riville (kuten ennen) */
-    .type-bar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-    .type-group { flex-wrap: nowrap; flex-shrink: 0; }
-    .type-btn { min-height: 44px; flex-shrink: 0; }
+    .type-btn, .malli-nappi { min-height: 44px; }
+    .type-bar { padding: 12px; }
     .field input, .field select, .nimike-input, .table-row input, .segment-row input { min-height: 44px; font-size: 16px; }
     .table-header, .table-row { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, 1fr) 32px; gap: 5px; }
     .table-row input { padding: 0 5px; }
@@ -254,7 +268,12 @@
 </div>
 
 <main class="kpt-sisalto pelti-sisalto">
-<div class="type-bar">
+<!-- Mallinvalinta (Tomi 26.11.2026): yksi matala rivi "Malli: [nimi ▾]", josta aukeaa paneeli kaikkine malleineen.
+     Valikosta avattuna paneeli on valmiiksi auki (malli valitaan ensin), tilauksesta avattuna kiinni. -->
+<div class="malli-rivi" id="malli-rivi">
+<span class="malli-otsikko">Malli</span>
+<button type="button" id="malli-nappi" class="malli-nappi" onclick="avaaMallit()" aria-expanded="false" aria-controls="malli-paneeli"><span id="malli-nimi">Alavesipelti</span><span class="malli-nuoli">▾</span></button>
+<div class="type-bar" id="malli-paneeli" hidden>
   <div class="type-group">
     <span class="type-group-label">MUUT</span>
     <button class="type-btn active" onclick="setType('avp')">Alavesipelti</button>
@@ -278,6 +297,7 @@
     <button class="type-btn" onclick="setType('paatypelti')">Päätypelti</button>
     <button class="type-btn" onclick="setType('paatypelti_huopa')">Päätypelti huopa</button>
   </div>
+</div>
 </div>
 
 <div class="kpt-ruudukko pelti-ruudukko">
@@ -420,6 +440,27 @@ let lengthRows = [{ mitta: 1000, paat: 0, kpl: 1, huomio: '' }];
 // ─── Aktiivinen tyyppi ────────────────────────────────────────────
 let activeType = 'avp';
 
+// Mallinvalinnan paneeli (Tomi 26.11.2026): "Malli: [nimi ▾]" avaa paneelin, valinta / Esc / klikkaus muualle sulkee.
+function paivitaMalliNappi() {
+  const b = document.querySelector('.type-btn.active'), el = document.getElementById('malli-nimi');
+  if (b && el) el.textContent = b.textContent.trim();
+}
+function avaaMallit(auki) {
+  const p = document.getElementById('malli-paneeli'), n = document.getElementById('malli-nappi');
+  if (!p || !n) return;
+  if (auki === undefined) auki = p.hidden;
+  if (auki && typeof _malliLukittu !== 'undefined' && _malliLukittu) {   // muokatessa malli on lukittu: vilkautetaan lukitusteksti
+    const lukko = document.getElementById('tilaus-lukko');
+    if (lukko) { lukko.classList.add('huomio'); setTimeout(() => lukko.classList.remove('huomio'), 1800); }
+    return;
+  }
+  p.hidden = !auki;
+  n.setAttribute('aria-expanded', auki ? 'true' : 'false');
+}
+function suljeMallit() { avaaMallit(false); }
+document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('#malli-rivi')) suljeMallit(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') suljeMallit(); });
+
 function setType(t) {
   // Muokkaustilassa mallia ei voi vaihtaa: tilaukseen jäisi vanha malli mutta uuden mallin mitat
   if (_malliLukittu && t !== activeType) {
@@ -432,6 +473,7 @@ function setType(t) {
   document.querySelectorAll('.type-btn').forEach((b) => {
     b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
   });
+  paivitaMalliNappi(); suljeMallit();
   renderProfileFields();
   // Resetoi kentät oletusarvoihin
   const type = TYPES[activeType];
@@ -1358,6 +1400,7 @@ if (savedCtx) {
   // Suoraan valikosta avattu (T2): palkki "Ei tilausta auki", pelti lähetetään valintaikkunan kautta
   tilausPalkkiTila(false);
   document.getElementById('tilaus-ryhmä').textContent = 'Piirrä pelti ja lisää se uuteen tai olemassa olevaan tilaukseen';
+  avaaMallit(true);   // valikosta avattuna malli valitaan ensin (Tomi 26.11.2026)
 }
 
 // BroadcastChannel fallback
