@@ -6,72 +6,28 @@
 <title>Tehtävät — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+     rakenne ja skripti ennallaan (oma valikkokoodi pois). Lomake puhelimella koko ruudulle, kentät 16 px. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{
-    --bg: #1e2a30;
-    --bg-panel: #253540;
-    --bg-card: #2b3d48;
-    --border: #374b56;
-    --text: #e8edf0;
-    --text-dim: #9fb0b8;
-    --accent: #ec4899;
-    --accent-dim: #ec489933;
-    --accent-glow: rgba(236,72,153,0.15);
-    --high: #ef4444;
-    --normal: #eab308;
-    --low: #22c55e;
-    --radius: 4px;
+  /* Vanhat värinimet → yhteiset --kpt-värit (R6b). Kiireellisyys: punainen / keltainen / vihreä. */
+  :root, html[data-teema]{
+    --bg: var(--kpt-tausta);
+    --bg-panel: var(--kpt-paneeli);
+    --bg-card: var(--kpt-paneeli);
+    --border: var(--kpt-reuna);
+    --text: var(--kpt-teksti);
+    --text-dim: var(--kpt-himmea);
+    --accent: var(--kpt-korostus);
+    --accent-dim: color-mix(in srgb, var(--kpt-korostus) 20%, transparent);
+    --accent-glow: var(--kpt-korostus-tausta);
+    --high: var(--kpt-virhe);
+    --normal: var(--kpt-huom);
+    --low: var(--kpt-ok);
+    --radius: 6px;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'IBM Plex Sans', sans-serif;
-    min-height:100vh;
-  }
-  /* HEADER — sama rakenne kuin muilla sivuilla (asiakkaat.html jne.) */
-  header {
-    background: #241e30;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: #3a3545; border: 1px solid #585568;
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: #4a4558; }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: #3a3545; border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; width: 100%; text-align: left;
-    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; color: var(--text); background: none;
-    border: none; cursor: pointer; text-decoration: none;
-    transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
   main{max-width:1200px;margin:0 auto;padding:20px;}
 
@@ -80,7 +36,7 @@
     margin-bottom:20px;
   }
   .btn{
-    background:var(--accent);color:#1e1220;border:none;
+    background:var(--accent);color:var(--kpt-teksti-korostuksella);border:none;
     padding:10px 18px;border-radius:var(--radius);font-weight:600;
     font-family:'IBM Plex Sans',sans-serif;font-size:14px;cursor:pointer;
   }
@@ -89,8 +45,8 @@
     background:transparent;color:var(--text);border:1px solid var(--border);
   }
   .btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
-  .btn.danger{background:var(--high);color:#fff;}
-  .btn-primary{background:var(--accent);color:#1e1220;}
+  .btn.danger{background:var(--high);color:var(--kpt-teksti-korostuksella);}
+  .btn-primary{background:var(--accent);color:var(--kpt-teksti-korostuksella);}
   .btn-primary:hover{filter:brightness(1.1);}
   .saving{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
 
@@ -125,7 +81,7 @@
     display:flex;gap:12px;align-items:flex-start;
     transition:background .15s;
   }
-  .card:hover{background:#324450;}
+  .card:hover{background:var(--kpt-paneeli2);}
   .card.priority-high{border-left-color:var(--high);}
   .card.priority-normal{border-left-color:var(--normal);}
   .card.priority-low{border-left-color:var(--low);}
@@ -241,26 +197,63 @@
   }
   .toast.show{display:block;}
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+
+  /* ---------- R6b: uusi ulkoasu ja puhelin (26.11.2026) ---------- */
+  .field input[type=text], .field input[type=tel], .field input[type=email], .field input[type=date],
+  .field input[type=time], .field select, .field textarea{
+    background:var(--kpt-kentta);border-color:var(--kpt-reuna2);min-height:42px;
+  }
+  .field input[type=email]{width:100%;color:var(--text);padding:9px 10px;border:1px solid var(--kpt-reuna2);border-radius:var(--radius);font-family:var(--kpt-fontti);font-size:14px;}
+  .modal{box-shadow:var(--kpt-varjo);}
+  .card{border:1px solid var(--border);border-left-width:4px;}
+  .column h2{font-family:var(--kpt-mono);font-size:12px;letter-spacing:.1em;}
+  .column h2 .count{background:var(--kpt-paneeli2);}
+  .customer-dropdown{background:var(--kpt-paneeli);box-shadow:var(--kpt-varjo);}
+  .btn{min-height:40px;}
+  .kpt-yla #newBtn{min-height:32px;padding:0 12px;font-size:13px;}
+
+  @media (max-width:700px){
+    .card{padding:14px;}
+    .card input[type=checkbox]{width:24px;height:24px;}
+    .toggle-wrap{font-size:15px;min-height:40px;}
+    .toggle-wrap input{width:22px;height:22px;}
+    /* Lomake koko ruudulle, kentät 16 px (iPhone ei zoomaa), Tallenna alalaidassa */
+    .overlay{padding:0;align-items:stretch;}
+    .modal{max-width:none;max-height:none;height:100%;border-radius:0;border:none;padding:16px 16px 0;display:flex;flex-direction:column;}
+    .field input[type=text], .field input[type=tel], .field input[type=email], .field input[type=date],
+    .field input[type=time], .field select, .field textarea{font-size:16px;min-height:48px;}
+    .checkbox-field{min-height:44px;}
+    .checkbox-field input{width:24px;height:24px;}
+    .checkbox-field label{font-size:16px;}
+    .contact-toggle{font-size:15px;min-height:40px;}
+    .customer-dropdown-item{padding:12px;font-size:15px;}
+    .modal-actions{position:sticky;bottom:0;margin-top:auto;padding:12px 0 16px;background:var(--bg-panel);}
+    .modal-actions .right{flex:1;}
+    .modal-actions .btn{min-height:48px;font-size:15px;}
+    .modal-actions .right .btn{flex:1;}
+  }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Tehtävät</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Tehtävät</h1></div>
   <div class="header-right">
     <span class="saving" id="saveStatus"></span>
     <button class="btn btn-primary" id="newBtn">+ Uusi tehtävä</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
@@ -336,9 +329,9 @@
     <div class="field">
       <label for="todoPriority">Prioriteetti</label>
       <select id="todoPriority">
-        <option value="high" style="color:#ef4444;">🔴 Kiireellinen</option>
-        <option value="normal" selected style="color:#eab308;">🟡 Normaali</option>
-        <option value="low" style="color:#22c55e;">🟢 Ei kiireellinen</option>
+        <option value="high">🔴 Kiireellinen</option>
+        <option value="normal" selected>🟡 Normaali</option>
+        <option value="low">🟢 Ei kiireellinen</option>
       </select>
     </div>
     <div class="field checkbox-field">
@@ -373,13 +366,7 @@
   let linkedCustomerName = null;
 
   // ---------- Nav-valikko (sama toteutus kuin muilla sivuilla) ----------
-  window.toggleNav = function(e){
-    e.stopPropagation();
-    document.getElementById("navDropdown").classList.toggle("open");
-  };
-  document.addEventListener("click", function(){
-    document.getElementById("navDropdown").classList.remove("open");
-  });
+  // Valikko: nav.js hoitaa (R6, oma toggleNav poistettu)
 
   // ---------- Auth helpers ----------
   async function getAuthHeaders(){
