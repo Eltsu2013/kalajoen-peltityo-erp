@@ -4,344 +4,243 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tilaukset — Kalajoen Peltityö</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<!-- Ulkoasuremontti R4a (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Tila-suodatin tiiviinä nappina, joka avaa
+     valinnat (Tomi 26.11.: suodatinpalkki vei puhelimella paljon tilaa, kuten Peltilistojen mallinvalitsin), luvut
+     valinnoissa. Puhelimella taulukon rivit kortteina. Sivun omissa tyyleissä vain --kpt-muuttujia. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-  :root {
-    --bg: #1e2a30;
-    --panel: #253035;
-    --panel2: #2e3a40;
-    --border: #3a5060;
-    --accent: #0ea5e9;
-    --accent-dim: #0284c7;
-    --accent-glow: rgba(14,165,233,0.12);
-    --text: #ededf0;
-    --text-dim: #9595a0;
-    --input-bg: #2a3840;
-    --success: #3dba6e;
-    --danger: #e84040;
-    --warn: #e8a020;
-    --violet: #a855f7;
+  :root, html[data-teema] {
+    --t-luonnos: var(--kpt-himmea); --t-kesken: var(--kpt-v-tilaukset); --t-tarjottu: var(--kpt-v-ajat);
+    --t-tilattu: var(--kpt-v-tilaukset); --t-tyon-alla: var(--kpt-huom); --t-valmis: var(--kpt-ok);
+    --t-laskutettu: var(--kpt-ok); --t-arkisto: var(--kpt-heikko);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
 
-  /* HEADER */
-  header {
-    background: #16222a;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  /* NAV */
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: var(--panel2); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: var(--input-bg); }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; padding: 8px 14px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    color: var(--text); text-decoration: none; transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-
-  /* SISÄLTÖ */
-  .page { padding: 20px 24px; max-width: 1400px; }
-
-  /* YHTEENVETO-KORTIT */
-  .summary-row {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
-  }
+  /* Yhteenveto (tietokoneella): napautus suodattaa */
+  .summary-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
   .summary-card {
-    background: var(--panel2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: border-color 0.15s;
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys);
+    padding: 12px 16px; cursor: pointer; transition: border-color .15s;
   }
-  .summary-card:hover { border-color: var(--accent); }
-  .summary-card.active { border-color: var(--accent); background: var(--accent-glow); }
-  .summary-card .card-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-dim); margin-bottom: 6px;
-  }
-  .summary-card .card-number {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 24px; font-weight: 600;
-    line-height: 1;
-  }
+  .summary-card:hover { border-color: var(--kpt-korostus); }
+  .summary-card.active { border-color: var(--kpt-korostus); background: var(--kpt-korostus-tausta); }
+  .summary-card .card-label { font-family: var(--kpt-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--kpt-himmea); margin-bottom: 6px; }
+  .summary-card .card-number { font-family: var(--kpt-mono); font-size: 24px; font-weight: 600; line-height: 1; color: var(--kpt-teksti); }
+  #cnt-active { color: var(--kpt-korostus); }
+  #cnt-invoiced { color: var(--kpt-ok); }
+  #cnt-draft, #cnt-archived { color: var(--kpt-himmea); }
 
-  /* SUODATINPALKKI */
-  .filter-bar {
-    background: var(--panel2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
-    display: flex; gap: 8px; align-items: center;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
+  /* Tila-valitsin ja haku */
+  .tyokalut { position: relative; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .tila-nappi {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 42px; padding: 6px 14px; cursor: pointer;
+    background: var(--kpt-korostus); border: 1px solid var(--kpt-korostus); border-radius: 8px;
+    color: var(--kpt-teksti-korostuksella); font: 600 15px var(--kpt-fontti);
   }
-  .filter-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; color: var(--text-dim);
-    letter-spacing: 0.06em; white-space: nowrap;
+  .tila-nappi .otsikko { font-weight: 400; opacity: .85; }
+  .tila-nappi .maara { font-family: var(--kpt-mono); font-size: 13px; opacity: .85; }
+  .tila-nuoli { font-size: 12px; transition: transform .15s; }
+  .tila-nappi[aria-expanded="true"] .tila-nuoli { transform: rotate(180deg); }
+  .tila-paneeli {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; width: min(560px, 100%);
+    padding: 12px; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 10px;
+    box-shadow: var(--kpt-varjo);
   }
-  .filter-btns { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+  .tila-paneeli[hidden] { display: none; }
+  .filter-btns { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
   .fbtn {
-    background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; padding: 4px 10px; border-radius: 3px; cursor: pointer;
-    transition: all 0.15s; white-space: nowrap;
+    --v: var(--kpt-himmea);
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 42px; padding: 6px 12px;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); border-left: 3px solid var(--v); border-radius: 6px;
+    color: var(--kpt-teksti); font: 500 14px var(--kpt-fontti); cursor: pointer; text-align: left;
   }
-  .fbtn:hover { border-color: var(--accent); color: var(--text); }
-  .fbtn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-  .fbtn.archive-btn.active { background: var(--text-dim); border-color: var(--text-dim); color: #1a1a1a; }
+  .fbtn:hover { border-color: var(--kpt-korostus); border-left-color: var(--v); }
+  .fbtn.active { background: var(--kpt-korostus-tausta); border-color: var(--kpt-korostus); border-left-color: var(--v); font-weight: 600; }
+  .fbtn .maara { font-family: var(--kpt-mono); font-size: 12.5px; color: var(--kpt-himmea); }
+  .fbtn[data-filter="active"], .fbtn[data-filter="all"] { --v: var(--kpt-korostus); }
+  .fbtn[data-filter="DRAFT"] { --v: var(--t-luonnos); }
+  .fbtn[data-filter="IN_PROGRESS"] { --v: var(--t-kesken); }
+  .fbtn[data-filter="QUOTED"] { --v: var(--t-tarjottu); }
+  .fbtn[data-filter="ORDERED"] { --v: var(--t-tilattu); }
+  .fbtn[data-filter="IN_PRODUCTION"] { --v: var(--t-tyon-alla); }
+  .fbtn[data-filter="COMPLETED"] { --v: var(--t-valmis); }
+  .fbtn[data-filter="INVOICED"] { --v: var(--t-laskutettu); }
+  .fbtn[data-filter="ARCHIVED"] { --v: var(--t-arkisto); }
   .filter-search {
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; padding: 5px 10px; border-radius: 3px;
-    width: 200px;
+    flex: 1 1 220px; max-width: 360px; min-height: 42px; padding: 8px 12px;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); border-radius: 8px;
+    color: var(--kpt-teksti); font: 14px var(--kpt-fontti);
   }
-  .filter-search:focus { outline: none; border-color: var(--accent); }
-  .filter-search::placeholder { color: var(--text-dim); }
+  .filter-search:focus { outline: none; border-color: var(--kpt-korostus); box-shadow: 0 0 0 3px var(--kpt-korostus-tausta); }
+  .filter-search::placeholder { color: var(--kpt-heikko); }
 
-  /* TAULUKKO */
-  .orders-table-wrap {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    overflow: hidden;
-  }
-  .orders-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .orders-table thead tr {
-    background: var(--panel2);
-  }
+  /* Taulukko */
+  .orders-table-wrap { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); overflow: hidden; }
+  .orders-table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .orders-table th {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-dim);
-    padding: 10px 14px; text-align: left;
-    border-bottom: 1px solid var(--border);
+    font-family: var(--kpt-mono); font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--kpt-himmea); padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--kpt-reuna);
     cursor: pointer; white-space: nowrap; user-select: none;
   }
-  .orders-table th:hover { color: var(--text); }
-  .orders-table th.sorted { color: var(--accent); }
-  .sort-arrow { margin-left: 4px; opacity: 0.6; }
-  .orders-table td {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-  }
+  .orders-table th:hover { color: var(--kpt-teksti); }
+  .orders-table th.sorted { color: var(--kpt-korostus); }
+  .sort-arrow { margin-left: 4px; opacity: .6; }
+  .orders-table td { padding: 10px 14px; border-bottom: 1px solid var(--kpt-reuna); vertical-align: middle; }
   .orders-table tr:last-child td { border-bottom: none; }
-  .orders-table tbody tr {
-    cursor: pointer;
-    transition: background 0.1s;
-  }
-  .orders-table tbody tr:hover { background: var(--accent-glow); }
-  .orders-table tbody tr td:first-child {
-    border-left: 3px solid transparent;
-    padding-left: 11px;
-  }
+  .orders-table tbody tr { cursor: pointer; transition: background .1s; }
+  .orders-table tbody tr:hover { background: var(--kpt-korostus-tausta); }
+  .orders-table tbody tr td:first-child { border-left: 3px solid transparent; padding-left: 11px; }
+  .orders-table tbody tr.highlight-target { animation: highlightPulse 1.5s ease-in-out 2; }
+  @keyframes highlightPulse { 0%, 100% { background: transparent; } 50% { background: var(--kpt-korostus-tausta); } }
+  tr.s-draft td:first-child      { border-left-color: var(--t-luonnos); }
+  tr.s-active td:first-child     { border-left-color: var(--t-kesken); }
+  tr.s-quoted td:first-child     { border-left-color: var(--t-tarjottu); }
+  tr.s-ordered td:first-child    { border-left-color: var(--t-tilattu); }
+  tr.s-production td:first-child { border-left-color: var(--t-tyon-alla); }
+  tr.s-done td:first-child       { border-left-color: var(--t-valmis); }
+  tr.s-invoiced td:first-child   { border-left-color: var(--t-laskutettu); }
+  tr.s-archived td:first-child   { border-left-color: var(--t-arkisto); }
 
-  /* Korostus kun tilaus avataan suoralinkillä (esim. kalenterista) */
-  .orders-table tbody tr.highlight-target {
-    animation: highlightPulse 1.5s ease-in-out 2;
-  }
-  @keyframes highlightPulse {
-    0%, 100% { background: transparent; }
-    50% { background: var(--accent-glow); }
-  }
-
-  /* Reunaviivan väri statuksen mukaan */
-  tr.s-draft td:first-child   { border-left-color: var(--border); }
-  tr.s-active td:first-child   { border-left-color: var(--accent); }
-  tr.s-quoted td:first-child   { border-left-color: var(--violet); }
-  tr.s-ordered td:first-child  { border-left-color: var(--accent); }
-  tr.s-production td:first-child { border-left-color: var(--warn); }
-  tr.s-done td:first-child     { border-left-color: var(--success); }
-  tr.s-invoiced td:first-child { border-left-color: var(--success); }
-  tr.s-archived td:first-child { border-left-color: #444; }
-
-  /* STATUS-BADGE */
+  /* Tilan merkki (napautus avaa tilan vaihdon) */
   .badge {
-    display: inline-block;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; font-weight: 600;
-    padding: 2px 8px; border-radius: 3px;
-    white-space: nowrap;
+    --v: var(--kpt-himmea);
+    display: inline-block; font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 5px;
+    white-space: nowrap; color: var(--v); background: color-mix(in srgb, var(--v) 15%, transparent); border: 1px solid color-mix(in srgb, var(--v) 35%, transparent);
   }
-  .badge-draft     { background: #333340; color: var(--text-dim); }
-  .badge-active    { background: #0e2535; color: var(--accent); }
-  .badge-quoted    { background: #1e1535; color: var(--violet); }
-  .badge-ordered   { background: #0e2535; color: var(--accent); }
-  .badge-production { background: #2a2010; color: var(--warn); }
-  .badge-done      { background: #1a3028; color: var(--success); }
-  .badge-invoiced  { background: #1a3028; color: var(--success); }
-  .badge-archived  { background: #2a2a2a; color: #666; }
-
-  /* Statuksen muutospudotusvalikko listassa */
+  .badge-draft { --v: var(--t-luonnos); }  .badge-active { --v: var(--t-kesken); }  .badge-quoted { --v: var(--t-tarjottu); }
+  .badge-ordered { --v: var(--t-tilattu); }  .badge-production { --v: var(--t-tyon-alla); }  .badge-done { --v: var(--t-valmis); }
+  .badge-invoiced { --v: var(--t-laskutettu); }  .badge-archived { --v: var(--t-arkisto); }
   .status-wrap { position: relative; display: inline-block; cursor: pointer; }
   .status-menu {
-    display: none; position: fixed;
-    background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 5px; z-index: 500;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.5); min-width: 130px; overflow: hidden;
+    display: none; position: fixed; z-index: 500; min-width: 150px; overflow: hidden;
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 8px; box-shadow: var(--kpt-varjo);
   }
   .status-menu.open { display: block; }
-  .status-item {
-    padding: 8px 12px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    cursor: pointer; color: var(--text);
-    transition: background 0.1s;
-  }
-  .status-item:hover { background: var(--accent-glow); color: var(--accent); }
+  .status-item { padding: 9px 14px; font-size: 14px; cursor: pointer; color: var(--kpt-teksti); }
+  .status-item:hover { background: var(--kpt-korostus-tausta); color: var(--kpt-korostus); }
 
-  .customer-name { font-weight: 500; color: var(--text); }
-  .order-date { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); white-space: nowrap; }
-  .order-kohde { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim); }
-  .order-arrow { color: var(--border); font-size: 16px; }
+  .customer-name { font-weight: 500; color: var(--kpt-teksti); }
+  .order-date { font-family: var(--kpt-mono); font-size: 12.5px; color: var(--kpt-himmea); white-space: nowrap; }
+  .order-kohde { font-size: 13.5px; color: var(--kpt-himmea); }
+  .order-arrow { color: var(--kpt-heikko); font-size: 16px; }
+  .orders-table tbody tr:hover .order-arrow { color: var(--kpt-korostus); }
   .copy-btn {
-    background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; padding: 3px 8px; border-radius: 3px; cursor: pointer;
-    white-space: nowrap;
+    background: none; border: 1px solid var(--kpt-reuna); color: var(--kpt-himmea); font-family: var(--kpt-mono);
+    font-size: 11px; padding: 5px 9px; border-radius: 6px; cursor: pointer; white-space: nowrap;
   }
-  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .orders-table tbody tr:hover .order-arrow { color: var(--accent); }
-
-  /* FOOTER */
+  .copy-btn:hover { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
   .table-footer {
-    background: var(--panel2);
-    border-top: 1px solid var(--border);
-    padding: 10px 14px;
-    display: flex; align-items: center; justify-content: space-between;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px; color: var(--text-dim);
+    border-top: 1px solid var(--kpt-reuna); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--kpt-mono); font-size: 11.5px; color: var(--kpt-himmea);
   }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--kpt-himmea); font-size: 14px; }
+  .ei-asiakasta, .ei-kohdetta { color: var(--kpt-heikko); }
 
-  /* EMPTY STATE */
-  .empty-state {
-    text-align: center; padding: 60px 20px;
-    color: var(--text-dim); font-size: 13px;
-  }
-
-  /* NAPIT */
-  .btn {
-    padding: 8px 14px; border: none; border-radius: 4px;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .btn-primary { background: var(--accent); color: #fff; }
-  .btn-primary:hover { background: var(--accent-dim); }
-
-  /* MOBIILI */
+  /* Puhelin: yhteenveto pois (luvut ovat tila-valinnoissa), rivit kortteina, joten mitään ei tarvitse vierittää sivuttain */
   @media (max-width: 700px) {
-    .page { padding: 12px; }
-    .summary-row { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-    .summary-card .card-number { font-size: 18px; }
-    .col-kohde, .col-delivery { display: none; }
-    .filter-search { width: 100%; }
+    .summary-row { display: none; }
+    .filter-search { max-width: none; font-size: 16px; }
+    .tila-paneeli { width: 100%; }
+    .filter-btns { grid-template-columns: 1fr 1fr; }
+    .orders-table thead { display: none; }
+    .orders-table, .orders-table tbody { display: block; }
+    .orders-table tbody tr {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 2px;
+      grid-template-areas: "asiakas tila" "kohde tila" "pvm kopio";
+      padding: 10px 12px 10px 11px; border-bottom: 1px solid var(--kpt-reuna); border-left: 3px solid transparent;
+    }
+    .orders-table tbody tr:last-child { border-bottom: none; }
+    .orders-table td { padding: 0 !important; border: none !important; display: block; }
+    .orders-table td:nth-child(1) { grid-area: pvm; align-self: center; }
+    .orders-table td:nth-child(2) { grid-area: asiakas; font-size: 15px; }
+    .orders-table td:nth-child(3) { grid-area: kohde; }
+    .orders-table td:nth-child(4) { grid-area: tila; align-self: start; justify-self: end; }
+    .orders-table td:nth-child(5) { display: none; }
+    .orders-table td:nth-child(6) { grid-area: kopio; justify-self: end; display: flex !important; }
+    .orders-table td[colspan] { grid-column: 1 / -1; }
+    .orders-table .col-kohde { display: block; }
+    tr.s-draft { border-left-color: var(--t-luonnos) !important; }  tr.s-active { border-left-color: var(--t-kesken) !important; }
+    tr.s-quoted { border-left-color: var(--t-tarjottu) !important; }  tr.s-ordered { border-left-color: var(--t-tilattu) !important; }
+    tr.s-production { border-left-color: var(--t-tyon-alla) !important; }  tr.s-done { border-left-color: var(--t-valmis) !important; }
+    tr.s-invoiced { border-left-color: var(--t-laskutettu) !important; }  tr.s-archived { border-left-color: var(--t-arkisto) !important; }
+    .badge { font-size: 12px; padding: 6px 10px; }
+    .copy-btn { min-height: 34px; }
+    .order-arrow { display: none; }
   }
-
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Tilaukset</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Tilaukset</h1></div>
   <div class="header-right">
-    <button class="btn btn-primary" onclick="uusiTilaus()">+ Uusi tilaus</button>
+    <button class="kpt-nappi ensisijainen pieni" type="button" onclick="uusiTilaus()">+ Uusi tilaus</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
-<div class="page">
+<main class="kpt-sisalto">
 
-  <!-- YHTEENVETO-KORTIT -->
+  <!-- YHTEENVETO-KORTIT (tietokoneella) -->
   <div class="summary-row" id="summaryRow">
     <div class="summary-card active" onclick="setFilter('active')" id="card-active">
       <div class="card-label">Aktiiviset</div>
-      <div class="card-number" id="cnt-active" style="color:var(--accent)">—</div>
+      <div class="card-number" id="cnt-active">—</div>
     </div>
     <div class="summary-card" onclick="setFilter('draft')" id="card-draft">
       <div class="card-label">Luonnokset</div>
-      <div class="card-number" id="cnt-draft" style="color:var(--text-dim)">—</div>
+      <div class="card-number" id="cnt-draft">—</div>
     </div>
     <div class="summary-card" onclick="setFilter('invoiced')" id="card-invoiced">
       <div class="card-label">Laskutettu</div>
-      <div class="card-number" id="cnt-invoiced" style="color:var(--success)">—</div>
+      <div class="card-number" id="cnt-invoiced">—</div>
     </div>
     <div class="summary-card" onclick="setFilter('archived')" id="card-archived">
       <div class="card-label">Arkisto</div>
-      <div class="card-number" id="cnt-archived" style="color:var(--text-dim)">—</div>
+      <div class="card-number" id="cnt-archived">—</div>
     </div>
     <div class="summary-card" onclick="setFilter('all')" id="card-all">
       <div class="card-label">Kaikki</div>
-      <div class="card-number" id="cnt-all" style="color:var(--text)">—</div>
+      <div class="card-number" id="cnt-all">—</div>
     </div>
   </div>
 
-  <!-- SUODATINPALKKI -->
-  <div class="filter-bar">
-    <span class="filter-label">STATUS:</span>
-    <div class="filter-btns" id="statusBtns">
-      <button class="fbtn active" onclick="setStatusBtn(this,'active')"   data-filter="active">Aktiiviset</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'IN_PROGRESS')" data-filter="IN_PROGRESS">Kesken</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'QUOTED')"    data-filter="QUOTED">Tarjottu</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'ORDERED')"   data-filter="ORDERED">Tilattu</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'IN_PRODUCTION')" data-filter="IN_PRODUCTION">Työn alla</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'COMPLETED')" data-filter="COMPLETED">Valmis</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'INVOICED')"  data-filter="INVOICED">Laskutettu</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'DRAFT')"     data-filter="DRAFT">Luonnos</button>
-      <button class="fbtn archive-btn" onclick="setStatusBtn(this,'ARCHIVED')" data-filter="ARCHIVED">Arkisto</button>
-      <button class="fbtn"        onclick="setStatusBtn(this,'all')"       data-filter="all">Kaikki</button>
+  <!-- TILA-VALITSIN JA HAKU -->
+  <div class="tyokalut" id="tila-rivi">
+    <button type="button" id="tila-nappi" class="tila-nappi" onclick="avaaTilat()" aria-expanded="false" aria-controls="tila-paneeli">
+      <span class="otsikko">Tila:</span> <span id="tila-nimi">Aktiiviset</span> <span class="maara" id="tila-maara"></span><span class="tila-nuoli">▾</span>
+    </button>
+    <input type="text" class="filter-search" id="searchInput" placeholder="Hae asiakasta tai kohdetta..." oninput="applyFilters()">
+    <div class="tila-paneeli" id="tila-paneeli" hidden>
+      <div class="filter-btns" id="statusBtns">
+        <button class="fbtn active" onclick="setStatusBtn(this,'active')" data-filter="active"><span>Aktiiviset</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'IN_PROGRESS')" data-filter="IN_PROGRESS"><span>Kesken</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'QUOTED')" data-filter="QUOTED"><span>Tarjottu</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'ORDERED')" data-filter="ORDERED"><span>Tilattu</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'IN_PRODUCTION')" data-filter="IN_PRODUCTION"><span>Työn alla</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'COMPLETED')" data-filter="COMPLETED"><span>Valmis</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'INVOICED')" data-filter="INVOICED"><span>Laskutettu</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'DRAFT')" data-filter="DRAFT"><span>Luonnos</span><span class="maara"></span></button>
+        <button class="fbtn archive-btn" onclick="setStatusBtn(this,'ARCHIVED')" data-filter="ARCHIVED"><span>Arkisto</span><span class="maara"></span></button>
+        <button class="fbtn" onclick="setStatusBtn(this,'all')" data-filter="all"><span>Kaikki</span><span class="maara"></span></button>
+      </div>
     </div>
-    <input type="text" class="filter-search" id="searchInput"
-           placeholder="Hae asiakasta..." oninput="applyFilters()">
   </div>
 
   <!-- TAULUKKO -->
@@ -373,11 +272,11 @@
     </table>
     <div class="table-footer">
       <span id="footerCount">—</span>
-      <span id="footerInfo" style="color:var(--text-dim);font-size:10px;"></span>
+      <span id="footerInfo"></span>
     </div>
   </div>
 
-</div>
+</main>
 
 <script>
 const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
@@ -421,7 +320,39 @@ function updateCounts() {
   document.getElementById('cnt-invoiced').textContent = inv;
   document.getElementById('cnt-archived').textContent = arch;
   document.getElementById('cnt-all').textContent      = allOrders.length;
+  // Luvut myös tila-valintoihin (puhelimella yhteenvetokortit ovat piilossa)
+  const maara = f => allOrders.filter(o => suodatinSallii(o, f)).length;
+  document.querySelectorAll('.fbtn').forEach(b => { const m = b.querySelector('.maara'); if (m) m.textContent = maara(b.dataset.filter); });
+  paivitaTilaNappi();
 }
+
+// Sama ehto kuin applyFiltersissä: kuuluuko tilaus suodattimeen f
+function suodatinSallii(o, f) {
+  if (f === 'active')   return ACTIVE_STATUSES.includes(o.status);
+  if (f === 'all')      return true;
+  if (f === 'draft')    return o.status === 'DRAFT';
+  if (f === 'invoiced') return o.status === 'INVOICED';
+  if (f === 'archived') return o.status === 'ARCHIVED';
+  return o.status === f;
+}
+
+// ── Tila-valitsin: tiivis nappi, joka avaa valinnat (Tomi 26.11.2026) ──
+const SUODATIN_NIMI = { draft: 'DRAFT', invoiced: 'INVOICED', archived: 'ARCHIVED' };
+function paivitaTilaNappi() {
+  const f = SUODATIN_NIMI[currentFilter] || currentFilter;
+  const b = document.querySelector(`.fbtn[data-filter="${f}"]`);
+  const nimi = document.getElementById('tila-nimi'), m = document.getElementById('tila-maara');
+  if (nimi) nimi.textContent = b ? b.querySelector('span').textContent : currentFilter;
+  if (m) m.textContent = allOrders.length ? '(' + allOrders.filter(o => suodatinSallii(o, currentFilter)).length + ')' : '';
+}
+function avaaTilat(auki) {
+  const p = document.getElementById('tila-paneeli'), n = document.getElementById('tila-nappi');
+  if (auki === undefined) auki = p.hidden;
+  p.hidden = !auki;
+  n.setAttribute('aria-expanded', auki ? 'true' : 'false');
+}
+document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('#tila-rivi')) avaaTilat(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') avaaTilat(false); });
 
 function setFilter(f) {
   currentFilter = f;
@@ -431,9 +362,10 @@ function setFilter(f) {
   if (card) card.classList.add('active');
   // Synkronoi status-napit
   document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector(`.fbtn[data-filter="${f}"]`);
+  const btn = document.querySelector(`.fbtn[data-filter="${SUODATIN_NIMI[f] || f}"]`);
   if (btn) btn.classList.add('active');
   applyFilters();
+  paivitaTilaNappi();
 }
 
 function setStatusBtn(btn, f) {
@@ -442,22 +374,16 @@ function setStatusBtn(btn, f) {
   btn.classList.add('active');
   // Synkronoi summary-kortit
   document.querySelectorAll('.summary-card').forEach(c => c.classList.remove('active'));
-  const card = document.getElementById('card-' + f);
+  const card = document.getElementById('card-' + f) || document.getElementById('card-' + (Object.keys(SUODATIN_NIMI).find(k => SUODATIN_NIMI[k] === f) || ''));
   if (card) card.classList.add('active');
   applyFilters();
+  paivitaTilaNappi();
+  avaaTilat(false);
 }
 
 function applyFilters() {
   currentSearch = document.getElementById('searchInput').value.toLowerCase();
-  let rows = allOrders.filter(o => {
-    // Status-suodatus
-    if (currentFilter === 'active')   return ACTIVE_STATUSES.includes(o.status);
-    if (currentFilter === 'all')      return true;
-    if (currentFilter === 'draft')    return o.status === 'DRAFT';
-    if (currentFilter === 'invoiced') return o.status === 'INVOICED';
-    if (currentFilter === 'archived') return o.status === 'ARCHIVED';
-    return o.status === currentFilter;
-  });
+  let rows = allOrders.filter(o => suodatinSallii(o, currentFilter));   // Status-suodatus
   // Hakusuodatus
   if (currentSearch) {
     rows = rows.filter(o => {
@@ -513,8 +439,8 @@ function renderTable(rows) {
     const fi   = STATUS_FI[o.status] || o.status;
     const date = (o.order_date || '').slice(0, 10).split('-').reverse().join('.');
     const deliv = o.delivery_date ? o.delivery_date.slice(0,10).split('-').reverse().join('.') : '—';
-    const name  = o.customers?.name || '<span style="color:var(--text-dim)">— ei asiakasta —</span>';
-    const kohde = o.kohde || '<span style="color:var(--border)">—</span>';
+    const name  = o.customers?.name || '<span class="ei-asiakasta">— ei asiakasta —</span>';
+    const kohde = o.kohde || '<span class="ei-kohdetta">—</span>';
     return `<tr id="order-row-${o.id}" class="s-${cls}" onclick="openOrder('${o.id}')">
       <td class="order-date">${date}</td>
       <td class="customer-name">${name}</td>
@@ -558,11 +484,6 @@ function uusiTilaus() {
   window.location.href = 'tilaus.html';
 }
 
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-
 // ── Statuksen muutospudotusvalikko listassa ──
 function toggleStatusMenu(id, e) {
   e.stopPropagation();
@@ -588,6 +509,9 @@ function toggleStatusMenu(id, e) {
       menu.style.bottom = 'auto';
     }
     menu.classList.add('open');
+    // Ruudun oikeaan reunaan asti, ei yli (puhelimella merkki on lähellä reunaa)
+    const yli = rect.left + menu.offsetWidth - (window.innerWidth - 8);
+    if (yli > 0) menu.style.left = Math.max(8, rect.left - yli) + 'px';
   }
 }
 
@@ -618,7 +542,6 @@ async function setOrderStatus(id, newStatus) {
 }
 
 document.addEventListener('click', () => {
-  document.getElementById('navDropdown').classList.remove('open');
   document.querySelectorAll('.status-menu').forEach(m => m.classList.remove('open'));
 });
 
