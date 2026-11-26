@@ -5,88 +5,44 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tunnit — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Ulkoasuremontti R6a (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+       rakenne ja skripti ennallaan. Aikaväli napin taakse (Tomi 26.11.), merkintäikkuna puhelimella koko ruudulle
+       (Tomi: tunteja kirjataan puhelimella ja koneella). Tulosteessa vanhat värit, lisäksi logo + päiväys (Tomi 26.11.). -->
+  <link rel="stylesheet" href="tyyli.css?v=2">
+  <script src="teema.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth-guard.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --bg:       #0f1117;
-      --surface:  #1a1d27;
-      --border:   #2a2d3a;
-      --text:     #e8eaf0;
-      --muted:    #7a7f96;
-      --accent:   #f59e0b;
-      --accent2:  #d97706;
-      --danger:   #ef4444;
-      --danger-bg:#2d1212;
+    /* Vanhat värinimet → yhteiset --kpt-värit (ruudulla). Tulosteessa vanhat arvot, jotta tuloste pysyy ennallaan. */
+    :root, html[data-teema] {
+      --bg:       var(--kpt-kentta);
+      --surface:  var(--kpt-paneeli);
+      --border:   var(--kpt-reuna);
+      --text:     var(--kpt-teksti);
+      --muted:    var(--kpt-himmea);
+      --accent:   var(--kpt-korostus);
+      --accent2:  color-mix(in srgb, var(--kpt-korostus) 82%, #000);
+      --danger:   var(--kpt-virhe);
+      --danger-bg:color-mix(in srgb, var(--kpt-virhe) 12%, transparent);
     }
-
-    body {
-      font-family: 'IBM Plex Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
+    @media print {
+      :root, html[data-teema] {
+        --bg:       #0f1117;
+        --surface:  #1a1d27;
+        --border:   #2a2d3a;
+        --text:     #e8eaf0;
+        --muted:    #555;   /* R6a: selitteet luettavammiksi tulosteessa (ennen #7a7f96) */
+        --accent:   #f59e0b;
+        --accent2:  #d97706;
+        --danger:   #ef4444;
+        --danger-bg:#2d1212;
+      }
+      body.kpt-sivu { font-size: 16px; line-height: normal; }
+      .kpt-sivu h2 { line-height: inherit; }
+      html { color-scheme: light; }
     }
-
-    /* ── NAV ── */
-    nav {
-      background: #241e30;
-      border-bottom: 2px solid var(--accent);
-      padding: 10px 24px;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      position: sticky;
-      top: 0;
-      z-index: 300;
-    }
-    nav h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-    .nav-logo-wrap {
-      display: flex; align-items: center; gap: 0.75rem; text-decoration: none;
-    }
-    .nav-menu-wrap { position: relative; }
-    .nav-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; font-weight: 600;
-      padding: 6px 12px; border-radius: 4px;
-      cursor: pointer; letter-spacing: 0.04em;
-    }
-    .nav-btn:hover { background: var(--border); }
-    .nav-dropdown {
-      display: none;
-      position: absolute;
-      top: calc(100% + 6px);
-      right: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      min-width: 200px;
-      z-index: 999;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      overflow: hidden;
-    }
-    .nav-dropdown.open { display: block; }
-    .nav-section-label {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 10px; font-weight: 600;
-      letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--muted); padding: 8px 14px 4px;
-    }
-    .nav-item {
-      display: block; width: 100%; text-align: left;
-      padding: 8px 14px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; color: var(--text);
-      background: none; border: none; cursor: pointer;
-      text-decoration: none; transition: background 0.1s;
-    }
-    .nav-item:hover { background: var(--border); color: var(--accent); }
-    .nav-item.current { color: var(--accent); font-weight: 600; }
-    .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
     /* ── PAGE ── */
     .page {
@@ -94,6 +50,7 @@
       margin: 0 auto;
       padding: 1.25rem 1rem 3rem;
     }
+    @media screen { .page { padding: 20px 16px 64px; } }
 
     /* ── TOOLBAR ── */
     .toolbar {
@@ -351,58 +308,187 @@
       .badge-hours { background: #eee !important; color: #000 !important; }
     }
 
+
+    /* ── R6a: tulosteen logo ja päiväys (Tomi 26.11.2026: logo oli unohtunut) ── */
+    .print-header { position: relative; }
+    .print-logo { position: absolute; right: 0; top: 0; height: 30px; width: auto; }
+    .print-pvm { position: absolute; right: 0; top: 32px; font-size: 0.75rem !important; color: #444; margin: 0 !important; }
+    /* R6a: tuloste luettavaksi mustavalkotulostimella. Ennen arkipäivien rivit tulostuivat lähes valkoisina
+       (ruudun vaalea tekstiväri) ja yhteenvedon luvut mustina tummalla pohjalla. */
+    @media print {
+      body.kpt-sivu { font-family: 'IBM Plex Sans', sans-serif; }
+      .summary-card { background: #fff; }
+      .summary-card .label { color: #444; }
+      .time-table tr.has-entry td { color: #000; }
+      .badge-vacation, .badge-sick { background: #fff !important; color: #000 !important; border: 1px solid #000; }
+    }
+
+    /* ── R6a: uusi ulkoasu ruudulla (tuloste käyttää yllä olevia vanhoja sääntöjä) ── */
+    @media screen {
+      .toolbar { position: relative; gap: 10px; margin-bottom: 16px; }
+      .kpt-yla a.kpt-nappi { color: var(--kpt-teksti); }
+      .month-nav button, .employee-select {
+        min-height: 40px; border-radius: 6px; border-color: var(--kpt-reuna2); background: var(--kpt-paneeli);
+        font-size: 15px;
+      }
+      .month-nav button { padding: 0 14px; font-family: var(--kpt-fontti); }
+      .month-nav button:hover, .employee-select:hover { border-color: var(--kpt-himmea); background: var(--kpt-paneeli); }
+      .month-label { font-size: 15px; min-width: 150px; }
+      .employee-select { padding: 0 10px; }
+
+      .aikavali-nappi {
+        display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; cursor: pointer;
+        background: transparent; border: 1px solid var(--kpt-reuna2); border-radius: 6px;
+        color: var(--kpt-teksti); font: 600 14px var(--kpt-fontti);
+      }
+      .aikavali-nappi:hover { border-color: var(--kpt-himmea); }
+      .aikavali-nappi .otsikko { font-weight: 400; color: var(--kpt-himmea); }
+      .aikavali-nappi.valittu { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+      .aikavali-nappi.valittu .otsikko { color: inherit; opacity: .85; }
+      .aikavali-nappi .nuoli { font-size: 12px; transition: transform .15s; }
+      .aikavali-nappi[aria-expanded="true"] .nuoli { transform: rotate(180deg); }
+      .aikavali-paneeli {
+        position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; width: min(420px, 100%);
+        padding: 14px; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 10px;
+        box-shadow: var(--kpt-varjo);
+      }
+      .aikavali-paneeli[hidden] { display: none; }
+      .aikavali-kentat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+      .aikavali-kentat label, .aikavali-kentat input { min-width: 0; }
+      .aikavali-kentat label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; color: var(--kpt-himmea); }
+      .aikavali-kentat input {
+        min-height: 44px; padding: 0 10px; font: 15px var(--kpt-mono); width: 100%;
+        background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px;
+      }
+      .aikavali-vihje { font-size: 13px; color: var(--kpt-himmea); margin: 10px 0 12px; }
+      .aikavali-napit { display: flex; gap: 8px; justify-content: flex-end; }
+
+      .summary-bar { gap: 10px; margin-bottom: 16px; }
+      .summary-card { border-radius: var(--kpt-pyoristys); padding: 10px 16px; min-width: 110px; }
+      .summary-card .label { font-size: 11px; }
+
+      .time-table { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); border-collapse: separate; border-spacing: 0; overflow: hidden; }
+      .time-table th { background: var(--kpt-paneeli2); font-size: 11px; }
+      .time-table tr:last-child td { border-bottom: 0; }
+      .time-table tr.weekend td { background: color-mix(in srgb, var(--kpt-himmea) 9%, transparent); }
+      .time-table tr.is-vacation td { background: color-mix(in srgb, var(--kpt-ok) 10%, transparent); }
+      .time-table tr.is-sick td { background: color-mix(in srgb, var(--kpt-virhe) 10%, transparent); }
+      .time-table tr.clickable:hover td { background: var(--kpt-korostus-tausta); }
+      .badge-vacation { background: color-mix(in srgb, var(--kpt-ok) 15%, transparent); color: var(--kpt-ok); }
+      .badge-sick     { background: color-mix(in srgb, var(--kpt-virhe) 15%, transparent); color: var(--kpt-virhe); }
+      .badge-hours    { background: var(--kpt-korostus-tausta); }
+
+      .modal-backdrop { background: rgba(0,0,0,0.55); padding: 16px; }
+      .modal { margin: 0; border-radius: var(--kpt-pyoristys); box-shadow: var(--kpt-varjo); max-height: calc(100vh - 32px); overflow-y: auto; }
+      .modal h3 { font-family: var(--kpt-fontti); font-size: 17px; }
+      .form-group label { font-family: var(--kpt-fontti); font-size: 13px; text-transform: none; letter-spacing: 0; }
+      .form-group input, .form-group textarea, .form-group select { min-height: 42px; font-size: 15px; border-color: var(--kpt-reuna2); border-radius: 6px; }
+      .form-group input:focus, .form-group textarea:focus { box-shadow: 0 0 0 3px var(--kpt-korostus-tausta); }
+      .checkbox-label { font-size: 15px; min-height: 40px; }
+      .checkbox-label input[type=checkbox] { width: 20px; height: 20px; }
+      .btn { min-height: 40px; padding: 0 16px; border-radius: 6px; font: 600 14px var(--kpt-fontti); letter-spacing: 0; border-color: var(--kpt-reuna2); background: transparent; }
+      .btn:hover { background: transparent; border-color: var(--kpt-himmea); }
+      .btn-accent { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+      .btn-accent:hover { background: var(--kpt-korostus); border-color: var(--kpt-korostus); filter: brightness(1.08); }
+      .btn-danger { color: var(--kpt-virhe); border-color: color-mix(in srgb, var(--kpt-virhe) 55%, transparent); }
+      .btn-danger:hover { background: color-mix(in srgb, var(--kpt-virhe) 12%, transparent); color: var(--kpt-virhe); }
+    }
+
+    /* ── R6a: puhelin. Merkintäikkuna koko ruudulle, isot kentät ja napit (Tomi: tunteja kirjataan myös puhelimella) ── */
+    @media screen and (max-width: 700px) {
+      .page { padding: 12px 12px 48px; }
+      .month-nav { width: 100%; }
+      .month-label { flex: 1; min-width: 0; }
+      .month-nav button { min-height: 44px; min-width: 48px; }
+      .employee-select { width: 100%; min-height: 44px; font-size: 16px; }
+      .aikavali-nappi { width: 100%; min-height: 44px; justify-content: flex-start; }
+      .aikavali-nappi .nuoli { margin-left: auto; }
+      .aikavali-paneeli { width: 100%; }
+      .aikavali-kentat input { font-size: 16px; min-height: 48px; }
+      .aikavali-napit .kpt-nappi { flex: 1; }
+      .summary-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .summary-card { min-width: 0; padding: 8px 10px; }
+      .time-table td { padding: 12px 10px; }      /* isompi rivi: sormi osuu oikeaan päivään */
+      .time-table td:first-child { white-space: nowrap; }
+
+      .modal-backdrop { padding: 0; align-items: stretch; }
+      .modal { max-width: none; max-height: none; height: 100%; border-radius: 0; border: 0; padding: 16px 16px 0; display: flex; flex-direction: column; }
+      .form-group input, .form-group textarea, .form-group select { min-height: 52px; font-size: 18px; }
+      .checkbox-row { gap: 10px; }
+      .checkbox-label { flex: 1; min-height: 52px; padding: 0 14px; border: 1px solid var(--kpt-reuna2); border-radius: 6px; font-size: 16px; }
+      .checkbox-label input[type=checkbox] { width: 24px; height: 24px; }
+      .modal-actions { position: sticky; bottom: 0; margin-top: auto; padding: 12px 0 16px; background: var(--kpt-paneeli); }
+      .modal-actions .btn { flex: 1; min-height: 52px; font-size: 16px; }
+      .modal-actions .btn-danger { flex-basis: 100%; margin-right: 0; }
+    }
+
     @media (max-width: 600px) {
       .time-table th:nth-child(3),
       .time-table td:nth-child(3) { display: none; }
       .summary-card .value { font-size: 1.1rem; }
     }
   
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<nav>
-  <div class="logo-img" style="height:56px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="165" height="56" style="height:56px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Tunnit</h1>
-</nav>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Tunnit</h1></div>
+  <div class="header-right">
+    <button class="kpt-nappi pieni" type="button" onclick="doPrint()">🖨 Tulosta</button>
+    <a href="henkilosto.html" class="kpt-nappi pieni">👥 Henkilöstö</a>
+    <button class="kpt-teema-kytkin" type="button"></button>
+  </div>
+</header>
 
 
 <div class="page">
 
   <!-- PRINT-OTSIKKO (näkyy vain tulostuksessa) -->
   <div class="print-header" id="printHeader">
+    <img class="print-logo" src="logo-musta.png" alt="Kalajoen Peltityö">
+    <p class="print-pvm" id="printPvm"></p>
     <h2 id="printName">—</h2>
     <p id="printPeriod">—</p>
   </div>
 
   <!-- TOOLBAR -->
-  <div class="toolbar">
+  <div class="toolbar" id="aikavali-rivi">
     <div class="month-nav">
-      <button onclick="changeMonth(-1)">◀</button>
+      <button onclick="changeMonth(-1)" aria-label="Edellinen kuukausi">◀</button>
       <div class="month-label" id="monthLabel">—</div>
-      <button onclick="changeMonth(1)">▶</button>
+      <button onclick="changeMonth(1)" aria-label="Seuraava kuukausi">▶</button>
     </div>
     <select class="employee-select" id="employeeSelect" onchange="loadMonth()">
       <option value="">Ladataan...</option>
     </select>
-    <div style="display:flex;align-items:center;gap:0.4rem;margin-left:0.5rem">
-      <input type="date" id="dateFrom" class="employee-select" style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px" onchange="onDateRangeChange()">
-      <span style="color:var(--muted);font-size:12px">–</span>
-      <input type="date" id="dateTo" class="employee-select" style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 8px" onchange="onDateRangeChange()">
-      <button class="btn" onclick="clearDateRange()" title="Tyhjennä aikaväli">✕</button>
+    <!-- Aikaväli napin takana (R6a, Tomi 26.11.2026). Kentät samoilla id:illä ja käsittelijöillä kuin ennen. -->
+    <button type="button" id="aikavali-nappi" class="aikavali-nappi" onclick="avaaAikavali()" aria-expanded="false" aria-controls="aikavali-paneeli">
+      <span class="otsikko">Aikaväli:</span> <span id="aikavali-nimi">koko kuukausi</span><span class="nuoli">▾</span>
+    </button>
+    <div class="aikavali-paneeli" id="aikavali-paneeli" hidden>
+      <div class="aikavali-kentat">
+        <label>Alkaen <input type="date" id="dateFrom" onchange="onDateRangeChange()"></label>
+        <label>Päättyen <input type="date" id="dateTo" onchange="onDateRangeChange()"></label>
+      </div>
+      <p class="aikavali-vihje">Valitse molemmat päivät. Kuukauden vaihto nuolilla palaa koko kuukauteen.</p>
+      <div class="aikavali-napit">
+        <button class="kpt-nappi pieni" type="button" onclick="clearDateRange(); avaaAikavali(false)">Tyhjennä</button>
+        <button class="kpt-nappi ensisijainen pieni" type="button" onclick="avaaAikavali(false)">Valmis</button>
+      </div>
     </div>
-    <button class="btn ml-auto" onclick="doPrint()">🖨 Tulosta</button>
-    <a href="henkilosto.html" class="btn" style="text-decoration:none">👥 Henkilöstö</a>
   </div>
 
   <!-- YHTEENVETO -->
@@ -759,14 +845,35 @@ async function deleteEntry() {
   }
 }
 
-// ── NAV ──
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
+</script>
+<script>
+// R6a (26.11.2026): aikavälin nappi ja tulosteen päiväys. Vanha skripti yllä ennallaan.
+function avaaAikavali(auki) {
+  const p = document.getElementById('aikavali-paneeli'), n = document.getElementById('aikavali-nappi');
+  if (auki === undefined) auki = p.hidden;
+  p.hidden = !auki;
+  n.setAttribute('aria-expanded', auki ? 'true' : 'false');
 }
-document.addEventListener('click', () => {
-  document.getElementById('navDropdown')?.classList.remove('open');
-});
+function paivitaAikavaliNappi() {
+  const a = document.getElementById('dateFrom').value, l = document.getElementById('dateTo').value;
+  const valittu = !!(a && l);
+  document.getElementById('aikavali-nimi').textContent = valittu ? formatDateFi(a) + ' – ' + formatDateFi(l) : 'koko kuukausi';
+  document.getElementById('aikavali-nappi').classList.toggle('valittu', valittu);
+}
+(function () {
+  // Napin teksti päivittyy aina, kun lista ladataan (kuukauden vaihto, tyhjennys, aikaväli) tai päivää muutetaan.
+  const lataa = loadMonth;
+  loadMonth = async function () { const r = await lataa.apply(this, arguments); paivitaAikavaliNappi(); return r; };
+  ['dateFrom', 'dateTo'].forEach(id => document.getElementById(id).addEventListener('change', paivitaAikavaliNappi));
+  document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('#aikavali-rivi')) avaaAikavali(false); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') avaaAikavali(false); });
+  function pvm() {
+    const d = new Date();
+    document.getElementById('printPvm').textContent = 'Tulostettu ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear();
+  }
+  pvm();
+  window.addEventListener('beforeprint', pvm);
+})();
 </script>
 </body>
 </html>
