@@ -10,7 +10,7 @@
 //   d.monikulmio([[0,0],[800,0],[800,600],[0,600]], 'LEIKKAUS');   // suljettu ääriviiva
 //   d.viiva(0, 100, 800, 100, 'TAITOS');
 //   d.kaari(cx, cy, r, alkuAste, loppuAste, 'LEIKKAUS');            // vastapäivään alkukulmasta loppukulmaan
-//   d.teksti(0, 620, 12, 'Etu + Taka · 2 kpl', 'TEKSTI');
+//   d.teksti(0, 620, 12, 'Etu + Taka · 2 kpl', 'TEKSTI');                 // tiedostoon: Etu + Taka - 2 kpl
 //   d.lataa('huuva.dxf');                                            // selain: tiedoston lataus
 //   d.sisalto() / KPT_DXF.koodaa(teksti)                              // DXF-tiedosto tekstinä / tavuina (Windows-1252, ä ja ö)
 // Ei riippuvuuksia. Node-testit: testit/dxf/test_dxf.js.
@@ -65,7 +65,8 @@
         return d;
       },
       teksti(x, y, korkeus, s, t) {
-        lisaa(0, 'TEXT', 8, taso(t), 10, n(x), 20, n(y), 30, '0', 40, n(korkeus), 1, String(s).replace(/[\r\n]+/g, ' '));
+        s = tekstiCadille(s);
+        lisaa(0, 'TEXT', 8, taso(t), 10, n(x), 20, n(y), 30, '0', 40, n(korkeus), 1, s);
         laajenna(x, y); laajenna(x + korkeus * 0.6 * String(s).length, y + korkeus);
         return d;
       },
@@ -115,6 +116,15 @@
     return d;
   }
 
+  // CAD-ohjelmien viivafonteista puuttuu merkkejä: Tomin CAD näytti · ja × kysymysmerkkeinä (26.11.2026).
+  // Siksi erikoismerkit tavallisiksi (· → -, × → x) ja aste, plusmiinus ja halkaisija CAD:n omilla koodeilla (%%d, %%p, %%c).
+  // Ä, ö ja å jäävät (Windows-1252), koska nimissä niitä tarvitaan.
+  function tekstiCadille(s) {
+    return String(s).replace(/[\r\n]+/g, ' ')
+      .replace(/[·•]/g, '-').replace(/×/g, 'x').replace(/[–—]/g, '-').replace(/[‘’]/g, "'").replace(/[“”]/g, '"')
+      .replace(/°/g, '%%d').replace(/±/g, '%%p').replace(/[⌀Ø]/g, '%%c');
+  }
+
   // Teksti tavuiksi Windows-1252-merkistössä (R12 ei tunne UTF-8:aa). Ä, ö, å, × ja ° löytyvät; muut merkit → ?
   const CP1252 = { 0x20AC: 0x80, 0x201A: 0x82, 0x2026: 0x85, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93, 0x201D: 0x94, 0x2013: 0x96, 0x2014: 0x97 };
   function koodaa(s) {
@@ -133,7 +143,7 @@
     return s;
   }
 
-  const KPT_DXF = { uusi, koodaa, turvallinenNimi, TASOT };
+  const KPT_DXF = { uusi, koodaa, turvallinenNimi, tekstiCadille, TASOT };
   globalThis.KPT_DXF = KPT_DXF;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_DXF;
 })();

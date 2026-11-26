@@ -62,11 +62,11 @@ ok(ylaAla, '3c: jokaisella palalla vähintään kolme taitosviivaa (yläreuna ja
 
 // teksti
 const tekstit = e.filter(x => x.tyyppi === 'TEXT').map(x => H.arvo(x, 1));
-ok(tekstit.length === rA.length && tekstit[0] === 'Huuva 1 · ' + rA[0].name + ' · 2 kpl · aihio 860 × ' + Math.ceil(rA[0].h - 1e-6) + ' mm', '4a: teksti: työn nimi, pala, kpl ja aihio (' + tekstit[0] + ')');
+ok(tekstit.length === rA.length && tekstit[0] === 'Huuva 1 - ' + rA[0].name + ' - 2 kpl - aihio 860 x ' + Math.ceil(rA[0].h - 1e-6) + ' mm', '4a: teksti: työn nimi, pala, kpl ja aihio (' + tekstit[0] + ')');
 ok(e.filter(x => x.tyyppi === 'TEXT').every(x => H.arvo(x, 8) === 'TEKSTI'), '4b: tekstit TEKSTI-tasolla');
 ok(huuvaDxf([], 'X') === null && huuvaDxf(null) === null, '4c: ilman paloja ei tiedostoa');
 // huuvien määrä näkyy kappalemäärässä
-ok(huuvaDxf(kerroHuuvat(rA, 3), 'H').sisalto().indexOf(rA[0].name + ' · 6 kpl') > 0, '4d: 3 huuvaa -> 6 kpl tekstissä');
+ok(huuvaDxf(kerroHuuvat(rA, 3), 'H').sisalto().indexOf(rA[0].name + ' - 6 kpl') > 0, '4d: 3 huuvaa -> 6 kpl tekstissä');
 ok(t.indexOf('NaN') < 0 && t.indexOf('undefined') < 0, '4e: ei NaN / undefined');
 
 console.log(fails === 0 ? '\\nKAIKKI TESTIT OK' : '\\nEPÄONNISTUI: ' + fails);

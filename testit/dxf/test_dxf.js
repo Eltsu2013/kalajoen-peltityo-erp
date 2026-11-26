@@ -43,7 +43,8 @@ const { parit, entiteetit, arvo, arvot } = require('./lue_dxf.js');
   const ar = e.find(x => x.tyyppi === 'ARC');
   ok(arvo(ar, 40) === '1000' && arvo(ar, 50) === '60' && arvo(ar, 51) === '120', '2d: kaari: säde 1000, kulmat 60–120');
   const tx = e.find(x => x.tyyppi === 'TEXT');
-  ok(arvo(tx, 1) === 'Etu + Taka · 2 kpl' && arvo(tx, 40) === '12', '2e: teksti ja korkeus');
+  ok(arvo(tx, 1) === 'Etu + Taka - 2 kpl' && arvo(tx, 40) === '12', '2e: teksti ja korkeus, · → - (CAD-fonteista puuttuu ·)');
+  ok(KPT_DXF.tekstiCadille('860 × 601 · 45° ±1 Ø20 Pääty') === '860 x 601 - 45%%d %%p1 %%c20 Pääty', '2e: × → x, ° ± Ø CAD-koodeiksi, ä jää');
   // rajat: kaaren ylin kohta 90°: y = -500 + 1000 = 500; monikulmion ylin 600, teksti 632
   const b = d.rajat();
   ok(Math.abs(b.minX + 100) < 1e-6 && b.minY === 0 && Math.abs(b.maxX - 900) < 1e-6, '2f: rajat: kaaren päät x = 400 ± 1000·cos 60° = -100 ja 900, ala 0');
