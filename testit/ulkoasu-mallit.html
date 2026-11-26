@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ulkoasun mallisivu — Kalajoen Peltityö</title>
-<!-- Mallisivu (ulkoasuremontti R0, 24.11.2026): kaikki yhteisen ulkoasun osat yhdellä sivulla.
+<!-- Mallisivu (ulkoasuremontti R0, 24.11.2026; päivitetty remontin lopuksi 26.11.2026: tiivis valitsin,
+     lomake-ikkuna ja uuden sivun muistilista): kaikki yhteisen ulkoasun osat yhdellä sivulla.
      <base> osoittaa orders-kansioon, joten tyylit, logot ja valikon linkit toimivat kuten oikeilla sivuilla. -->
 <base href="../orders/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
-<link rel="stylesheet" href="tyyli.css?v=2">
+<link rel="stylesheet" href="tyyli.css?v=3">
 <script src="teema.js?v=1"></script>
 <style>
   .malli-varit { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
@@ -132,7 +133,64 @@
     </div>
   </div>
 
+  <div class="kpt-ruudukko">
+    <div class="kpt-kortti">
+      <div class="kpt-kortti-otsikko">Tiivis valitsin (tyyli.css v3)</div>
+      <p class="kpt-vihje">Paljon tilaa vievät valinnat napin taakse. Napissa näkyy valinta, jotta tietää, mitä lista näyttää. Muu kuin oletus → nappi värillinen.</p>
+      <div class="kpt-valitsin" id="malli-valitsin">
+        <button class="kpt-valitsin-nappi" type="button" aria-expanded="false" onclick="malliValitsin()">
+          <span class="otsikko">Tila:</span> <span id="malli-valinta">Aktiiviset</span><span class="nuoli">▾</span>
+        </button>
+        <div class="kpt-valitsin-paneeli" id="malli-paneeli" hidden>
+          <div class="malli-rivi" style="margin:0">
+            <button class="kpt-nappi pieni" type="button" data-v="Aktiiviset">Aktiiviset</button>
+            <button class="kpt-nappi pieni" type="button" data-v="Kesken">Kesken</button>
+            <button class="kpt-nappi pieni" type="button" data-v="Työn alla">Työn alla</button>
+            <button class="kpt-nappi pieni" type="button" data-v="Valmis">Valmis</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpt-kortti">
+      <div class="kpt-kortti-otsikko">Lomake-ikkuna (tyyli.css v3)</div>
+      <p class="kpt-vihje">Tietokoneella keskellä ruutua, puhelimella koko ruudulle ja napit alalaidassa. Kokeile kapealla ikkunalla.</p>
+      <button class="kpt-nappi ensisijainen" type="button" onclick="document.getElementById('malli-ikkuna').classList.add('auki')">Avaa lomake</button>
+    </div>
+  </div>
+
+  <div class="kpt-kortti">
+    <div class="kpt-kortti-otsikko">Uuden sivun muistilista (opittua R0–R6)</div>
+    <ul class="kpt-vihje" style="margin:0;padding-left:18px">
+      <li><b>Pohja:</b> <code>tyyli.css?v=3</code> + <code>teema.js?v=1</code> &lt;head&gt;issa, <code>&lt;body class="kpt-sivu"&gt;</code>, yläpalkki <code>kpt-yla</code> kuten tällä sivulla, valikko <code>nav.js?v=6</code>. Uusi sivu valikkoon yhdellä rivillä nav.js:n listaan.</li>
+      <li><b>Värit vain muuttujina</b> (<code>--kpt-...</code>), ei kiinteitä värejä. Tarkista sivu molemmissa ulkoasuissa.</li>
+      <li><b>Puhelin:</b> kentät 16 px (iPhone ei zoomaa), napit vähintään 44 px, verstaalla käytettävät isommiksi. Lomakkeet koko ruudulle.</li>
+      <li><b>Kuvat paperille:</b> piirretään ruudun väreillä, sivu muuntaa <code>KPT_PELLIT.paperiVarit</code>-funktiolla vaalealle paperille (<code>kpt-piirros paperi</code>). Tulosteet mustavalkoisina (<code>tyokortti.js</code>).</li>
+      <li><b>Tulosteet:</b> <code>body.kpt-sivu</code> muuttaa fonttikokoa ja riviväliä. Tulosteeseen <code>@media print { body.kpt-sivu { font-size: 16px; line-height: normal } }</code>, ja vertaa tuloste vanhaan.</li>
+      <li><b>Linkkinappi</b> (<code>&lt;a class="kpt-nappi"&gt;</code>) saa linkin korostusvärin; jos se pitää olla tekstin värinen, aseta väri sivulla.</li>
+      <li><b>Vanhan sivun siirto:</b> kytke vanhat värinimet uusiin (<code>:root, html[data-teema] { --vanha: var(--kpt-...) }</code>), rakenne ja skripti ennallaan, ja vertaa tallennukset vanhaan versioon.</li>
+    </ul>
+  </div>
+
 </main>
+
+<!-- Lomake-ikkunan malli -->
+<div class="kpt-ikkuna-tausta" id="malli-ikkuna" onclick="if (event.target === this) this.classList.remove('auki')">
+  <div class="kpt-ikkuna" role="dialog" aria-labelledby="malli-ikkuna-otsikko">
+    <h3 id="malli-ikkuna-otsikko">Työntekijä</h3>
+    <div class="kpt-kentat">
+      <div class="kpt-kentta"><label for="mi-etu">Etunimi</label><input id="mi-etu" value="Matti"></div>
+      <div class="kpt-kentta"><label for="mi-suku">Sukunimi</label><input id="mi-suku" value="Meikäläinen"></div>
+    </div>
+    <div class="kpt-kentta"><label for="mi-puh">Puhelin</label><input id="mi-puh" type="tel" inputmode="tel" value="040 123 4567"></div>
+    <div class="kpt-kentta"><label for="mi-huom">Huomio</label><textarea id="mi-huom"></textarea></div>
+    <div class="kpt-ikkuna-napit">
+      <button class="kpt-nappi vaara vasen" type="button">Arkistoi</button>
+      <button class="kpt-nappi" type="button" onclick="document.getElementById('malli-ikkuna').classList.remove('auki')">Peruuta</button>
+      <button class="kpt-nappi ensisijainen" type="button" onclick="document.getElementById('malli-ikkuna').classList.remove('auki')">Tallenna</button>
+    </div>
+  </div>
+</div>
 
 <script>
   // Kategorian vaihto mallisivulla (oikeilla sivuilla kategoria tulee nav.js:stä)
@@ -143,6 +201,24 @@
     document.documentElement.dataset.kategoria = a.dataset.k;
     document.querySelectorAll('#malli-kategoriat .kpt-tab').forEach(t => t.classList.toggle('aktiivinen', t === a));
     document.getElementById('malli-katnimi').textContent = a.dataset.k ? a.textContent : 'Etusivu';
+  });
+
+  // Tiivis valitsin: avaus, valinta, sulku Esc:llä ja klikkauksella muualle
+  function malliValitsin(auki) {
+    const p = document.getElementById('malli-paneeli'), n = document.querySelector('#malli-valitsin .kpt-valitsin-nappi');
+    if (auki === undefined) auki = p.hidden;
+    p.hidden = !auki; n.setAttribute('aria-expanded', auki ? 'true' : 'false');
+  }
+  document.getElementById('malli-paneeli').addEventListener('click', e => {
+    const b = e.target.closest('[data-v]'); if (!b) return;
+    document.getElementById('malli-valinta').textContent = b.dataset.v;
+    document.querySelector('#malli-valitsin .kpt-valitsin-nappi').classList.toggle('valittu', b.dataset.v !== 'Aktiiviset');
+    malliValitsin(false);
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('#malli-valitsin')) malliValitsin(false); });
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    malliValitsin(false); document.getElementById('malli-ikkuna').classList.remove('auki');
   });
 </script>
 </body>

@@ -7,11 +7,13 @@
  * Kaksi ulkoasua: tumma (oletus) ja vaalea, html[data-teema="vaalea"]. Valinta: teema.js (ladataan <head>issa).
  *
  * Käyttö sivulla:
- *   <head> ... <link rel="stylesheet" href="tyyli.css?v=2"> <script src="teema.js?v=1"></script>
+ *   <head> ... <link rel="stylesheet" href="tyyli.css?v=3"> <script src="teema.js?v=1"></script>
  *   <body class="kpt-sivu"> ... yläpalkki <header class="kpt-yla"> (malli: testit/ulkoasu-mallit.html)
  * Kaikki luokat alkavat kpt-, jotta ne eivät sekoitu sivujen vanhoihin tyyleihin siirtymäaikana.
  * Sivun omissa tyyleissä käytetään näitä muuttujia (--kpt-...), ei kiinteitä värejä, jotta vaalea ulkoasu toimii.
  * MUISTA: kun tätä tiedostoa muutetaan, nosta ?v=-numeroa kaikilla sivuilla, jotka lataavat sen.
+ * v3 (26.11.2026, remontin siivous): uudet osat Tiivis valitsin (kpt-valitsin) ja Lomake-ikkuna (kpt-ikkuna).
+ *   Vain lisäyksiä: vanhat luokat ennallaan, joten v2:n sivut näyttävät samalta.
  */
 
 /* ---------- Värit: tumma ulkoasu (oletus) ---------- */
@@ -276,6 +278,55 @@ details.kpt-kortti[open] > summary::before { content: '▾ '; }
 .kpt-piirros.paperi { background: var(--kpt-paperi); border-color: var(--kpt-paperi-reuna); }
 .kpt-piirros svg { display: block; width: 100%; height: auto; }
 
+/* ---------- Tiivis valitsin (v3, 26.11.2026) ----------
+ * Tomin linja 26.11.: valinnat, jotka vievät puhelimella paljon tilaa, napin taakse avautuvaan paneeliin, ja napissa
+ * näkyy valinta (malleja: Peltilistojen mallinvalinta, Tilausten tila, Varaston suodattimet, Tuntien aikaväli).
+ *   <div class="kpt-valitsin">
+ *     <button class="kpt-valitsin-nappi" aria-expanded="false"><span class="otsikko">Tila:</span> Aktiiviset <span class="nuoli">▾</span></button>
+ *     <div class="kpt-valitsin-paneeli" hidden> ... valinnat ... </div>
+ *   </div>
+ * Sivun skripti avaa ja sulkee paneelin (hidden + aria-expanded) ja sulkee sen Esc:llä ja klikkauksella muualle.
+ * Luokka .valittu napissa = muu kuin oletusvalinta (nappi täytetään korostusvärillä). */
+.kpt-valitsin { position: relative; display: inline-block; }
+.kpt-valitsin-nappi {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; cursor: pointer;
+  background: transparent; border: 1px solid var(--kpt-reuna2); border-radius: 6px;
+  color: var(--kpt-teksti); font: 600 14px var(--kpt-fontti);
+}
+.kpt-valitsin-nappi:hover { border-color: var(--kpt-himmea); }
+.kpt-valitsin-nappi .otsikko { font-weight: 400; color: var(--kpt-himmea); }
+.kpt-valitsin-nappi .nuoli { font-size: 12px; transition: transform .15s; }
+.kpt-valitsin-nappi[aria-expanded="true"] .nuoli { transform: rotate(180deg); }
+.kpt-valitsin-nappi.valittu { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+.kpt-valitsin-nappi.valittu .otsikko { color: inherit; opacity: .85; }
+.kpt-valitsin-paneeli {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; width: max-content; max-width: min(560px, calc(100vw - 24px));
+  padding: 14px; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: 10px; box-shadow: var(--kpt-varjo);
+}
+.kpt-valitsin-paneeli[hidden] { display: none; }
+
+/* ---------- Lomake-ikkuna (v3, 26.11.2026) ----------
+ * Tietokoneella keskellä ruutua, puhelimella koko ruudun kokoinen ja napit kiinni alalaidassa (R6: Henkilöstö,
+ * Tunnit, Tehtävät). Kentät .kpt-kentta-luokalla, jolloin ne ovat puhelimella 16 px (iPhone ei zoomaa).
+ *   <div class="kpt-ikkuna-tausta" id="..."><div class="kpt-ikkuna" role="dialog">
+ *     <h3>Otsikko</h3> ... kentät ...
+ *     <div class="kpt-ikkuna-napit"><button class="kpt-nappi vaara vasen">Poista</button>
+ *       <button class="kpt-nappi">Peruuta</button><button class="kpt-nappi ensisijainen">Tallenna</button></div>
+ *   </div></div>
+ * Avaus ja sulkeminen: luokka .auki taustaelementissä. */
+.kpt-ikkuna-tausta {
+  display: none; position: fixed; inset: 0; z-index: 500; padding: 16px;
+  align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.55);
+}
+.kpt-ikkuna-tausta.auki { display: flex; }
+.kpt-ikkuna {
+  width: 100%; max-width: 480px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 20px;
+  background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); box-shadow: var(--kpt-varjo);
+}
+.kpt-ikkuna h3 { font-size: 17px; color: var(--kpt-korostus); margin: 0 0 16px; }
+.kpt-ikkuna-napit { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+.kpt-ikkuna-napit .vasen { margin-right: auto; }
+
 /* ---------- Puhelin ---------- */
 @media (max-width: 700px) {
   .kpt-yla { padding: 6px 12px; gap: 8px; }
@@ -286,6 +337,17 @@ details.kpt-kortti[open] > summary::before { content: '▾ '; }
   .kpt-kentta input, .kpt-kentta select { min-height: 48px; font-size: 16px; }   /* 16 px: iPhone ei zoomaa kenttään */
   .kpt-nappi { min-height: 44px; }
   .kpt-avainluku .arvo { font-size: 24px; }
+  /* Tiivis valitsin koko leveydelle, paneeli napin alle */
+  .kpt-valitsin { display: block; }
+  .kpt-valitsin-nappi { width: 100%; min-height: 44px; }
+  .kpt-valitsin-nappi .nuoli { margin-left: auto; }
+  .kpt-valitsin-paneeli { width: 100%; max-width: none; }
+  /* Lomake-ikkuna koko ruudulle, napit alalaidassa */
+  .kpt-ikkuna-tausta { padding: 0; align-items: stretch; }
+  .kpt-ikkuna { max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; padding: 16px 16px 0; display: flex; flex-direction: column; }
+  .kpt-ikkuna-napit { position: sticky; bottom: 0; margin-top: auto; padding: 12px 0 16px; background: var(--kpt-paneeli); }
+  .kpt-ikkuna-napit .kpt-nappi { flex: 1; min-height: 48px; }
+  .kpt-ikkuna-napit .vasen { flex-basis: 100%; margin-right: 0; }
 }
 
 /* ---------- Tuloste ---------- */
