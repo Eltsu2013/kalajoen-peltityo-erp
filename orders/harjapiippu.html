@@ -231,6 +231,14 @@
     <a class="tyyppi-tab" href="piippu.html">Lapepiippu</a>
     <a class="tyyppi-tab active" href="harjapiippu.html">Harjapiippu</a>
   </div>
+  <script>
+  // Välilehdet kuljettavat tilauksen ryhmän (?groupId=) heti, ennen muun sivun latautumista (korjattu 26.11.2026, Tomin testi):
+  // ennen tunnus lisättiin vasta pääskriptissä, joten hitaalla latauksella välilehti avasi toisen piippusivun tyhjänä.
+  (function () {
+    var g = new URLSearchParams(location.search).get('groupId');
+    if (g) document.querySelectorAll('.tyyppi-tab').forEach(function (a) { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(g); });
+  })();
+  </script>
   <div class="header-right">
     <div id="materiaali-valinta"></div>
   </div>
@@ -743,8 +751,7 @@ try {
     if (m.vals.tyyppi === 'harjapiippu') muokattava = m; else toinenTyyppi = m;
   }
 } catch (e) { /* ei muokattavaa */ }
-// Välilehdet kuljettavat tilauksen ryhmän mukana, jotta tyypin voi vaihtaa kesken
-if (targetGroupId) document.querySelectorAll('.tyyppi-tab').forEach(a => { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(targetGroupId); });
+// Välilehdet kuljettavat tilauksen ryhmän mukana: pieni skripti heti välilehtien perässä (26.11.2026).
 
 function ilmoitus(html, vari) {
   const sb = document.querySelector('#sidebar .section');

@@ -157,6 +157,14 @@
       <a class="kpt-tab aktiivinen" href="piippu.html">Lapepiippu</a>
       <a class="kpt-tab" href="harjapiippu.html">Harjapiippu</a>
     </div>
+    <script>
+    // Välilehdet kuljettavat tilauksen ryhmän (?groupId=) heti, ennen muun sivun latautumista (korjattu 26.11.2026, Tomin testi):
+    // ennen tunnus lisättiin vasta pääskriptissä, joten hitaalla latauksella välilehti avasi toisen piippusivun tyhjänä.
+    (function () {
+      var g = new URLSearchParams(location.search).get('groupId');
+      if (g) document.querySelectorAll('.kpt-tabs .kpt-tab').forEach(function (a) { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(g); });
+    })();
+    </script>
     <div class="k-toolbar"><button type="button" class="kpt-nappi pieni" onclick="avaaKaikki(true)">Avaa kaikki</button><button type="button" class="kpt-nappi pieni" onclick="avaaKaikki(false)">Sulje kaikki</button></div>
   </div>
 
@@ -580,8 +588,7 @@ try {
     if (m.vals.tyyppi === 'harjapiippu') toinenTyyppi = m; else muokattava = m;
   }
 } catch (e) { /* ei muokattavaa */ }
-// Välilehdet Lapepiippu | Harjapiippu kuljettavat tilauksen ryhmän mukana, jotta tyypin voi vaihtaa kesken
-if (targetGroupId) document.querySelectorAll('.kpt-tabs .kpt-tab').forEach(a => { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(targetGroupId); });
+// Välilehdet Lapepiippu | Harjapiippu kuljettavat tilauksen ryhmän mukana: pieni skripti heti välilehtien perässä (26.11.2026).
 
 function palautaMuokattava() {
   if (toinenTyyppi) {
