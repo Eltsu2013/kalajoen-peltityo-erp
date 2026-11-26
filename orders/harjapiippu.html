@@ -4,490 +4,438 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Harjapiippu — Kalajoen Peltityö</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Uusi ulkoasu (ulkoasuremontti R2c, 26.11.2026) Piipun mallilla: sama pohja (tyyli.css + teema.js), välilehdet Lapepiippu | Harjapiippu,
+     syötöt vasemmalla avattavina kortteina (Puoli 1 | Puoli 2 rinnakkain myös puhelimella, Tomi 26.11.), tulokset oikealla, kuvat
+     värillisinä paperilla. Tietokoneella sarakkeet vierivät erikseen, venytys poistettu. Kenttien id:t ja laskenta ennallaan. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  :root {
-    --bg: #0a0f1a;
-    --bg2: #111827;
-    --bg3: #1a2332;
-    --bg4: #1e2d3d;
-    --text: #e2eef5;
-    --text2: #6b8fa8;
-    --border: #1e3a4a;
-    --accent: #22c55e;
-    --accent2: #16a34a;
-    --input-bg: #111827;
-    --red: #ef4444;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; min-height: 100vh; }
+  /* Piippusivujen yhteiset tyylit (sama kuin piippu.html, R2b): vain tyyli.css:n muuttujia (molemmat ulkoasut). Yhteinen pohja tulee tyyli.css:stä. */
+  .kpt-sisalto.piippu-sisalto { max-width: 1600px; }
+  .valilehti-rivi { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+  .valilehti-rivi .kpt-tabs { margin: 0; }
+  .k-toolbar { display: flex; gap: 8px; }
+  .piippu-ruudukko { align-items: start; }
+  #sidebar, .oikea { min-width: 0; }
 
-  /* Navigointipalkki */
-  header {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+  /* Tietokone (Tomi 26.11.2026): syötöt ja tulokset vierivät erikseen, joten kuva pysyy näkyvissä kenttiä muutettaessa */
+  @media (min-width: 1100px) {
+    body.kpt-sivu { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    main.piippu-sisalto { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; padding-bottom: 0; }
+    .piippu-ruudukko { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(400px, 5fr) minmax(0, 7fr); align-items: stretch; }
+    #sidebar, .oikea { overflow-y: auto; min-height: 0; padding: 0 6px 48px 0; }
   }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); margin-left: 8px; }
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text2);
-    padding: 6px 12px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: 'IBM Plex Sans', sans-serif;
-    transition: border-color 0.15s, color 0.15s;
-  }
-  .nav-btn:hover { background: var(--bg3); }
-  .nav-dropdown {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    left: 0;
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    min-width: 200px;
-    z-index: 200;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-    padding: 4px 0;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--text2);
-    padding: 8px 14px 4px;
-    opacity: 0.6;
-  }
-  .nav-item {
-    display: block;
-    padding: 8px 14px;
-    color: var(--text2);
-    text-decoration: none;
-    font-size: 13px;
-    transition: background 0.1s, color 0.1s;
-  }
-  .nav-item:hover { background: var(--bg3); color: var(--text); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
-  .main { display: grid; grid-template-columns: 300px 1fr; height: calc(100vh - 74px); overflow: hidden; }
-  .sidebar { background: var(--bg2); border-right: 1px solid var(--border); overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; position: relative; }
-  .sidebar-resizer { position: absolute; top: 0; right: 0; width: 5px; height: 100%; cursor: col-resize; z-index: 10; background: transparent; }
-  .sidebar-resizer:hover, .sidebar-resizer.dragging { background: var(--accent); opacity: 0.5; }
-  .content { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  /* Avattavat kortit: yhteenveto näkyy otsikossa vain kiinni olevalla kortilla */
+  details.kpt-kortti > summary .yv { text-transform: none; letter-spacing: 0; font-family: var(--kpt-mono); font-weight: 400; font-size: 12px; color: var(--kpt-teksti); margin-left: 6px; overflow-wrap: anywhere; }
+  details.kpt-kortti[open] > summary .yv { display: none; }
+  details.kpt-kortti > summary.tarkka { color: var(--kpt-virhe); }
+  .k-sisalto { margin-top: 14px; }
+  .alaotsikko { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kpt-himmea); border-top: 1px solid var(--kpt-reuna); padding-top: 12px; margin: 4px 0 10px; }
+  .kpt-kentta select { padding-right: 6px; }
+  .alaotsikko.eka { border-top: 0; padding-top: 0; }
 
-  .section { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
-  .section h3 { font-size: 11px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-  .section h3.red { color: var(--red); }
+  /* Osat (ruksit) */
+  .osat { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-bottom: 10px; }
+  .chk-row { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--kpt-teksti); cursor: pointer; min-height: 32px; }
+  .chk-row input { width: 18px; height: 18px; accent-color: var(--kpt-korostus); flex: none; margin: 0; }
 
-  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
-  .field label { font-size: 11px; color: var(--text2); }
-  .field input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 8px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
-  .field input[type=number]:focus { outline: none; border-color: var(--accent); }
-  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-  .sidebar.wide .field-grid { grid-template-columns: 1fr 1fr 1fr; }
-  .sidebar.xwide .field-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .sidebar.wide .field label { font-size: 10px; }
+  /* Valintanapit (Sauma, Kiila, kappalemäärät) Huuvan seg-btn-tyylillä */
+  .sauma-options { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sauma-btn { min-height: 38px; min-width: 44px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); color: var(--kpt-himmea); font-family: var(--kpt-fontti); font-size: 14px; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+  .sauma-btn:hover { border-color: var(--kpt-korostus); color: var(--kpt-teksti); }
+  .sauma-btn.active { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
+  .nappi-ryhmat { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 12px; }
+  .nappi-ryhmat .mini-label, .mini-label { display: block; font-size: 13px; color: var(--kpt-himmea); margin-bottom: 6px; }
 
-  .checks { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-  .check-item { display: flex; align-items: center; gap: 8px; }
-  .check-item input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
-  .check-item label { font-size: 13px; cursor: pointer; }
-  .sauma-options { display: flex; gap: 6px; margin-left: 23px; margin-top: 2px; }
-  .sauma-btn { background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; color: var(--text2); padding: 3px 10px; font-size: 12px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif; transition: border-color 0.15s; }
-  .sauma-btn.active { background: var(--accent2); border-color: var(--accent); color: white; }
-  .kiila-ohje { font-size: 11px; color: var(--text2); line-height: 1.45; margin: 0 0 8px; }
-  .kiila-alaotsikko { font-size: 11px; color: var(--text2); font-weight: 600; margin: 6px 0 4px; }
-  .kiila-valinta { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 5px 6px; font-size: 13px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
-  .kiila-virhe { color: var(--red); font-size: 12px; margin-top: 6px; }
+  /* Vakiot: tiivis lista (nimi vasemmalla, kapea kenttä oikealla) */
+  .vakio-grid { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 6px 10px; align-items: center; }
+  .vakio-grid label { font-size: 13px; color: var(--kpt-himmea); }
+  .vakio-grid input, .vakio-grid select { width: 100%; min-height: 36px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 0 8px; font: 14px var(--kpt-mono); text-align: right; }
+  .vakio-grid select { text-align: left; font-family: var(--kpt-fontti); padding: 0 4px; }
+  .vakio-grid input:focus, .vakio-grid select:focus { outline: none; border-color: var(--kpt-korostus); }
+  .vakio-grid input.red-input { border-color: var(--kpt-virhe); }
+  .vakio-grid.leve-valinta { grid-template-columns: minmax(0, 1fr) 140px; }
+
+  /* Lisäosat */
+  .lisaosa-rivi { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .lisaosa-rivi input { min-height: 36px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 0 8px; font: 14px var(--kpt-fontti); }
+  .lisaosa-rivi input[type=text] { flex: 1; min-width: 0; }
+  .lisaosa-rivi input[type=number] { width: 70px; text-align: right; }
+  .lisaosa-rivi .yks, .yks { font-size: 13px; color: var(--kpt-himmea); }
+  .lisaosa-poista { background: none; border: 0; color: var(--kpt-himmea); font-size: 18px; cursor: pointer; padding: 0 6px; min-height: 36px; }
+  .lisaosa-poista:hover { color: var(--kpt-virhe); }
+  .jalat-rivi { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .jalat-rivi label { font-size: 13px; color: var(--kpt-himmea); }
+  .jalat-rivi input { width: 70px; min-height: 36px; background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; padding: 0 8px; font: 14px var(--kpt-mono); text-align: right; }
+
+  /* Kiila / mutka */
+  .kiila-ohje { font-size: 13px; color: var(--kpt-himmea); line-height: 1.5; margin: 0 0 10px; }
+  .kiila-virhe { color: var(--kpt-virhe); font-size: 13px; margin-top: 6px; }
   .kiila-virhe:empty { display: none; }
-  .kiila-kolme { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 8px; }
-  input.laskettu::placeholder { color: var(--red); font-weight: 600; opacity: 1; }
-  .varoitus .laskettu-rivi { font-weight: 600; }
+  input.laskettu::placeholder { color: var(--kpt-virhe); font-weight: 600; opacity: 1; }
+  #kiila-kuva:empty { display: none; }
+  #kiila-kuva { margin-top: 8px; max-width: 400px; margin-left: auto; margin-right: auto; }
 
-  .vakio-grid { display: grid; grid-template-columns: 1fr 56px; gap: 3px 8px; align-items: center; }
-  .vakio-grid label { font-size: 11px; color: var(--text2); }
-  .vakio-grid input[type=number] { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 3px 5px; font-size: 12px; width: 56px; text-align: right; font-family: 'IBM Plex Mono', monospace; }
-  .vakio-grid input[type=number]:focus { outline: none; border-color: var(--accent); }
-  .vakio-grid input.red-input { border-color: var(--red) !important; }
+  /* Varoitukset sisältöalueen ylälaidassa (laskettu korkeus, kiero katto) */
+  #varoitus:empty { display: none; }
+  #varoitus .laskettu-rivi { font-weight: 600; }
+  #ilmo-paikka:empty { display: none; }
 
-  .kuva-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 12px 16px; }
-  .kuva-card svg { width: 100%; display: block; }
-  /* Etukuva (23.11.2026): avattava kortti, ylimpänä ja auki sivua avattaessa (24.11.2026) */
-  .etukuva-kortti { margin-top: 0; }
-  .etukuva-kortti > summary { cursor: pointer; font-size: 12px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; list-style: none; }
-  .etukuva-kortti > summary::-webkit-details-marker { display: none; }
-  .etukuva-kortti > summary::before { content: "▸ "; }
-  .etukuva-kortti[open] > summary::before { content: "▾ "; }
-  #etukuva svg { width: 100%; max-width: 560px; margin: 8px auto 0; display: block; }
-  .kulmat { display: flex; gap: 40px; padding: 8px 0 2px; border-top: 1px solid var(--border); margin-top: 8px; }
-  .kulma-item { font-size: 12px; color: var(--text2); }
-  .kulma-item span { color: var(--text); font-weight: 600; font-size: 14px; margin-left: 6px; }
 
-  .luettelo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .luettelo-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; padding: 14px; }
-  .luettelo-card h3 { font-size: 12px; font-weight: 600; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { color: var(--text2); font-weight: 500; text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border); font-size: 11px; }
-  td { padding: 5px 6px; border-bottom: 1px solid #1a2744; }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: var(--bg3); }
-  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
-  .td-sym { text-align: center; color: var(--text2); font-size: 11px; }
-  .total-row td { border-top: 1px solid var(--border); font-weight: 600; color: var(--accent); padding-top: 7px; }
-  .empty-msg { color: var(--text2); font-size: 12px; text-align: center; padding: 16px 0; }
+  /* Kuvat */
+  #etukuva svg { max-width: 560px; margin: 0 auto; }
+  #etukuva:empty { display: none; }
+  .kulmat { display: flex; flex-wrap: wrap; gap: 6px 32px; padding: 10px 0 2px; }
+  .kulma-item { font-size: 13px; color: var(--kpt-himmea); }
+  .kulma-item span { color: var(--kpt-teksti); font-family: var(--kpt-mono); font-weight: 600; font-size: 15px; margin-left: 6px; }
+  .kuva-huom { font-size: 13px; color: var(--kpt-himmea); margin-top: 4px; }
+  .kuva-huom:empty { display: none; }
+  .kpk-kuva .kpt-piirros { margin-bottom: 4px; }
 
-  @media (max-width: 900px) {
-    .main { grid-template-columns: 1fr; height: auto; overflow: visible; }
-    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
-    .luettelo-grid { grid-template-columns: 1fr; }
-    .nav-links { display: none; }
-  }
-  /* Puhelin: yläpalkki rivittyy (materiaalivalinnat omalle rivilleen), ettei sivu veny leveämmäksi kuin ruutu */
+  /* Peltilista */
+  .luettelo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 8px 20px; }
+  .luettelo-osa h3 { font-family: var(--kpt-mono); font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--kpt-korostus); margin: 0 0 6px; }
+  .luettelo-osa { overflow-x: auto; }
+  .luettelo-osa table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .luettelo-osa th { color: var(--kpt-himmea); font-weight: 500; text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--kpt-reuna); font-size: 12px; }
+  .luettelo-osa td { padding: 6px; border-bottom: 1px solid var(--kpt-reuna); }
+  .luettelo-osa tr:last-child td { border-bottom: none; }
+  .luettelo-osa tbody tr:hover td { background: var(--kpt-korostus-tausta); }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--kpt-mono); }
+  .td-sym { text-align: center; color: var(--kpt-himmea); font-size: 12px; }
+  .total-row td.td-num { white-space: nowrap; }
+  .total-row td { border-top: 1px solid var(--kpt-reuna2); font-weight: 600; color: var(--kpt-korostus); padding-top: 8px; }
+  .empty-msg { color: var(--kpt-himmea); font-size: 13px; text-align: center; padding: 16px 0; }
+
+  /* Tilaukseen (lista + lähetys samassa kortissa) */
+  .tilaukseen { border-top: 1px solid var(--kpt-reuna); margin-top: 14px; padding-top: 14px; }
+  .tilaus-status { font-size: 13px; min-height: 18px; margin-top: 8px; color: var(--kpt-himmea); text-align: center; overflow-wrap: anywhere; }
+  .tilaus-status.ok { color: var(--kpt-ok); } .tilaus-status.huom { color: var(--kpt-huom); } .tilaus-status.virhe { color: var(--kpt-virhe); }
+  .tuotanto-nappi { margin-top: 8px; }
+  .tuotanto-nappi.ei-kaytossa { opacity: .5; cursor: not-allowed; border-style: dashed; }
+  .tuotanto-info { font-size: 13px; color: var(--kpt-huom); text-align: center; margin-top: 6px; }
+  .tuotanto-info:empty { display: none; }
+
+  /* Puhelin */
   @media (max-width: 700px) {
-    header { flex-wrap: wrap; padding: 8px 12px; gap: 8px; }
-    .header-right { margin-left: 0; width: 100%; }
-    .header-right select { flex: 1 1 0; min-width: 0; font-size: 16px !important; padding: 8px !important; }
-    /* Materiaali omalle rivilleen, väri ja paksuus sen alle (pitkät värinimet mahtuvat, 23.11.2026) */
-    .header-right { flex-wrap: wrap; }
-    .header-right #materiaali-valinta { width: 100%; }
-    .kulmat { gap: 16px; flex-wrap: wrap; }
+    .vakio-grid input, .vakio-grid select, .lisaosa-rivi input, .jalat-rivi input { min-height: 44px; font-size: 16px; }
+    .sauma-btn { min-height: 44px; }
+    .kulmat { gap: 6px 16px; }
+    .k-toolbar { width: 100%; } .k-toolbar .kpt-nappi { flex: 1; }
+    #kansi-sisalto input[type=number], #kansi-sisalto select { font-size: 16px; min-height: 40px; }   /* iPhone ei zoomaa */
   }
-
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  
-
-  /* Harjapiippu (vaihe 5, 20.11.2026): piippusivujen välilehdet, puolet rinnakkain ja automaattikentät (mockup v2) */
-  .tyyppi-tabs { display: flex; gap: 4px; margin-left: 8px; }
-  .tyyppi-tab { padding: 5px 12px; border: 1px solid var(--border); border-radius: 4px; color: var(--text2); text-decoration: none; font-size: 13px; }
-  .tyyppi-tab:hover { color: var(--text); }
-  .tyyppi-tab.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
-  .puolet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-  .puoli-otsikko { font-size: 11px; color: var(--text); font-weight: 600; margin-bottom: 4px; }
-  .field input.lukittu { color: var(--text2); border-style: dashed; }
-  .auto-rivi { display: flex; gap: 4px; }
-  .auto-rivi input { flex: 1; min-width: 0; }
-  .auto-kentta.auto input { border-color: #0e7490; color: #67e8f9; }
-  .auto-merkki { font-size: 9px; text-transform: uppercase; letter-spacing: .06em; padding: 1px 4px; border-radius: 3px; margin-left: 2px; }
-  .auto-kentta.auto .auto-merkki { background: #083344; color: #67e8f9; }
-  .auto-kentta.auto .auto-merkki::after { content: 'laskettu'; }
-  .auto-kentta.kasin .auto-merkki { background: #3b2a06; color: #fcd34d; }
-  .auto-kentta.kasin .auto-merkki::after { content: 'oma arvo'; }
-  .palauta { background: var(--bg); border: 1px solid var(--border); color: var(--text2); border-radius: 3px; width: 30px; cursor: pointer; font-size: 14px; }
-  .auto-kentta.auto .palauta { visibility: hidden; }
-  .info-pieni { font-size: 11px; color: var(--text2); margin-top: 6px; line-height: 1.45; }
-  .valinta { display: flex; gap: 6px; margin: 4px 0 8px; }
-  .valinta .sauma-btn { flex: 1; padding: 5px 8px; }
-  .varoitus { background: #3f1212; border: 1px solid var(--red); color: #fecaca; border-radius: 4px; padding: 8px 12px; font-size: 13px; }
-  .varoitus:empty { display: none; }
-  .lisatieto { display: block; font-size: 11px; color: #f59e0b; margin-top: 2px; }
-  .tulossa { font-size: 12px; color: var(--text2); text-align: center; padding: 10px; border: 1px dashed var(--border); border-radius: 4px; }
-  .vakio-grid select { background: var(--bg); border: 1px solid var(--border); border-radius: 3px; color: var(--text); padding: 3px 4px; font-size: 12px; width: 100%; font-family: 'IBM Plex Mono', monospace; }
-  .vakio-grid.leveampi { grid-template-columns: 1fr 92px; }
-  @media (max-width: 700px) {
-    .tyyppi-tabs { margin-left: 0; order: 3; width: 100%; }
-    .tyyppi-tab { flex: 1; text-align: center; padding: 8px; }
-    .field input[type=number], .vakio-grid input[type=number] { font-size: 16px; }
-  }
-
-  /* Avaa Tuotannossa -nappi (vaihe 6c) */
-  .tuotanto-nappi { display: block; text-align: center; margin-top: 8px; padding: 8px; border: 1px solid var(--accent); color: var(--accent); border-radius: 4px; text-decoration: none; font-size: 13px; }
-  .tuotanto-nappi:hover { background: rgba(34,197,94,.1); }
-  .tuotanto-nappi.ei-kaytossa { opacity: .45; cursor: not-allowed; border-style: dashed; }
   /* Muuttamattomat mitat (Tomi 26.11.2026): uudessa piipussa oletusmitat kentissä, mutta muuttamaton mittakenttä näkyy oranssilla
      reunalla ja listassa, kunnes siihen kirjoittaa. Kuvat näkyvät koko ajan (Tomi: kuvasta näkee muokattavan kohdan). */
-  input.mitta.oletus { border-color: #f59e0b; }
-  .mitat-ilmo { margin: 0 0 12px; padding: 10px 12px; border: 1px solid #f59e0b; border-radius: 4px; background: rgba(245,158,11,.08); color: var(--text); font-size: 13px; line-height: 1.5; }
-  .mitat-ilmo:empty { display: none; }
+  input.mitta.oletus { border-color: var(--kpt-huom); }
+  #mitat-puuttuu:empty { display: none; }
+
+  /* ── Harjapiipun omat (R2c): puolet rinnakkain, puolen 2 laskettavat kentät, kiilan korkeudet kolmessa sarakkeessa ── */
+  .puolet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 12px; }
+  .puoli-otsikko { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--kpt-teksti); margin-bottom: 6px; }
+  .kiila-kolme { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 10px; }
+  .kpt-kentta input.lukittu { color: var(--kpt-himmea); border-style: dashed; }
+  .auto-rivi { display: flex; gap: 6px; }
+  .auto-rivi input { flex: 1; min-width: 0; }
+  .auto-kentta.auto input { border-color: var(--kpt-info); color: var(--kpt-info); }
+  .auto-merkki { font-family: var(--kpt-mono); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding: 1px 5px; border-radius: 4px; margin-left: 4px; }
+  .auto-kentta.auto .auto-merkki { color: var(--kpt-info); border: 1px solid var(--kpt-info); }
+  .auto-kentta.auto .auto-merkki::after { content: 'laskettu'; }
+  .auto-kentta.kasin .auto-merkki { color: var(--kpt-huom); border: 1px solid var(--kpt-huom); }
+  .auto-kentta.kasin .auto-merkki::after { content: 'oma arvo'; }
+  .palauta { flex: none; width: 44px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); color: var(--kpt-himmea); border-radius: 6px; cursor: pointer; font-size: 16px; }
+  .palauta:hover { border-color: var(--kpt-korostus); color: var(--kpt-teksti); }
+  .auto-kentta.auto .palauta { display: none; }   /* ↺ vain, kun kentässä on oma arvo: laskettu kenttä yhtä leveä kuin puolen 1 kenttä */
+  .info-pieni { font-size: 13px; color: var(--kpt-himmea); line-height: 1.5; margin: 0 0 10px; }
+  .valinta { display: flex; gap: 6px; margin: 0 0 12px; flex-wrap: wrap; }
+  .valinta .sauma-btn { flex: 1; }
+  .lisatieto { display: block; font-size: 12px; color: var(--kpt-huom); margin-top: 2px; }
+  .kiila-otsikkorivi { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .chk-pieni { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--kpt-himmea); margin: 0 0 10px; cursor: pointer; }
+  .chk-pieni input { width: 18px; height: 18px; accent-color: var(--kpt-korostus); margin: 0; }
+  .vakio-grid.leveampi { grid-template-columns: minmax(0, 1fr) 140px; }
+  @media (max-width: 700px) {
+    .puolet { gap: 0 8px; }
+    .kiila-kolme { gap: 0 6px; }
+    .kpt-kentta > label { font-size: 12px; }
+    .vakio-grid.leveampi { grid-template-columns: minmax(0, 1fr) 120px; }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Piippu</h1>
-  <div class="tyyppi-tabs">
-    <a class="tyyppi-tab" href="piippu.html">Lapepiippu</a>
-    <a class="tyyppi-tab active" href="harjapiippu.html">Harjapiippu</a>
-  </div>
-  <script>
-  // Välilehdet kuljettavat tilauksen ryhmän (?groupId=) heti, ennen muun sivun latautumista (korjattu 26.11.2026, Tomin testi):
-  // ennen tunnus lisättiin vasta pääskriptissä, joten hitaalla latauksella välilehti avasi toisen piippusivun tyhjänä.
-  (function () {
-    var g = new URLSearchParams(location.search).get('groupId');
-    if (g) document.querySelectorAll('.tyyppi-tab').forEach(function (a) { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(g); });
-  })();
-  </script>
-  <div class="header-right">
-    <div id="materiaali-valinta"></div>
-  </div>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Piippu</h1></div>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
 </header>
 
-<div class="main">
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-resizer" id="sidebar-resizer"></div>
-
-  <div class="section">
-    <h3>Piipun osat</h3>
-    <div class="checks">
-      <div class="check-item"><input type="checkbox" id="chk-juuret" checked onchange="laske()"><label for="chk-juuret">Juuret</label></div>
-      <div class="check-item"><input type="checkbox" id="chk-huppu" checked onchange="laske()"><label for="chk-huppu">Huppu</label></div>
-      <div class="check-item"><input type="checkbox" id="chk-kansi" checked onchange="laske()"><label for="chk-kansi">Kansi</label></div>
-      <div class="check-item"><input type="checkbox" id="chk-hattu" checked onchange="laske()"><label for="chk-hattu">Hattu</label></div>
+<main class="kpt-sisalto piippu-sisalto">
+  <div class="valilehti-rivi">
+    <div class="kpt-tabs">
+      <a class="kpt-tab" href="piippu.html">Lapepiippu</a>
+      <a class="kpt-tab aktiivinen" href="harjapiippu.html">Harjapiippu</a>
     </div>
-    <div class="info-pieni">Huppu tehdään aina kahdella etukappaleella (etu 1 ja etu 2).</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
-      <label style="margin:0;white-space:nowrap;font-size:12px;">Piippuja</label>
-      <input type="number" id="v-piippukpl" value="1" min="1" style="width:60px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;" oninput="laske()">
-      <span style="font-size:11px;color:var(--text2);">kpl</span>
-    </div>
-    <div style="margin-top:8px;">
-      <label style="display:block;margin-bottom:4px;font-size:12px;">Huomio</label>
-      <textarea id="v-huomio" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:12px;resize:vertical;" placeholder="Esim. piipussa lunssi, kootaan paikan päällä..."></textarea>
-    </div>
+    <script>
+    // Välilehdet kuljettavat tilauksen ryhmän (?groupId=) heti, ennen muun sivun latautumista (korjattu 26.11.2026, Tomin testi):
+    // ennen tunnus lisättiin vasta pääskriptissä, joten hitaalla latauksella välilehti avasi toisen piippusivun tyhjänä.
+    (function () {
+      var g = new URLSearchParams(location.search).get('groupId');
+      if (g) document.querySelectorAll('.kpt-tabs .kpt-tab').forEach(function (a) { a.href = a.getAttribute('href').split('?')[0] + '?groupId=' + encodeURIComponent(g); });
+    })();
+    </script>
+    <div class="k-toolbar"><button type="button" class="kpt-nappi pieni" onclick="avaaKaikki(true)">Avaa kaikki</button><button type="button" class="kpt-nappi pieni" onclick="avaaKaikki(false)">Sulje kaikki</button></div>
   </div>
 
-  <div class="section">
-    <h3>Piipun mitat</h3>
-    <div class="puolet"><div class="puoli-otsikko">Puoli 1</div><div class="puoli-otsikko">Puoli 2</div></div>
-    <div class="puolet">
-      <div class="field"><label>Leveys (mm)</label><input type="number" id="lev1" class="mitta" value="400" min="0" oninput="laske()"></div>
-      <div class="field"><label>Leveys (mm)</label><input type="number" id="lev2" value="" placeholder="sama" min="0" oninput="laske()"></div>
-    </div>
-    <div class="field"><label>Kokonaismitta etu 1 ↔ etu 2 (mm)</label><input type="number" id="koko" class="mitta" value="1200" min="0" oninput="laske()"></div>
-    <div class="puolet">
-      <div class="field"><label>Suora mitta harjalle (mm)</label><input type="number" id="suora1" class="mitta" value="450" min="0" oninput="laske()"></div>
-      <div class="field auto-kentta" id="kentta-suora2"><label>Suora mitta harjalle (mm) <span class="auto-merkki"></span></label>
-        <div class="auto-rivi"><input type="number" id="suora2" min="0" oninput="kasinSyotetty('suora2')"><button class="palauta" title="Laske automaattisesti" onclick="palautaAuto('suora2')">↺</button></div></div>
-    </div>
-    <div class="field"><label>Korkeus harjan kohdalla (mm)</label><input type="number" id="korkH" class="mitta" value="550" min="0" oninput="laske()"></div>
-    <div class="puolet">
-      <div class="field"><label>Korkeus etureunassa (mm)</label><input type="number" id="kork1" class="mitta" value="760" min="0" oninput="laske()"></div>
-      <div class="field auto-kentta" id="kentta-kork2"><label>Korkeus etureunassa (mm) <span class="auto-merkki"></span></label>
-        <div class="auto-rivi"><input type="number" id="kork2" min="0" oninput="kasinSyotetty('kork2')"><button class="palauta" title="Laske automaattisesti" onclick="palautaAuto('kork2')">↺</button></div></div>
-    </div>
-    <div class="puolet">
-      <div class="field"><label>Vinomitta harjalle (mm)</label><input type="number" id="vino1" readonly class="lukittu" tabindex="-1"></div>
-      <div class="field auto-kentta" id="kentta-vino2"><label>Vinomitta harjalle (mm) <span class="auto-merkki"></span></label>
-        <div class="auto-rivi"><input type="number" id="vino2" min="0" oninput="kasinSyotetty('vino2')"><button class="palauta" title="Laske automaattisesti" onclick="palautaAuto('vino2')">↺</button></div></div>
-    </div>
-    <div class="info-pieni">Puolen 2 mitat lasketaan automaattisesti: suora mitta kokonaismitasta, korkeus ja vinomitta puolen 1 kaltevuudesta. Kirjoita kenttään oma arvo, jos mitattu on eri. ↺ palauttaa laskennan.</div>
-  </div>
+  <div class="kpt-ruudukko piippu-ruudukko">
 
-  <!-- Kiila / mutka (vaihe 5b, 24.11.2026, suunnitelma claude/harjapiippu_kiila_suunnitelma.md, mockup testit/piippu/harjakiila-mockup.html).
-       Mitat yläpäästä. Tyhjä = kuten suorassa; tyhjät vasemman puolen korkeudet lasketaan katon tasosta (varoitus). -->
-  <div class="section" id="kiila-osio">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-      <h3 style="margin:0;">Kiila / mutka</h3>
-      <button class="sauma-btn" id="btn-kiila" onclick="setKiila(!kiilaPaalla)">Kiila / mutka</button>
-    </div>
-    <div id="kiila-kentat" style="display:none;margin-top:8px;">
-      <p class="kiila-ohje">Mitat piipun <b>yläpäästä</b>. Tyhjä kenttä = kuten suorassa piipussa. Oikea sivu = kokonaismitta ja harjan kohta oikealla = suora mitta (puoli 1), kuten sivukuvassa. Seiso etu 1:n edessä: oikea on oikealla kädellä.</p>
-      <div class="kiila-alaotsikko">Yläpään muoto</div>
-      <div class="puolet">
-        <div class="field"><label>Vasen sivu (mm)</label><input type="number" id="k-vasenPituus" oninput="laske()"></div>
-        <div class="field"><label>Suora kulma</label><select id="k-suoraKulma" onchange="laske()" class="kiila-valinta"><option value="0">etu 1 vasen</option><option value="1">etu 1 oikea</option><option value="2">etu 2 oikea</option><option value="3">etu 2 vasen</option></select></div>
+  <!-- VASEN: syötöt (id sidebar säilyy: muutosten seuranta ja muokkausilmoitus käyttävät sitä) -->
+  <div id="sidebar">
+    <div id="ilmo-paikka"></div>
+
+    <details id="k-piippu" data-kortti class="kpt-kortti" open><summary>Piippu ja tilaus <span class="yv" id="ky-piippu"></span></summary><div class="k-sisalto">
+      <div class="alaotsikko eka">Materiaali</div>
+      <div id="materiaali-valinta"></div>
+      <div class="alaotsikko">Osat</div>
+      <div class="osat">
+        <label class="chk-row"><input type="checkbox" id="chk-juuret" checked onchange="laske()"> Juuret</label>
+        <label class="chk-row"><input type="checkbox" id="chk-huppu" checked onchange="laske()"> Huppu</label>
+        <label class="chk-row"><input type="checkbox" id="chk-kansi" checked onchange="laske()"> Kansi</label>
+        <label class="chk-row"><input type="checkbox" id="chk-hattu" checked onchange="laske()"> Hattu</label>
       </div>
-      <div class="field"><label>Harjan kohta vasemmalla sivulla, etu 1:stä (mm)</label><input type="number" id="k-harjaVasen" oninput="laske()"></div>
-      <div class="kiila-alaotsikko">Korkeudet piipun kulmasta kattoon</div>
-      <p class="kiila-ohje">Oikean sivun tyhjät = mitat yllä. Vasemman sivun tyhjät lasketaan katon tasosta (punainen ≈ = laskettu, ei mitattu).</p>
-      <div class="kiila-kolme">
-        <div class="field"><label>Etu 1 vasen</label><input type="number" id="k-korkE1V" oninput="laske()"></div>
-        <div class="field"><label>Harja vasen</label><input type="number" id="k-korkHV" oninput="laske()"></div>
-        <div class="field"><label>Etu 2 vasen</label><input type="number" id="k-korkE2V" oninput="laske()"></div>
-        <div class="field"><label>Etu 1 oikea</label><input type="number" id="k-korkE1O" oninput="laske()"></div>
-        <div class="field"><label>Harja oikea</label><input type="number" id="k-korkHO" oninput="laske()"></div>
-        <div class="field"><label>Etu 2 oikea</label><input type="number" id="k-korkE2O" oninput="laske()"></div>
+      <p class="info-pieni">Huppu tehdään aina kahdella etukappaleella (etu 1 ja etu 2).</p>
+      <div class="kpt-kentat">
+        <div class="kpt-kentta"><label for="v-piippukpl">Piippuja kpl</label><input type="number" id="v-piippukpl" value="1" min="1" oninput="laske()"></div>
       </div>
-      <div class="kiila-alaotsikko">Kiila sivuittain (katon kohdalla)</div>
-      <p class="kiila-ohje">Plus = levenee alaspäin, miinus = kapenee. Mitataan seinän korkeimmasta kulmasta.</p>
+      <div class="kpt-kentta">
+        <label for="v-huomio">Huomio</label>
+        <textarea id="v-huomio" rows="2" placeholder="Esim. piipussa lunssi, kootaan paikan päällä... Näkyy tilauksen huomioissa."></textarea>
+      </div>
+    </div></details>
+
+    <details id="k-mitat" data-kortti class="kpt-kortti" open><summary>Piipun mitat <span class="yv" id="ky-mitat"></span></summary><div class="k-sisalto">
+      <div class="puolet"><div class="puoli-otsikko">Puoli 1</div><div class="puoli-otsikko">Puoli 2</div></div>
       <div class="puolet">
-        <div class="field"><label>Etu 1 (mm)</label><input type="number" id="k-kiilaEtu1" placeholder="0" oninput="laske()"></div>
-        <div class="field"><label>Etu 2 (mm)</label><input type="number" id="k-kiilaEtu2" placeholder="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="lev1">Leveys (mm)</label><input type="number" id="lev1" class="mitta" value="400" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="lev2">Leveys (mm)</label><input type="number" id="lev2" value="" placeholder="sama" min="0" oninput="laske()"></div>
+      </div>
+      <div class="kpt-kentta"><label for="koko">Kokonaismitta etu 1 ↔ etu 2 (mm)</label><input type="number" id="koko" class="mitta" value="1200" min="0" oninput="laske()"></div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="suora1">Suora mitta harjalle (mm)</label><input type="number" id="suora1" class="mitta" value="450" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta auto-kentta" id="kentta-suora2"><label for="suora2">Suora mitta harjalle (mm) <span class="auto-merkki"></span></label>
+          <div class="auto-rivi"><input type="number" id="suora2" min="0" oninput="kasinSyotetty('suora2')"><button type="button" class="palauta" title="Laske automaattisesti" onclick="palautaAuto('suora2')">↺</button></div></div>
+      </div>
+      <div class="kpt-kentta"><label for="korkH">Korkeus harjan kohdalla (mm)</label><input type="number" id="korkH" class="mitta" value="550" min="0" oninput="laske()"></div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="kork1">Korkeus etureunassa (mm)</label><input type="number" id="kork1" class="mitta" value="760" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta auto-kentta" id="kentta-kork2"><label for="kork2">Korkeus etureunassa (mm) <span class="auto-merkki"></span></label>
+          <div class="auto-rivi"><input type="number" id="kork2" min="0" oninput="kasinSyotetty('kork2')"><button type="button" class="palauta" title="Laske automaattisesti" onclick="palautaAuto('kork2')">↺</button></div></div>
       </div>
       <div class="puolet">
-        <div class="field"><label>Vasen (mm)</label><input type="number" id="k-kiilaVasen" placeholder="0" oninput="laske()"></div>
-        <div class="field"><label>Oikea (mm)</label><input type="number" id="k-kiilaOikea" placeholder="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="vino1">Vinomitta harjalle (mm)</label><input type="number" id="vino1" readonly class="lukittu" tabindex="-1"></div>
+        <div class="kpt-kentta auto-kentta" id="kentta-vino2"><label for="vino2">Vinomitta harjalle (mm) <span class="auto-merkki"></span></label>
+          <div class="auto-rivi"><input type="number" id="vino2" min="0" oninput="kasinSyotetty('vino2')"><button type="button" class="palauta" title="Laske automaattisesti" onclick="palautaAuto('vino2')">↺</button></div></div>
       </div>
-      <div id="kiila-kuva" style="margin-top:8px;"></div>
-      <p class="kiila-ohje" style="margin-top:6px;">Juuret lasketaan pisimmän sivun mukaan (mitataan ja muotoillaan erikseen), kansi ja hattu leveimmän ja pisimmän kohdan mukaan.</p>
-    </div>
-  </div>
+      <p class="info-pieni">Puolen 2 mitat lasketaan automaattisesti: suora mitta kokonaismitasta, korkeus ja vinomitta puolen 1 kaltevuudesta. Kirjoita kenttään oma arvo, jos mitattu on eri. ↺ palauttaa laskennan.</p>
+    </div></details>
 
-  <!-- Juuren mitat (nillityslista 23.11.2026): sama järjestys kuin lapepiipussa. Ennen erilliset osiot
-       Sivumitat ja Juuri — etuosa. Kenttien id:t ennallaan. -->
-  <div class="section">
-    <h3>Juuren mitat</h3>
-    <div class="puolet"><div class="puoli-otsikko">Puoli 1</div><div class="puoli-otsikko">Puoli 2</div></div>
-    <div class="puolet">
-      <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_1" class="mitta" value="200" min="0" oninput="laske()"></div>
-      <div class="field"><label>Eteen piipusta (mm)</label><input type="number" id="k24_2" class="mitta" value="200" min="0" oninput="laske()"></div>
-    </div>
-    <div class="puolet">
-      <div class="field"><label>Alas (mm)</label><input type="number" id="j25_1" class="mitta" value="15" min="0" oninput="laske()"></div>
-      <div class="field"><label>Alas (mm)</label><input type="number" id="j25_2" class="mitta" value="15" min="0" oninput="laske()"></div>
-    </div>
-    <div class="kiila-alaotsikko">Sivumitat: matka ehjän harjan yli</div>
-    <div class="puolet">
-      <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit1V" class="mitta" value="150" min="0" oninput="laske()"></div>
-      <div class="field"><label>Vasen (mm)</label><input type="number" id="ylit2V" class="mitta" value="150" min="0" oninput="laske()"></div>
-    </div>
-    <div class="puolet">
-      <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit1O" class="mitta" value="150" min="0" oninput="laske()"></div>
-      <div class="field"><label>Oikea (mm)</label><input type="number" id="ylit2O" class="mitta" value="150" min="0" oninput="laske()"></div>
-    </div>
-    <div class="puolet">
-      <div class="field"><label>Uraan (mm)</label><input type="number" id="poimu" class="mitta" value="20" min="0" oninput="laske()"></div>
-      <div class="field"><label>Uraan kulma (°)</label><input type="number" id="v-harjakulma" value="45" min="0" max="180" oninput="laske()"></div>
-    </div>
-    <div class="info-pieni">Uraan ja kulma ovat samat molemmilla puolilla. Uraan = katteen profiili (KP-20 20, tiili 30, huopa 0).</div>
-  </div>
+    <!-- Kiila / mutka (vaihe 5b, 24.11.2026, suunnitelma claude/harjapiippu_kiila_suunnitelma.md, mockup testit/piippu/harjakiila-mockup.html).
+         Mitat yläpäästä. Tyhjä = kuten suorassa; tyhjät vasemman puolen korkeudet lasketaan katon tasosta (varoitus). -->
+    <details id="k-kiila" data-kortti class="kpt-kortti" open><summary>Kiila / mutka <span class="yv" id="ky-kiila"></span></summary><div class="k-sisalto" id="kiila-osio">
+      <div class="sauma-options"><button type="button" class="sauma-btn" id="btn-kiila" onclick="setKiila(!kiilaPaalla)">Kiila / mutka</button></div>
+      <div id="kiila-kentat" style="display:none;margin-top:12px;">
+        <p class="kiila-ohje">Mitat piipun <b>yläpäästä</b>. Tyhjä kenttä = kuten suorassa piipussa. Oikea sivu = kokonaismitta ja harjan kohta oikealla = suora mitta (puoli 1), kuten sivukuvassa. Seiso etu 1:n edessä: oikea on oikealla kädellä.</p>
+        <div class="alaotsikko">Yläpään muoto</div>
+        <div class="puolet">
+          <div class="kpt-kentta"><label for="k-vasenPituus">Vasen sivu (mm)</label><input type="number" id="k-vasenPituus" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-suoraKulma">Suora kulma</label><select id="k-suoraKulma" onchange="laske()"><option value="0">etu 1 vasen</option><option value="1">etu 1 oikea</option><option value="2">etu 2 oikea</option><option value="3">etu 2 vasen</option></select></div>
+        </div>
+        <div class="kpt-kentta"><label for="k-harjaVasen">Harjan kohta vasemmalla sivulla, etu 1:stä (mm)</label><input type="number" id="k-harjaVasen" oninput="laske()"></div>
+        <div class="alaotsikko">Korkeudet piipun kulmasta kattoon</div>
+        <p class="kiila-ohje">Oikean sivun tyhjät = mitat yllä. Vasemman sivun tyhjät lasketaan katon tasosta (punainen ≈ = laskettu, ei mitattu).</p>
+        <div class="kiila-kolme">
+          <div class="kpt-kentta"><label for="k-korkE1V">Etu 1 vasen</label><input type="number" id="k-korkE1V" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-korkHV">Harja vasen</label><input type="number" id="k-korkHV" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-korkE2V">Etu 2 vasen</label><input type="number" id="k-korkE2V" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-korkE1O">Etu 1 oikea</label><input type="number" id="k-korkE1O" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-korkHO">Harja oikea</label><input type="number" id="k-korkHO" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-korkE2O">Etu 2 oikea</label><input type="number" id="k-korkE2O" oninput="laske()"></div>
+        </div>
+        <div class="alaotsikko">Kiila sivuittain (katon kohdalla)</div>
+        <p class="kiila-ohje">Plus = levenee alaspäin, miinus = kapenee. Mitataan seinän korkeimmasta kulmasta.</p>
+        <div class="puolet">
+          <div class="kpt-kentta"><label for="k-kiilaEtu1">Etu 1 (mm)</label><input type="number" id="k-kiilaEtu1" placeholder="0" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-kiilaEtu2">Etu 2 (mm)</label><input type="number" id="k-kiilaEtu2" placeholder="0" oninput="laske()"></div>
+        </div>
+        <div class="puolet">
+          <div class="kpt-kentta"><label for="k-kiilaVasen">Vasen (mm)</label><input type="number" id="k-kiilaVasen" placeholder="0" oninput="laske()"></div>
+          <div class="kpt-kentta"><label for="k-kiilaOikea">Oikea (mm)</label><input type="number" id="k-kiilaOikea" placeholder="0" oninput="laske()"></div>
+        </div>
+        <div id="kiila-kuva"></div>
+        <p class="kiila-ohje" style="margin-top:8px;">Juuret lasketaan pisimmän sivun mukaan (mitataan ja muotoillaan erikseen), kansi ja hattu leveimmän ja pisimmän kohdan mukaan.</p>
+      </div>
+    </div></details>
 
-  <div class="section">
-    <h3>Juuren vakiot</h3>
-    <div class="vakio-grid">
-      <label>Tuplat juuriin (mm)</label><input type="number" id="v-tupla" value="15" oninput="laske()">
-      <label>Juuri etu lisäys leveyteen (mm)</label><input type="number" id="v-etulis" value="40" oninput="laske()">
-      <label>Juuri nousee piipulle (mm)</label><input type="number" id="v-nousu" value="200" oninput="laske()">
-      <label>Sivujuurten lisävara (mm)</label><input type="number" id="v-sivulisa" value="50" oninput="laske()">
-    </div>
-  </div>
+    <!-- Juuren mitat (nillityslista 23.11.2026): sama järjestys kuin lapepiipussa. Kenttien id:t ennallaan. -->
+    <details id="k-juuri" data-kortti class="kpt-kortti" open><summary>Juuren mitat <span class="yv" id="ky-juuri"></span></summary><div class="k-sisalto">
+      <div class="puolet"><div class="puoli-otsikko">Puoli 1</div><div class="puoli-otsikko">Puoli 2</div></div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="k24_1">Eteen piipusta (mm)</label><input type="number" id="k24_1" class="mitta" value="200" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="k24_2">Eteen piipusta (mm)</label><input type="number" id="k24_2" class="mitta" value="200" min="0" oninput="laske()"></div>
+      </div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="j25_1">Alas (mm)</label><input type="number" id="j25_1" class="mitta" value="15" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="j25_2">Alas (mm)</label><input type="number" id="j25_2" class="mitta" value="15" min="0" oninput="laske()"></div>
+      </div>
+      <div class="alaotsikko">Sivumitat: matka ehjän harjan yli</div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="ylit1V">Vasen (mm)</label><input type="number" id="ylit1V" class="mitta" value="150" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="ylit2V">Vasen (mm)</label><input type="number" id="ylit2V" class="mitta" value="150" min="0" oninput="laske()"></div>
+      </div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="ylit1O">Oikea (mm)</label><input type="number" id="ylit1O" class="mitta" value="150" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="ylit2O">Oikea (mm)</label><input type="number" id="ylit2O" class="mitta" value="150" min="0" oninput="laske()"></div>
+      </div>
+      <div class="puolet">
+        <div class="kpt-kentta"><label for="poimu">Uraan (mm)</label><input type="number" id="poimu" class="mitta" value="20" min="0" oninput="laske()"></div>
+        <div class="kpt-kentta"><label for="v-harjakulma">Uraan kulma (°)</label><input type="number" id="v-harjakulma" value="45" min="0" max="180" oninput="laske()"></div>
+      </div>
+      <p class="info-pieni">Uraan ja kulma ovat samat molemmilla puolilla. Uraan = katteen profiili (KP-20 20, tiili 30, huopa 0).</p>
+    </div></details>
 
-  <div class="section">
-    <h3 class="red">Hupun mitat ⚠</h3>
-    <!-- Etukappaleet 1–3 osana (23.11.2026): oletuksena sama jako molemmille, tarvittaessa etu 2:lle oma -->
-    <div style="font-size:11px;color:var(--text2);">Hupun etu <span id="etu1-otsikko"></span></div>
-    <div class="valinta">
-      <button class="sauma-btn active" id="etu1-1" onclick="setEtuJako(1, 1)">Yhtenä</button>
-      <button class="sauma-btn" id="etu1-2" onclick="setEtuJako(1, 2)">2 osaa</button>
-      <button class="sauma-btn" id="etu1-3" onclick="setEtuJako(1, 3)">3 osaa</button>
-    </div>
-    <label style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text2);margin:-2px 0 6px;cursor:pointer;">
-      <input type="checkbox" id="etu2-eri" onchange="setEtu2Eri(this.checked)"> Eri jako etu 2 -puolelle
-    </label>
-    <div id="etu2-rivi" style="display:none">
-      <div style="font-size:11px;color:var(--text2);">Hupun etu (etu 2 -puoli)</div>
+    <details id="k-vakiot" data-kortti class="kpt-kortti" open><summary>Juuren vakiot <span class="yv" id="ky-vakiot"></span></summary><div class="k-sisalto">
+      <div class="vakio-grid">
+        <label for="v-tupla">Tuplat juuriin (mm)</label><input type="number" id="v-tupla" value="15" oninput="laske()">
+        <label for="v-etulis">Juuri etu lisäys leveyteen (mm)</label><input type="number" id="v-etulis" value="40" oninput="laske()">
+        <label for="v-nousu">Juuri nousee piipulle (mm)</label><input type="number" id="v-nousu" value="200" oninput="laske()">
+        <label for="v-sivulisa">Sivujuurten lisävara (mm)</label><input type="number" id="v-sivulisa" value="50" oninput="laske()">
+      </div>
+    </div></details>
+
+    <details id="k-huppu" data-kortti class="kpt-kortti" open><summary class="tarkka">Hupun mitat ⚠ <span class="yv" id="ky-huppu"></span></summary><div class="k-sisalto">
+      <!-- Etukappaleet 1–3 osana (23.11.2026): oletuksena sama jako molemmille, tarvittaessa etu 2:lle oma -->
+      <span class="mini-label">Hupun etu <span id="etu1-otsikko"></span></span>
       <div class="valinta">
-        <button class="sauma-btn active" id="etu2-1" onclick="setEtuJako(2, 1)">Yhtenä</button>
-        <button class="sauma-btn" id="etu2-2" onclick="setEtuJako(2, 2)">2 osaa</button>
-        <button class="sauma-btn" id="etu2-3" onclick="setEtuJako(2, 3)">3 osaa</button>
+        <button type="button" class="sauma-btn active" id="etu1-1" onclick="setEtuJako(1, 1)">Yhtenä</button>
+        <button type="button" class="sauma-btn" id="etu1-2" onclick="setEtuJako(1, 2)">2 osaa</button>
+        <button type="button" class="sauma-btn" id="etu1-3" onclick="setEtuJako(1, 3)">3 osaa</button>
       </div>
-    </div>
-    <div style="font-size:11px;color:var(--text2);">Hupun sivut</div>
-    <div class="valinta">
-      <button class="sauma-btn active" id="sivut-yksi" onclick="setSivut(1)">Yhtenä kappaleena</button>
-      <button class="sauma-btn" id="sivut-jaettu" onclick="setSivut(2)">Poikki harjalta</button>
-    </div>
-    <div class="vakio-grid" id="jako-rivi" style="display:none;margin-bottom:6px;">
-      <label>Jakosauma harjalla, mm (etu 2 -puolelle tuplana; tyhjä = sama kuin hupun saumat)</label><input type="number" id="v-jakosauma" value="" placeholder="20" oninput="laske()">
-    </div>
-    <div class="vakio-grid leveampi">
-      <label>Hupun saumat (mm)</label><input type="number" id="v-sauma" value="20" oninput="laske()">
-      <label>Lisää hupun kokoon (mm)</label><input type="number" id="v-huplis" value="10" oninput="laske()">
-      <label>Hupun yläreuna (mm) ⚠</label><input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
-      <label>Yläreunan taitos</label>
-      <select id="v-ylatyyppi" onchange="laske()"><option value="ulos">Ulos 90°</option><option value="sisaan">Sisään 90°</option><option value="tupla">Tupla 180°</option></select>
-      <label>Hupun alatuplat (mm)</label><input type="number" id="v-alatupla" value="20" oninput="laske()">
-      <label>Vähennys korkeudesta (mm)</label><input type="number" id="v-vahennys" value="20" oninput="laske()">
-      <label>Sivujen liitosvara, mm (puolet kumpaankin päähän)</label><input type="number" id="v-hsivlisa" value="5" oninput="laske()">
-      <label>Hattu piippua isompi (mm)</label><input type="number" id="v-hattulis" value="250" oninput="laske()">
-    </div>
+      <label class="chk-pieni"><input type="checkbox" id="etu2-eri" onchange="setEtu2Eri(this.checked)"> Eri jako etu 2 -puolelle</label>
+      <div id="etu2-rivi" style="display:none">
+        <span class="mini-label">Hupun etu (etu 2 -puoli)</span>
+        <div class="valinta">
+          <button type="button" class="sauma-btn active" id="etu2-1" onclick="setEtuJako(2, 1)">Yhtenä</button>
+          <button type="button" class="sauma-btn" id="etu2-2" onclick="setEtuJako(2, 2)">2 osaa</button>
+          <button type="button" class="sauma-btn" id="etu2-3" onclick="setEtuJako(2, 3)">3 osaa</button>
+        </div>
+      </div>
+      <span class="mini-label">Hupun sivut</span>
+      <div class="valinta">
+        <button type="button" class="sauma-btn active" id="sivut-yksi" onclick="setSivut(1)">Yhtenä kappaleena</button>
+        <button type="button" class="sauma-btn" id="sivut-jaettu" onclick="setSivut(2)">Poikki harjalta</button>
+      </div>
+      <div class="vakio-grid" id="jako-rivi" style="display:none;margin-bottom:8px;">
+        <label for="v-jakosauma">Jakosauma harjalla, mm (etu 2 -puolelle tuplana; tyhjä = sama kuin hupun saumat)</label><input type="number" id="v-jakosauma" value="" placeholder="20" oninput="laske()">
+      </div>
+      <div class="vakio-grid leveampi">
+        <label for="v-sauma">Hupun saumat (mm)</label><input type="number" id="v-sauma" value="20" oninput="laske()">
+        <label for="v-huplis">Lisää hupun kokoon (mm)</label><input type="number" id="v-huplis" value="10" oninput="laske()">
+        <label for="v-ylareunaV">Hupun yläreuna (mm) ⚠</label><input type="number" id="v-ylareunaV" value="20" class="red-input" oninput="laske()">
+        <label for="v-ylatyyppi">Yläreunan taitos</label>
+        <select id="v-ylatyyppi" onchange="laske()"><option value="ulos">Ulos 90°</option><option value="sisaan">Sisään 90°</option><option value="tupla">Tupla 180°</option></select>
+        <label for="v-alatupla">Hupun alatuplat (mm)</label><input type="number" id="v-alatupla" value="20" oninput="laske()">
+        <label for="v-vahennys">Vähennys korkeudesta (mm)</label><input type="number" id="v-vahennys" value="20" oninput="laske()">
+        <label for="v-hsivlisa">Sivujen liitosvara, mm (puolet kumpaankin päähän)</label><input type="number" id="v-hsivlisa" value="5" oninput="laske()">
+        <label for="v-hattulis">Hattu piippua isompi (mm)</label><input type="number" id="v-hattulis" value="250" oninput="laske()">
+      </div>
 
-    <div style="margin-top:10px;">
-      <div style="font-size:12px;color:var(--text2);font-weight:600;margin-bottom:6px;">Lisäosat</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <label style="margin:0;white-space:nowrap;font-size:12px;">Piipun jalat</label>
-        <input type="number" id="v-jalat" value="0" min="0" style="width:60px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;" oninput="laske()">
-        <span style="font-size:11px;color:var(--text2);">kpl</span>
+      <div class="alaotsikko" style="margin-top:14px;">Lisäosat</div>
+      <div class="jalat-rivi">
+        <label for="v-jalat">Piipun jalat</label>
+        <input type="number" id="v-jalat" value="0" min="0" oninput="laske()">
+        <span class="yks">kpl</span>
       </div>
       <div id="lisaosat-container"></div>
-      <button onclick="lisaaLisaosa()" style="margin-top:4px;padding:3px 10px;font-size:11px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:4px;cursor:pointer;">+ Lisää osa</button>
+      <button type="button" class="kpt-nappi pieni" onclick="lisaaLisaosa()">+ Lisää osa</button>
+    </div></details>
+  </div>
+
+  <!-- OIKEA: tulokset (sama järjestys kuin Piipussa). Etukuva ylimpänä ja aina auki (Tomi 24.11.2026). -->
+  <div class="oikea">
+    <div class="kpt-ilmoitus huom" id="mitat-puuttuu"></div>
+    <div class="kpt-ilmoitus virhe" id="varoitus"></div>
+
+    <details class="kpt-kortti" id="etukuva-kortti" open>
+      <summary>Piippu edestä · juuren mitat</summary>
+      <div class="k-sisalto"><div class="kpt-piirros paperi" id="etukuva"></div></div>
+    </details>
+
+    <div class="kpt-kortti">
+      <div class="kpt-kortti-otsikko">Piippu sivulta</div>
+      <div class="kpt-piirros paperi" id="sivukuva"></div>
+      <div class="kulmat">
+        <div class="kulma-item">Puoli 1 etukulma (kanttikoneeseen):<span id="kulma1">—</span>°</div>
+        <div class="kulma-item">Puoli 2 etukulma (kanttikoneeseen):<span id="kulma2">—</span>°</div>
+        <div class="kulma-item">Kaltevuus 1 / 2:<span id="kalt">—</span></div>
+        <div class="kulma-item">Katon kaltevuus 1 / 2:<span id="kalt-suhde">—</span></div>
+      </div>
     </div>
-  </div>
 
-</div>
-
-<div class="content">
-  <div class="varoitus" id="varoitus"></div>
-  <div class="mitat-ilmo" id="mitat-puuttuu"></div>
-
-  <!-- Etukuva ylimpänä ja aina auki sivua avattaessa (Tomi 24.11.2026: juuren mitat täytetään ensin) -->
-  <details class="kuva-card etukuva-kortti" id="etukuva-kortti" open>
-    <summary>Piippu edestä · juuren mitat</summary>
-    <div id="etukuva"></div>
-  </details>
-
-  <div class="kuva-card">
-    <div id="sivukuva"></div>
-    <div class="kulmat">
-      <div class="kulma-item">Puoli 1 etukulma (kanttikoneeseen):<span id="kulma1">—</span>°</div>
-      <div class="kulma-item">Puoli 2 etukulma (kanttikoneeseen):<span id="kulma2">—</span>°</div>
-      <div class="kulma-item">Kaltevuus 1 / 2:<span id="kalt">—</span></div>
-      <div class="kulma-item">Katon kaltevuus 1 / 2:<span id="kalt-suhde">—</span></div>
+    <!-- Peltilista ja lähetys tilaukseen samassa kortissa (kuten Piipussa) -->
+    <div class="kpt-kortti" id="peltilista-kortti">
+      <div class="kpt-kortti-otsikko">Peltilista</div>
+      <div class="luettelo-grid">
+        <div class="luettelo-osa">
+          <h3>Juuret</h3>
+          <div id="luettelo-juuret"><p class="empty-msg">—</p></div>
+        </div>
+        <div class="luettelo-osa">
+          <h3>Huppu / Kansi / Hattu</h3>
+          <div id="luettelo-huppu"><p class="empty-msg">—</p></div>
+        </div>
+      </div>
+      <div class="tilaukseen">
+        <button type="button" id="btn-lisaa" class="kpt-nappi ensisijainen leve" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
+        <div id="lisays-status" class="tilaus-status"></div>
+        <a id="tuotanto-linkki" class="kpt-nappi leve tuotanto-nappi" target="_blank" style="display:none">🏭 Avaa Tuotannossa →</a>
+        <div id="tuotanto-info" class="tuotanto-info"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Kansi ja reiät oletuksena kiinni (Tomi 24.11.2026); aukeaa muokattaessa, jos kannessa on reikiä -->
-  <details class="kuva-card etukuva-kortti" id="kansi-kortti">
-    <summary>Kansi ja reiät</summary>
-    <div id="kansi-sisalto"></div>
-  </details>
+    <!-- Kansi ja reiät oletuksena kiinni (Tomi 24.11.2026); aukeaa muokattaessa, jos kannessa on reikiä -->
+    <details class="kpt-kortti" id="kansi-kortti">
+      <summary>Kansi ja reiät</summary>
+      <div class="k-sisalto" id="kansi-sisalto"></div>
+    </details>
 
-  <div class="luettelo-grid">
-    <div class="luettelo-card">
-      <h3>Juuret</h3>
-      <div id="luettelo-juuret"><p class="empty-msg">—</p></div>
+    <div class="kpt-kortti" id="levitys-card" style="display:none;">
+      <div class="kpt-kortti-otsikko">Hupun levityskuvat</div>
+      <div id="levityskuvat"></div>
     </div>
-    <div class="luettelo-card">
-      <h3>Huppu / Kansi / Hattu</h3>
-      <div id="luettelo-huppu"><p class="empty-msg">—</p></div>
-    </div>
+
+    <!-- Kaistat ja rullan menekki (yhteinen menekki.js, vaihe 8.3 24.11.2026): hupun palat kaistoiksi, oletuksena kiinni -->
+    <details class="kpt-kortti" id="kaista-kortti" style="display:none;">
+      <summary>Kaistat ja menekki</summary>
+      <div class="k-sisalto" id="kaista-sisalto"></div>
+    </details>
   </div>
-  <div class="luettelo-card" id="levitys-card" style="display:none;">
-    <h3>Hupun levityskuvat</h3>
-    <div id="levityskuvat"></div>
   </div>
-  <!-- Kaistat ja rullan menekki (yhteinen menekki.js, vaihe 8.3 24.11.2026): hupun palat kaistoiksi, oletuksena kiinni -->
-  <details class="kuva-card etukuva-kortti" id="kaista-kortti" style="margin-top:12px;display:none;">
-    <summary>Kaistat ja menekki</summary>
-    <div id="kaista-sisalto" style="margin-top:8px"></div>
-  </details>
-  <div style="padding:12px;border-top:1px solid var(--border);">
-    <button id="btn-lisaa" onclick="lisaaTilaukseen()" style="width:100%;padding:10px;background:var(--accent);color:#000;font-weight:600;font-size:14px;border:none;border-radius:4px;cursor:pointer;">
-      Lisää tilaukseen →
-    </button>
-    <div id="lisays-status" style="font-size:11px;color:var(--text2);text-align:center;margin-top:6px;min-height:16px;"></div>
-    <a id="tuotanto-linkki" class="tuotanto-nappi" target="_blank" style="display:none">🏭 Avaa Tuotannossa →</a>
-    <div id="tuotanto-info" style="font-size:11px;color:#f59e0b;text-align:center;margin-top:4px;min-height:14px;"></div>
-  </div>
-</div>
-</div>
+</main>
 
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=4"></script>
@@ -515,6 +463,28 @@ document.addEventListener('input', e => {
   if (e.target && e.target.classList && e.target.classList.contains('mitta') && e.target.classList.contains('oletus')) { e.target.classList.remove('oletus'); naytaMuuttamattomat(); }
 }, true);
 function chk(id) { return document.getElementById(id).checked; }
+
+// Ulkoasuremontti R2c (26.11.2026): kuvat ruudun väreillä kuten ennen ja muunnetaan vaalealle paperille (kuten Piipussa)
+function paperille(html) { return window.KPT_PELLIT && KPT_PELLIT.paperiVarit ? KPT_PELLIT.paperiVarit(html) : html; }
+function paperiSelite(html) {
+  const PV = (window.KPT_PELLIT && KPT_PELLIT.PAPERI_VARIT) || {};
+  return String(html || '').replace(/color:\s*(#[0-9a-fA-F]{3,6})/g, (m, c) => 'color:' + (PV[c.toLowerCase()] || c));
+}
+// Kiinni olevan kortin otsikkoon yhteenveto (kuten Piipussa)
+function paivitaYhteenvedot() {
+  const t = (id, x) => { const e = document.getElementById(id); if (e) e.textContent = x ? '· ' + x : ''; };
+  const val = id => (document.getElementById(id) || {}).value || '–';
+  const osat = [['chk-juuret', 'juuret'], ['chk-huppu', 'huppu'], ['chk-kansi', 'kansi'], ['chk-hattu', 'hattu']].filter(([id]) => chk(id)).map(([, n]) => n);
+  const ma = window.MATERIAALI ? MATERIAALI.arvo() : {};
+  t('ky-piippu', [[ma.color, ma.material, ma.thickness].filter(Boolean).join(' '), osat.join(', ') || 'ei osia', (val('v-piippukpl') || 1) + ' kpl'].filter(Boolean).join(' · '));
+  const lev2 = (document.getElementById('lev2') || {}).value;
+  t('ky-mitat', val('lev1') + (lev2 ? '/' + lev2 : '') + ' · koko ' + val('koko') + ' · harja ' + val('korkH') + ' · etu ' + val('kork1'));
+  t('ky-kiila', kiilaPaalla ? 'päällä' : 'pois');
+  t('ky-juuri', 'eteen ' + val('k24_1') + '/' + val('k24_2') + ' · uraan ' + val('poimu') + ' · kulma ' + val('v-harjakulma') + '°');
+  t('ky-vakiot', 'tuplat ' + val('v-tupla') + ' · nousu ' + val('v-nousu'));
+  t('ky-huppu', 'saumat ' + val('v-sauma') + ' · yläreuna ' + val('v-ylareunaV') + ' · sivut ' + (sivutJako === 2 ? 'poikki harjalta' : 'yhtenä'));
+}
+function avaaKaikki(auki) { document.querySelectorAll('#sidebar details[data-kortti]').forEach(d => { d.open = auki; }); }
 const r = n => Math.round(n);
 const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 let viimeisin = null;   // viimeisin laskenta (vals, tulos, piippukpl) tilaukseen lähettämistä varten
@@ -601,7 +571,7 @@ function paivitaKiilaVihjeet(vals) {
     el.classList.toggle('laskettu', lask);
   });
   const kuva = document.getElementById('kiila-kuva');
-  kuva.innerHTML = kiilaPaalla ? (m ? L.harjaKuvaYlhaalta(vals) : '') : '';
+  kuva.innerHTML = kiilaPaalla && m ? '<div class="kpt-piirros paperi">' + paperille(L.harjaKuvaYlhaalta(vals)) + '</div>' : '';
 }
 
 // Syötöt tilausrivin profile_data.vals -muotoon (samat nimet kuin laskeHarjapiippu)
@@ -632,7 +602,7 @@ function keraaVals() {
 function piirraEtukuva(v) {
   const el = document.getElementById('etukuva');
   if (!el || !window.KPT_PIIPPU_LEVITYS) return;
-  try { el.innerHTML = KPT_PIIPPU_LEVITYS.etukuva(v); } catch (e) { console.error('Etukuva:', e); el.innerHTML = ''; }
+  try { el.innerHTML = paperille(KPT_PIIPPU_LEVITYS.etukuva(v)); } catch (e) { console.error('Etukuva:', e); el.innerHTML = ''; }
 }
 (function () {
   const k = document.getElementById('etukuva-kortti');
@@ -648,7 +618,8 @@ function piirraKaistat(palat, piippukpl) {
   if (!kaistaKortti) return;
   try { kaistaKortti.piirra(palat ? KPT_PIIPPU_LEVITYS.kaistaKappaleet(palat, piippukpl) : null); } catch (e) { console.error('Kaistat:', e); kaistaKortti.piirra(null); }
 }
-const kansiKortti = window.KPT_KANSI ? KPT_KANSI.sivuKortti(document.getElementById('kansi-sisalto'), { muutos: () => laske(), kortti: document.getElementById('kansi-kortti') }) : null;
+const kansiKortti = window.KPT_KANSI ? KPT_KANSI.sivuKortti(document.getElementById('kansi-sisalto'), { muutos: () => laske(), kortti: document.getElementById('kansi-kortti'),
+  kuvaMuunnos: svg => '<div class="kpt-piirros paperi">' + paperille(svg) + '</div>' }) : null;
 const kansiArvo = () => kansiKortti ? kansiKortti.arvo() : {};
 
 function laske() {
@@ -680,12 +651,13 @@ function laske() {
   document.getElementById('kalt').textContent = ` ${g.puoli1.kaltevuusDeg.toFixed(1).replace('.', ',')}° / ${g.puoli2.kaltevuusDeg.toFixed(1).replace('.', ',')}°`;
 
   document.getElementById('kalt-suhde').textContent = ' ' + KPT_PIIPPU_LEVITYS.harjaSuhde(vals).join(' / ');
-  document.getElementById('sivukuva').innerHTML = KPT_PIIPPU_LEVITYS.harjaSivukuva(vals);
+  document.getElementById('sivukuva').innerHTML = paperille(KPT_PIIPPU_LEVITYS.harjaSivukuva(vals));
   piirraEtukuva(Object.assign({ tyyppi: 'harjapiippu' }, vals));
   if (kansiKortti) kansiKortti.piirra(tulos.kansi, vals);
   renderTaulu('luettelo-juuret', tulos.juuret, piippukpl);
   renderTaulu('luettelo-huppu', tulos.muut, piippukpl);
   piirraLevityskuvat(vals, osat.huppu && !(tulos.virheet || []).length, piippukpl);
+  paivitaYhteenvedot();
 }
 
 // Hupun levityskuvat (yhteinen piippu-levitys.js). Virhe kuvissa ei saa kaataa laskentaa.
@@ -697,7 +669,7 @@ function piirraLevityskuvat(vals, nayta, piippukpl) {
     const auki = Array.from(el.querySelectorAll('details')).map(d => d.open);   // näppäily ei sulje avattuja kortteja
     const L = KPT_PIIPPU_LEVITYS, t = L.harjaHupunPalat(vals);
     if (!t) { kortti.style.display = 'none'; piirraKaistat(null); return; }
-    el.innerHTML = L.SELITE + t.palat.map(pa => L.palaHtml(pa, { kpl: pa.kpl * piippukpl })).join('');
+    el.innerHTML = paperiSelite(L.SELITE) + t.palat.map(pa => paperille(L.palaHtml(pa, { kpl: pa.kpl * piippukpl }))).join('');
     el.querySelectorAll('details').forEach((d, i) => { if (auki[i] !== undefined) d.open = auki[i]; });
     kortti.style.display = '';
     piirraKaistat(t.palat, piippukpl);
@@ -732,11 +704,11 @@ function lisaaLisaosa() { lisaosat.push({ id: Date.now(), nimi: '', kpl: 1 }); r
 function poistaLisaosa(id) { lisaosat = lisaosat.filter(x => x.id !== id); renderLisaosat(); laske(); }
 function renderLisaosat() {
   document.getElementById('lisaosat-container').innerHTML = lisaosat.map(x => `
-    <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
-      <input type="text" placeholder="Osan nimi" value="${esc(x.nimi)}" oninput="lisaosat.find(y=>y.id===${x.id}).nimi=this.value;laske()" style="flex:1;min-width:0;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;">
-      <input type="number" value="${x.kpl}" min="1" oninput="lisaosat.find(y=>y.id===${x.id}).kpl=+this.value;laske()" style="width:50px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:3px;">
-      <span style="font-size:11px;color:var(--text2);">kpl</span>
-      <button onclick="poistaLisaosa(${x.id})" style="background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:0 2px;">×</button>
+    <div class="lisaosa-rivi">
+      <input type="text" placeholder="Osan nimi" value="${esc(x.nimi)}" oninput="lisaosat.find(y=>y.id===${x.id}).nimi=this.value;laske()">
+      <input type="number" value="${x.kpl}" min="1" oninput="lisaosat.find(y=>y.id===${x.id}).kpl=+this.value;laske()">
+      <span class="yks">kpl</span>
+      <button type="button" class="lisaosa-poista" onclick="poistaLisaosa(${x.id})" title="Poista osa">×</button>
     </div>`).join('');
 }
 
@@ -747,9 +719,11 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 // Sama valitsin kuin Huuvassa ja Kartiossa: kirjoitettavat hakukentät, väri rajaa materiaalit, ainoa vaihtoehto valitaan
 // itse, oletuksena Pinnoitettu teräs (ennen muistettiin edellinen valinta, joten tarjolla oli esim. aina Rakenneteräs).
 // Väritön materiaali kelpaa ilman väriä. Muokkauksessa tilauksen piipun oma materiaali (palautetaan alla).
-var MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-valinta'), { tiivis: true, muutos: function () { tallennaMateriaali(); } });
+// R2c (26.11.2026): tavallisena valitsimena Piippu ja tilaus -kortin ylimpänä, kuten Piipussa.
+var MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-valinta'), { muutos: function () { tallennaMateriaali(); } });
 function tallennaMateriaali() {
   if (kaistaKortti) kaistaKortti.paivita();   // paksuus vaikuttaa kaistojen asetteluun
+  if (typeof paivitaYhteenvedot === 'function') paivitaYhteenvedot();
 }
 function materiaaliPaksuus() { var a = window.MATERIAALI ? MATERIAALI.arvo() : null; return a && a.thickness ? String(a.thickness) : ''; }
 MATERIAALI.valmis.then(function () {
@@ -772,8 +746,9 @@ try {
 // Välilehdet kuljettavat tilauksen ryhmän mukana: pieni skripti heti välilehtien perässä (26.11.2026).
 
 function ilmoitus(html, vari) {
-  const sb = document.querySelector('#sidebar .section');
-  if (sb) sb.insertAdjacentHTML('beforebegin', '<div class="muokkaus-ilmo" style="margin:0 0 2px;padding:8px 10px;border:1px solid ' + vari + ';border-radius:4px;font-size:12px;color:var(--text);line-height:1.45;background:rgba(34,197,94,.06);">' + html + '</div>');
+  // R2c: yhteiset ilmoitusluokat (punainen = virhe, muuten sininen info kuten Piipussa)
+  const sb = document.getElementById('ilmo-paikka');
+  if (sb) sb.insertAdjacentHTML('beforeend', '<div class="muokkaus-ilmo kpt-ilmoitus ' + (/red|virhe/.test(vari) ? 'virhe' : 'info') + '">' + html + '</div>');
 }
 
 const HARJA_KENTAT = ['lev1', 'koko', 'suora1', 'kork1', 'korkH', 'poimu', 'ylit1V', 'ylit1O', 'ylit2V', 'ylit2O', 'k24_1', 'j25_1', 'k24_2', 'j25_2'];
@@ -828,7 +803,7 @@ function palautaMuokattava() {
 function lisaaTilaukseen() {
   const korvaa = lisaysNapinTeksti() !== 'Lisää tilaukseen';
   const status = document.getElementById('lisays-status');
-  const virhe = t => { status.style.color = '#f87171'; status.textContent = t; };
+  const virhe = t => lahetysIlmoitus(t, 'virhe');
   laske();
   if (!viimeisin) return virhe('Laske piippu ensin');
   const { vals, tulos, piippukpl } = viimeisin;
@@ -883,7 +858,7 @@ function lahetysIlmoitus(teksti, tyyppi) {
   const st = document.getElementById('lisays-status');
   if (!st) return;
   clearTimeout(lisaysStatusAjastin);
-  st.style.color = ({ odota: 'var(--text2)', ok: '#4ade80', huom: '#f5b942', virhe: '#f87171' })[tyyppi] || '';
+  st.className = 'tilaus-status' + (['ok', 'huom', 'virhe'].includes(tyyppi) ? ' ' + tyyppi : '');   // värit tyyleistä (R2c)
   st.textContent = teksti;
   if (tyyppi === 'ok') lisaysStatusAjastin = setTimeout(() => { st.textContent = ''; }, 10000);
 }
@@ -898,7 +873,7 @@ if (!muokattava) merkitseOletukset();   // uusi piippu (myös toisen tyypin ryhm
 let tuotantoKohde = (muokattava && muokattava.orderId && muokattava.groupName) ? { orderId: muokattava.orderId, groupName: muokattava.groupName } : null;
 let muutettu = false, lahetettyGroupId = null;
 // Välilehden vaihto hukkaa tallentamattomat muutokset (Tomi 26.11.2026) → kysytään ensin
-document.querySelectorAll('.tyyppi-tab').forEach(a => a.addEventListener('click', e => {
+document.querySelectorAll('.kpt-tabs .kpt-tab').forEach(a => a.addEventListener('click', e => {
   if (muutettu && !confirm('Sinulla on tallentamattomia muutoksia, jotka häviävät, jos vaihdat sivua. Vaihdetaanko silti?')) e.preventDefault();
 }));
 function paivitaTuotantoLinkki() {
@@ -914,10 +889,10 @@ function paivitaTuotantoLinkki() {
     a.classList.remove('ei-kaytossa'); info.textContent = '';
   }
 }
-const merkitseMuutos = e => { if (e.target && e.target.closest && e.target.closest('#sidebar, .header-right')) { muutettu = true; paivitaTuotantoLinkki(); } };
+const merkitseMuutos = e => { if (e.target && e.target.closest && e.target.closest('#sidebar, #kansi-sisalto')) { muutettu = true; paivitaTuotantoLinkki(); } };
 document.addEventListener('input', merkitseMuutos, true);
 document.addEventListener('change', merkitseMuutos, true);
-document.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#sidebar button')) merkitseMuutos(e); }, true);
+document.addEventListener('click', e => { if (e.target && e.target.closest && e.target.closest('#sidebar button, #kansi-sisalto button')) merkitseMuutos(e); }, true);
 window.addEventListener('storage', e => {
   if (e.key !== 'kpt_piippu_tallennettu' || !e.newValue) return;
   try {
@@ -950,33 +925,8 @@ paivitaLisaysNappi();
 
 laske();
 
-// Sivupalkin leveyden säätö (sama kuin Piippu-sivulla, oma tallennusavain)
-(function () {
-  const STORAGE_KEY = 'kpt_harjapiippu_sidebar_width', MIN_WIDTH = 260, MAX_WIDTH = 700, WIDE_THRESHOLD = 420, XWIDE_THRESHOLD = 580;
-  const sidebar = document.getElementById('sidebar'), resizer = document.getElementById('sidebar-resizer'), main = document.querySelector('.main');
-  const luokat = w => { sidebar.classList.toggle('wide', w >= WIDE_THRESHOLD); sidebar.classList.toggle('xwide', w >= XWIDE_THRESHOLD); };
-  let saved = null;
-  try { saved = parseInt(localStorage.getItem(STORAGE_KEY)); } catch (e) { /* ei tallennusta */ }
-  if (saved && saved >= MIN_WIDTH) { main.style.gridTemplateColumns = saved + 'px 1fr'; luokat(saved); }
-  let startX, startW;
-  resizer.addEventListener('mousedown', e => {
-    startX = e.clientX; startW = sidebar.offsetWidth;
-    resizer.classList.add('dragging'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
-    const onMove = ev => { const w = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW + (ev.clientX - startX))); main.style.gridTemplateColumns = w + 'px 1fr'; luokat(w); };
-    const onUp = () => {
-      try { localStorage.setItem(STORAGE_KEY, sidebar.offsetWidth); } catch (e) { /* ei tallennusta */ }
-      resizer.classList.remove('dragging'); document.body.style.cursor = ''; document.body.style.userSelect = '';
-      document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp);
-    };
-    document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
-  });
-})();
-
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-document.addEventListener('click', function () { document.getElementById('navDropdown').classList.remove('open'); });
+// Ulkoasun vaihto (teema.js): kaistakuva vaihtaa värinsä ulkoasun mukana, paperikuvat pysyvät samoina
+document.addEventListener('kpt-teema', () => laske());
 </script>
 </body>
 </html>
