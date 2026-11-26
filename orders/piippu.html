@@ -167,8 +167,7 @@
     .header-right select { flex: 1 1 0; min-width: 0; font-size: 16px !important; padding: 8px !important; }
     /* Materiaali omalle rivilleen, väri ja paksuus sen alle (pitkät värinimet mahtuvat, 23.11.2026) */
     .header-right { flex-wrap: wrap; }
-    .header-right #sel-materiaali { flex: 1 1 100%; }
-    .header-right #sel-vari { flex: 2 1 0; }
+    .header-right #materiaali-valinta { width: 100%; }
     .kulmat { gap: 16px; flex-wrap: wrap; }
   }
 
@@ -208,15 +207,7 @@
     <a class="tyyppi-tab" href="harjapiippu.html">Harjapiippu</a>
   </div>
   <div class="header-right">
-    <select id="sel-materiaali" onchange="paivitaVarit()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
-      <option value="">Materiaali</option>
-    </select>
-    <select id="sel-vari" onchange="paivitaPaksuudet()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
-      <option value="">Väri</option>
-    </select>
-    <select id="sel-paksuus" onchange="tallennaMateriaali()" style="background:var(--bg3);color:var(--text1);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:13px;">
-      <option value="">Paksuus</option>
-    </select>
+    <div id="materiaali-valinta"></div>
   </div>
 </header>
 
@@ -542,6 +533,7 @@
 <script src="piippu-laskenta.js?v=10"></script>
 <script src="piippu-levitys.js?v=19"></script>
 <script src="kansi.js?v=4"></script>
+<script src="materiaali.js?v=5"></script>
 <script src="lahetys.js?v=3"></script>
 <script>
 let saumatyyppi = 1;
@@ -644,84 +636,19 @@ function r(n) { return Math.round(n); }
 // Supabase — tuotteiden haku materiaali/väri-dropdowneihin
 const SUPA_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
-let kaikki_tuotteet = [];
 
-async function haeMateriaalit() {
-  try {
-    const res = await fetch(`${SUPA_URL}/rest/v1/products?is_active=eq.true&select=material,color,thickness_mm&order=material,color`, {
-      headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` }
-    });
-    kaikki_tuotteet = await res.json();
-    const materiaalit = [...new Set(kaikki_tuotteet.map(p => p.material))].sort();
-    const mSel = document.getElementById('sel-materiaali');
-    materiaalit.forEach(m => {
-      const o = document.createElement('option');
-      o.value = m; o.textContent = m;
-      mSel.appendChild(o);
-    });
-    // Palauta valinta: muokattavan piipun oma materiaali, muuten viimeksi käytetty
-    const muistettu = (muokattava && muokattava.material)
-      ? { mat: muokattava.material, vari: muokattava.color, pak: muokattava.thickness }
-      : JSON.parse(localStorage.getItem('kpt_piippu_mat') || '{}');
-    if (muistettu.mat && materiaalit.includes(muistettu.mat)) {
-      mSel.value = muistettu.mat;
-      paivitaVarit(muistettu.vari, muistettu.pak);
-    }
-  } catch(e) { console.error('Tuotteiden haku epäonnistui', e); }
-}
-
+// ── Materiaali (materiaali.js v5, 26.11.2026, Tomi): Tuoteryhmä → Väri → Materiaali → Paksuus ─────────────
+// Sama valitsin kuin Huuvassa ja Kartiossa: kirjoitettavat hakukentät, väri rajaa materiaalit, ainoa vaihtoehto valitaan
+// itse, oletuksena Pinnoitettu teräs (ennen muistettiin edellinen valinta, joten tarjolla oli esim. aina Rakenneteräs).
+// Väritön materiaali kelpaa ilman väriä. Muokkauksessa tilauksen piipun oma materiaali (palautetaan alla).
+var MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-valinta'), { tiivis: true, muutos: function () { tallennaMateriaali(); } });
 function tallennaMateriaali() {
-  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
-    mat: document.getElementById('sel-materiaali').value,
-    vari: document.getElementById('sel-vari').value,
-    pak: document.getElementById('sel-paksuus').value
-  }));
   if (kaistaKortti) kaistaKortti.paivita();   // paksuus vaikuttaa kaistojen asetteluun
 }
-
-function paivitaVarit(muistettuVari, muistettuPak) {
-  const mat = document.getElementById('sel-materiaali').value;
-  const varit = [...new Set(kaikki_tuotteet.filter(p => p.material === mat).map(p => p.color))].sort();
-  const vSel = document.getElementById('sel-vari');
-  vSel.innerHTML = '<option value="">Väri</option>';
-  varit.forEach(v => {
-    const o = document.createElement('option');
-    o.value = v; o.textContent = v;
-    vSel.appendChild(o);
-  });
-  document.getElementById('sel-paksuus').innerHTML = '<option value="">Paksuus</option>';
-  if (muistettuVari && varit.includes(muistettuVari)) {
-    vSel.value = muistettuVari;
-  }
-  // Päivitä paksuudet aina kun väri on valittu
-  paivitaPaksuudet(muistettuPak);
-  // Tallenna
-  localStorage.setItem('kpt_piippu_mat', JSON.stringify({
-    mat, vari: vSel.value, pak: document.getElementById('sel-paksuus').value
-  }));
-}
-
-function paivitaPaksuudet(muistettuPak) {
-  const mat = document.getElementById('sel-materiaali').value;
-  const vari = document.getElementById('sel-vari').value;
-  const paksuudet = [...new Set(kaikki_tuotteet
-    .filter(p => p.material === mat && p.color === vari)
-    .map(p => p.thickness_mm))]
-    .sort((a,b) => a-b);
-  const pSel = document.getElementById('sel-paksuus');
-  pSel.innerHTML = '<option value="">Paksuus</option>';
-  paksuudet.forEach(p => {
-    const o = document.createElement('option');
-    o.value = p; o.textContent = p + ' mm';
-    pSel.appendChild(o);
-  });
-  if (muistettuPak && paksuudet.map(String).includes(String(muistettuPak))) {
-    pSel.value = muistettuPak;
-  }
-  tallennaMateriaali();
-}
-
-haeMateriaalit();
+function materiaaliPaksuus() { var a = window.MATERIAALI ? MATERIAALI.arvo() : null; return a && a.thickness ? String(a.thickness) : ''; }
+MATERIAALI.valmis.then(function () {
+  if (muokattava && muokattava.material) MATERIAALI.aseta({ material: muokattava.material, color: muokattava.color, thickness: muokattava.thickness });
+});
 
 // Lue groupId URL-parametrista (jos avattu tilaus.html:stä)
 const urlParams = new URLSearchParams(window.location.search);
@@ -803,16 +730,15 @@ function palautaMuokattava() {
 
 async function lisaaTilaukseen() {
   const korvaa = lisaysNapinTeksti() !== 'Lisää tilaukseen';
-  const materiaali = document.getElementById('sel-materiaali').value;
-  const vari = document.getElementById('sel-vari').value;
-  const paksuus = document.getElementById('sel-paksuus').value;
+  const ma = MATERIAALI.arvo(), puuttuuMat = MATERIAALI.puuttuu();
+  const materiaali = ma.material || '', vari = ma.color || '', paksuus = ma.thickness ? String(ma.thickness) : '';
   const status = document.getElementById('lisays-status');
 
   const piippukpl = Math.max(1, parseFloat(document.getElementById('v-piippukpl').value) || 1);
   const leveys = parseFloat(document.getElementById('leveys').value) || 0;
   const suora  = parseFloat(document.getElementById('suora').value) || 0;
   const huomio = document.getElementById('v-huomio').value.trim();
-  const ryhmaNimi = `Lapepiippu ${leveys}×${suora} ${vari}`;
+  const ryhmaNimi = `Lapepiippu ${leveys}×${suora} ${vari || materiaali}`;
 
   // Kerää peltirivit juuret + huppu/kansi/hattu listoista
   const pellit = [];
@@ -836,9 +762,9 @@ async function lisaaTilaukseen() {
     return;
   }
 
-  if (!materiaali || !vari || !paksuus) {
+  if (puuttuuMat) {   // väri vain, jos materiaalilla on värejä
     status.style.color = '#f87171';
-    status.textContent = `Valitse ${!materiaali?'materiaali':!vari?'väri':'paksuus'} ensin`;
+    status.textContent = `Valitse ${puuttuuMat} ensin`;
     return;
   }
 
@@ -887,7 +813,7 @@ async function lisaaTilaukseen() {
 
   // Päivitä muokkaustiedot, jotta sivun päivitys (F5) palauttaa juuri lähetetyn piipun eikä vanhaa
   try {
-    localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, orderId: tuotantoKohde ? tuotantoKohde.orderId : null, groupName: tuotantoKohde ? tuotantoKohde.groupName : null, vals: piippuData, material: materiaali, color: vari, thickness: paksuus,
+    localStorage.setItem(MUOKKAUS_AVAIN, JSON.stringify({ groupId, orderId: tuotantoKohde ? tuotantoKohde.orderId : null, groupName: tuotantoKohde ? tuotantoKohde.groupName : null, vals: piippuData, material: materiaali, color: vari || null, thickness: paksuus,
       items: pellit.map(p => ({ nimike: p.osa, kpl: parseFloat(p.kpl) || 0, pituus: !!parseFloat(p.pit) })) }));
   } catch (e) { /* ei tallennusta */ }
 
@@ -911,7 +837,7 @@ async function lisaaTilaukseen() {
       angles: [],
       totalM2,
       material: materiaali,
-      color: vari,
+      color: vari || null,
       thickness: parseFloat(paksuus),
       productGroup: 'Piippu',
       source: 'piippu',
@@ -974,7 +900,7 @@ function piirraEtukuva(v) {
 
 // Kansi ja reiät (yhteinen kansi.js, laskenta piippu-laskenta.js, vaihe 7b 23.11.2026)
 // Kaistat ja menekki (menekki.js): var, koska tallennaMateriaali voi kutsua tätä ennen kuin rivi on ajettu
-var kaistaKortti = window.KPT_MENEKKI ? KPT_MENEKKI.sivuKortti(document.getElementById('kaista-sisalto'), { kortti: document.getElementById('kaista-kortti'), paksuus: () => document.getElementById('sel-paksuus').value }) : null;
+var kaistaKortti = window.KPT_MENEKKI ? KPT_MENEKKI.sivuKortti(document.getElementById('kaista-sisalto'), { kortti: document.getElementById('kaista-kortti'), paksuus: () => materiaaliPaksuus() }) : null;
 function piirraKaistat(palat, piippukpl) {
   if (!kaistaKortti) return;
   try { kaistaKortti.piirra(palat ? KPT_PIIPPU_LEVITYS.kaistaKappaleet(palat, piippukpl) : null); } catch (e) { console.error('Kaistat:', e); kaistaKortti.piirra(null); }

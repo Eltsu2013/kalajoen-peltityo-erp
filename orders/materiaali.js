@@ -14,6 +14,7 @@
 //   listat(tuotteet, { ryhma, vari, materiaali }) → { varit, materiaalit, paksuudet, ryhmallaVareja }, ryhmat(), oletusRyhma(),
 //   ryhmaTuotteelle(). Käyttäjät: peltipiirturi.html, vakiomallit.html; valitsin() samassa järjestyksessä (Huuva, Kartio),
 //   oletus Pinnoitettu teräs, ei enää edellisen valinnan muistia (avain-asetus jätetään huomiotta).
+// v5: valitsin(el, { tiivis: true }) = yksi rivi ilman näkyviä otsikoita (piippu.html, harjapiippu.html yläpalkissa).
 // Käyttäjät: huuva.html, kartio.html, peltipiirturi.html, vakiomallit.html. MUISTA: nosta ?v=-numeroa sivuilla, jotka lataavat tämän.
 (function () {
   'use strict';
@@ -108,13 +109,30 @@
 .kma-lista button:hover, .kma-lista button.valittu { background: var(--kpt-kentta, #111821); }
 .kma-lista .kma-tyhja { padding: 10px 12px; font-size: 13px; color: var(--kpt-himmea, #94a3b8); }
 .kma-haku input:disabled { opacity: 0.6; }
+/* v5: tiivis rivi vanhojen sivujen yläpalkkiin (piiput): ei näkyviä otsikoita, kentän nimi paikkatekstinä */
+.kma-tiivis { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.kma-tiivis .kpt-kentta { margin: 0; }
+.kma-tiivis label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.kma-tiivis { flex-wrap: nowrap; }
+.kma-tiivis [data-m="group"] { width: 136px; } .kma-tiivis [data-m="color"] { width: 92px; }
+.kma-tiivis [data-m="material"] { width: 112px; } .kma-tiivis .kma-paksuus { width: 84px; }
+.kma-tiivis input, .kma-tiivis select { width: 100%; box-sizing: border-box; background: var(--kpt-kentta, var(--bg3, #111821)); color: var(--kpt-teksti, var(--text1, var(--text, #e8eef5)));
+  border: 1px solid var(--kpt-reuna2, var(--border, #3a4656)); border-radius: 4px; padding: 4px 8px; font: inherit; font-size: 13px; }
+.kma-tiivis .kma-lista { z-index: 1000; min-width: 180px; }
+@media (max-width: 700px) {
+  .kma-tiivis { width: 100%; flex-wrap: wrap; }
+  .kma-tiivis [data-m="group"] { width: 100%; } .kma-tiivis [data-m="color"], .kma-tiivis [data-m="material"] { flex: 1 1 0; width: auto; min-width: 0; }
+  .kma-tiivis .kma-paksuus { flex: 0 0 96px; }
+  .kma-tiivis input, .kma-tiivis select { font-size: 16px; padding: 8px; }
+}
 `;
     document.head.appendChild(st);
   }
 
   // Hakukenttä + suodattuva lista (kuten Peltilistoissa). Arvo hyväksytään vain listasta (klikkaus, Enter tai tarkka nimi).
   function hakuKentta(el, nimi, o) {
-    el.innerHTML = '<label>' + esc(nimi) + '</label><div class="kma-haku"><input type="text" autocomplete="off" spellcheck="false" placeholder="Kirjoita tai valitse"><div class="kma-lista" role="listbox"></div></div>';
+    const paikka = o.paikka || 'Kirjoita tai valitse';
+    el.innerHTML = '<label>' + esc(nimi) + '</label><div class="kma-haku"><input type="text" autocomplete="off" spellcheck="false" aria-label="' + esc(nimi) + '" placeholder="' + esc(paikka) + '"><div class="kma-lista" role="listbox"></div></div>';
     const inp = el.querySelector('input'), lista = el.querySelector('.kma-lista');
     let arvo = '', vaihtoehdot = [];
     function nayta() {
@@ -148,7 +166,7 @@
       vaihtoehdot(v, tyhjaTeksti) {
         vaihtoehdot = v || [];
         inp.disabled = !vaihtoehdot.length;
-        inp.placeholder = vaihtoehdot.length ? 'Kirjoita tai valitse' : (tyhjaTeksti || '');
+        inp.placeholder = vaihtoehdot.length ? paikka : (tyhjaTeksti || '');
       },
       arvo: () => arvo,
     };
@@ -161,24 +179,26 @@
     tyylit();
     let tuotteet = [];
     let tila = { group: '', color: null, material: null, thickness: null };
-    el.innerHTML = '<div class="kpt-kentat">'
+    const tiivis = !!o.tiivis;   // v5: yksi rivi ilman näkyviä otsikoita (piippusivujen yläpalkki)
+    el.innerHTML = '<div class="' + (tiivis ? 'kma-tiivis' : 'kpt-kentat') + '">'
       + '<div class="kpt-kentta" data-m="group"></div>'
       + '<div class="kpt-kentta" data-m="color"></div>'
       + '<div class="kpt-kentta" data-m="material"></div>'
-      + '<div class="kpt-kentta"><label>Paksuus</label><select data-m="thickness"><option value="">Paksuus</option></select></div>'
+      + '<div class="kpt-kentta kma-paksuus"><label>Paksuus</label><select data-m="thickness" aria-label="Paksuus"><option value="">Paksuus</option></select></div>'
       + '</div>';
+    const paikka = nimi => tiivis ? nimi : null;
     const pk = el.querySelector('select[data-m="thickness"]');
-    const kRyhma = hakuKentta(el.querySelector('[data-m="group"]'), 'Tuoteryhmä', { valittu: g => {
+    const kRyhma = hakuKentta(el.querySelector('[data-m="group"]'), 'Tuoteryhmä', { paikka: paikka('Tuoteryhmä'), valittu: g => {
       muutos('group', samaRyhma(g, tila.group) ? Object.assign({}, tila, { group: g }) : { group: g, color: null, material: null, thickness: null });
     } });
-    const kVari = hakuKentta(el.querySelector('[data-m="color"]'), 'Väri', { valittu: v => {
+    const kVari = hakuKentta(el.querySelector('[data-m="color"]'), 'Väri', { paikka: paikka('Väri'), valittu: v => {
       const a = Object.assign({}, tila, { color: v || null });
       const mats = listat(tuotteet, { ryhma: a.group, vari: a.color }).materiaalit;
       if (a.material && mats.indexOf(a.material) < 0) a.material = null;   // materiaali ei käy uudelle värille
       if (!a.material && mats.length === 1) a.material = mats[0];         // vain yksi materiaali tässä värissä
       muutos('color', a);
     } });
-    const kMat = hakuKentta(el.querySelector('[data-m="material"]'), 'Materiaali', { valittu: m => {
+    const kMat = hakuKentta(el.querySelector('[data-m="material"]'), 'Materiaali', { paikka: paikka('Materiaali'), valittu: m => {
       const a = Object.assign({}, tila, { material: m || null });
       if (a.color && listat(tuotteet, { ryhma: a.group, materiaali: a.material }).varit.indexOf(a.color) < 0) a.color = null;
       muutos('material', a);
