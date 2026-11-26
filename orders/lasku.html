@@ -5,46 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lasku / Tarjous — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Ulkoasuremontti R4c (26.11.2026): uusi ulkoasu (tyyli.css + teema.js), puhelimella yksi sarake ja laskurivit
+     kortteina (Tomi 26.11.), tuloste mustavalkoiseksi ja luettavaksi (väliaikainen, oikea laskupohja laskutusprojektissa). -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-:root {
-  --bg: #0f1117;
-  --bg2: #161920;
-  --bg3: #1e2130;
-  --bg4: #252840;
-  --border: #2a2d3e;
-  --border2: #363a52;
-  --text: #e8eaf0;
-  --text2: #9096b0;
-  --text3: #5a6080;
-  --accent: #f59e0b;
-  --accent2: #fbbf24;
-  --info: #38bdf8;
-  --success: #4ade80;
-  --danger: #f87171;
-  --warning: #fb923c;
-  --font: 'IBM Plex Sans', sans-serif;
-  --mono: 'IBM Plex Mono', monospace;
-  --radius: 4px;
+:root, html[data-teema] {
+  /* Ulkoasuremontti R4c (26.11.2026): vanhat muuttujanimet kytketty yhteisiin (tyyli.css), joten rakenne pysyi. */
+  --bg: var(--kpt-tausta);
+  --bg2: var(--kpt-paneeli);
+  --bg3: var(--kpt-kentta);
+  --bg4: var(--kpt-paneeli2);
+  --border: var(--kpt-reuna);
+  --border2: var(--kpt-reuna2);
+  --text: var(--kpt-teksti);
+  --text2: var(--kpt-himmea);
+  --text3: var(--kpt-heikko);
+  --accent: var(--kpt-korostus);
+  --accent2: var(--kpt-korostus);
+  --info: var(--kpt-info);
+  --success: var(--kpt-ok);
+  --danger: var(--kpt-virhe);
+  --warning: var(--kpt-huom);
+  --font: var(--kpt-fontti);
+  --mono: var(--kpt-mono);
+  --radius: 6px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+body { font-size: 14px; line-height: 1.5; min-height: 100vh; }
 
-/* NAV */
-nav { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 20px; display: flex; align-items: center; gap: 16px; height: 74px; position: sticky; top: 0; z-index: 100; }
-.nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.nav-logo svg { height: 50px; width: auto; filter: brightness(0) invert(1); opacity: 0.9; }
-.nav-title { font-family: var(--mono); font-size: 13px; color: var(--text2); }
-.nav-sep { width: 1px; height: 20px; background: var(--border2); }
-.nav-menu-btn { background: none; border: 1px solid var(--border2); color: var(--text2); padding: 4px 10px; border-radius: var(--radius); cursor: pointer; font-size: 13px; font-family: var(--font); }
-.nav-menu-btn:hover { border-color: var(--border); color: var(--text); }
-.nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.nav-status { font-family: var(--mono); font-size: 11px; padding: 3px 10px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); }
+/* Laskun tila yläpalkissa */
+.nav-status { font-family: var(--mono); font-size: 11.5px; padding: 4px 10px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); }
 .nav-status.luonnos { color: var(--text2); border-color: var(--border2); }
-.nav-status.lahetetty { color: var(--info); border-color: var(--info); background: rgba(56,189,248,0.08); }
-.nav-status.maksettu { color: var(--success); border-color: var(--success); background: rgba(74,222,128,0.08); }
-.nav-invoice-num { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 500; }
-
+.nav-status.lahetetty { color: var(--info); border-color: var(--info); background: color-mix(in srgb, var(--info) 10%, transparent); }
+.nav-status.maksettu { color: var(--success); border-color: var(--success); background: color-mix(in srgb, var(--success) 10%, transparent); }
+.nav-invoice-num { font-family: var(--mono); color: var(--accent); font-weight: 500; }
 /* LAYOUT */
 .layout { display: grid; grid-template-columns: 1fr 320px; gap: 0; min-height: calc(100vh - 48px); }
 .main { padding: 24px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--border); }
@@ -78,14 +74,14 @@ textarea { resize: vertical; min-height: 60px; }
 .btn { padding: 7px 14px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; cursor: pointer; border: 1px solid var(--border2); background: var(--bg3); color: var(--text); transition: all 0.15s; }
 .btn:hover { border-color: var(--border); background: var(--bg4); }
 .btn-sm { padding: 4px 10px; font-size: 12px; }
-.btn-accent { background: var(--accent); color: #0f1117; border-color: var(--accent); font-weight: 500; }
+.btn-accent { background: var(--accent); color: var(--kpt-teksti-korostuksella); border-color: var(--accent); font-weight: 500; }
 .btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
-.btn-info { background: rgba(56,189,248,0.12); color: var(--info); border-color: rgba(56,189,248,0.3); }
-.btn-info:hover { background: rgba(56,189,248,0.2); }
-.btn-danger { background: rgba(248,113,113,0.1); color: var(--danger); border-color: rgba(248,113,113,0.3); }
-.btn-danger:hover { background: rgba(248,113,113,0.2); }
-.btn-success { background: rgba(74,222,128,0.1); color: var(--success); border-color: rgba(74,222,128,0.3); }
-.btn-success:hover { background: rgba(74,222,128,0.2); }
+.btn-info { background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--info); border-color: color-mix(in srgb, var(--info) 35%, transparent); }
+.btn-info:hover { background: color-mix(in srgb, var(--info) 20%, transparent); }
+.btn-danger { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.btn-danger:hover { background: color-mix(in srgb, var(--danger) 20%, transparent); }
+.btn-success { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border-color: color-mix(in srgb, var(--success) 35%, transparent); }
+.btn-success:hover { background: color-mix(in srgb, var(--success) 20%, transparent); }
 
 /* ASIAKAS SEARCH */
 .search-wrap { position: relative; }
@@ -103,7 +99,7 @@ textarea { resize: vertical; min-height: 60px; }
 /* TYYPPI TOGGLE */
 .type-toggle { display: flex; gap: 0; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
 .type-btn { flex: 1; padding: 7px; font-size: 13px; font-family: var(--font); border: none; background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; }
-.type-btn.active { background: var(--accent); color: #0f1117; font-weight: 500; }
+.type-btn.active { background: var(--accent); color: var(--kpt-teksti-korostuksella); font-weight: 500; }
 .type-btn:not(.active):hover { background: var(--bg4); color: var(--text); }
 
 /* RIVIT TABLE */
@@ -113,8 +109,8 @@ table.rivit th { background: var(--bg3); padding: 8px 8px; text-align: left; fon
 table.rivit th.right { text-align: right; }
 table.rivit td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 table.rivit tr:last-child td { border-bottom: none; }
-table.rivit tr.hidden-row td { opacity: 0.45; background: rgba(255,255,255,0.02); }
-table.rivit tr.summary-row td { background: rgba(245,158,11,0.06); }
+table.rivit tr.hidden-row td { opacity: 0.45; }
+table.rivit tr.summary-row td { background: var(--kpt-korostus-tausta); }
 table.rivit input { padding: 4px 6px; font-size: 12px; background: var(--bg4); border-color: transparent; }
 table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
 .col-kohde { width: 10%; }
@@ -130,7 +126,7 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
 .col-act { width: 4%; }
 .rivi-total { text-align: right; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); }
 .hidden-badge { font-size: 10px; background: var(--bg4); color: var(--text3); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--border); margin-left: 4px; }
-.summary-badge { font-size: 10px; background: rgba(245,158,11,0.15); color: var(--accent); padding: 1px 6px; border-radius: 2px; border: 1px solid rgba(245,158,11,0.3); margin-left: 4px; }
+.summary-badge { font-size: 10px; background: var(--kpt-korostus-tausta); color: var(--accent); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--accent); margin-left: 4px; }
 
 /* DROPDOWN MENU */
 .dropdown-wrap { position: relative; display: inline-block; }
@@ -180,55 +176,111 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
 
 /* NOTIFICATION */
 .notif { position: fixed; bottom: 20px; right: 20px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; z-index: 300; display: none; transition: all 0.2s; }
-.notif.success { border-color: rgba(74,222,128,0.4); color: var(--success); }
-.notif.error { border-color: rgba(248,113,113,0.4); color: var(--danger); }
+.notif.success { border-color: var(--success); color: var(--success); }
+.notif.error { border-color: var(--danger); color: var(--danger); }
 
-/* PRINT */
-@media print {
-  nav, .sidebar, .rivit-add-row, .btn, .dropdown-wrap, .modal-overlay, .notif { display: none !important; }
-  .layout { grid-template-columns: 1fr; }
-  body { background: white; color: black; }
-  .card { border: none; background: white; }
-  .card-header { border-bottom: 1px solid #ccc; }
-  table.rivit th { background: #f5f5f5; color: #333; }
-  table.rivit td { border-bottom: 1px solid #eee; }
-  .main { padding: 0; border: none; }
+/* ── Puhelin (Tomi 26.11.2026: laskun voi tehdä myös puhelimella) ── */
+@media screen and (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .main { border-right: none; padding: 14px; }
+  .sidebar { padding: 14px; border-top: 1px solid var(--border); }
 }
-.nav-menu-wrap { position: relative; }
-.nav-item { display: block; width: 100%; text-align: left; padding: 8px 14px; font-family: var(--mono); font-size: 12px; color: var(--text); background: none; border: none; cursor: pointer; text-decoration: none; transition: background 0.1s; }
-.nav-item:hover { background: rgba(232,160,32,0.1); color: var(--accent); }
-.nav-item.current { color: var(--accent); font-weight: 600; }
-.nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-.nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
-.nav-section-label { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); padding: 8px 14px 4px; }
+@media screen and (max-width: 700px) {
+  .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+  input, select, textarea { font-size: 16px; min-height: 42px; }   /* iPhone ei zoomaa kenttään */
+  .btn { min-height: 42px; }
+  .btn-sm { min-height: 36px; }
+  .type-btn { min-height: 42px; }
+  .kpt-yla .header-right { width: 100%; margin-left: 0; }
+  .kpt-yla .header-right .btn { flex: 1 1 auto; }
+  /* Laskurivit kortteina: nimike koko leveydelle, numerot neljään sarakkeeseen otsikoineen */
+  .rivit-wrap { overflow: visible; }
+  table.rivit { min-width: 0; table-layout: auto; }
+  table.rivit colgroup, table.rivit thead { display: none; }
+  table.rivit, table.rivit tbody { display: block; }
+  table.rivit tbody tr {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 8px; position: relative;
+    padding: 12px 12px 12px; border-bottom: 1px solid var(--border);
+  }
+  table.rivit td { display: block; padding: 0; border: none; min-width: 0; }
+  table.rivit td::before { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+  table.rivit td:nth-child(1) { grid-column: 1 / -1; padding-right: 48px; }
+  table.rivit td:nth-child(2) { grid-column: 1 / -1; }
+  table.rivit td:nth-child(1)::before { content: 'Kohde'; }
+  table.rivit td:nth-child(2)::before { content: 'Tuote / nimike'; }
+  table.rivit td:nth-child(3)::before { content: 'Pit'; }
+  table.rivit td:nth-child(4)::before { content: 'Lev'; }
+  table.rivit td:nth-child(5)::before { content: 'Kpl'; }
+  table.rivit td:nth-child(6)::before { content: 'A-hinta'; }
+  table.rivit td:nth-child(7)::before { content: 'Ale %'; }
+  table.rivit td:nth-child(8)::before { content: 'Yht alv 0%'; }
+  table.rivit td:nth-child(9)::before { content: 'Alv %'; }
+  table.rivit td:nth-child(10)::before { content: 'Rivihinta'; }
+  table.rivit td:nth-child(11) { position: absolute; top: 10px; right: 10px; }
+  table.rivit td.rivi-total { align-self: end; padding-bottom: 10px; }
+  table.rivit input { font-size: 16px; min-height: 40px; background: var(--bg3); border-color: var(--border2); }
+  table.rivit tr#riviEmpty { display: block; }
+  table.rivit tr#riviEmpty td::before { content: none; }
+  .kaavake-row { grid-template-columns: minmax(0, 1fr); }
+  .kaavake-cell { border-right: none; border-bottom: 1px solid var(--border); }
+  .kaavake-row .kaavake-cell:last-child { border-bottom: none; }
+  .modal { width: 100%; max-height: 90vh; }
+  .notif { left: 12px; right: 12px; bottom: 12px; }
+}
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
-  </style>
+/* ── Tuloste: mustavalkoinen ja luettava (väliaikainen, kunnes laskutusprojektissa tehdään oikea laskupohja) ──
+   Ennen R4c:tä tuloste oli tumma sivu, jonka kentät tulostuivat vaalealla tekstillä lähes näkymättömiksi. */
+@media print {
+  .kpt-yla, .sidebar, .rivit-add-row, .btn, .dropdown-wrap, .modal-overlay, .notif, #asiakasSearchWrap, #naytaHinnatWrap { display: none !important; }
+  @page { size: A4; margin: 12mm; }
+  * { transition: none !important; }
+  html, body, body.kpt-sivu { background: #fff !important; color: #000 !important; }
+  .layout { display: block; min-height: 0; }
+  .main { padding: 0; border: none; gap: 10px; }
+  .card { border: 1px solid #999; background: #fff; break-inside: avoid; }
+  .card-header { border-bottom: 1px solid #999; }
+  .card-header h3, label, .kaavake-cell-label, .sidebar-label { color: #333 !important; }
+  .card-header span { display: none; }
+  input, select, textarea, .asiakas-selected, .type-toggle { background: #fff !important; color: #000 !important; border: none !important; box-shadow: none !important; padding-left: 0; }
+  textarea { resize: none; min-height: 0; }
+  input::placeholder, textarea::placeholder { color: transparent; }
+  .type-btn:not(.active) { display: none; }
+  .type-btn.active { background: #fff !important; color: #000 !important; text-align: left; padding: 0; font-weight: 600; font-size: 15px; }
+  .asiakas-name, .asiakas-detail, .asiakas-num, .field-val, .kaavake-cell-val, .totals-table td, .rivi-total, .total-yht { color: #000 !important; }
+  table.rivit { min-width: 0; font-size: 10.5px; }
+  table.rivit col.col-act, table.rivit td:nth-child(11), table.rivit th:last-child { display: none; }
+  table.rivit th { background: #eee !important; color: #000 !important; }
+  table.rivit td { border-bottom: 1px solid #ccc; padding: 4px 6px; }
+  table.rivit input { padding: 0; font-size: 10.5px; }
+  table.rivit tr.hidden-row { display: none; }
+  .hidden-badge, .summary-badge { display: none; }
+  .kaavake, .kaavake-row, .kaavake-cell { border-color: #000 !important; }
+}
+</style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<nav>
-  <a class="nav-logo" href="tilaukset.html">
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
   </a>
-  <div class="nav-menu-wrap" style="margin-left:8px">
-    <button class="nav-menu-btn" onclick="toggleNavLasku(event)">☰ Valikko</button>
-    <div class="nav-dropdown" id="navDropdownLasku" style="display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--bg2);border:1px solid var(--border);border-radius:6px;min-width:200px;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,0.4);overflow:hidden;">
+  <div class="nav-menu-wrap">
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
+    <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <div class="nav-sep"></div>
-  <span class="nav-title" id="navTyyppi">Lasku</span>
-  <span class="nav-invoice-num" id="navNum">—</span>
-  <div class="nav-right">
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1><span id="navTyyppi">Lasku</span> <span class="nav-invoice-num" id="navNum">—</span></h1></div>
+  <div class="header-right">
     <span class="nav-status luonnos" id="navStatus">Luonnos</span>
     <button class="btn btn-sm" onclick="tallenna()">Tallenna</button>
     <button class="btn btn-sm btn-accent" onclick="lahetaSahkoposti()" id="btnLaheta" disabled>Lähetä sähköpostilla</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
-</nav>
+</header>
 
 <div class="layout">
 <div class="main">
@@ -983,15 +1035,7 @@ function muokkaaHintaa(id) {
   }
 }
 
-function toggleNavLasku(e) {
-  e.stopPropagation();
-  const dd = document.getElementById('navDropdownLasku');
-  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
-}
-document.addEventListener('click', () => {
-  const dd = document.getElementById('navDropdownLasku');
-  if (dd) dd.style.display = 'none';
-});
+// Valikon avaa ja sulkee nav.js (uusi ulkoasu, R4c)
 </script>
 </body>
 </html>
