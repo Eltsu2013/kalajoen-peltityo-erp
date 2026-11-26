@@ -4,70 +4,33 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hinnasto — Kalajoen Peltityö</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+     rakenne ja skripti ennallaan (oma valikkokoodi pois). Simuloinnin sininen = yhteinen --kpt-info. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
-  :root {
-    --bg: #1e2a30;
-    --panel: #253035;
-    --panel2: #2e3a40;
-    --border: #3a5060;
-    --accent: #f97316;
-    --accent-dim: #ea6c08;
-    --accent-glow: rgba(249,115,22,0.10);
-    --text: #ededf0;
-    --text-dim: #9595a0;
-    --input-bg: #2a3840;
-    --success: #3dba6e;
-    --danger: #e84040;
-    --warn: #e8a020;
-    --cyan: #0ea5e9;
+  /* Vanhat värinimet → yhteiset --kpt-värit (R6b) */
+  :root, html[data-teema] {
+    --bg: var(--kpt-tausta);
+    --panel: var(--kpt-paneeli);
+    --panel2: var(--kpt-paneeli2);
+    --border: var(--kpt-reuna);
+    --accent: var(--kpt-korostus);
+    --accent-dim: color-mix(in srgb, var(--kpt-korostus) 82%, #000);
+    --accent-glow: var(--kpt-korostus-tausta);
+    --text: var(--kpt-teksti);
+    --text-dim: var(--kpt-himmea);
+    --input-bg: var(--kpt-kentta);
+    --success: var(--kpt-ok);
+    --danger: var(--kpt-virhe);
+    --warn: var(--kpt-huom);
+    --cyan: var(--kpt-info);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
-
-  /* HEADER */
-  header {
-    background: #16222a;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-    position: sticky; top: 0; z-index: 100;
-  }
-  header h1 { font-size: 16px; font-weight: 500; }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  /* NAV */
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: var(--panel2); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: var(--input-bg); }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: var(--panel2); border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; padding: 8px 14px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    color: var(--text); text-decoration: none; transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+  *, *::before, *::after { margin: 0; padding: 0; }   /* vanha nollaus, jota sivun asettelu olettaa */
 
   /* PAGE */
-  .page { padding: 20px 24px; max-width: 1400px; }
+  .page { padding: 20px 24px 64px; max-width: 1400px; margin: 0 auto; }
 
   /* SUMMARY */
   .summary-row {
@@ -87,7 +50,7 @@
     font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; line-height: 1;
   }
   .card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-  .card-accent { border-color: rgba(249,115,22,0.4); }
+  .card-accent { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
   .card-accent .card-number { color: var(--accent); }
 
   /* TABS */
@@ -130,7 +93,7 @@
     transition: all 0.15s;
   }
   .fbtn:hover { border-color: var(--accent); color: var(--text); }
-  .fbtn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .fbtn.active { background: var(--accent); border-color: var(--accent); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
   .filter-search {
     background: var(--input-bg); border: 1px solid var(--border);
     color: var(--text); font-family: 'IBM Plex Mono', monospace;
@@ -146,12 +109,12 @@
     padding: 7px 14px; border-radius: 4px; cursor: pointer;
     border: 1px solid var(--border); transition: all 0.15s; letter-spacing: 0.02em;
   }
-  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--kpt-teksti-korostuksella); }
   .btn-primary:hover { background: var(--accent-dim); }
   .btn-secondary { background: var(--panel2); color: var(--text); }
   .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
   .btn-sm { padding: 4px 10px; font-size: 11px; }
-  .btn-danger { background: transparent; color: var(--danger); border-color: rgba(232,64,64,0.3); }
+  .btn-danger { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
 
   /* TABLE */
   .table-wrap {
@@ -180,10 +143,10 @@
     font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px;
     white-space: nowrap;
   }
-  .badge-orange { background: rgba(249,115,22,0.15); color: var(--accent); }
-  .badge-gray { background: #2a3840; color: var(--text-dim); }
-  .badge-cyan { background: rgba(14,165,233,0.12); color: var(--cyan); }
-  .badge-green { background: rgba(61,186,110,0.15); color: var(--success); }
+  .badge-orange { background: var(--kpt-korostus-tausta); color: var(--accent); }
+  .badge-gray { background: var(--kpt-paneeli2); color: var(--text-dim); }
+  .badge-cyan { background: color-mix(in srgb, var(--cyan) 13%, transparent); color: var(--cyan); }
+  .badge-green { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
 
   .empty-state {
     text-align: center; color: var(--text-dim); padding: 40px;
@@ -222,7 +185,7 @@
   .modal {
     background: var(--panel); border: 1px solid var(--border);
     border-radius: 6px; width: 600px; max-width: 95vw;
-    box-shadow: 0 24px 48px rgba(0,0,0,0.5); max-height: 90vh;
+    box-shadow: var(--kpt-varjo); max-height: 90vh;
     display: flex; flex-direction: column;
   }
   .modal-header {
@@ -272,7 +235,7 @@
   .preview-row {
     display: grid; grid-template-columns: 70px 90px 90px 80px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    padding: 3px 0; border-bottom: 1px solid rgba(58,80,96,0.4); gap: 8px;
+    padding: 3px 0; border-bottom: 1px solid var(--border); gap: 8px;
   }
   .preview-row:last-child { border-bottom: none; }
   .preview-row.header-row { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 6px; }
@@ -297,7 +260,7 @@
 
   /* INFO BOX */
   .info-box {
-    background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.2);
+    background: color-mix(in srgb, var(--accent) 6%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
     border-radius: 4px; padding: 10px 14px;
     font-size: 12px; color: var(--text-dim); margin-bottom: 14px;
   }
@@ -360,24 +323,50 @@
     .m-card-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
   }
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+  /* ---------- R6b: uusi ulkoasu (26.11.2026) ---------- */
+  .tab { font-family: var(--kpt-fontti); font-size: 14px; padding: 10px 18px; letter-spacing: 0; }
+  .btn { min-height: 34px; }
+  .btn-sm { min-height: 28px; }
+  .fbtn { min-height: 28px; }
+  .filter-search { min-height: 34px; }
+  .form-input { border-color: var(--kpt-reuna2); }
+  .simu-banneri { background: color-mix(in srgb, var(--cyan) 10%, transparent); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
+    border-radius: 4px; padding: 8px 14px; font-size: 12px; color: var(--cyan); margin-bottom: 10px; }
+  #massSimuBtn { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 40%, transparent); }
+  @media (max-width: 700px) {
+    .kpt-yla { position: static; }
+    .page { padding: 12px 12px 48px; }
+    .tab { font-size: 13px; padding: 10px 12px; }
+    .fbtn { min-height: 36px; font-size: 12px; padding: 0 12px; }
+    .filter-search, .form-input, .edit-input { font-size: 16px; min-height: 44px; }
+    .btn { min-height: 44px; }
+    .btn-sm { min-height: 36px; }
+    .icon-btn { font-size: 18px; padding: 6px 8px; }
+    .modal-overlay { align-items: stretch; }
+    .modal { width: 100%; max-width: none; max-height: none; height: 100%; border-radius: 0; }
+    .modal-footer .btn { flex: 1; }
+  }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Hinnasto</h1>
-  <div class="header-right"></div>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Hinnasto</h1></div>
+  <div class="header-right">
+    <button class="kpt-teema-kytkin" type="button"></button>
+  </div>
 </header>
 
 <div class="page">
@@ -561,7 +550,7 @@
           <div class="info-box" style="margin:0;font-size:11px">Pyöristetään lähimpään 5 ¢</div>
         </div>
       </div>
-      <div id="simuBanner" style="display:none;background:rgba(14,165,233,0.1);border:1px solid rgba(14,165,233,0.3);border-radius:4px;padding:8px 14px;font-size:12px;color:#0ea5e9;margin-bottom:10px;">
+      <div id="simuBanner" class="simu-banneri" style="display:none;">
         &#9432; Simulaatio — hinnat laskettu alla mutta <strong>ei tallennettu</strong>. Paina "Tallenna hinnat" jos haluat ottaa käyttöön.
       </div>
       <div class="preview-box">
@@ -575,7 +564,7 @@
     <div class="modal-footer">
       <span id="massRowCount" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-right:auto;align-self:center"></span>
       <button class="btn btn-secondary" onclick="closeModal('massModal')">Peruuta</button>
-      <button class="btn btn-secondary" id="massSimuBtn" onclick="runSimulation()" style="color:#0ea5e9;border-color:rgba(14,165,233,0.4)">&#9654; Simuloi</button>
+      <button class="btn btn-secondary" id="massSimuBtn" onclick="runSimulation()">&#9654; Simuloi</button>
       <button class="btn btn-primary" id="massConfirmBtn" onclick="executeMassUpdate()">Tallenna hinnat</button>
     </div>
   </div>
@@ -1222,11 +1211,7 @@ function showAddMaterialModal() {
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function closeIfOverlay(e, id) { if (e.target.id === id) closeModal(id); }
 
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-document.addEventListener('click', function() { document.getElementById('navDropdown').classList.remove('open'); });
+// Valikko: nav.js hoitaa (R6b, oma toggleNav poistettu)
 
 // ---- TOAST ----
 var toastTimer;
