@@ -218,6 +218,7 @@
     <span class="saving" id="save-status"></span>
     <a class="kpt-nappi pieni" href="peltipiirturi.html">← Peltilistat</a>
     <button class="kpt-nappi pieni" type="button" onclick="openVakiomallit()">Vakiomallit →</button>
+    <button class="kpt-nappi pieni" type="button" id="tuotanto-btn" onclick="avaaTuotannossa()" style="display:none" title="Avaa tämä tilaus Tuotannossa (esim. työkortin tulostus)">🏭 Tuotanto →</button>
     <button class="kpt-nappi pieni" type="button" id="kopioi-btn" onclick="kopiointiTilaus()" style="display:none">⧉ Kopioi tilaus</button>
     <button class="kpt-teema-kytkin" type="button"></button>
   </div>
@@ -743,6 +744,7 @@ async function loadOrderById(orderId) {
   const order = data[0];
 
   currentOrderId = order.id;
+  paivitaTuotantoNappi();
   document.getElementById('order-number-display').textContent = order.order_number || currentOrderId.slice(0,8);
   if (order.order_date) document.getElementById('order-date').value = order.order_date.slice(0,10);
   if (order.delivery_date) document.getElementById('order-delivery').value = order.delivery_date.slice(0,10);
@@ -879,6 +881,7 @@ async function copyOrderById(sourceId, keepCustomer) {
   const newOrders = await r3.json();
   const newOrderId = newOrders[0].id;
   currentOrderId = newOrderId;
+  paivitaTuotantoNappi();
   document.getElementById('order-number-display').textContent = newOrders[0].order_number || newOrderId.slice(0,8);
   document.getElementById('order-date').value = today;
   document.getElementById('order-site-address').value = keepCustomer ? (src.site_address || '') : '';
@@ -1095,6 +1098,7 @@ async function createOrder() {
   }
   const data = await r.json();
   currentOrderId = data[0].id;
+  paivitaTuotantoNappi();
   document.getElementById('order-number-display').textContent = data[0].order_number || currentOrderId.slice(0,8);
   setSaveStatus('ok', 'Tallennettu');
 }
@@ -2511,6 +2515,19 @@ if (openOrderId) {
 Promise.resolve(alustus).catch(e => console.warn('Tilauksen alustus', e)).then(() => { if (LAHETYS) LAHETYS.aloita(); });
 
 // Valikon avaa ja sulkee nav.js (R4d)
+
+// ── Tilaus ⇄ Tuotanto (Tomi 26.11.2026: tilauksesta suoraan saman tilauksen tuotantonäkymään, esim. työkortin tulostus) ──
+// Tuotanto avautuu omaan välilehteensä (sama välilehti uudelleen, ei uutta joka kerta); Tuotannon "Muokkaa" palaa tähän
+// välilehteen, koska tämä välilehti on nimetty tilauksen mukaan (window.name).
+function paivitaTuotantoNappi() {
+  const b = document.getElementById('tuotanto-btn');
+  if (b) b.style.display = currentOrderId ? 'inline-block' : 'none';
+  if (currentOrderId) { try { window.name = 'kpt_tilaus_' + currentOrderId; } catch (e) { /* ei nimeä */ } }
+}
+function avaaTuotannossa() {
+  if (!currentOrderId) return;
+  window.open('tuotanto.html?tilaus=' + encodeURIComponent(currentOrderId), 'kpt_tuotanto');
+}
 
 // ── Huuva ja kartio tilauksesta (Tomi 26.11.2026) ─────────────────
 // Kuten piippu: valittu ryhmä (muokkaus, jos ryhmässä on jo sama sovite) tai uusi ryhmä, ja sivu lähettää ryhmän rivit takaisin.

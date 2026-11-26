@@ -1904,7 +1904,9 @@ async function changeOrderStatus(newStatus) {
 function openInTilaus() {
   if (!activeOrderId) return;
   localStorage.setItem('openOrderId', activeOrderId);
-  window.open('tilaus.html', '_blank');
+  // Sama tilaus aukeaa samaan välilehteen, josta Tuotanto avattiin (tilaus nimeää välilehtensä kpt_tilaus_<id>),
+  // muuten uuteen. Näin samaa tilausta ei ole auki monessa välilehdessä (Tomi 26.11.2026).
+  window.open('tilaus.html', 'kpt_tilaus_' + activeOrderId);
 }
 
 // ── Rivikohtainen status ───────────────────────────────────────────
