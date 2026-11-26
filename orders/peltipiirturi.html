@@ -390,7 +390,7 @@
         <button type="button" id="asento-pysty" onclick="asentoSuunta('pysty')">Pystyyn</button>
       </span>
       <button type="button" id="asento-palauta" onclick="asentoPalauta()" style="display:none">Palauta oletus</button>
-      <button type="button" id="pinta-nappi" onclick="vaihdaPintaMerkinta()" title="Vaihda pinnan merkintätapa">Pinta: raita</button>
+      <button type="button" id="pinta-nappi" onclick="vaihdaPintaMerkinta()" title="Vaihda pinnan merkintätapa">Pinta: kolmio</button>
       <div class="asento-vihje">Napauta mittaa kuvassa, niin se viiva suoristetaan. Asento tallentuu tilaukseen.</div>
     </div>
     <div class="lev-kortti" id="lev-kortti">
@@ -1094,11 +1094,13 @@ function redraw() {
 // ─── Pinnan merkintätapa ja kuvan koon seuranta ───────────────────
 // Pinta merkitään joko ohuella väriraidalla (pellin värillä) tai kolmiolla.
 // Valinta muistetaan tällä laitteella.
-let pintaMerkinta = 'raita';
-try { if (localStorage.getItem('kpt_pinta_merkinta') === 'kolmio') pintaMerkinta = 'kolmio'; } catch (e) { console.warn('pintaMerkinta:', e); }
+// Pinnan merkintä: oletuksena kolmio (Tomi 26.11.2026: selvempi kuin raita). Uusi muistiavain, jotta kaikki aloittavat
+// kolmiolla; Pinta-napin valinta muistetaan selaimessa kuten ennen.
+let pintaMerkinta = 'kolmio';
+try { if (localStorage.getItem('kpt_pinta_merkinta2') === 'raita') pintaMerkinta = 'raita'; } catch (e) { console.warn('pintaMerkinta:', e); }
 function vaihdaPintaMerkinta() {
   pintaMerkinta = pintaMerkinta === 'kolmio' ? 'raita' : 'kolmio';
-  try { localStorage.setItem('kpt_pinta_merkinta', pintaMerkinta); } catch (e) { console.warn('pintaMerkinta:', e); }
+  try { localStorage.setItem('kpt_pinta_merkinta2', pintaMerkinta); } catch (e) { console.warn('pintaMerkinta:', e); }
   redraw();
 }
 // Kuva piirretään ruudun pikseleissä, joten se piirretään uudelleen kun kuvan leveys muuttuu
