@@ -685,17 +685,6 @@
           <input type="hidden" id="pm-group">
         </div>
       </div>
-      <div class="field">
-        <label>Materiaali</label>
-        <div style="position:relative">
-          <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
-            oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)" style="width:100%">
-          <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
-            background:var(--panel);border:1px solid var(--border);border-top:none;
-            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
-          <input type="hidden" id="pm-mat">
-        </div>
-      </div>
       <div class="field" id="pm-color-row">
         <label>Väri</label>
         <div style="position:relative">
@@ -705,6 +694,17 @@
             background:var(--panel);border:1px solid var(--border);border-top:none;
             max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
           <input type="hidden" id="pm-color">
+        </div>
+      </div>
+      <div class="field">
+        <label>Materiaali</label>
+        <div style="position:relative">
+          <input type="text" id="pm-mat-search" placeholder="Hae..." autocomplete="off"
+            oninput="pmFilterMat(this.value)" onfocus="pmFilterMat(this.value)" style="width:100%">
+          <div id="pm-mat-dd" style="display:none;position:absolute;top:100%;left:0;right:0;
+            background:var(--panel);border:1px solid var(--border);border-top:none;
+            max-height:150px;overflow-y:auto;z-index:100;border-radius:0 0 4px 4px"></div>
+          <input type="hidden" id="pm-mat">
         </div>
       </div>
       <div class="field">
@@ -830,6 +830,7 @@
   </div>
 </div>
 
+<script src="materiaali.js?v=3"></script>
 <script src="lahetys.js?v=3"></script>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ─── Profiilityypit ───────────────────────────────────────────────
@@ -892,6 +893,8 @@ async function fetchPmProducts() {
   try {
     const r = await fetch(SUPABASE_URL + '/rest/v1/products?is_active=eq.true&unit=eq.m²&order=material,color', { headers: pmHeaders });
     pmProducts = await r.json();
+    if (!Array.isArray(pmProducts)) pmProducts = [];
+    pmOletus();
   } catch(e) { console.log('Tuotteiden haku epäonnistui', e); }
 }
 
@@ -911,64 +914,82 @@ function pmShowDropdown(ddId, items, onClickFn) {
   dd.style.display = 'block';
 }
 
+// ── Materiaalivalinta v3 (26.11.2026, Tomi): Tuoteryhmä → Väri → Materiaali → Paksuus ──
+// Väri rajaa materiaalit (RR20 → lähes aina Glossy), ja materiaalin vaihto säilyttää värin, jos se käy.
+// Logiikka on yhteisessä orders/materiaali.js:ssä (KPT_MATERIAALI.listat), sama Peltilistoissa ja Vakiomalleissa.
+// Tuoteryhmät verrataan kirjainkoosta välittämättä; uudella työllä oletus Pinnoitettu teräs.
+const PM = KPT_MATERIAALI;
+let pmValmis = Promise.resolve();   // fetchPmProducts() asettaa
+let pmMuokataan = false;
+function pmEl(id) { return document.getElementById(id); }
+function pmValinta() { return { ryhma: pmEl('pm-group').value, vari: pmEl('pm-color').value, materiaali: pmEl('pm-mat').value }; }
+function pmAseta(kentta, arvo) { pmEl('pm-' + kentta).value = arvo || ''; pmEl('pm-' + kentta + '-search').value = arvo || ''; }
+function pmVariRivi() {
+  const v = pmValinta();
+  pmEl('pm-color-row').style.display = (!v.ryhma || v.vari || PM.listat(pmProducts, { ryhma: v.ryhma }).ryhmallaVareja) ? '' : 'none';
+}
+function pmHaku(q, kentta) { return q === pmEl('pm-' + kentta).value ? '' : q; }   // valittu arvo kentässä → näytä koko lista
 function pmFilterGroup(q) {
-  const groups = [...new Set(pmProducts.map(p => p.product_group).filter(Boolean))].sort()
-    .filter(g => !q || g.toLowerCase().includes(q.toLowerCase()));
-  pmShowDropdown('pm-group-dd', groups, g => {
-    document.getElementById('pm-group-search').value = g;
-    document.getElementById('pm-group').value = g;
-    document.getElementById('pm-group-dd').style.display = 'none';
-    // Nollaa materiaali, väri, paksuus
-    document.getElementById('pm-mat-search').value = '';
-    document.getElementById('pm-mat').value = '';
-    document.getElementById('pm-color-search').value = '';
-    document.getElementById('pm-color').value = '';
-    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
-    // Tarkista onko tässä tuoteryhmässä värejä
-    const hasColors = pmProducts.filter(p => p.product_group === g).some(p => p.color);
-    document.getElementById('pm-color-row').style.display = hasColors ? '' : 'none';
+  pmShowDropdown('pm-group-dd', PM.suodata(PM.ryhmat(pmProducts), pmHaku(q, 'group')), g => {
+    pmEl('pm-group-dd').style.display = 'none';
+    if (!PM.samaRyhma(g, pmEl('pm-group').value)) { pmAseta('color', ''); pmAseta('mat', ''); }
+    pmAseta('group', g);
+    pmVariRivi(); pmUpdateThick(); pmMuuttui();
   });
 }
-
-function pmFilterMat(q) {
-  const group = document.getElementById('pm-group').value;
-  const mats = [...new Set(pmProducts.filter(p => !group || p.product_group === group).map(p => p.material))].sort()
-    .filter(m => !q || m.toLowerCase().includes(q.toLowerCase()));
-  pmShowDropdown('pm-mat-dd', mats, m => {
-    document.getElementById('pm-mat-search').value = m;
-    document.getElementById('pm-mat').value = m;
-    document.getElementById('pm-mat-dd').style.display = 'none';
-    document.getElementById('pm-color-search').value = '';
-    document.getElementById('pm-color').value = '';
-    document.getElementById('pm-thick').innerHTML = '<option value="">— valitse —</option>';
-    pmUpdateThick(); // päivitä paksuus heti materiaalin valinnan jälkeen
-  });
-}
-
 function pmFilterColor(q) {
-  const mat = document.getElementById('pm-mat').value;
-  const group = document.getElementById('pm-group').value;
-  const colors = [...new Set(pmProducts.filter(p => (!mat || p.material === mat) && (!group || p.product_group === group)).map(p => p.color).filter(Boolean))].sort()
-    .filter(c => !q || c.toLowerCase().includes(q.toLowerCase()));
-  pmShowDropdown('pm-color-dd', colors, c => {
-    document.getElementById('pm-color-search').value = c;
-    document.getElementById('pm-color').value = c;
-    document.getElementById('pm-color-dd').style.display = 'none';
-    pmUpdateThick();
-    redraw(); // väriraita pellin värillä
+  // Kaikki tuoteryhmän värit; jos valittu materiaali ei käy uudelle värille, materiaali tyhjenee
+  const varit = PM.listat(pmProducts, { ryhma: pmEl('pm-group').value }).varit;
+  pmShowDropdown('pm-color-dd', PM.suodata(varit, pmHaku(q, 'color')), c => {
+    pmEl('pm-color-dd').style.display = 'none';
+    pmAseta('color', c);
+    const mats = PM.listat(pmProducts, pmValinta()).materiaalit;
+    if (pmEl('pm-mat').value && !mats.includes(pmEl('pm-mat').value)) pmAseta('mat', '');
+    if (!pmEl('pm-mat').value && mats.length === 1) pmAseta('mat', mats[0]);   // vain yksi materiaali tässä värissä
+    pmUpdateThick(); pmMuuttui();
   });
 }
-
-function pmUpdateThick() {
-  const mat = document.getElementById('pm-mat').value;
-  const col = document.getElementById('pm-color').value;
-  // Jos väri on tyhjä, haetaan kaikki paksuudet materiaalille
-  const thicks = [...new Set(pmProducts.filter(p => p.material===mat && (!col || p.color===col)).map(p => p.thickness_mm))].sort((a,b)=>a-b);
-  const sel = document.getElementById('pm-thick');
-  sel.innerHTML = '<option value="">— valitse —</option>';
-  thicks.forEach(t => { const o = document.createElement('option'); o.value=t; o.textContent=t+' mm'; sel.appendChild(o); });
-  if (thicks.length === 1) sel.value = thicks[0];
+function pmFilterMat(q) {
+  // Materiaalit valitun värin mukaan (ilman väriä kaikki ryhmän materiaalit)
+  const mats = PM.listat(pmProducts, pmValinta()).materiaalit;
+  pmShowDropdown('pm-mat-dd', PM.suodata(mats, pmHaku(q, 'mat')), m => {
+    pmEl('pm-mat-dd').style.display = 'none';
+    pmAseta('mat', m);
+    if (pmEl('pm-color').value && !PM.listat(pmProducts, pmValinta()).varit.includes(pmEl('pm-color').value)) pmAseta('color', '');
+    pmUpdateThick(); pmMuuttui();
+  });
 }
+function pmUpdateThick() {
+  const sel = pmEl('pm-thick'), ennen = sel.value;
+  const thicks = PM.listat(pmProducts, pmValinta()).paksuudet;
+  sel.innerHTML = '<option value="">— valitse —</option>';
+  thicks.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t + ' mm'; sel.appendChild(o); });
+  if (thicks.map(String).includes(ennen)) sel.value = ennen;
+  else if (thicks.length === 1) sel.value = thicks[0];
+}
+// Uusi työ: oletuksena Pinnoitettu teräs (muokkauksessa tallennettu valinta)
+function pmOletus() {
+  if (pmMuokataan || pmEl('pm-group').value) return;
+  pmAseta('group', PM.oletusRyhma(pmProducts));
+  pmVariRivi();
+}
+// Muokkaus: tallennettu valinta takaisin; vanhan rivin tuoteryhmä päätellään materiaalista
+function pmPalauta(c) {
+  pmMuokataan = true;
+  return pmValmis.then(() => {
+    const r = c.ryhma || PM.ryhmaTuotteelle(pmProducts, c.materiaali, c.vari);
+    pmAseta('group', r ? (PM.ryhmat(pmProducts).find(g => PM.samaRyhma(g, r)) || r) : '');
+    pmAseta('color', c.vari); pmAseta('mat', c.materiaali);
+    pmVariRivi(); pmUpdateThick();
+    if (c.paksuus) {
+      const sel = pmEl('pm-thick'), v = String(Number(c.paksuus));
+      if (![...sel.options].some(o => o.value === v)) { const o = document.createElement('option'); o.value = v; o.textContent = v + ' mm'; sel.appendChild(o); }
+      sel.value = v;
+    }
+    pmMuuttui();
+  });
+}
+function pmMuuttui() { redraw(); }   // väriraita pellin värillä
 
 document.addEventListener('click', e => {
   if (!e.target.closest('#pm-group-search') && !e.target.closest('#pm-group-dd'))
@@ -979,7 +1000,7 @@ document.addEventListener('click', e => {
     document.getElementById('pm-color-dd').style.display = 'none';
 });
 
-fetchPmProducts();
+pmValmis = fetchPmProducts();
 
 // ── Sidebar resize ────────────────────────────────────────────────
 (function() {
@@ -1753,26 +1774,8 @@ function aktivoiTilausPalkki(ctx) {
 
   // Muokkaustila — asetetaan materiaali/väri/paksuus kenttiin
   if (ctx.existingMaterial) {
-    // Odotetaan että fetchPmProducts on valmis (500ms varmuuden vuoksi)
-    setTimeout(() => {
-      if (ctx.existingProductGroup) {
-        const grpEl = document.getElementById('pm-group-search');
-        const grpHid = document.getElementById('pm-group');
-        if (grpEl) grpEl.value = ctx.existingProductGroup;
-        if (grpHid) grpHid.value = ctx.existingProductGroup;
-      }
-      document.getElementById('pm-mat-search').value = ctx.existingMaterial;
-      document.getElementById('pm-mat').value = ctx.existingMaterial;
-      if (ctx.existingColor) {
-        document.getElementById('pm-color-search').value = ctx.existingColor;
-        document.getElementById('pm-color').value = ctx.existingColor;
-      }
-      pmUpdateThick();
-      if (ctx.existingThickness) {
-        document.getElementById('pm-thick').value = ctx.existingThickness;
-      }
-      redraw(); // väriraita pellin värillä
-    }, 500);
+    // Odotetaan, että tuotteet on haettu (pmValmis), sitten tallennettu valinta takaisin
+    pmPalauta({ ryhma: ctx.existingProductGroup, vari: ctx.existingColor, materiaali: ctx.existingMaterial, paksuus: ctx.existingThickness });
   }
 }
 

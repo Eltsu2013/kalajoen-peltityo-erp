@@ -8,7 +8,12 @@
 //
 // valitsin(el, { avain, muutos(arvo, mikaMuuttui) }) → { arvo(), aseta(a), puuttuu(), valmis: Promise }
 //   arvo() = { material, color (null, jos materiaalilla ei värejä), thickness }; puuttuu() = 'materiaali' | 'väri' | 'paksuus' | null
-// Käyttäjät: huuva.html, kartio.html. MUISTA: nosta ?v=-numeroa sivuilla, jotka lataavat tämän.
+// v3 (26.11.2026, Tomi): tuoteryhmä (product_group: Pinnoitettu teräs, Alumiini, Rakenneteräs…) ja järjestys
+//   Tuoteryhmä → Väri → Materiaali → Paksuus: väri rajaa materiaalit (RR20 → lähes aina Glossy) ja materiaali värit.
+//   Tuoteryhmät verrataan kirjainkoosta välittämättä ("Pinnoitettu teräs" = "Pinnoitettu Teräs"), oletus Pinnoitettu teräs.
+//   listat(tuotteet, { ryhma, vari, materiaali }) → { varit, materiaalit, paksuudet, ryhmallaVareja }, ryhmat(), oletusRyhma(),
+//   ryhmaTuotteelle(). Käyttäjät: peltipiirturi.html, vakiomallit.html (valitsin() tulee ryhmän kanssa myöhemmin).
+// Käyttäjät: huuva.html, kartio.html, peltipiirturi.html, vakiomallit.html. MUISTA: nosta ?v=-numeroa sivuilla, jotka lataavat tämän.
 (function () {
   'use strict';
   const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
@@ -34,6 +39,45 @@
     return null;
   }
   function teksti(a) { return a && a.material ? [a.material, a.color, a.thickness ? String(a.thickness).replace('.', ',') + ' mm' : ''].filter(Boolean).join(' ') : ''; }
+
+  // ── v3: tuoteryhmä ja väri ennen materiaalia ──
+  const ryhmaAvain = s => String(s == null ? '' : s).trim().toLowerCase();
+  const OLETUSRYHMA = 'Pinnoitettu teräs';
+  // Tuoteryhmät kerran kukin, kirjainkoosta välittämättä; näytetään yleisin kirjoitusasu
+  function ryhmat(tuotteet) {
+    const m = new Map();
+    tuotteet.forEach(p => {
+      if (!p.product_group || !ryhmaAvain(p.product_group)) return;
+      const k = ryhmaAvain(p.product_group), r = m.get(k) || {};
+      r[p.product_group] = (r[p.product_group] || 0) + 1;
+      m.set(k, r);
+    });
+    return [...m.values()].map(r => Object.keys(r).sort((a, b) => r[b] - r[a] || jarj(a, b))[0]).sort(jarj);
+  }
+  const samaRyhma = (a, b) => ryhmaAvain(a) === ryhmaAvain(b);
+  function rajaa(tuotteet, v) {
+    v = v || {};
+    return tuotteet.filter(p => (!v.ryhma || samaRyhma(p.product_group, v.ryhma))
+      && (!v.materiaali || p.material === v.materiaali) && (!v.vari || p.color === v.vari));
+  }
+  // Listat nykyisen valinnan mukaan: värit rajautuvat materiaalilla ja materiaalit värillä (kumpi tahansa ensin)
+  function listat(tuotteet, v) {
+    v = v || {};
+    const ryhmassa = rajaa(tuotteet, { ryhma: v.ryhma });
+    return {
+      varit: uniikit(rajaa(ryhmassa, { materiaali: v.materiaali }).map(p => p.color).filter(Boolean)).sort(jarj),
+      materiaalit: uniikit(rajaa(ryhmassa, { vari: v.vari }).map(p => p.material).filter(Boolean)).sort(jarj),
+      paksuudet: v.materiaali ? uniikit(rajaa(ryhmassa, { materiaali: v.materiaali, vari: v.vari }).map(p => Number(p.thickness_mm)).filter(x => x > 0)).sort((a, b) => a - b) : [],
+      ryhmallaVareja: ryhmassa.some(p => p.color),
+    };
+  }
+  function oletusRyhma(tuotteet, toive) { return ryhmat(tuotteet).find(g => samaRyhma(g, toive || OLETUSRYHMA)) || ''; }
+  // Vanhoilla riveillä ei ehkä ole tuoteryhmää: päätellään materiaalista (ja väristä)
+  function ryhmaTuotteelle(tuotteet, materiaali, vari) {
+    const p = rajaa(tuotteet, { materiaali, vari }).find(x => x.product_group) || rajaa(tuotteet, { materiaali }).find(x => x.product_group);
+    return p ? (ryhmat(tuotteet).find(g => samaRyhma(g, p.product_group)) || p.product_group) : '';
+  }
+
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   let tuotteetLupaus = null;
@@ -163,7 +207,7 @@
     };
   }
 
-  const KPT_MATERIAALI = { valitsin, materiaalit, varit, paksuudet, suodata, puuttuu, teksti, SUPABASE_URL, SUPABASE_KEY };
+  const KPT_MATERIAALI = { valitsin, materiaalit, varit, paksuudet, suodata, puuttuu, teksti, ryhmat, samaRyhma, rajaa, listat, oletusRyhma, ryhmaTuotteelle, OLETUSRYHMA, SUPABASE_URL, SUPABASE_KEY };
   if (typeof globalThis !== 'undefined') globalThis.KPT_MATERIAALI = KPT_MATERIAALI;
   if (typeof module !== 'undefined' && module.exports) module.exports = KPT_MATERIAALI;
 })();
