@@ -5,115 +5,104 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Henkilöstö — Kalajoen Peltityö</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Ulkoasuremontti R6a (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Rakenne, luokat ja skripti ennallaan,
+       tyylit vain --kpt-muuttujilla. "+ Lisää työntekijä" yläpalkissa, lomake puhelimella koko ruudulle. -->
+  <link rel="stylesheet" href="tyyli.css?v=2">
+  <script src="teema.js?v=1"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="auth-guard.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg:       #0f1117;
-      --surface:  #1a1d27;
-      --border:   #2a2d3a;
-      --text:     #e8eaf0;
-      --muted:    #7a7f96;
-      --accent:   #f59e0b;
-      --accent2:  #d97706;
-      --danger:   #ef4444;
-      --danger-bg:#2d1212;
-      --success:  #22c55e;
-    }
-    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    .page { max-width: 800px; }
 
-    /* ── NAV ── */
-    nav { background: #241e30; border-bottom: 2px solid var(--accent); padding: 10px 24px; display: flex; align-items: center; gap: 16px; position: sticky; top: 0; z-index: 300; }
-    nav h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-    .nav-menu-wrap { position: relative; }
-    .nav-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 4px; cursor: pointer; letter-spacing: 0.04em; }
-    .nav-btn:hover { background: var(--border); }
-    .nav-dropdown { display: none; position: absolute; top: calc(100% + 6px); right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; min-width: 200px; z-index: 999; box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden; }
-    .nav-dropdown.open { display: block; }
-    .nav-section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding: 8px 14px 4px; }
-    .nav-item { display: block; width: 100%; text-align: left; padding: 8px 14px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text); background: none; border: none; cursor: pointer; text-decoration: none; transition: background 0.1s; }
-    .nav-item:hover { background: var(--border); color: var(--accent); }
-    .nav-item.current { color: var(--accent); font-weight: 600; }
-    .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+    /* ── KORTIT ── */
+    .section-label { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--kpt-himmea); margin: 0 0 8px; }
+    .section-label + div, #archivedList { margin-bottom: 20px; }
+    .employee-card { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; transition: border-color 0.15s; }
+    .employee-card:hover { border-color: var(--kpt-korostus); }
+    .employee-card.no-click { cursor: default; }
+    .employee-card.no-click:hover { border-color: var(--kpt-reuna); }
+    .employee-card.archived { opacity: 0.55; }
+    .employee-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .employee-name { font-weight: 600; font-size: 16px; }
+    .employee-meta { font-size: 13px; color: var(--kpt-himmea); font-family: var(--kpt-mono); overflow-wrap: anywhere; }
+    .badge-owner, .badge-archived { display: inline-block; vertical-align: 2px; font-size: 11px; font-family: var(--kpt-mono); font-weight: 600; padding: 1px 7px; border-radius: 999px; letter-spacing: 0.04em; }
+    .badge-owner { background: var(--kpt-korostus-tausta); color: var(--kpt-korostus); }
+    .badge-archived { background: color-mix(in srgb, var(--kpt-himmea) 15%, transparent); color: var(--kpt-himmea); }
+    .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .card-right span { color: var(--kpt-himmea) !important; }
 
-    /* ── PAGE ── */
-    .page { max-width: 800px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
-    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem; }
-    .page-header h2 { font-size: 1.1rem; font-weight: 600; }
+    /* ── NAPIT (vanhat luokat, uusi ulkoasu) ── */
+    .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: 6px; cursor: pointer; font: 600 14px var(--kpt-fontti); background: transparent; color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); }
+    .btn:hover { border-color: var(--kpt-himmea); }
+    .btn-accent { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border-color: var(--kpt-korostus); }
+    .btn-accent:hover { filter: brightness(1.08); border-color: var(--kpt-korostus); }
+    .btn-danger { color: var(--kpt-virhe); border-color: color-mix(in srgb, var(--kpt-virhe) 55%, transparent); }
+    .btn-danger:hover { background: color-mix(in srgb, var(--kpt-virhe) 12%, transparent); border-color: var(--kpt-virhe); }
+    .btn-success { color: var(--kpt-ok); border-color: color-mix(in srgb, var(--kpt-ok) 55%, transparent); }
+    .btn-success:hover { background: color-mix(in srgb, var(--kpt-ok) 12%, transparent); border-color: var(--kpt-ok); }
+    .kpt-yla #addBtn { min-height: 32px; padding: 0 10px; font-size: 13px; }
 
-    /* ── CARDS ── */
-    .section-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; margin-top: 1.5rem; }
-    .employee-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 0.6rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; transition: border-color 0.15s; }
-    .employee-card:hover { border-color: var(--accent); }
-    .employee-card.archived { opacity: 0.5; }
-    .employee-info { display: flex; flex-direction: column; gap: 3px; }
-    .employee-name { font-weight: 600; font-size: 1rem; }
-    .employee-meta { font-size: 12px; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
-    .badge-owner { background: rgba(245,158,11,0.15); color: var(--accent); font-size: 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; padding: 2px 7px; border-radius: 3px; letter-spacing: 0.06em; }
-    .badge-archived { background: rgba(122,127,150,0.15); color: var(--muted); font-size: 10px; font-family: 'IBM Plex Mono', monospace; font-weight: 600; padding: 2px 7px; border-radius: 3px; }
-    .card-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
-
-    /* ── BUTTONS ── */
-    .btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer; letter-spacing: 0.04em; }
-    .btn:hover { background: var(--border); }
-    .btn-accent { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 600; }
-    .btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
-    .btn-danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-    .btn-success { background: rgba(34,197,94,0.1); border-color: var(--success); color: var(--success); }
-    .btn-success:hover { background: var(--success); color: #000; }
-
-    /* ── MODAL ── */
-    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; align-items: center; justify-content: center; }
+    /* ── LOMAKE-IKKUNA ── */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 500; align-items: center; justify-content: center; padding: 16px; }
     .modal-backdrop.open { display: flex; }
-    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; width: 100%; max-width: 460px; margin: 1rem; }
-    .modal h3 { font-size: 1rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--accent); font-family: 'IBM Plex Mono', monospace; }
-    .form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 0.75rem; }
-    .form-group label { font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-    .form-group input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; padding: 8px 10px; border-radius: 4px; }
-    .form-group input:focus { outline: none; border-color: var(--accent); }
-    .form-group input:disabled { opacity: 0.4; cursor: not-allowed; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    .modal-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem; flex-wrap: wrap; }
-    .modal-actions .left { margin-right: auto; display: flex; gap: 0.5rem; }
+    .modal { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--kpt-pyoristys); box-shadow: var(--kpt-varjo); padding: 20px; width: 100%; max-width: 480px; max-height: calc(100vh - 32px); overflow-y: auto; }
+    .modal h3 { font-size: 17px; margin-bottom: 16px; color: var(--kpt-korostus); }
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; min-width: 0; }
+    .form-group label { font-size: 13px; color: var(--kpt-himmea); }
+    .form-group input { width: 100%; min-height: 42px; padding: 0 10px; font: 15px var(--kpt-fontti); background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 6px; }
+    .form-group input:focus { outline: none; border-color: var(--kpt-korostus); box-shadow: 0 0 0 3px var(--kpt-korostus-tausta); }
+    .form-group input:disabled { opacity: 0.55; cursor: not-allowed; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+    .modal-actions .left { margin-right: auto; display: flex; gap: 8px; }
 
-    .readonly-note { font-size: 11px; color: var(--muted); font-style: italic; margin-top: 0.25rem; }
+    .readonly-note { font-size: 12px; color: var(--kpt-himmea); font-style: italic; margin-top: 4px; }
 
-    /* ── EMPTY ── */
-    .empty { color: var(--muted); text-align: center; padding: 2rem; font-size: 0.9rem; }
-  
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
+    /* ── TYHJÄ ── */
+    .empty { color: var(--kpt-himmea); text-align: center; padding: 32px; font-size: 14px; border: 1px dashed var(--kpt-reuna); border-radius: var(--kpt-pyoristys); }
+
+    /* ── PUHELIN: lomake koko ruudulle, kentät allekkain, napit alalaidassa ── */
+    @media (max-width: 700px) {
+      .modal-backdrop { padding: 0; align-items: stretch; }
+      .modal { max-width: none; max-height: none; height: 100%; border-radius: 0; border: 0; padding: 16px 16px 0; display: flex; flex-direction: column; }
+      .form-row { grid-template-columns: 1fr; }
+      .form-group input { min-height: 48px; font-size: 16px; }   /* 16 px: iPhone ei zoomaa kenttään */
+      .modal-actions { position: sticky; bottom: 0; margin-top: auto; padding: 12px 0 16px; background: var(--kpt-paneeli); }
+      .modal-actions .btn { min-height: 48px; flex: 1; }
+      .modal-actions .left { width: 100%; margin: 0; }
+      .modal-actions .left:empty, .modal-actions .left:not(:has(.btn:not([style*="none"]))) { display: none; }
+      .modal-actions .left .btn { flex: 1; }
+      .employee-card { padding: 12px 14px; }
+    }
   </style>
 </head>
-<body>
-<nav>
-  <div class="logo-img" style="height:56px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="165" height="56" style="height:56px;width:auto;display:block"></div>
+<body class="kpt-sivu">
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-  <h1>Henkilöstö</h1>
-</nav>
-
-
-<div class="page">
-  <div class="page-header">
-    <h2>Henkilöstö</h2>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Henkilöstö</h1></div>
+  <div class="header-right">
     <button class="btn btn-accent" id="addBtn" style="display:none" onclick="openNew()">+ Lisää työntekijä</button>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
-
+</header>
+<main class="kpt-sisalto page">
   <div class="section-label">Aktiiviset</div>
   <div id="activeList"><div class="empty">Ladataan...</div></div>
 
   <div class="section-label" id="archivedLabel" style="display:none">Arkistoidut</div>
   <div id="archivedList"></div>
-</div>
+</main>
 
 <!-- MODAALI -->
 <div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
@@ -388,14 +377,6 @@ async function restoreEmployee() {
   }
 }
 
-// ── NAV ──
-function toggleNav(e) {
-  e.stopPropagation();
-  document.getElementById('navDropdown').classList.toggle('open');
-}
-document.addEventListener('click', () => {
-  document.getElementById('navDropdown')?.classList.remove('open');
-});
 </script>
 </body>
 </html>
