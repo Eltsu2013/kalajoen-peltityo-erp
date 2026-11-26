@@ -6,72 +6,30 @@
 <title>Ajanseuranta — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- Ulkoasuremontti R6a (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+     rakenne ja skripti ennallaan. Puhelinkäyttö: isommat napit, iso kello, kentät 16 px. Käynnissä oleva ajanotto ja
+     Tauko-nappi pysyvät punaisina (Tomi 26.11.), muu sivu kategorian violetilla. -->
+<link rel="stylesheet" href="tyyli.css?v=2">
+<script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root{
-    --bg: #1e2a30;
-    --bg-panel: #253540;
-    --bg-card: #2b3d48;
-    --border: #374b56;
-    --text: #e8edf0;
-    --text-dim: #9fb0b8;
-    --accent: #f43f5e;
-    --accent-dim: #f43f5e33;
-    --accent-glow: rgba(244,63,94,0.15);
-    --high: #ef4444;
-    --normal: #eab308;
-    --low: #22c55e;
-    --run: #f43f5e;
-    --radius: 4px;
+  /* Vanhat värinimet → yhteiset --kpt-värit. Käynnissä = punainen (--kpt-virhe), Tomi 26.11.2026. */
+  :root, html[data-teema]{
+    --bg: var(--kpt-tausta);
+    --bg-panel: var(--kpt-paneeli);
+    --bg-card: var(--kpt-paneeli);
+    --border: var(--kpt-reuna);
+    --text: var(--kpt-teksti);
+    --text-dim: var(--kpt-himmea);
+    --accent: var(--kpt-korostus);
+    --accent-dim: color-mix(in srgb, var(--kpt-korostus) 20%, transparent);
+    --accent-glow: var(--kpt-korostus-tausta);
+    --high: var(--kpt-virhe);
+    --normal: var(--kpt-huom);
+    --low: var(--kpt-ok);
+    --run: var(--kpt-virhe);
+    --radius: 6px;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'IBM Plex Sans', sans-serif;
-    min-height:100vh;
-  }
-  header {
-    background: #241e30;
-    border-bottom: 2px solid var(--accent);
-    padding: 10px 24px;
-    display: flex; align-items: center; gap: 16px;
-  }
-  header h1 { font-size: 16px; font-weight: 500; color: var(--text); }
-  .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-
-  .nav-menu-wrap { position: relative; }
-  .nav-btn {
-    background: #3a3545; border: 1px solid #585568;
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; font-weight: 600; padding: 6px 12px;
-    border-radius: 4px; cursor: pointer; letter-spacing: 0.04em;
-  }
-  .nav-btn:hover { background: #4a4558; }
-  .nav-dropdown {
-    display: none; position: absolute; top: calc(100% + 6px); left: 0;
-    background: #3a3545; border: 1px solid var(--border);
-    border-radius: 6px; min-width: 200px; z-index: 999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.4); overflow: hidden;
-  }
-  .nav-dropdown.open { display: block; }
-  .nav-section-label {
-    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-    color: var(--text-dim); padding: 8px 14px 4px;
-  }
-  .nav-item {
-    display: block; width: 100%; text-align: left;
-    padding: 8px 14px; font-family: 'IBM Plex Mono', monospace;
-    font-size: 12px; color: var(--text); background: none;
-    border: none; cursor: pointer; text-decoration: none;
-    transition: background 0.1s;
-  }
-  .nav-item:hover { background: var(--accent-glow); color: var(--accent); }
-  .nav-item.current { color: var(--accent); font-weight: 600; }
-  .nav-item.external::after { content: ' ↗'; opacity: 0.6; font-size: 11px; }
-  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
 
   main{max-width:900px;margin:0 auto;padding:20px;}
 
@@ -86,10 +44,10 @@
     padding:7px 12px;border-radius:var(--radius);cursor:pointer;letter-spacing:.02em;
   }
   .filter-tab:hover{border-color:var(--accent);color:var(--text);}
-  .filter-tab.active{background:var(--accent);border-color:var(--accent);color:#2a0e15;}
+  .filter-tab.active{background:var(--accent);border-color:var(--accent);color:var(--kpt-teksti-korostuksella);}
 
   .btn{
-    background:var(--accent);color:#2a0e15;border:none;
+    background:var(--accent);color:var(--kpt-teksti-korostuksella);border:none;
     padding:10px 18px;border-radius:var(--radius);font-weight:600;
     font-family:'IBM Plex Sans',sans-serif;font-size:14px;cursor:pointer;
   }
@@ -98,8 +56,8 @@
     background:transparent;color:var(--text);border:1px solid var(--border);
   }
   .btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
-  .btn.danger{background:var(--high);color:#fff;}
-  .btn-primary{background:var(--accent);color:#2a0e15;}
+  .btn.danger{background:var(--high);color:var(--kpt-teksti-korostuksella);}
+  .btn-primary{background:var(--accent);color:var(--kpt-teksti-korostuksella);}
   .btn-sm{padding:6px 12px;font-size:12px;}
   .saving{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
 </style>
@@ -116,7 +74,7 @@
     padding:14px 16px;cursor:pointer;
     transition:background .15s;
   }
-  .project-card:hover{background:#324450;}
+  .project-card:hover{background:var(--kpt-paneeli2);}
   .project-card.running{border-left-color:var(--run);}
   .project-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
   .project-card-title{font-weight:600;font-size:15px;}
@@ -137,9 +95,9 @@
     animation:pulse 1.4s infinite;
   }
   @keyframes pulse{
-    0%{box-shadow:0 0 0 0 rgba(244,63,94,0.5);}
-    70%{box-shadow:0 0 0 7px rgba(244,63,94,0);}
-    100%{box-shadow:0 0 0 0 rgba(244,63,94,0);}
+    0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--run) 50%, transparent);}
+    70%{box-shadow:0 0 0 7px transparent;}
+    100%{box-shadow:0 0 0 0 transparent;}
   }
 
   /* ---------- Detail-näkymä ---------- */
@@ -183,7 +141,7 @@
 
   .rows-toolbar{margin-bottom:14px;}
   .start-row-btn{
-    background:var(--accent);color:#2a0e15;border:none;
+    background:var(--accent);color:var(--kpt-teksti-korostuksella);border:none;
     padding:14px 22px;border-radius:var(--radius);font-weight:700;
     font-family:'IBM Plex Sans',sans-serif;font-size:16px;cursor:pointer;
     width:100%;
@@ -219,12 +177,12 @@
   .row-detail-input{flex:1;min-width:100px;}
   .row-actions{display:flex;gap:6px;margin-left:auto;}
   .stop-btn{
-    background:var(--run);color:#fff;border:none;padding:7px 16px;
+    background:var(--run);color:var(--kpt-teksti-korostuksella);border:none;padding:7px 16px;
     border-radius:var(--radius);font-weight:700;font-size:13px;cursor:pointer;
   }
   .stop-btn:hover{filter:brightness(1.1);}
   .resume-btn{
-    background:var(--low);color:#0e2a12;border:none;padding:7px 16px;
+    background:var(--low);color:var(--kpt-teksti-korostuksella);border:none;padding:7px 16px;
     border-radius:var(--radius);font-weight:700;font-size:13px;cursor:pointer;
   }
   .resume-btn:hover{filter:brightness(1.1);}
@@ -346,8 +304,8 @@
   .search-dropdown-item .sd-sub{color:var(--text-dim);font-size:12px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;}
   .st-chip{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;border:1px solid var(--border);color:var(--text-dim);}
   .st-chip.st-draft{color:var(--text-dim);}
-  .st-chip.st-active{color:#eab308;border-color:#eab308;}
-  .st-chip.st-done{color:#22c55e;border-color:#22c55e;}
+  .st-chip.st-active{color:var(--kpt-huom);border-color:var(--kpt-huom);}
+  .st-chip.st-done{color:var(--kpt-ok);border-color:var(--kpt-ok);}
   .chip-preview{
     margin-top:8px;display:flex;align-items:center;gap:8px;
     background:var(--accent-glow);border:1px solid var(--accent);border-radius:12px;
@@ -378,32 +336,71 @@
     .chip-preview button{font-size:16px;padding:6px 8px;}
   }
 
+
+  /* ---------- R6a: uusi ulkoasu ja puhelin (26.11.2026) ---------- */
+  .field input[type=text], .field select, .row-category-input, .row-detail-input, .duration-edit-box input{
+    background:var(--kpt-kentta);border-color:var(--kpt-reuna2);
+  }
+  .modal{box-shadow:var(--kpt-varjo);}
+  .project-card, .row-card{border:1px solid var(--border);border-left-width:4px;}
+  /* Kello: käynnissä olevan ajanoton aika isona, jotta sen näkee käsivarren mitan päästä */
+  .row-timer{font-size:20px;}
+  .row-timer.running{font-size:26px;}
+  .row-category-input, .row-detail-input{font-size:14px;padding:8px 10px;}
+  .stop-btn, .resume-btn{min-height:40px;font-size:14px;padding:0 18px;}
+  .duration-edit-btn, .row-delete-btn{min-height:40px;min-width:44px;font-size:14px;}
+  .filter-tab{min-height:36px;font-family:var(--kpt-fontti);font-size:13px;}
+
+  @media (max-width:700px){
+    .kpt-yla{position:static;}               /* ei kellu: koko ruutu ajanotoille */
+    .filter-tabs{width:100%;}
+    .filter-tab{flex:1 1 auto;min-height:44px;font-size:14px;}
+    #newProjectBtn{width:100%;min-height:48px;font-size:16px;}
+    .back-btn{font-size:15px;min-height:44px;}
+    .icon-btn{min-height:40px;min-width:44px;font-size:16px;}
+    .start-row-btn{min-height:56px;font-size:18px;}
+    .row-card{padding:14px;}
+    .row-label-input{font-size:16px;}           /* 16 px: iPhone ei zoomaa kenttään */
+    .row-category-input, .row-detail-input{font-size:16px;min-height:44px;flex:1 1 100%;}
+    .row-timer.running{font-size:30px;}
+    .row-actions{gap:8px;}
+    .row-saved-tick{flex:1 1 100%;height:0;line-height:0;text-align:right;margin-top:-4px;}   /* ei vie omaa riviä */
+    .stop-btn, .resume-btn{min-height:52px;font-size:17px;flex:1;}
+    .duration-edit-btn, .row-delete-btn{min-height:52px;min-width:56px;font-size:17px;}
+    .seg-chip{font-size:13px;padding:6px 10px;}
+    .seg-edit-btn, .seg-del-btn{font-size:16px;padding:4px 6px;}
+    .duration-edit-box input{font-size:16px;min-height:44px;}
+    .duration-edit-box .btn{min-height:44px;}
+    .link-chip, .add-link-btn{font-size:14px;padding:8px 14px;}
+  }
+
   @media (max-width:600px){
     main{padding:14px;}
     .project-card-top{flex-direction:column;}
     .row-actions{margin-left:0;width:100%;justify-content:flex-end;}
   }
 
-    /* Valikko mahtuu ruudulle: pitkä lista vierittyy (17.11.2026) */
-    #navDropdown, #navDropdownLasku { max-height: calc(100vh - 90px); overflow-y: auto; }
   </style>
 </head>
-<body>
+<body class="kpt-sivu">
 
-<header>
-  <div class="logo-img" style="height:50px;display:flex;align-items:center"><img src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="147" height="50" style="height:50px;width:auto;display:block"></div>
+<header class="kpt-yla">
+  <a class="kpt-logo" href="etusivu.html">
+    <img class="kpt-vain-tumma" src="logo-valkoinen.png" alt="Kalajoen Peltityö" width="118" height="40">
+    <img class="kpt-vain-vaalea" src="logo-musta.png" alt="Kalajoen Peltityö" width="118" height="40">
+  </a>
   <div class="nav-menu-wrap">
-    <button class="nav-btn" onclick="toggleNav(event)">☰ Valikko</button>
+    <button class="kpt-valikko-nappi" type="button">☰ Valikko</button>
     <div class="nav-dropdown" id="navDropdown">
       <!-- Valikon sisältö tulee tiedostosta nav.js. Tämä linkki näkyy vain, jos nav.js ei lataudu. -->
       <a class="nav-item" href="etusivu.html">🏠 Etusivu</a>
     </div>
     <script src="nav.js?v=5"></script>
   </div>
-
-  <h1>Ajanseuranta</h1>
+  <div class="kpt-otsikko"><span class="kpt-kategoria"></span><h1>Ajanseuranta</h1></div>
   <div class="header-right">
     <span class="saving" id="saveStatus"></span>
+    <button class="kpt-teema-kytkin" type="button"></button>
   </div>
 </header>
 
@@ -533,14 +530,7 @@
   let tickTimer = null;
   let orderPickTarget = null; // "new" tai "link" — kumman modaalin haku on kyseessä
 
-  // ---------- Nav-valikko ----------
-  window.toggleNav = function(e){
-    e.stopPropagation();
-    document.getElementById("navDropdown").classList.toggle("open");
-  };
-  document.addEventListener("click", function(){
-    document.getElementById("navDropdown").classList.remove("open");
-  });
+  // Valikko: nav.js hoitaa (R6a, oma toggleNav poistettu)
 
   // ---------- Auth helpers ----------
   async function getAuthHeaders(){
