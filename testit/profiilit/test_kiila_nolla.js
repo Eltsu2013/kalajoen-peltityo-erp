@@ -30,11 +30,11 @@ const kuvanKiilat = k => k.tulos.labels.filter(x => typeof x === 'string' && x.i
   near(t[0].kulma, 80, 0.01, '1f: taitos 1 80°');
   near(t[1].kulma, 80, 0.01, '1g: taitos 2 80°');
   near(t[2].kulma, 125, 0.01, '1h: etukäännöksen taitos 125° (kulma pää B:stä)');
-  near(t[2].ya, 160, 0.01, '1i: etukäännöksen taitos pää A:ssa reunalla (160)');
-  near(t[2].yb, 160, 0.01, '1j: etukäännöksen taitos pää B:ssä 160');
+  near(t[2].ya, 15, 0.01, '1i: etukäännöksen taitos pää A:ssa reunalla (väri ylöspäin: 15 alareunasta)');
+  near(t[2].yb, 15, 0.01, '1j: etukäännöksen taitos pää B:ssä 15');
   const loppu = r.viivat[r.viivat.length - 1];
-  near(loppu.ya, 160, 0.01, '1k: loppureuna A 160');
-  near(loppu.yb, 175, 0.01, '1l: loppureuna B 175');
+  near(loppu.ya, 15, 0.01, '1k: loppureuna (etukäännöksen reuna) A 15: käännös kapenee nollaan');
+  near(loppu.yb, 0, 0.01, '1l: loppureuna B 0 = aihion alareuna');
   const k = kuva('kynnys', { seg3_len: 0 }, { seg3_len: 15 });
   ok(!!k && kuvanKiilat(k).indexOf('0–15') >= 0, '1m: poikkileikkauksessa mitta 0–15');
   ok(!!k && k.haamu.length > 0, '1n: pää B haamuna');
@@ -76,11 +76,41 @@ const kuvanKiilat = k => k.tulos.labels.filter(x => typeof x === 'string' && x.i
   const r = lev('kynnys', { seg3_len: 10 }, { seg3_len: 15 });
   ok(!!r && Math.abs(r.aihioA - 170) < 0.01 && Math.abs(r.aihioB - 175) < 0.01, '4a: Kynnys etukäännös 10 → 15 kuten ennen');
   const r2 = lev('ulista', { tiiC_len: 10 }, { tiiC_len: 15 }, { tiiC: true });
-  ok(!!r2 && Math.abs(taitokset(r2)[2].ya - 290) < 0.01, '4b: U-lista tiiviste 10 → 15 kuten ennen (taitos A 290)');
+  ok(!!r2 && Math.abs(taitokset(r2)[2].ya - 10) < 0.01, '4b: U-lista tiiviste 10 → 15 (väri ylöspäin: taitos A 10 alareunasta)');
   const r3 = lev('ulista', {}, {}, {});
   ok(!!r3 && !r3.kiila && Math.abs(r3.aihioA - 300) < 0.01, '4c: suora U-lista ei kiila');
   const r4 = lev('kynnys', { seg3_len: 0 }, {});
   ok(!!r4 && !r4.kiila && taitokset(r4).length === 2, '4d: suora Kynnys ilman etukäännöstä: kaksi taitosta');
+})();
+
+// 5. Väri ylöspäin (Tomi 27.11.2026): kaikissa malleissa alkureuna on kuvassa ylhäällä ja pinnan (värin)
+//    puoli katsojaan päin. Tarkistus: pinnan normaali profiilissa vs. levityskuvan katsojan suunta.
+(function () {
+  const EPS = 0.01, lahella = (a, b) => Math.abs(a.x - b.x) < EPS && Math.abs(a.y - b.y) < EPS;
+  let tarkistettu = 0, vaarin = [];
+  Object.keys(P.mallit).forEach(t => {
+    const m = P.mallit[t]; if (!m.build || t === 'vapaa') return;
+    const res = m.build(Object.assign({}, oletus(t)), {}), pts = res.points || res, pv = res.pintaViiva;
+    if (!pv) return;
+    let idx = -1;
+    for (let i = 0; i < pts.length - 1; i++) if ((lahella(pts[i], pv.p1) && lahella(pts[i + 1], pv.p2)) || (lahella(pts[i], pv.p2) && lahella(pts[i + 1], pv.p1))) { idx = i; break; }
+    if (idx < 0) return;
+    // profiilikuva pää A:n puolelta (y alas). Pinta on pintaviivan yläpuolella mallin asennossa (piirraKuva).
+    const dx = pts[idx + 1].x - pts[idx].x, dy = pts[idx + 1].y - pts[idx].y;
+    const s = Math.abs(dx) < 0.001 ? (dy > 0 ? -1 : 1) : (dx > 0 ? 1 : -1);
+    const r = lev(t, {}, {});
+    if (!r) return;
+    // levityskuvassa reitti kulkee alkureunasta (j = 0) loppureunaan: ylhäältä alas, kun väri on ylöspäin.
+    // Taustapuoli ylöspäin vastaisi s = +1 ja reittiä alhaalta ylös; käännetty kuva = reitti ylhäältä alas.
+    const alas = r.viivat[0].ya > r.viivat[r.viivat.length - 1].ya;
+    tarkistettu++;
+    if (!(s > 0 && alas)) vaarin.push(t);
+  });
+  ok(tarkistettu >= 15 && vaarin.length === 0, '5a: väri ylöspäin ' + tarkistettu + ' mallissa (alkureuna ylhäällä)' + (vaarin.length ? ' väärin: ' + vaarin.join(', ') : ''));
+  const k = P.piirraLevitys(lev('kynnys', { seg3_len: 0 }, { seg3_len: 15 }), 700, {});
+  ok(/VÄRI YLÖSPÄIN/.test(k.svg), '5b: kuvassa teksti VÄRI YLÖSPÄIN');
+  const taulu = P.levitysTaulukko(lev('kynnys', { seg3_len: 0 }, { seg3_len: 15 }));
+  ok(taulu.indexOf('Alkureuna') < taulu.indexOf('Loppureuna'), '5c: taulukon järjestys kuten kuvassa (alkureuna ylimpänä)');
 })();
 
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);

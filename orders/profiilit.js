@@ -2910,7 +2910,11 @@ function laskeLevitys(tyyppi, vals, valsB, opts, L, viite) {
   }
   const minX = Math.min.apply(null, kaikki.map(q => q.x)), maxX = Math.max.apply(null, kaikki.map(q => q.x));
   const minY = Math.min.apply(null, kaikki.map(q => q.y)), maxY = Math.max.apply(null, kaikki.map(q => q.y));
-  const FA = lev.FA.map(q => ({ x: q.x - minX, y: q.y - minY })), FB = lev.FB.map(q => ({ x: q.x - minX, y: q.y - minY }));
+  // Väri ylöspäin (Tomi 27.11.2026: pelti on merkatessa pöydällä väri ylöspäin). Levitys syntyy taustapuolelta
+  // katsottuna (pää A vasemmalla, alkureuna alhaalla, profiilikuva pää A:n puolelta), joten kuva käännetään
+  // ylösalaisin: pää A pysyy vasemmalla, alkureuna nousee ylös ja mitat otetaan väri ylöspäin -kuvan alareunasta.
+  const korkeus = maxY - minY;
+  const FA = lev.FA.map(q => ({ x: q.x - minX, y: korkeus - (q.y - minY) })), FB = lev.FB.map(q => ({ x: q.x - minX, y: korkeus - (q.y - minY) }));
   const aihioL = maxX - minX;
   // Levityksessä syntyy alle puolen millin pyöristyseroja; näytetään aihion leveys silloin
   // samana lukuna kuin pään oma aihio, ettei "300 mm" ja "299,9 mm" esiinny rinnakkain.
@@ -3038,12 +3042,19 @@ function piirraLevitys(lev, W, asetukset) {
   };
   h += paa(FA, pv - 8, 'end') + paa(FB, W - pv + 8, 'start');
   h += tk(pv, 14, 'PÄÄ A', '#5b6170', 'middle', 500) + tk(W - pv, 14, 'PÄÄ B', '#5b6170', 'middle', 500);
+  h += tk(W / 2, 14, 'VÄRI YLÖSPÄIN', '#8a4b00', 'middle', 600);
   h += tk(W / 2, H - 12, 'pituus ' + muotoile(lev.pituus) + ' mm (oranssi viiva)', '#8a4b00', 'middle', 500);
   let edelY = -Infinity;
-  for (let j = n - 1; j >= 1; j--) {
+  const jarjestys = [];
+  for (let j = 1; j < n; j++) jarjestys.push(j);
+  jarjestys.sort((a, b) => (Y(FA[a]) + Y(FB[a])) - (Y(FA[b]) + Y(FB[b])));   // ylhäältä alas
+  // yläreunan korkeus viivan keskikohdalla: lähellä yläreunaa oleva teksti viivan alle, ettei se osu reunaan
+  const ylaKeski = (Y(FA[0]) + Y(FB[0])) / 2;
+  for (const j of jarjestys) {
     const v = lev.viivat[j];
     const mx = (X(FA[j]) + X(FB[j])) / 2;
-    let my = (Y(FA[j]) + Y(FB[j])) / 2 - 9;
+    const keskiY = (Y(FA[j]) + Y(FB[j])) / 2;
+    let my = keskiY - 9 < ylaKeski + 8 ? keskiY + 9 : keskiY - 9;
     if (my - edelY < 13) my = edelY + 13;
     edelY = my;
     if (v.keski) h += tk(mx, my, 'keskilinja', '#5b6170', 'middle', 600);
@@ -3054,15 +3065,16 @@ function piirraLevitys(lev, W, asetukset) {
 
 // Merkkaustaulukko HTML-muodossa (sama Mallistossa ja Tuotannossa)
 function levitysTaulukko(lev) {
-  const rivit = lev.viivat.map(v =>
+  const jarj = lev.viivat.slice().sort((a, b) => (b.ya + b.yb) - (a.ya + a.yb));   // kuvan ylin viiva ensin
+  const rivit = jarj.map(v =>
     `<tr><td style="text-align:left">${v.nimi}${v.viite ? ' ★' : ''}</td><td class="lev-kulma">${v.tupla ? 'tupla' : (v.kulma === null ? '' : muotoile(v.kulma) + '°')}</td>` +
     `<td>${muotoile(v.ya)}</td><td>${muotoile(v.xa)}</td><td class="lev-b">${muotoile(v.yb)}</td><td class="lev-b">${muotoile(v.xb)}</td><td>${muotoile(v.pituus)}</td></tr>`
-  ).reverse().join('');
+  ).join('');
   return '<table class="lev-taulu"><thead><tr><th style="text-align:left">Viiva</th><th>Kulma</th><th>A: alareunasta</th><th>A: päästä</th><th>B: alareunasta</th><th>B: päästä</th><th>Viivan pituus</th></tr></thead><tbody>' + rivit + '</tbody></table>';
 }
 
 window.KPT_PROFIILIT = {
-  versio: '2026-11-27',
+  versio: '2026-11-27b',
   mallit: TYPES,
   tuotantoKuvat: PROD_TYPES,
   piirraKuva: piirraKuva,
