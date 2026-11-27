@@ -689,16 +689,24 @@ async function loadFixed() {
   renderFixed();
 }
 
+// matVirhe: haun virhe näkyviin (27.11.2026: Materiaalit olivat tyhjiä ilman selitystä, kun haku epäonnistui hiljaa)
+var matVirhe = '';
 async function loadMaterials() {
+  matVirhe = '';
   try {
     const r = await fetch(
       SUPABASE_URL + '/rest/v1/pricing_materials?select=id,material,thickness_mm,purchase_price,multiplier,work_price,updated_at&order=material',
       { headers: HDR }
     );
-    if (!r.ok) { matData = []; renderMaterials(); return; }
+    if (!r.ok) {
+      var t = ''; try { var j = await r.json(); t = [j.message, j.hint, j.details].filter(Boolean).join(' · '); } catch (e2) {}
+      matVirhe = 'Materiaalien haku epäonnistui (' + r.status + ')' + (t ? ': ' + t : '');
+      console.error(matVirhe);
+      matData = []; renderMaterials(); return;
+    }
     matData = await r.json();
     if (!Array.isArray(matData)) matData = [];
-  } catch(e) { matData = []; }
+  } catch(e) { matData = []; matVirhe = 'Materiaalien haku epäonnistui: ' + (e && e.message ? e.message : e); }
   renderMaterials();
 }
 
@@ -950,7 +958,7 @@ function renderMaterials() {
   var tbody = document.getElementById('matBody');
   renderMaterialsMobile();
   if (!matData.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ei materiaaleja — lisää napilla</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">' + (matVirhe ? '<span style="color:var(--kpt-virhe)">' + esc(matVirhe) + '</span>' : 'Ei materiaaleja — lisää napilla') + '</td></tr>';
     return;
   }
   var html = '';
@@ -974,7 +982,7 @@ function renderMaterials() {
 function renderMaterialsMobile() {
   var grid = document.getElementById('matMobileGrid');
   if (!grid) return;
-  if (!matData.length) { grid.innerHTML = '<div class="empty-state">Ei materiaaleja — lisää napilla</div>'; return; }
+  if (!matData.length) { grid.innerHTML = '<div class="empty-state">' + (matVirhe ? '<span style="color:var(--kpt-virhe)">' + esc(matVirhe) + '</span>' : 'Ei materiaaleja — lisää napilla') + '</div>'; return; }
   var luku = function (v, d) { return v != null ? parseFloat(v).toFixed(d) : '—'; };
   var html = '';
   matData.forEach(function(row) {
@@ -1050,7 +1058,8 @@ async function saveMaterial() {
     editingMaterialId = null;
     await loadMaterials();
   } else {
-    showToast('Tallennus epäonnistui', true);
+    var t = ''; try { var j = await r.json(); t = j.message || ''; } catch (e2) {}
+    showToast('Tallennus epäonnistui' + (t ? ': ' + t : ''), true);
   }
 }
 
