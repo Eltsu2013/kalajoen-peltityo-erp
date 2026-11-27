@@ -28,6 +28,13 @@
   .piippu-meta { font-size: 14px; color: var(--kpt-himmea); }
   .piippu-meta strong { color: var(--kpt-teksti); }
   .huomio-box { margin-bottom: 12px; }
+  /* Työaika-kortti (hinnoittelu vaihe 3b, 27.11.2026) */
+  .tyoaika-kortti .ta-rivi { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+  .tyoaika-kortti .ta-kentta { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--kpt-himmea); }
+  .tyoaika-kortti input { width: 80px; min-height: 36px; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--kpt-reuna); background: var(--kpt-kentta); color: var(--kpt-teksti); font-size: 14px; }
+  .tyoaika-kortti .ta-tila.ok { color: var(--kpt-ok); } .tyoaika-kortti .ta-tila.virhe { color: var(--kpt-virhe); }
+  .tyoaika-kortti .ta-vihje { font-size: 12px; color: var(--kpt-himmea); margin-top: 6px; }
+  @media (max-width: 700px) { .tyoaika-kortti input { font-size: 16px; min-height: 44px; } }
 
   /* Juuret ja huppu allekkain, jotta vaihenapit mahtuvat yhdelle riville */
   .two-col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-bottom: 16px; align-items: start; }
@@ -783,6 +790,8 @@ function render(items, order) {
 
     ${huomio?`<div class="huomio-box kpt-ilmoitus huom">⚠ ${huomio}</div>`:''}
 
+    ${firstWithData ? tyoaikaKorttiHtml(v) : ''}
+
     <div class="summary-bar">
       <div class="summary-item">Peltejä yhteensä: <strong>${totalM2.toFixed(3)} m²</strong></div>
       ${harjaYhteenveto(v)}
@@ -920,6 +929,45 @@ function kulmatTeksti(v) {
   } catch (e) { console.warn('Kulmat:', e); }
   return '';
 }
+// ── Työaika tuotannossa (hinnoittelu vaihe 3b, 27.11.2026, Tomi: suunnitellaan toimistossa, tehdään tuotannossa) ──
+// Suunnitteluaika ja työaika piipulle kerran (ei per pala), molemmat muokattavissa. Tallentuu piipun syöttöpakettiin
+// profile_data.vals.tyoaika ryhmän ensimmäiselle riville (sama kuin Piippu-sivulla), joten hinnoittelu ja muokkaus näkevät sen.
+function tyoaikaKorttiHtml(v) {
+  const ta = (v && v.tyoaika) || {}, arvo = x => Number(x) > 0 ? String(x) : '';
+  return `<div class="section-card tyoaika-kortti" style="margin-bottom:16px"><h3>Työaika</h3><div class="kortti-sisalto">
+    <div class="ta-rivi">
+      <label class="ta-kentta">Suunnitteluaika <input type="number" inputmode="numeric" min="0" step="1" id="ta-s" value="${arvo(ta.suunnittelu_min)}" placeholder="—" onchange="tallennaTyoaika()"> min</label>
+      <label class="ta-kentta">Työaika <input type="number" inputmode="numeric" min="0" step="1" id="ta-t" value="${arvo(ta.tyo_min)}" placeholder="—" onchange="tallennaTyoaika()"> min</label>
+      <span class="ta-tila" id="ta-tila"></span>
+    </div>
+    <div class="ta-vihje">Koko piipulle, ei per pala. Tallentuu tilaukseen heti, kun kentästä poistutaan.</div>
+  </div></div>`;
+}
+async function tallennaTyoaika() {
+  const item = tkData && tkData.dataItem;
+  const tila = document.getElementById('ta-tila');
+  if (!item || !tila) return;
+  const lue = id => { const x = parseFloat(document.getElementById(id).value); return isFinite(x) && x >= 0 ? x : null; };
+  const s = lue('ta-s'), t = lue('ta-t');
+  const ta = (s === null && t === null) ? null : { suunnittelu_min: s || 0, tyo_min: t || 0, yhteensa_min: (s || 0) + (t || 0) };
+  tila.className = 'ta-tila'; tila.textContent = 'Tallennetaan…';
+  let pd = item.profile_data || {};
+  try {   // tuore profile_data, ettei sivun vanha tieto korvaa muualla tehtyjä muutoksia
+    const r0 = await fetch(`${SUPA_URL}/rest/v1/order_items?id=eq.${item.id}&select=profile_data`, { headers });
+    if (r0.ok) { const j = await r0.json(); if (j && j[0]) pd = j[0].profile_data || {}; }
+  } catch (e) { /* sivun tieto */ }
+  const vals = Object.assign({}, pd.vals || {});
+  if (ta) vals.tyoaika = ta; else delete vals.tyoaika;
+  const uusi = Object.assign({}, pd, { vals });
+  const res = await fetch(`${SUPA_URL}/rest/v1/order_items?id=eq.${item.id}`, {
+    method: 'PATCH', headers: { ...headers, 'Prefer': 'return=minimal' }, body: JSON.stringify({ profile_data: uusi })
+  });
+  if (!res.ok) { tila.className = 'ta-tila virhe'; tila.textContent = 'Tallennus epäonnistui (' + res.status + ')'; return; }
+  item.profile_data = uusi;
+  if (tkData.v) { if (ta) tkData.v.tyoaika = ta; else delete tkData.v.tyoaika; }
+  tila.className = 'ta-tila ok'; tila.textContent = '✓ tallennettu';
+}
+
 function rakennaPiipunTyokortti(valinnat) {
   const val = Object.assign({ merkinta: true, lahikuvat: true, kansi: true }, valinnat || {});
   const T = window.KPT_TYOKORTTI;
@@ -964,6 +1012,7 @@ function rakennaPiipunTyokortti(valinnat) {
       ${juuret.map(rivi).join('')}${muut.map(rivi).join('')}
     </table>
     <div style="font-size:7.5pt;margin-top:1mm">Hupun palat aihion kokoisina (taitokset mukana). Levityskuvat ja merkintäpisteet piipun Tuotanto-sivulla (QR).</div>`;
+  if (T.aikaRivi) h += T.aikaRivi(v && v.tyoaika);   // kirjoitustila ajalle (hinnoittelu vaihe 3b)
   const mitat = mittalista(v, { kuvissa: true });
   if (mitat) h += `<h2>Muut mitat</h2><div class="tkk-mitat">${mitat}</div>`;
   // Hupun palojen sivut (vaihe 7.2): samat tilatut palat kuin ruudun levityskuvissa
