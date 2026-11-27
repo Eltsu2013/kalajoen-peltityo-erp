@@ -114,9 +114,11 @@ function menekkiM2(tuote) {
   const a = luku(tuote && tuote.aihio_width_mm) || 0;
   return rivit(tuote).reduce((s, r) => s + a / 1000 * r.kok / 1000 * r.kpl, 0) + (luku(pd(tuote).paatylaputM2) || 0);
 }
-// Työaika-arvio minuutteina (profile_data.tyoaika: { suunnittelu_min, tyo_min, yhteensa_min }), null = ei arviota
+// Työaika-arvio minuutteina { suunnittelu_min, tyo_min, yhteensa_min }, null = ei arviota.
+// Peltilistat ja kouru: profile_data.tyoaika. Piippu, Harjapiippu, Huuva, Kartio: syöttöpaketissa profile_data.vals.tyoaika
+// (ryhmän ensimmäisellä rivillä, hinnoittelu vaihe 3).
 function tyoaikaMin(tuote) {
-  const ta = pd(tuote).tyoaika;
+  const ta = pd(tuote).tyoaika || (pd(tuote).vals && pd(tuote).vals.tyoaika);
   if (!ta) return null;
   const y = luku(ta.yhteensa_min);
   if (y !== null) return y;

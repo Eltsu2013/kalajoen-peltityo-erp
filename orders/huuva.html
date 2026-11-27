@@ -319,6 +319,11 @@
           <div class="section-title">Tilaukseen</div>
           <div id="materiaali-valinta"></div>
           <div class="kpt-kentta"><label for="tilaus-huomio">Huomio</label><textarea id="tilaus-huomio" rows="2" placeholder="Näkyy tilauksen huomioissa"></textarea></div>
+          <div class="kpt-kentat">
+            <div class="kpt-kentta"><label for="tyo-suunnittelu">Suunnitteluaika min</label><input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—"></div>
+            <div class="kpt-kentta"><label for="tyo-tyo">Työaika min</label><input type="number" id="tyo-tyo" min="0" step="1" placeholder="—"></div>
+          </div>
+          <p class="kpt-vihje">Työaika-arvio koko työlle, ei per kappale. Tyhjä = ei arviota.</p>
           <button type="button" class="kpt-nappi leve" id="nappi-tilaukseen" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
           <div id="tilaus-status" class="tilaus-status"></div>
         </div>
@@ -1064,6 +1069,20 @@ const MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-v
     if (mika !== 'alku' && a.thickness) { const p = document.getElementById('in-paksuus'); if (p) { p.value = a.thickness; renderAll(); } }
   },
 });
+// Työaika-arvio (hinnoittelu vaihe 3, 27.11.2026): sama muoto kuin Peltilistoissa { suunnittelu_min, tyo_min, yhteensa_min },
+// koko työlle (ei per kappale). Kulkee syöttöpaketissa (vals.tyoaika) tilaukseen ja palaa muokattaessa. Tyhjä = null.
+function tyoaikaArvio() {
+  const lue = id => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return isFinite(v) && v >= 0 ? v : null; };
+  const suunnittelu = lue('tyo-suunnittelu'), tyo = lue('tyo-tyo');
+  if (suunnittelu === null && tyo === null) return null;
+  return { suunnittelu_min: suunnittelu || 0, tyo_min: tyo || 0, yhteensa_min: (suunnittelu || 0) + (tyo || 0) };
+}
+function asetaTyoaika(ta) {
+  const t = ta || {}, arvo = x => (x === null || x === undefined || x === 0 || x === '0') ? '' : x;
+  const s = document.getElementById('tyo-suunnittelu'), w = document.getElementById('tyo-tyo');
+  if (s) s.value = arvo(t.suunnittelu_min);
+  if (w) w.value = arvo(t.tyo_min);
+}
 function huuvaSyotteet() {
   const kentat = {};
   document.querySelectorAll('[data-kortti] input, [data-kortti] select').forEach(el => {
@@ -1072,6 +1091,7 @@ function huuvaSyotteet() {
   const kopio = o => JSON.parse(JSON.stringify(o));
   return {
     tyyppi: 'huuva', versio: 1, nimi: document.getElementById('k-nimi').value, kentat,
+    tyoaika: tyoaikaArvio(),   // hinnoittelu vaihe 3 (27.11.2026); Tilaukseen-osio ei ole data-kortti, joten ei kentat-listassa
     tila: { tyyppiState, nurkkaSivu, sijaintiState, panelOn: kopio(panelOn), ylaTyyppi: kopio(ylaTyyppi), loveusOn,
             reunaTyyppi: kopio(reunaTyyppi), seinaSuunta: kopio(seinaSuunta) },
   };
@@ -1117,6 +1137,7 @@ var MUOKKAUS = (function () {
 if (MUOKKAUS && palautaHuuva(MUOKKAUS.vals)) {
   MATERIAALI.aseta({ material: MUOKKAUS.material, color: MUOKKAUS.color, thickness: MUOKKAUS.thickness });
   document.getElementById('tilaus-huomio').value = MUOKKAUS.huomio || '';
+  asetaTyoaika(MUOKKAUS.vals && MUOKKAUS.vals.tyoaika);
   document.getElementById('nappi-tilaukseen').textContent = 'Tallenna muutokset tilaukseen →';
   var ilmo = document.createElement('div');
   ilmo.className = 'kpt-ilmoitus info'; ilmo.id = 'muokkaus-ilmo'; ilmo.style.marginBottom = '10px';

@@ -228,6 +228,11 @@
         <label for="v-huomio">Huomio</label>
         <textarea id="v-huomio" rows="2" placeholder="Esim. piipussa lunssi, kootaan paikan päällä... Näkyy tilauksen huomioissa."></textarea>
       </div>
+      <div class="kpt-kentat">
+        <div class="kpt-kentta"><label for="tyo-suunnittelu">Suunnitteluaika min</label><input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—"></div>
+        <div class="kpt-kentta"><label for="tyo-tyo">Työaika min</label><input type="number" id="tyo-tyo" min="0" step="1" placeholder="—"></div>
+      </div>
+      <p class="kpt-vihje">Työaika-arvio koko työlle, ei per kappale. Tyhjä = ei arviota.</p>
     </div></details>
 
     <details id="k-mitat" data-kortti class="kpt-kortti" open><summary>Piipun mitat <span class="yv" id="ky-mitat"></span></summary><div class="k-sisalto">
@@ -773,6 +778,21 @@ function ilmoitus(html, vari) {
 const HARJA_KENTAT = ['lev1', 'koko', 'suora1', 'kork1', 'korkH', 'poimu', 'ylit1V', 'ylit1O', 'ylit2V', 'ylit2O', 'k24_1', 'j25_1', 'k24_2', 'j25_2'];
 const HARJA_VAKIOT = [['tupla', 'v-tupla'], ['etulis', 'v-etulis'], ['nousu', 'v-nousu'], ['sivulisa', 'v-sivulisa'], ['sauma', 'v-sauma'], ['huplis', 'v-huplis'],
   ['ylareunaV', 'v-ylareunaV'], ['alatupla', 'v-alatupla'], ['vahennys', 'v-vahennys'], ['hsivlisa', 'v-hsivlisa'], ['hattulis', 'v-hattulis'], ['jakosauma', 'v-jakosauma'], ['harjakulma', 'v-harjakulma']];
+// Työaika-arvio (hinnoittelu vaihe 3, 27.11.2026): sama muoto kuin Peltilistoissa { suunnittelu_min, tyo_min, yhteensa_min },
+// koko työlle (ei per kappale). Kulkee syöttöpaketissa (vals.tyoaika) tilaukseen ja palaa muokattaessa. Tyhjä = null.
+function tyoaikaArvio() {
+  const lue = id => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return isFinite(v) && v >= 0 ? v : null; };
+  const suunnittelu = lue('tyo-suunnittelu'), tyo = lue('tyo-tyo');
+  if (suunnittelu === null && tyo === null) return null;
+  return { suunnittelu_min: suunnittelu || 0, tyo_min: tyo || 0, yhteensa_min: (suunnittelu || 0) + (tyo || 0) };
+}
+function asetaTyoaika(ta) {
+  const t = ta || {}, arvo = x => (x === null || x === undefined || x === 0 || x === '0') ? '' : x;
+  const s = document.getElementById('tyo-suunnittelu'), w = document.getElementById('tyo-tyo');
+  if (s) s.value = arvo(t.suunnittelu_min);
+  if (w) w.value = arvo(t.tyo_min);
+}
+
 function palautaMuokattava() {
   if (toinenTyyppi) {
     ilmoitus('<b>Tämän ryhmän piippu on lapepiippu.</b> Tallennus korvaa sen tällä harjapiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.', 'virhe');
@@ -787,6 +807,7 @@ function palautaMuokattava() {
   aseta('lev2', v.lev2 === null || v.lev2 === undefined ? '' : v.lev2);
   if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
   aseta('v-huomio', v.huomio || '');
+  asetaTyoaika(v.tyoaika);
   suora2Tila = v.suora2Tila === 'kasin' ? 'kasin' : 'auto';
   puoli2Tila = ['kork', 'vino'].includes(v.puoli2Tila) ? v.puoli2Tila : 'auto';
   if (suora2Tila === 'kasin') aseta('suora2', v.suora2);
@@ -833,7 +854,7 @@ function lisaaTilaukseen() {
   if (!pellit.length) return virhe('Ei peltejä laskettuna — valitse osat');
   if (puuttuuMat) return virhe(`Valitse ${puuttuuMat} ensin`);   // väri vain, jos materiaalilla on värejä
   const huomio = document.getElementById('v-huomio').value.trim();
-  const piippuData = Object.assign({ tyyppi: 'harjapiippu' }, vals, { piippukpl, huomio });
+  const piippuData = Object.assign({ tyyppi: 'harjapiippu' }, vals, { piippukpl, huomio, tyoaika: tyoaikaArvio() });   // tyoaika: hinnoittelu vaihe 3
   const leveydet = vals.lev2 !== null && vals.lev2 !== vals.lev1 ? vals.lev1 + '/' + vals.lev2 : String(vals.lev1);
   const ryhmaNimi = `Harjapiippu ${leveydet}×(${r(vals.suora1)}+${r(vals.suora2)}) ${vari || materiaali}`;
   const groupId = targetGroupId || ('g_piippu_' + Date.now());

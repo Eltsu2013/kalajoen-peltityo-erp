@@ -210,6 +210,11 @@
       <div class="kpt-kortti tilaukseen" id="tilaus-kortti" style="margin-top:16px"><div class="kpt-kortti-otsikko">Tilaukseen</div>
         <div id="materiaali-valinta"></div>
         <div class="kpt-kentta"><label for="tilaus-huomio">Huomio</label><textarea id="tilaus-huomio" rows="2" placeholder="Näkyy tilauksen huomioissa"></textarea></div>
+        <div class="kpt-kentat">
+          <div class="kpt-kentta"><label for="tyo-suunnittelu">Suunnitteluaika min</label><input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—"></div>
+          <div class="kpt-kentta"><label for="tyo-tyo">Työaika min</label><input type="number" id="tyo-tyo" min="0" step="1" placeholder="—"></div>
+        </div>
+        <p class="kpt-vihje">Työaika-arvio koko työlle, ei per kappale. Tyhjä = ei arviota.</p>
         <button class="kpt-nappi leve" id="nappi-tilaukseen" type="button" onclick="lisaaTilaukseen()">Lisää tilaukseen →</button>
         <div id="tilaus-status" class="tilaus-status"></div>
       </div>
@@ -2243,10 +2248,25 @@ var MATERIAALI = KPT_MATERIAALI.valitsin(document.getElementById('materiaali-val
     if (mika !== 'alku' && a.thickness) { var t = $('k-t'); t.value = String(a.thickness).replace('.', ','); t.dispatchEvent(new Event('input')); }
   },
 });
+// Työaika-arvio (hinnoittelu vaihe 3, 27.11.2026): sama muoto kuin Peltilistoissa { suunnittelu_min, tyo_min, yhteensa_min },
+// koko työlle (ei per kappale). Kulkee syöttöpaketissa (vals.tyoaika) tilaukseen ja palaa muokattaessa. Tyhjä = null.
+function tyoaikaArvio() {
+  const lue = id => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return isFinite(v) && v >= 0 ? v : null; };
+  const suunnittelu = lue('tyo-suunnittelu'), tyo = lue('tyo-tyo');
+  if (suunnittelu === null && tyo === null) return null;
+  return { suunnittelu_min: suunnittelu || 0, tyo_min: tyo || 0, yhteensa_min: (suunnittelu || 0) + (tyo || 0) };
+}
+function asetaTyoaika(ta) {
+  const t = ta || {}, arvo = x => (x === null || x === undefined || x === 0 || x === '0') ? '' : x;
+  const s = document.getElementById('tyo-suunnittelu'), w = document.getElementById('tyo-tyo');
+  if (s) s.value = arvo(t.suunnittelu_min);
+  if (w) w.value = arvo(t.tyo_min);
+}
 function kartioSyotteet() {
   var o = { tyyppi: 'kartio', versio: 1 };
   KENTAT.forEach(function (id) { o[id] = $(id).value; });
   o.saumat = JSON.parse(JSON.stringify(SAUMAT)); o.reunaValinnat = JSON.parse(JSON.stringify(REUNAVALINNAT));
+  o.tyoaika = tyoaikaArvio();   // hinnoittelu vaihe 3 (27.11.2026)
   return o;
 }
 function tilausStatus(teksti, tyyppi) {
@@ -2279,6 +2299,7 @@ var MUOKKAUS = (function () {
 if (MUOKKAUS && palautaKartio(MUOKKAUS.vals)) {
   MATERIAALI.aseta({ material: MUOKKAUS.material, color: MUOKKAUS.color, thickness: MUOKKAUS.thickness });
   document.getElementById('tilaus-huomio').value = MUOKKAUS.huomio || '';
+  asetaTyoaika(MUOKKAUS.vals && MUOKKAUS.vals.tyoaika);
   document.getElementById('nappi-tilaukseen').textContent = 'Tallenna muutokset tilaukseen →';
   var ilmo = document.createElement('div');
   ilmo.className = 'kpt-ilmoitus info'; ilmo.id = 'muokkaus-ilmo'; ilmo.style.marginBottom = '10px';

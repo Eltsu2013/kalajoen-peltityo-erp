@@ -172,5 +172,16 @@ eq(H.tapa({ profile_type: 'KAPPALE', profile_data: { maara: 3 } }), 'kappale', '
   eq(H.paanKaantoLisa(h.vaativa, 1, 4), 30, '13c: vaativa 7,50 € × 1 pää × 4 kpl = 30,00 €');
 })();
 
+// 14. Työaika syöttöpaketissa (Piippu, Harjapiippu, Huuva, Kartio: profile_data.vals.tyoaika, vaihe 3)
+(function () {
+  eq(H.tyoaikaMin({ profile_data: { vals: { tyoaika: { suunnittelu_min: 30, tyo_min: 150, yhteensa_min: 180 } } } }), 180, '14a: vals.tyoaika luetaan');
+  eq(H.tyoaikaMin({ profile_data: { vals: { tyoaika: null } } }), null, '14b: vals.tyoaika tyhjä → ei arviota');
+  const huuva = [{ profile_type: 'huuva', aihio_width_mm: 700, material: 'Pural', thickness_mm: 0.5, order_item_rows: [rivi(560, 2)],
+    profile_data: { vals: { tyyppi: 'huuva', tyoaika: { yhteensa_min: 90 } } } },
+    { profile_type: 'huuva', aihio_width_mm: 520, material: 'Pural', thickness_mm: 0.5, order_item_rows: [rivi(560, 2)] }];
+  const r = H.ryhmanHinta(huuva, CTX);
+  ok(r.puuttuu.length === 0 && r.rivit[0].tyoMukana && r.rivit[0].osat[1].summa === 75, '14c: huuvan työ 90 min = 75,00 € ensimmäiseltä riviltä, ei puutteita');
+})();
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;

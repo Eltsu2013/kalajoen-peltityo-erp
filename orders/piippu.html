@@ -206,6 +206,11 @@
         <label for="v-huomio">Huomio</label>
         <textarea id="v-huomio" rows="2" placeholder="Esim. piipussa lunssi, kootaan paikan päällä... Näkyy tilauksen huomioissa."></textarea>
       </div>
+      <div class="kpt-kentat">
+        <div class="kpt-kentta"><label for="tyo-suunnittelu">Suunnitteluaika min</label><input type="number" id="tyo-suunnittelu" min="0" step="1" placeholder="—"></div>
+        <div class="kpt-kentta"><label for="tyo-tyo">Työaika min</label><input type="number" id="tyo-tyo" min="0" step="1" placeholder="—"></div>
+      </div>
+      <p class="kpt-vihje">Työaika-arvio koko työlle, ei per kappale. Tyhjä = ei arviota.</p>
     </div></details>
 
     <details id="k-mitat" data-kortti class="kpt-kortti" open><summary>Piipun mitat <span class="yv" id="ky-mitat"></span></summary><div class="k-sisalto">
@@ -614,6 +619,21 @@ try {
 } catch (e) { /* ei muokattavaa */ }
 // Välilehdet Lapepiippu | Harjapiippu kuljettavat tilauksen ryhmän mukana: pieni skripti heti välilehtien perässä (26.11.2026).
 
+// Työaika-arvio (hinnoittelu vaihe 3, 27.11.2026): sama muoto kuin Peltilistoissa { suunnittelu_min, tyo_min, yhteensa_min },
+// koko työlle (ei per kappale). Kulkee syöttöpaketissa (vals.tyoaika) tilaukseen ja palaa muokattaessa. Tyhjä = null.
+function tyoaikaArvio() {
+  const lue = id => { const el = document.getElementById(id); const v = el ? parseFloat(el.value) : NaN; return isFinite(v) && v >= 0 ? v : null; };
+  const suunnittelu = lue('tyo-suunnittelu'), tyo = lue('tyo-tyo');
+  if (suunnittelu === null && tyo === null) return null;
+  return { suunnittelu_min: suunnittelu || 0, tyo_min: tyo || 0, yhteensa_min: (suunnittelu || 0) + (tyo || 0) };
+}
+function asetaTyoaika(ta) {
+  const t = ta || {}, arvo = x => (x === null || x === undefined || x === 0 || x === '0') ? '' : x;
+  const s = document.getElementById('tyo-suunnittelu'), w = document.getElementById('tyo-tyo');
+  if (s) s.value = arvo(t.suunnittelu_min);
+  if (w) w.value = arvo(t.tyo_min);
+}
+
 function palautaMuokattava() {
   if (toinenTyyppi) {
     const sb0 = document.getElementById('ilmo-paikka');
@@ -640,6 +660,7 @@ function palautaMuokattava() {
   aseta('v-harjakulma', v.harjakulma);
   if (v.harjakulma === undefined || v.harjakulma === null || v.harjakulma === '') aseta('v-harjakulma', 90);   // vanha tilaus: kulma oli oletuksena 90
   aseta('v-huomio', v.huomio || '');
+  asetaTyoaika(v.tyoaika);
   if (v.ylaTyyppi) aseta('v-ylatyyppi', v.ylaTyyppi);
   KIILA_KENTAT.forEach(n => aseta('k-' + n, v[n] === null || v[n] === undefined ? '' : v[n]));
   aseta('k-suoraKulma', [0, 1, 2, 3].includes(Number(v.suoraKulma)) ? Number(v.suoraKulma) : 0);
@@ -759,6 +780,7 @@ async function lisaaTilaukseen() {
     ylaTyyppi: document.getElementById('v-ylatyyppi').value,   // hupun yläreunan taitos: ulos / sisaan / tupla (levityskuvat)
     ...kiilaArvot(),   // kiila / mutkapiippu (20.11.2026): kiilaPaalla, suoraKulma, takaLeveys, vasenPituus, korkeudet kulmissa, kiilat
     huomio,
+    tyoaika: tyoaikaArvio(),   // hinnoittelu vaihe 3 (27.11.2026)
     kansi: kansiArvo(),   // kannen taitos ja reiät (vaihe 7b, 23.11.2026)
   };
 
