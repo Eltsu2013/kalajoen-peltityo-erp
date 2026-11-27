@@ -2749,7 +2749,7 @@ function kentanKohde(tyyppi, vals, opts, kenttaId) {
 // Pellin todellinen kulkureitti reunasta reunaan: pääketju ilman piirtoteknisiä pätkiä,
 // ja sen päihin liittyvät lisäviivat (tiiviste, tupla). Reitin pituus = aihion leveys
 // (tarkistettu mallien aihio-kaavoja vasten kaikilla valintojen yhdistelmillä).
-function reitti(res) {
+function reitti(res, pidaNollat) {
   const pts = (Array.isArray(res) ? res : (res && res.points) || []);
   const ex = (Array.isArray(res) ? [] : (res.extraLines || [])).filter(e => e && e.p1 && e.p2);
   const labels = Array.isArray(res) ? null : (res.labels || null);
@@ -2757,7 +2757,8 @@ function reitti(res) {
   const idx = [0];
   for (let i = 1; i < pts.length; i++) {
     const e = pts[idx[idx.length - 1]], q = pts[i];
-    if (et(q, e) < 0.01) continue; // nollapituinen pätkä
+    // nollapituinen pätkä (kiilan nollapään vertailussa pidetään häviävän lyhyetkin, ks. kiilaPaat)
+    if (et(q, e) < (pidaNollat ? 1e-9 : 0.01)) continue;
     if (idx.length >= 2) {
       const d = pts[idx[idx.length - 2]];
       const c = ((e.x - d.x) * (q.x - e.x) + (e.y - d.y) * (q.y - e.y)) / (et(e, d) * et(q, e));
@@ -2824,17 +2825,53 @@ function kiilaArvot(vals, valsB) {
   return out;
 }
 
+// Kiilan päät A ja B samanmuotoisiksi reiteiksi (sama määrä pisteitä, piste j = sama taitos).
+// Jos jokin mitta on toisessa päässä 0, malli jättää osan pois (Kynnyksen etukäännös) tai reitti
+// karsii nollapituisen pätkän (U-listan tiiviste), jolloin päissä on eri määrä pisteitä eikä
+// levitystä voi laskea. Silloin nolla korvataan häviävän pienellä mitalla (KIILA_PIENI), joten osa on
+// mukana kummassakin päässä: pää A:ssa se on käytännössä piste ja pellissä levenee kiilaksi.
+// Pätkät, jotka ovat lyhyitä kummassakin päässä, karsitaan kuten ennenkin.
+const KIILA_PIENI = 1e-6;
+function kiilaPaat(malli, vals, valsB, opts) {
+  const rakenna = (va, vb) => {
+    try { return [malli.build(Object.assign({}, va), opts || {}), malli.build(Object.assign({}, vb), opts || {})]; }
+    catch (e) { return null; }
+  };
+  const va = Object.assign({}, vals), vb = kiilaArvot(vals, valsB);
+  let r = rakenna(va, vb);
+  if (!r) return null;
+  let RA = reitti(r[0]), RB = reitti(r[1]);
+  if (RA.polku.length === RB.polku.length) return { ra: r[0], rb: r[1], A: RA.polku, B: RB.polku, irti: RA.irti + RB.irti };
+  let muutettu = false;
+  Object.keys(valsB || {}).forEach(k => {
+    const a = parseFloat(va[k]), b = parseFloat(vb[k]);
+    if (a === 0 && b > 0) { va[k] = KIILA_PIENI; muutettu = true; }
+    else if (b === 0 && a > 0) { vb[k] = KIILA_PIENI; muutettu = true; }
+  });
+  if (!muutettu) return null;
+  r = rakenna(va, vb);
+  if (!r) return null;
+  RA = reitti(r[0], true); RB = reitti(r[1], true);
+  let A = RA.polku, B = RB.polku;
+  if (A.length !== B.length) return null;
+  const et = (p, q) => Math.hypot(p.x - q.x, p.y - q.y);
+  for (let i = A.length - 2; i >= 0 && A.length > 2; i--) {
+    if (et(A[i], A[i + 1]) < 0.01 && et(B[i], B[i + 1]) < 0.01) {
+      A.splice(i + 1, 1); B.splice(i + 1, 1);
+    }
+  }
+  return { ra: r[0], rb: r[1], A: A, B: B, irti: RA.irti + RB.irti };
+}
+
 // Laskee levityksen ja merkkausmitat. Palauttaa null, jos mallia ei voi laskea.
 //   viivat[j] = { nimi, kulma (kanttikoneen luku tai null), tupla, ya, xa, yb, xb, pituus, viite }
 //   ya/yb = etäisyys aihion alareunasta päässä A/B, xa/xb = etäisyys aihion päästä
 function laskeLevitys(tyyppi, vals, valsB, opts, L, viite) {
   const malli = TYPES[tyyppi];
   if (!malli || !malli.build || tyyppi === 'vapaa') return null;
-  let ra, rb;
-  try { ra = malli.build(Object.assign({}, vals), opts || {}); rb = malli.build(kiilaArvot(vals, valsB), opts || {}); }
-  catch (e) { return null; }
-  const RA = reitti(ra), RB = reitti(rb);
-  let A = RA.polku, B = RB.polku;
+  const kp = kiilaPaat(malli, vals, valsB, opts);
+  if (!kp) return null;
+  let A = kp.A, B = kp.B;
   if (A.length < 2 || A.length !== B.length) return null;
   const n0 = A.length - 1;
   // Viite = viiva, jota pitkin pituus mitataan ja joka on levityskuvassa suora.
@@ -2881,8 +2918,13 @@ function laskeLevitys(tyyppi, vals, valsB, opts, L, viite) {
   const levein = Math.max(sumA0, sumB0);
   let aihioW = maxY - minY;
   if (Math.abs(aihioW - levein) < 0.5) aihioW = levein;
+  // Kulma on sama kummassakin päässä; nollapään häviävän lyhyen pätkän suunta otetaan pää B:stä
+  const suuntaVektori = (i, k) => {
+    const x = A[k].x - A[i].x, y = A[k].y - A[i].y;
+    return Math.hypot(x, y) > 0.001 ? [x, y] : [B[k].x - B[i].x, B[k].y - B[i].y];
+  };
   const koneKulma = j => {
-    const ux = A[j - 1].x - A[j].x, uy = A[j - 1].y - A[j].y, wx = A[j + 1].x - A[j].x, wy = A[j + 1].y - A[j].y;
+    const [ux, uy] = suuntaVektori(j, j - 1), [wx, wy] = suuntaVektori(j, j + 1);
     const c = (ux * wx + uy * wy) / ((Math.hypot(ux, uy) * Math.hypot(wx, wy)) || 1);
     return 180 - Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
   };
@@ -2914,7 +2956,7 @@ function laskeLevitys(tyyppi, vals, valsB, opts, L, viite) {
     aihioA: sumA, aihioB: sumB, aihioL: aihioL, aihioW: aihioW,
     kiila: lev.a.some((x, i) => Math.abs(x - lev.b[i]) > 0.05),
     suora: suora,
-    kaikkiMukana: RA.irti === 0 && RB.irti === 0
+    kaikkiMukana: kp.irti === 0
   };
 }
 
@@ -2923,9 +2965,14 @@ function laskeLevitys(tyyppi, vals, valsB, opts, L, viite) {
 function kiilaKuva(tyyppi, vals, valsB, opts, viite) {
   const malli = TYPES[tyyppi];
   if (!malli || !malli.build || tyyppi === 'vapaa') return null;
+  // Päät samanmuotoisina (nollamitta häviävän pienenä, ks. kiilaPaat); jos se ei onnistu, mallit sellaisinaan
+  const kp = kiilaPaat(malli, vals, valsB, opts);
   let ra, rb;
-  try { ra = malli.build(Object.assign({}, vals), opts || {}); rb = malli.build(kiilaArvot(vals, valsB), opts || {}); }
-  catch (e) { return null; }
+  if (kp) { ra = kp.ra; rb = kp.rb; }
+  else {
+    try { ra = malli.build(Object.assign({}, vals), opts || {}); rb = malli.build(kiilaArvot(vals, valsB), opts || {}); }
+    catch (e) { return null; }
+  }
   const pa = Array.isArray(ra) ? ra : ra.points, pb = Array.isArray(rb) ? rb : rb.points;
   if (!pa || !pb || pa.length !== pb.length) return null;
   const la = Array.isArray(ra) ? null : (ra.labels || null), lb = Array.isArray(rb) ? null : (rb.labels || null);
@@ -2949,7 +2996,7 @@ function kiilaKuva(tyyppi, vals, valsB, opts, viite) {
   });
   let haamu = [];
   if (kiila) {
-    const A = reitti(ra).polku, B = reitti(rb).polku;
+    const A = kp ? kp.A : reitti(ra).polku, B = kp ? kp.B : reitti(rb).polku;
     const kelpaa = A.length === B.length && typeof viite === 'number' && isFinite(viite) && viite >= 0 && viite <= A.length - 1;
     const r = kelpaa ? Math.floor(viite) : 0;
     const r2 = (kelpaa && viite % 1 !== 0 && r + 1 < A.length) ? r + 1 : r; // keskilinja = kahden pisteen puoliväli
@@ -3015,7 +3062,7 @@ function levitysTaulukko(lev) {
 }
 
 window.KPT_PROFIILIT = {
-  versio: '2026-11-13',
+  versio: '2026-11-27',
   mallit: TYPES,
   tuotantoKuvat: PROD_TYPES,
   piirraKuva: piirraKuva,

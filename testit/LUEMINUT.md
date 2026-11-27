@@ -55,6 +55,12 @@ Testaavat Kartio-sivua `orders/kartio.html` (vaihe 8.2 / ulkoasuremontti R1). Ne
 - `test_kartio.js` ja `test_kartio_karki.js` — Tomin Kartio-testit Claude-projektista (pyöreä ja nelikulmainen kartio, sovitteet, huullokset, saumat, sijoitus, leikkauskulmat; terävä kärki). Siirretty sellaisinaan, vain polku ja tulostus muutettu tälle ajurille.
 - `test_kartio_harppi.js` — uusi `kartioHarppi` (Tomin toiveet A ja B): harpin kärjen paikka pellillä, kaaren pisteet tasavälein, pisteet leikkausääriviivalla, kärki palan / pellin ulkopuolella.
 
+## profiilit/ (1 sarja, 27.11.2026)
+
+Testaavat yhteistä `orders/profiilit.js`:ää (Peltilistat ja Tuotanto) suoraan Nodella.
+
+- `test_kiila_nolla.js` — kiilapelti, kun mitta on toisessa päässä 0 (Kynnyksen etukäännös, U-listojen tiivisteet, tupla): levitys lasketaan, aihiot ja taitosten paikat oikein, poikkileikkauksessa "0–15" ja haamu, tuplan taitos tuplana. Lisäksi tarkistetaan, että nollasta poikkeavat kiilat ja suorat pellit ovat ennallaan.
+
 ## Tulossa
 
 - `piippu/`: harjapiipun testipiiput A ja B (vaihe 5).

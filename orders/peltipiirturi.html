@@ -234,7 +234,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
-<script src="profiilit.js?v=20261113m"></script>
+<script src="profiilit.js?v=20261127a"></script>
 </head>
 <body class="kpt-sivu">
 
@@ -474,6 +474,7 @@ function setType(t) {
     b.classList.toggle('active', b.getAttribute('onclick').includes(`'${t}'`));
   });
   paivitaMalliNappi(); suljeMallit();
+  document.getElementById('profile-fields').dataset.malli = ''; // mallin valinta nollaa valinnat kuten ennen
   renderProfileFields();
   // Resetoi kentät oletusarvoihin
   const type = TYPES[activeType];
@@ -613,6 +614,11 @@ pmValmis = fetchPmProducts();
 function renderProfileFields() {
   const type = TYPES[activeType];
   const el = document.getElementById('profile-fields');
+  // Valintojen (tiiviste, tupla…) tila talteen ennen kenttien tyhjennystä, jotta kiila-nappi ei
+  // kytke niitä pois (27.11.2026). Mallin vaihto aloittaa puhtaalta pöydältä kuten ennen.
+  const vanhatValinnat = {};
+  if (el.dataset.malli === activeType) el.querySelectorAll('input[type="checkbox"]').forEach(cb => { vanhatValinnat[cb.id] = cb.checked; });
+  el.dataset.malli = activeType;
   if (!type.fields.length) { el.innerHTML = ''; return; }
 
   const grid = document.createElement('div');
@@ -643,8 +649,7 @@ function renderProfileFields() {
     type.options.forEach(opt => {
       const row = document.createElement('label');
       row.className = 'valinta-rivi';
-      const existing = document.getElementById('opt_' + opt.id);
-      const checked = existing ? existing.checked : false;
+      const checked = !!vanhatValinnat['opt_' + opt.id];
       row.innerHTML = `
         <input type="checkbox" id="opt_${opt.id}" ${checked ? 'checked' : ''} onchange="redraw()">
         ${opt.label}
