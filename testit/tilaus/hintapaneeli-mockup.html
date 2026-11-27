@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="fi" data-kategoria="tilaukset">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tilauksen hintapaneeli — mockup</title>
+<!-- Hinnoittelu vaihe 4a, 27.11.2026 (suunnitelma claude/vaihe4a_hintapaneeli_suunnitelma.md).
+     Mockup OIKEALLA hintalaskennalla (orders/hinnoittelu.js) mutta keksityllä tilauksella ja ESIMERKKIHINNOILLA.
+     Ei kirjautumista, ei kantakutsuja, ei tallennusta. Poistetaan, kun paneeli on tilaus.html:ssä. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../orders/tyyli.css?v=3">
+<script src="../../orders/teema.js?v=1"></script>
+<style>
+  * { box-sizing: border-box; }
+  .sivu { max-width: 1000px; margin: 0 auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .sivu.puhelin { max-width: 380px; border-left: 1px dashed var(--kpt-reuna2); border-right: 1px dashed var(--kpt-reuna2); }
+  .valinnat { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; align-items: center; }
+  .valinnat label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+  .valinnat input { width: auto; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* Tilaus-sivun omat tyylit (kopio tilaus.html:stä) */
+  .btn { border: none; border-radius: 4px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+  .btn-primary { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+  .btn-secondary { background: var(--kpt-paneeli2); color: var(--kpt-teksti); box-shadow: inset 0 0 0 1px var(--kpt-reuna2); }
+  .order-group { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 6px; }
+  .group-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--kpt-reuna); background: var(--kpt-paneeli2); border-radius: 6px 6px 0 0; flex-wrap: wrap; }
+  .group-name { color: var(--kpt-korostus); font-size: 13px; font-weight: 600; }
+  .group-items { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .order-item { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); border-radius: 4px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+  .item-nimike { font-weight: 600; font-size: 13px; }
+  .item-detail { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; }
+  .tag { display: inline-block; background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna); border-radius: 3px; padding: 1px 6px; font-size: 10px; font-family: 'IBM Plex Mono', monospace; color: var(--kpt-himmea); }
+
+  /* ── UUTTA: hintapaneeli ── */
+  .hinnat-nappi.paalla { background: var(--kpt-ok); color: var(--kpt-teksti-korostuksella); box-shadow: none; }
+  .hinta-yht { background: var(--kpt-paneeli); border: 1px solid var(--kpt-ok); border-radius: 6px; padding: 12px 14px; }
+  .hinta-yht .iso { font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; color: var(--kpt-ok); }
+  .hinta-yht .pieni { font-size: 12px; color: var(--kpt-himmea); margin-top: 2px; }
+  .hinta-yht .puutteet { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+  .hinta-merkki { margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; color: var(--kpt-ok); white-space: nowrap; }
+  .hinta-merkki.vajaa { color: var(--kpt-huom); }
+  .rivi-hinta { margin-left: auto; text-align: right; min-width: 150px; }
+  .rivi-hinta .summa { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600; }
+  .rivi-hinta .kaava { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; }
+  .rivi-hinta details summary { cursor: pointer; font-size: 11px; color: var(--kpt-info); list-style: none; }
+  .rivi-hinta details summary::-webkit-details-marker { display: none; }
+  .rivi-hinta details div { font-size: 11px; color: var(--kpt-himmea); text-align: left; margin-top: 4px; max-width: 260px; margin-left: auto; }
+  .vertailu { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; }
+  .vertailu .ero-plus { color: var(--kpt-ok); } .vertailu .ero-miinus { color: var(--kpt-huom); }
+  .ehdotus { font-size: 11px; color: var(--kpt-heikko); font-style: italic; margin-top: 2px; }
+  .puute { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--kpt-huom); }
+  .puute button { font-size: 11px; padding: 2px 8px; background: none; border: 1px solid var(--kpt-huom); color: var(--kpt-huom); border-radius: 3px; cursor: pointer; }
+  .ryhma-hinta { border-top: 1px dashed var(--kpt-reuna2); margin: 0 12px; padding: 10px 0 12px; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .ryhma-hinta .r { display: flex; gap: 10px; align-items: baseline; }
+  .ryhma-hinta .r .n { flex: 1; } .ryhma-hinta .r .k { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; }
+  .ryhma-hinta .r .s { font-family: 'IBM Plex Mono', monospace; font-weight: 600; min-width: 80px; text-align: right; }
+  .ryhma-hinta .r.yht { border-top: 1px solid var(--kpt-reuna); padding-top: 4px; }
+  .ryhma-hinta details summary { cursor: pointer; font-size: 11px; color: var(--kpt-info); }
+  .ryhma-hinta table { width: 100%; font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--kpt-himmea); border-collapse: collapse; margin-top: 4px; }
+  .ryhma-hinta td { padding: 2px 4px; } .ryhma-hinta td:last-child { text-align: right; }
+  .piilo-hinnat .hinta { display: none !important; }
+  .korostus { outline: 2px solid var(--kpt-huom); outline-offset: 2px; }
+  @media (max-width: 600px) {
+    .rivi-hinta { margin-left: 0; width: 100%; text-align: left; border-top: 1px dashed var(--kpt-reuna); padding-top: 6px; }
+    .rivi-hinta details div { margin-left: 0; }
+    .hinta-merkki { margin-left: 0; width: 100%; }
+  }
+  .sivu.puhelin .rivi-hinta { margin-left: 0; width: 100%; text-align: left; border-top: 1px dashed var(--kpt-reuna); padding-top: 6px; }
+  .sivu.puhelin .rivi-hinta details div { margin-left: 0; }
+  .sivu.puhelin .hinta-merkki { margin-left: 0; width: 100%; }
+</style>
+</head>
+<body class="kpt-sivu">
+<header class="kpt-yla">
+  <span class="kpt-kategoria">Tilaukset</span>
+  <strong>Tilauksen hintapaneeli — mockup</strong>
+  <div class="header-right"><button class="kpt-teema-kytkin" type="button"></button></div>
+</header>
+
+<div class="sivu" id="sivu">
+  <div class="kpt-ilmoitus info" style="font-size:13px;line-height:1.5">
+    <b>Mockup (vaihe 4a).</b> Laskenta on oikea (hinnoittelu.js), mutta tilaus on keksitty ja <b>hinnat ovat esimerkkejä</b>:
+    Pural 0,5 perushinta 9,25 €/m² × 1,85 + työ 2,00 €/m, väri RR33 oma ostohinta 9,90 €/m², Verstastyö 50 €/h,
+    pään kääntö 2,50 / 5,00 / 7,50 €, Piipun jalka 18,00 €. Vanhan listan hinnat ovat keksittyjä. Mitään ei tallenneta.
+  </div>
+
+  <div class="kpt-kortti valinnat">
+    <b style="font-size:12px;color:var(--kpt-himmea)">MOCKUPIN VALINNAT:</b>
+    <label><input type="checkbox" id="v-puhelin"> Puhelimen leveys</label>
+    <label><input type="checkbox" id="v-paa" checked> Kysymys 2: pään kääntö -ehdotus</label>
+    <label><input type="checkbox" id="v-vert" checked> Kysymys 3: vertailu vanhaan listaan</label>
+    <label><input type="checkbox" id="v-kpl" checked> Kysymys 4: kappalehinta Kiinteistä nimellä</label>
+  </div>
+
+  <!-- Tästä alkaen = tilaus.html:n oikea puoli -->
+  <div style="display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap">
+    <div class="mono" style="font-size:13px;font-weight:600">Tilausnro: <span style="color:var(--kpt-korostus)">1234</span></div>
+    <span class="tag" style="font-size:11px">TILATTU</span>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary hinnat-nappi paalla" id="hinnat-nappi" onclick="vaihdaHinnat()">💶 Hinnat</button>
+      <button class="btn btn-secondary">+ Luo ryhmä vasemmalta</button>
+      <button class="btn btn-primary">🖨 Tulosta</button>
+    </div>
+  </div>
+  <div class="mono" style="font-size:11px;color:var(--kpt-himmea)">5 ryhmää · Asiakas Esimerkki, Kalajoki</div>
+
+  <div id="tilaus"></div>
+</div>
+
+<script src="../../orders/hinnoittelu.js"></script>
+<script>
+const H = window.KPT_HINNOITTELU;
+
+// ── Esimerkkihinnasto (ei oikeita lukuja) ─────────────────────────
+const MATERIAALIT = [
+  { material: 'Pural', thickness_mm: 0.5, color: null, purchase_price: 9.25, multiplier: 1.85, work_price: 2.00 },
+  { material: 'Pural', thickness_mm: 0.5, color: 'RR33', purchase_price: 9.90, multiplier: 1.85, work_price: 2.00 },
+];
+const KIINTEAT = [
+  { product_name: 'Verstastyö', unit: 'h', unit_price: 50 },
+  { product_name: 'Pään kääntö, helppo', unit: 'Kpl', unit_price: 2.5 },
+  { product_name: 'Pään kääntö, normaali', unit: 'Kpl', unit_price: 5 },
+  { product_name: 'Pään kääntö, vaativa', unit: 'Kpl', unit_price: 7.5 },
+  { product_name: 'Piipun jalka', unit: 'kpl', unit_price: 18 },
+];
+const VANHA_LISTA = [100, 150, 200, 250, 300, 350, 400, 500].map((w, i) => ({ material: 'Pural', thickness_mm: 0.5, width_mm: w, unit_price: [3.9, 4.8, 5.6, 6.5, 7.4, 8.2, 9.1, 10.9][i] }));
+const CTX = { materiaalit: MATERIAALIT, kiinteat: KIINTEAT };
+
+// ── Keksitty tilaus ───────────────────────────────────────────────
+const pur = { material: 'Pural', color: 'RR23', thickness: '0.5' };
+const pur33 = { material: 'Pural', color: 'RR33', thickness: '0.5' };
+const RYHMAT = [
+  { nimi: 'Räystäät ja otsalaudat', tuotteet: [
+    Object.assign({ profile_type: 'avp', nimike: 'Räystäslista', aihio_width_mm: 250, rows: [{ mitta: 3000, paat: 20, kok: 3020, kpl: 4 }, { mitta: 2500, paat: 20, kok: 2520, kpl: 2 }] }, pur),
+    Object.assign({ profile_type: 'avp', nimike: 'Otsalautapelti', aihio_width_mm: 312, rows: [{ mitta: 3000, paat: 0, kok: 3000, kpl: 3 }] }, pur),
+    Object.assign({ profile_type: 'avp', nimike: 'Tippalista', aihio_width_mm: 140, rows: [{ mitta: 2000, paat: 0, kok: 2000, kpl: 5 }] }, pur33),
+  ]},
+  { nimi: 'Lapepiippu 600×400 RR33', tuotteet: [
+    Object.assign({ profile_type: 'piippu', nimike: 'Juuret etu', aihio_width_mm: 760, rows: [{ mitta: 450, paat: 0, kok: 450, kpl: 1 }], profile_data: { vals: { tyoaika: { suunnittelu_min: 30, tyo_min: 180, yhteensa_min: 210 } } } }, pur33),
+    Object.assign({ profile_type: 'piippu', nimike: 'Juuret sivut', aihio_width_mm: 560, rows: [{ mitta: 620, paat: 0, kok: 620, kpl: 2 }] }, pur33),
+    Object.assign({ profile_type: 'piippu', nimike: 'Huppu etu + taka', aihio_width_mm: 690, rows: [{ mitta: 900, paat: 0, kok: 900, kpl: 2 }] }, pur33),
+    Object.assign({ profile_type: 'piippu', nimike: 'Huppu sivut', aihio_width_mm: 490, rows: [{ mitta: 1100, paat: 0, kok: 1100, kpl: 2 }] }, pur33),
+    Object.assign({ profile_type: 'piippu', nimike: 'Kansi', aihio_width_mm: 720, rows: [{ mitta: 520, paat: 0, kok: 520, kpl: 1 }] }, pur33),
+    Object.assign({ profile_type: 'piippu', nimike: 'Piipun jalka', quantity: 4, kpl: 4 }, pur33),
+  ]},
+  { nimi: 'Huuva 800×500→400×250 h500 RR23', tuotteet: [
+    Object.assign({ profile_type: 'huuva', nimike: 'Etu + Taka', aihio_width_mm: 870, rows: [{ mitta: 560, paat: 0, kok: 560, kpl: 2 }], profile_data: { vals: {} } }, pur),
+    Object.assign({ profile_type: 'huuva', nimike: 'Oikea + Vasen', aihio_width_mm: 580, rows: [{ mitta: 540, paat: 0, kok: 540, kpl: 2 }] }, pur),
+  ]},
+  { nimi: 'Lisätyöt 27.11.', tuotteet: [
+    { profile_type: 'avp', nimike: 'Ikkunan vesipelti', aihio_width_mm: 260, material: 'Alumiini', color: 'Stucco', thickness: '0.7', rows: [{ mitta: 1200, paat: 0, kok: 1200, kpl: 2 }] },
+  ]},
+  { nimi: 'Tarvikkeet', tuotteet: [
+    { profile_type: 'KAPPALE', nimike: 'Tarvikkeet · Kattoturva · Lumieste', quantity: 6, yksikko: 'kpl' },
+  ]},
+];
+
+// ── Apurit ────────────────────────────────────────────────────────
+const eur = x => x == null ? '—' : x.toLocaleString('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+const lukuFi = (x, d) => (+x.toFixed(d == null ? 2 : d)).toLocaleString('fi-FI');
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+const nimiN = s => String(s || '').trim().toLowerCase();
+const val = id => document.getElementById(id).checked;
+let hinnatPaalla = true;
+
+// Vanha listahinta: sama materiaali ja paksuus, pienin porras, joka on vähintään aihion levyinen
+function vanhaHinta(t) {
+  const p = parseFloat(String(t.thickness).replace(',', '.'));
+  const portaat = VANHA_LISTA.filter(r => nimiN(r.material) === nimiN(t.material) && r.thickness_mm === p && r.width_mm >= t.aihio_width_mm)
+    .sort((a, b) => a.width_mm - b.width_mm);
+  return portaat[0] || null;
+}
+// Kappalehinta Kiinteistä hinnoista nimellä (kysymys 4)
+function kappalehinta(t) {
+  if (!val('v-kpl')) return undefined;
+  const r = KIINTEAT.find(k => nimiN(k.product_name) === nimiN(t.nimike));
+  return r ? r.unit_price : undefined;
+}
+const PUUTE_NAPPI = {
+  hinta: '→ Hinnasto', tuntihinta: '→ Hinnasto', tyoaika: 'Lisää työaika →', materiaali: '✎ Muokkaa', aihio: '✎ Muokkaa', pituus: '✎ Muokkaa', kappalehinta: 'Lisätään vaiheessa 4b'
+};
+function puuteHtml(k, kenelle) {
+  const nappi = PUUTE_NAPPI[k];
+  const toiminto = k === 'kappalehinta' ? '<span style="color:var(--kpt-himmea);font-size:11px">(annetaan vaiheessa 4b)</span>' : `<button type="button" onclick="alert('Oikeassa sivussa: ${esc(nappi)} ${esc(kenelle)}')">${esc(nappi)}</button>`;
+  return `<span class="puute" data-puute>⚠ ${esc(H.puuteTeksti(k))} ${toiminto}</span>`;
+}
+
+function riviTeksti(t) {
+  if (t.rows && t.rows.length) return t.rows.map(r => `${r.paat ? r.mitta + '+' + r.paat + ' = ' : ''}<b>${r.kok} mm</b> × ${r.kpl} kpl`).join('<br>');
+  return `<b>${t.quantity} ${esc(t.yksikko || 'kpl')}</b>`;
+}
+
+// ── Piirto ────────────────────────────────────────────────────────
+function piirra() {
+  document.getElementById('sivu').classList.toggle('puhelin', val('v-puhelin'));
+  const el = document.getElementById('tilaus');
+  let yht = 0, puuteRivit = 0, vanhaYht = 0, uusiVert = 0;
+  const kaikkiPuutteet = [];
+
+  const ryhmatHtml = RYHMAT.map((g, gi) => {
+    const kappalehinnat = {};
+    g.tuotteet.forEach((t, i) => { const h = kappalehinta(t); if (h !== undefined) kappalehinnat[i] = h; });
+    const rh = H.ryhmanHinta(g.tuotteet, Object.assign({}, CTX, { kappalehinnat }));
+    yht += rh.yhteensa;
+    const vajaa = rh.puuttuu.length > 0;
+    rh.rivit.forEach(r => { if (r.puuttuu.length) puuteRivit++; });
+    if (rh.puuttuu.indexOf('tyoaika') >= 0) puuteRivit++;
+    rh.puuttuu.forEach(k => kaikkiPuutteet.push({ k, ryhma: g.nimi, gi }));
+    const onMatAika = rh.rivit.some(r => r.tapa === 'materiaali_aika');
+
+    const itemsHtml = g.tuotteet.map((t, i) => {
+      const r = rh.rivit[i];
+      let hintaHtml = '';
+      if (!onMatAika) {
+        const osa = r.osat[0];
+        let sis = '';
+        if (r.puuttuu.length) sis = r.puuttuu.map(k => puuteHtml(k, t.nimike)).join('<br>');
+        else if (r.tapa === 'lista' && osa) {
+          sis = `<div class="summa">${eur(r.yhteensa)}</div>
+                 <div class="kaava">${lukuFi(osa.maara, 2)} m × ${eur(osa.ahinta)}/m</div>
+                 <details><summary>Miten hinta muodostuu?</summary><div>${esc(osa.selite)}, pyöristys 5 senttiin = ${eur(osa.ahinta)}/m.
+                 Pituus päineen (esim. 3000 + 20 = 3,02 m).</div></details>`;
+          if (val('v-vert')) {
+            const v = vanhaHinta(t);
+            if (v) {
+              const ero = (osa.ahinta - v.unit_price) / v.unit_price * 100;
+              vanhaYht += v.unit_price * osa.maara; uusiVert += r.yhteensa;
+              sis += `<div class="vertailu">vanha lista ${eur(v.unit_price)}/m (porras ${v.width_mm} mm),
+                      ero <span class="${ero >= 0 ? 'ero-plus' : 'ero-miinus'}">${ero >= 0 ? '+' : '−'}${lukuFi(Math.abs(ero), 0)} %</span></div>`;
+            }
+          }
+        } else if (r.tapa === 'kappale' && osa) {
+          sis = `<div class="summa">${eur(r.yhteensa)}</div><div class="kaava">${lukuFi(osa.maara, 2)} kpl × ${eur(osa.ahinta)}</div>`;
+        }
+        if (r.tapa === 'lista' && val('v-paa')) {
+          const e = H.paanKaantoEhdotus(t);
+          if (e) {
+            const hinnat = H.paanKaantoHinnat(KIINTEAT), kpl = H.kplYhteensa(t);
+            const lisa = H.paanKaantoLisa(hinnat[e.taso], e.paat, kpl);
+            sis += `<div class="ehdotus">Pään kääntö (ehdotus): ${e.taso} ${eur(hinnat[e.taso])} × ${e.paat} päätä × ${kpl} kpl = ${eur(lisa)} — ei summassa, valitaan vaiheessa 4b</div>`;
+          }
+        }
+        hintaHtml = `<div class="rivi-hinta hinta">${sis}</div>`;
+      }
+      return `<div class="order-item">
+        <div style="flex:1;min-width:160px">
+          <div class="item-nimike">${esc(t.nimike)}</div>
+          <div class="item-detail">${[t.material, t.color, t.thickness && String(t.thickness).replace('.', ',')].filter(Boolean).join(' ')}${t.aihio_width_mm ? ' · aihio ' + t.aihio_width_mm + ' mm' : ''}</div>
+          <div class="item-detail" style="margin-top:2px">${riviTeksti(t)}</div>
+        </div>
+        ${hintaHtml}
+      </div>`;
+    }).join('');
+
+    // Materiaali + aika: ryhmän erittely alle
+    let ryhmaHtml = '';
+    if (onMatAika) {
+      let m2 = 0, matSumma = 0, nHinta = null, tyo = null, kpl = [];
+      const palat = [];
+      rh.rivit.forEach((r, i) => {
+        r.osat.forEach(o => {
+          if (o.nimi === 'Materiaali') { m2 += o.maara; matSumma += o.summa; nHinta = o.ahinta; palat.push({ n: g.tuotteet[i].nimike, m2: o.maara, s: o.summa }); }
+          else if (o.nimi === 'Työ') tyo = o;
+          else if (o.nimi === 'Kappaleet') kpl.push({ n: g.tuotteet[i].nimike, o });
+        });
+      });
+      const rivit = [];
+      if (m2) rivit.push(`<div class="r"><span class="n">Materiaali</span><span class="k">${lukuFi(m2, 2)} m² × ${eur(nHinta)}/m²</span><span class="s">${eur(matSumma)}</span></div>`);
+      if (tyo) rivit.push(`<div class="r"><span class="n">Työ</span><span class="k">${tyo.maara} min × 50 €/h</span><span class="s">${eur(tyo.summa)}</span></div>`);
+      kpl.forEach(x => rivit.push(`<div class="r"><span class="n">${esc(x.n)}</span><span class="k">${x.o.maara} kpl × ${eur(x.o.ahinta)}</span><span class="s">${eur(x.o.summa)}</span></div>`));
+      rh.puuttuu.forEach(k => rivit.push(`<div class="r">${puuteHtml(k, g.nimi)}</div>`));
+      rivit.push(`<div class="r yht"><span class="n"><b>Ryhmä yhteensä</b></span><span class="s" style="${vajaa ? 'color:var(--kpt-huom)' : 'color:var(--kpt-ok)'}">${vajaa ? 'väh. ' : ''}${eur(rh.yhteensa)}</span></div>`);
+      rivit.push(`<details><summary>Näytä palat (${palat.length})</summary><table>${palat.map(p => `<tr><td>${esc(p.n)}</td><td>${lukuFi(p.m2, 3)} m²</td><td>${eur(p.s)}</td></tr>`).join('')}</table></details>`);
+      ryhmaHtml = `<div class="ryhma-hinta hinta">${rivit.join('')}</div>`;
+    }
+
+    return `<div class="order-group" id="ryhma-${gi}">
+      <div class="group-header">
+        <span class="group-name">${esc(g.nimi)}</span>
+        <span class="tag">${g.tuotteet.reduce((s, t) => s + H.kplYhteensa(t), 0)} kpl</span>
+        <span class="hinta-merkki hinta ${vajaa ? 'vajaa' : ''}">${vajaa && !rh.yhteensa ? '⚠ hinta puuttuu' : (vajaa ? '⚠ väh. ' : '') + eur(rh.yhteensa)}</span>
+      </div>
+      <div class="group-items">${itemsHtml}</div>
+      ${ryhmaHtml}
+    </div>`;
+  }).join('<div style="height:10px"></div>');
+
+  const alv = Math.round(yht * 1.255 * 100) / 100;
+  const puuteLista = kaikkiPuutteet.map(p => `<div><span class="puute">⚠ ${esc(p.ryhma)}: ${esc(H.puuteTeksti(p.k))}</span>
+      <button class="btn btn-secondary" style="padding:1px 8px;font-size:11px" onclick="siirry(${p.gi})">näytä</button></div>`).join('');
+  const vertHtml = val('v-vert') && vanhaYht
+    ? `<div class="pieni">Listapellit: uusi hinta ${eur(uusiVert)}, vanhalla listalla olisi ${eur(Math.round(vanhaYht * 100) / 100)}</div>` : '';
+  const yhtHtml = `<div class="hinta-yht hinta">
+      <div class="pieni">Tilaus yhteensä, ALV 0 %</div>
+      <div class="iso" style="${puuteRivit ? 'color:var(--kpt-huom)' : ''}">${puuteRivit ? 'väh. ' : ''}${eur(yht)}</div>
+      <div class="pieni">sis. ALV 25,5 %: ${eur(alv)}${puuteRivit ? ` · <b style="color:var(--kpt-huom)">${puuteRivit} riviä ilman täyttä hintaa</b>` : ''}</div>
+      ${vertHtml}
+      ${puuteLista ? `<div class="puutteet">${puuteLista}</div>` : ''}
+      <div style="margin-top:8px"><button class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="alert('Oikeassa sivussa hakee Hinnaston uudelleen (jos hintoja on korjattu toisessa välilehdessä).')">↻ Päivitä hinnat</button></div>
+    </div>`;
+
+  el.innerHTML = yhtHtml + '<div style="height:12px"></div>' + ryhmatHtml;
+  el.classList.toggle('piilo-hinnat', !hinnatPaalla);
+}
+
+function vaihdaHinnat() {
+  hinnatPaalla = !hinnatPaalla;
+  document.getElementById('hinnat-nappi').classList.toggle('paalla', hinnatPaalla);
+  piirra();
+}
+function siirry(gi) {
+  const r = document.getElementById('ryhma-' + gi);
+  r.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  r.classList.add('korostus'); setTimeout(() => r.classList.remove('korostus'), 1500);
+}
+document.querySelectorAll('.valinnat input').forEach(i => i.addEventListener('change', piirra));
+piirra();
+</script>
+</body>
+</html>
