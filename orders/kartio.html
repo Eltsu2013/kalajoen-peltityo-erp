@@ -1309,6 +1309,44 @@ function levitysSvg(k) {
   o += T(ks[0], ks[1] + fs * 0.35, 'kaari ' + fmt(k.kaariPieni), 'middle');
   if (hb > 0) { var hbp = P(k.Rb + hb + fs * 2.7, th / 2); o += T(hbp[0], hbp[1] + fs * 0.35, 'huullos ' + fmt(hb, 0) + ' · ' + huullosTaittoTeksti(hu.iso), 'middle'); }
   if (hs > 0) { var hsp = P(k.Rs + fs * 3.0, th / 2); o += T(hsp[0], hsp[1] + fs * 0.35, 'huullos ' + fmt(hs, 0) + ' · ' + huullosTaittoTeksti(hu.pieni), 'middle'); }
+  // Kulmamitat (Tomi 27.11.2026): ylä- ja alakulmien väli saumalisän ulkokulmasta toiseen, mittaviivana nuolineen. Kun pelti tulee
+  // jäännöspalasta, näillä tarkistetaan ennen lopullista leikkausta, että pala menee oikein. Yläväli kuvan yläpuolelle (kärjen puolelle),
+  // alaväli koko kuvan alapuolelle, ettei mene jänteen päälle. Ruudulla ja työkortissa (sama kuva), ei DXF:ssä.
+  var mittaY = [];                                   // mittojen ääripisteet kuvan rajoihin
+  if (th <= 180) {
+    var MITTA = function (pa, pb, ulos, txt) {
+      var ux = pb[0] - pa[0], uy = pb[1] - pa[1], L = Math.hypot(ux, uy);
+      if (!(L > fs * 3)) return '';
+      ux /= L; uy /= L;
+      var nx = -uy, ny = ux;
+      if (nx * ulos[0] + ny * ulos[1] < 0) { nx = -nx; ny = -ny; }
+      var d0 = ulos[2], qa = [pa[0] + nx * d0, pa[1] + ny * d0], qb = [pb[0] + nx * d0, pb[1] + ny * d0];
+      var yli = fs * 0.6, nuoli = fs * 0.9, lev = fs * 0.32, sw1 = rd(sw, 2), r = '';
+      [[pa, qa], [pb, qb]].forEach(function (x) {   // apuviivat kulmasta mittaviivan yli
+        r += '<line x1="' + rd(x[0][0] + nx * fs * 0.4, 2) + '" y1="' + rd(x[0][1] + ny * fs * 0.4, 2) + '" x2="' + rd(x[1][0] + nx * yli, 2) + '" y2="' + rd(x[1][1] + ny * yli, 2) + '" stroke="#000" stroke-width="' + sw1 + '"/>';
+      });
+      r += '<line x1="' + rd(qa[0], 2) + '" y1="' + rd(qa[1], 2) + '" x2="' + rd(qb[0], 2) + '" y2="' + rd(qb[1], 2) + '" stroke="#000" stroke-width="' + sw1 + '"/>';
+      [[qa, 1], [qb, -1]].forEach(function (x) {     // nuolenkärjet sisäänpäin
+        var p = x[0], s2 = x[1], kx = p[0] + ux * nuoli * s2, ky = p[1] + uy * nuoli * s2;
+        r += '<polygon points="' + rd(p[0], 2) + ',' + rd(p[1], 2) + ' ' + rd(kx + nx * lev, 2) + ',' + rd(ky + ny * lev, 2) + ' ' + rd(kx - nx * lev, 2) + ',' + rd(ky - ny * lev, 2) + '" fill="#000"/>';
+      });
+      var mx = (qa[0] + qb[0]) / 2 + nx * fs * 0.45, my = (qa[1] + qb[1]) / 2 + ny * fs * 0.45, kulma = Math.atan2(uy, ux) * 180 / Math.PI;
+      if (kulma > 90) kulma -= 180; else if (kulma <= -90) kulma += 180;
+      var dy = ny > 0 ? fs * 0.8 : 0;                // teksti viivan ulkopuolelle
+      mittaY.push(qa[1] + ny * yli, qb[1] + ny * yli, my + dy + fs * 0.3, my + dy - fs * 1.1);
+      r += '<text x="' + rd(mx, 2) + '" y="' + rd(my + dy, 2) + '" font-size="' + rd(fs, 2) + '" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-weight="700" fill="#000" transform="rotate(' + rd(kulma, 2) + ' ' + rd(mx, 2) + ' ' + rd(my + dy, 2) + ')">' + esc(txt) + '</text>';
+      return r;
+    };
+    var yl1 = kv.tab1[3], yl2 = kv.tab2[3], al1 = kv.tab1[2], al2 = kv.tab2[2];
+    // yläkulmat: kärjen ja kärki-tekstin yläpuolelle (Rs-, kulma- ja kärkitekstit jäävät väliin)
+    var ym = [(yl1[0] + yl2[0]) / 2, (yl1[1] + yl2[1]) / 2], yn = Math.hypot(ym[0], ym[1]) || 1, yu = [-ym[0] / yn, -ym[1] / yn];
+    var karkeen = -(yl1[0] * yu[0] + yl1[1] * yu[1]);    // kärjen etäisyys yläkulmien linjasta
+    if (k.Rs > 0) o += MITTA(yl1, yl2, [yu[0], yu[1], Math.max(fs * 2.6, karkeen + fs * 2.6)], fmt(Math.hypot(yl2[0] - yl1[0], yl2[1] - yl1[1]), 0));
+    // alakulmat: palan alimman kohdan ja kaari- / huullostekstien alapuolelle
+    var am = [(al1[0] + al2[0]) / 2, (al1[1] + al2[1]) / 2], an = Math.hypot(am[0], am[1]) || 1, au = [am[0] / an, am[1] / an];
+    var syvin = Math.max.apply(null, kv.ulko.map(function (p) { return (p[0] - al1[0]) * au[0] + (p[1] - al1[1]) * au[1]; }));
+    o += MITTA(al1, al2, [au[0], au[1], Math.max(0, syvin) + fs * (hb > 0 ? 4.6 : 3.4)], fmt(Math.hypot(al2[0] - al1[0], al2[1] - al1[1]), 0));
+  }
   // jänne (yli 180° kulmalla se ei kerro mitään hyödyllistä)
   if (th <= 180) {
     var j1 = P(k.Rb, 0), j2 = P(k.Rb, th);
@@ -1318,6 +1356,11 @@ function levitysSvg(k) {
     o += T(jm[0], jm[1] + fs * 1.5, 'jänne ' + fmt(k.janne), 'middle');
   }
   var x0 = b.x0 - m, y0 = b.y0 - m * 0.8, w = b.w + 2 * m, h = b.h + m * 1.9;
+  if (mittaY.length) {                               // kuva laajenee mittojen verran
+    var yMin = Math.min.apply(null, mittaY) - fs * 0.6, yMax = Math.max.apply(null, mittaY) + fs * 0.6;
+    if (yMin < y0) { h += y0 - yMin; y0 = yMin; }
+    if (yMax > y0 + h) h = yMax - y0;
+  }
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + rd(x0, 1) + ' ' + rd(y0, 1) + ' ' + rd(w, 1) + ' ' + rd(h, 1) + '" preserveAspectRatio="xMidYMid meet">' + o + '</svg>';
 }
 
@@ -2098,7 +2141,7 @@ function tkKartio(s, k, valinnat) {
       p += '</table>';
     }
     p += '<h2>Levityskuva</h2><div class="tk-svg">' + levitysSvg(o) + '</div>';
-    p += '<div class="tk-note">Harmaa = saumalisä' + (k.huul && k.huul.onko ? ', vaalea = huullos, pitkä katkoviiva kaarella = huulloksen taitoslinja' : '') + '. Katkoviiva = kappaleen reuna (sauma). Rb ja Rs mitataan kärjestä.</div>';
+    p += '<div class="tk-note">Harmaa = saumalisä' + (k.huul && k.huul.onko ? ', vaalea = huullos, pitkä katkoviiva kaarella = huulloksen taitoslinja' : '') + '. Katkoviiva = kappaleen reuna (sauma). Rb ja Rs mitataan kärjestä.' + (o.theta <= 180 ? ' Nuolimitat ylhäällä ja alhaalla = saumalisän ulkokulmasta toiseen: tarkista niillä ennen leikkausta, että pala mahtuu.' : '') + '</div>';
     p += '<h2>Sijoitus pellille</h2><div class="tk-svg tk-svg-sij">' + karkiKuvaan(sijoitusSvg(o), o) + '</div><div class="tk-note">' + esc(sijoitusSelitys(s, o)) + '</div>';
     p += TK.alaosa('Kartio');
     sivut.push(TK.sivu(p));
