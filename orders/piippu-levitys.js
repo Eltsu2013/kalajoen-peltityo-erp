@@ -23,6 +23,7 @@
 // täsmälleen samat palat kuin v1 (testit/piippu/test_levitys.js). v3 (20.11. illalla): kiilan lisäkenttä vasen sivu
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
+// v21 (27.11.2026, DXF 8.5 D4): dxf(palat, nimi, kerroin) ja dxfPalat (hupun palat DXF-tiedostoon, vaatii orders/dxf.js:n sivulla).
 // v20 (26.11.2026, ulkoasuremontti R2b): palojen korttien tyylit uuden ulkoasun muuttujilla (--kpt-*), vanhat värit varalla,
 //      joten sivut ilman tyyli.css:ää (Tuotanto, Harjapiippu) näyttävät ennallaan; kuvien tausta paperi, kun sivulla on --kpt-paperi.
 // v19 (24.11.2026): kaistaKappaleet (hupun palat kaistoille, menekki.js, vaihe 8.3; peilikuvapari samalle kaistalle vuorotellen).
@@ -1129,7 +1130,57 @@
     return tulos;
   }
 
-  const KPT_PIIPPU_LEVITYS = { kaistaKappaleet, YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
+  // ---------- DXF (vaihe 8.5 D4, 27.11.2026) ----------
+  // Hupun palat yhteen DXF-tiedostoon (orders/dxf.js, KPT_DXF): ääriviiva LEIKKAUS-tasolle samasta lähteestä kuin merkintäpisteet
+  // ja kaistakuva (PL.aihioPisteet), taitokset TAITOS-tasolle (levityksen viivat paitsi nurkkaviiva 'ei', jossa ei taiteta, ja
+  // leikkausreunan päällä olevat, esim. 0 mm sauma), teksti TEKSTI-tasolle. Aina ulkopinta ylöspäin (Tomi 26.11.): levityksen
+  // koordinaatit ovat jo y ylöspäin, joten ei kääntöä. Peilikuvapari (pa.peili) molempina muotoina, koska pinnoitettua peltiä
+  // ei voi kääntää (Tomi 26.11. klo 22.49, kuten kaistaKappaleet); itsessään symmetrinen sivu yhtenä muotona.
+  // palat = hupunPalat(v).palat tai harjaHupunPalat(v).palat, kerroin = piippujen määrä. Palauttaa KPT_DXF-olion tai null.
+  function dxfPalat(palat, kerroin) {
+    const kk = kerroin > 1 ? Math.floor(kerroin) : 1, tulos = [];
+    const pisteet = (p, peili) => PL.aihioPisteet(p, peili).pisteet.map(q => [q.x, q.y]);
+    const avain = r => r.map(q => q[0].toFixed(1) + ',' + q[1].toFixed(1)).sort().join(';');
+    const janalla = (q, a, b) => { const e = sub(b, a), l2 = e[0] * e[0] + e[1] * e[1]; let t = l2 ? ((q[0] - a[0]) * e[0] + (q[1] - a[1]) * e[1]) / l2 : 0; t = Math.max(0, Math.min(1, t)); return Math.hypot(q[0] - a[0] - e[0] * t, q[1] - a[1] - e[1] * t) < 0.01; };
+    const reunalla = (q, r) => r.some((a, i) => janalla(q, a, r[(i + 1) % r.length]));
+    (palat || []).forEach(pa => {
+      const lv = levita(pa), p = lv.p, n = pa.kpl * kk;
+      const siirra = q => [q[0] - p.minX, q[1] - p.minY];
+      const r0 = pisteet(p, false);
+      const v0 = lv.viivat.filter(v => v.suunta !== 'ei').map(v => [siirra(v.p), siirra(v.q)])
+        .filter(v => !(reunalla(v[0], r0) && reunalla(v[1], r0) && reunalla(mul(add(v[0], v[1]), 0.5), r0)));
+      const pala = { nimi: pa.nimi, kpl: n, w: p.w, h: p.h, ring: r0, viivat: v0 };
+      if (pa.peili && n >= 2 && n % 2 === 0) {
+        const r1 = pisteet(p, true);
+        if (avain(r0) !== avain(r1)) {
+          const peilaa = q => [p.w - q[0], q[1]];
+          tulos.push(Object.assign(pala, { kpl: n / 2 }));
+          tulos.push({ nimi: pa.nimi + ', peilikuva', kpl: n / 2, w: p.w, h: p.h, ring: r1, viivat: v0.map(v => [peilaa(v[0]), peilaa(v[1])]), peilikuva: true });
+          return;
+        }
+      }
+      tulos.push(pala);
+    });
+    return tulos;
+  }
+  function dxf(palat, nimi, kerroin) {
+    const D = globalThis.KPT_DXF;
+    if (!D) throw new Error('piippu-levitys.js: DXF vaatii dxf.js:n (KPT_DXF)');
+    const lista = dxfPalat(palat, kerroin);
+    if (!lista.length) return null;
+    const d = D.uusi();
+    let x0 = 0;
+    lista.forEach(k => {
+      const S = q => [q[0] + x0, q[1]];
+      d.monikulmio(k.ring.map(S), 'LEIKKAUS');
+      k.viivat.forEach(v => { const a = S(v[0]), b = S(v[1]); d.viiva(a[0], a[1], b[0], b[1], 'TAITOS'); });
+      d.teksti(x0, k.h + 15, 12, [nimi || '', k.nimi, k.kpl + ' kpl', 'aihio ' + ylos(k.w) + ' × ' + ylos(k.h) + ' mm'].filter(Boolean).join(' · '), 'TEKSTI');
+      x0 += k.w + 50;
+    });
+    return d;
+  }
+
+  const KPT_PIIPPU_LEVITYS = { kaistaKappaleet, dxf, dxfPalat, YLA_TYYPIT, SAUMAT, kiilaTiedot, ylapaa, hupunMalli, hupunPalat, levitaPala, piirraPala, taitosRivit,
     palaHtml, palaTiedot, levita, SELITE, CSS, laskeKaikki, kuvaYlhaalta, kiilaSivukuva,
     harjaHupunPalat, levitaTaso, laskeKaikkiHarja, harjaSivukuva, harjaSuhde, etukuva,
     harjaKiilaTiedot, harjaMalli, harjaKiilaPalat, laskeKaikkiHarjaKiila, harjaKuvaYlhaalta };

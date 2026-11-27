@@ -109,6 +109,8 @@
   .total-row td.td-num { white-space: nowrap; }
   .total-row td { border-top: 1px solid var(--kpt-reuna2); font-weight: 600; color: var(--kpt-korostus); padding-top: 8px; }
   .empty-msg { color: var(--kpt-himmea); font-size: 13px; text-align: center; padding: 16px 0; }
+  .dxf-rivi { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 10px; }
+  .dxf-rivi .kpt-vihje { margin: 0; flex: 1 1 260px; }
 
   /* Tilaukseen (lista + lähetys samassa kortissa) */
   .tilaukseen { border-top: 1px solid var(--kpt-reuna); margin-top: 14px; padding-top: 14px; }
@@ -429,6 +431,7 @@
     <div class="kpt-kortti" id="levitys-card" style="display:none;">
       <div class="kpt-kortti-otsikko">Hupun levityskuvat</div>
       <div id="levityskuvat"></div>
+      <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaPiippuDxf()">⬇ DXF-tiedosto (kaikki palat)</button><span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin; peilikuvaparin toinen sivu omana muotonaan, koska pinnoitettua peltiä ei voi kääntää.</span></div>
     </div>
 
     <!-- Kaistat ja rullan menekki (yhteinen menekki.js, vaihe 8.3 24.11.2026): hupun palat kaistoiksi, oletuksena kiinni -->
@@ -444,7 +447,8 @@
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=20"></script>
+<script src="piippu-levitys.js?v=21"></script>
+<script src="dxf.js?v=3"></script>
 <script src="kansi.js?v=5"></script>
 <script src="materiaali.js?v=5"></script>
 <script src="lahetys.js?v=3"></script>
@@ -663,15 +667,26 @@ function laske() {
   paivitaYhteenvedot();
 }
 
+// DXF (vaihe 8.5 D4, 27.11.2026): viimeksi piirretyt hupun palat ja piippujen määrä, tiedosto KPT_PIIPPU_LEVITYS.dxf:llä
+let dxfTila = null;
+function lataaPiippuDxf() {
+  const nimi = ((tuotantoKohde && tuotantoKohde.groupName) || (muokattava && muokattava.groupName) || 'Harjapiippu').trim();
+  const d = dxfTila ? KPT_PIIPPU_LEVITYS.dxf(dxfTila.palat, nimi, dxfTila.kerroin) : null;
+  if (!d) { alert('Hupun paloja ei ole: tarkista mitat.'); return; }
+  d.lataa(nimi + '.dxf');
+}
+
 // Hupun levityskuvat (yhteinen piippu-levitys.js). Virhe kuvissa ei saa kaataa laskentaa.
 function piirraLevityskuvat(vals, nayta, piippukpl) {
   const kortti = document.getElementById('levitys-card');
   const el = document.getElementById('levityskuvat');
   try {
+    dxfTila = null;
     if (!nayta) { kortti.style.display = 'none'; piirraKaistat(null); return; }
     const auki = Array.from(el.querySelectorAll('details')).map(d => d.open);   // näppäily ei sulje avattuja kortteja
     const L = KPT_PIIPPU_LEVITYS, t = L.harjaHupunPalat(vals);
     if (!t) { kortti.style.display = 'none'; piirraKaistat(null); return; }
+    dxfTila = { palat: t.palat, kerroin: piippukpl || 1 };
     el.innerHTML = paperiSelite(L.SELITE) + t.palat.map(pa => paperille(L.palaHtml(pa, { kpl: pa.kpl * piippukpl }))).join('');
     el.querySelectorAll('details').forEach((d, i) => { if (auki[i] !== undefined) d.open = auki[i]; });
     kortti.style.display = '';

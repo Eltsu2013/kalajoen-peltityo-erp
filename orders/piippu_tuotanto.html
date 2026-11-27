@@ -103,6 +103,8 @@
   .kuvat-rinn > .kpt-piirros { display: flex; align-items: center; }
   @media (max-width: 900px) { .kuvat-rinn { grid-template-columns: minmax(0,1fr); } }
   .kortti-sisalto { padding: 12px 14px; }
+  .dxf-rivi { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 10px; }
+  .dxf-rivi .kpt-vihje { margin: 0; flex: 1 1 260px; }
 
   /* Mitat */
   .sivu .mitta-row { font-size: 13px; font-family: var(--kpt-mono); display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
@@ -209,7 +211,8 @@
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=20"></script>
+<script src="piippu-levitys.js?v=21"></script>
+<script src="dxf.js?v=3"></script>
 <script src="kansi.js?v=5"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=5"></script>
@@ -695,14 +698,24 @@ function tilatutHupunPalat(v, muut) {
   if (!t) return [];
   return t.palat.filter(pa => tilatut.has(pa.nimi)).map(pa => Object.assign({}, pa, { kpl: tilatut.get(pa.nimi) || pa.kpl }));
 }
+// DXF (vaihe 8.5 D4, 27.11.2026): tilatut hupun palat (kpl tilauksesta, sisältää piippujen määrän) → KPT_PIIPPU_LEVITYS.dxf
+let dxfPalat = null;
+function lataaPiippuDxf() {
+  const nimi = (groupName || 'Piippu').trim();
+  const d = dxfPalat && dxfPalat.length ? KPT_PIIPPU_LEVITYS.dxf(dxfPalat, nimi, 1) : null;
+  if (!d) { alert('Hupun paloja ei ole tilattu.'); return; }
+  d.lataa(nimi + '.dxf');
+}
 function levityskuvatHtml(v, muut) {
   try {
     const L = window.KPT_PIIPPU_LEVITYS;
     const palat = tilatutHupunPalat(v, muut);
+    dxfPalat = palat;
     if (!palat.length) return '';
     return `<div class="section-card" style="margin-bottom:16px">
       <h3>Hupun levityskuvat</h3>
-      <div class="kortti-sisalto">${paperiSelite(L.SELITE)}${palat.map(pa => paperille(L.palaHtml(pa, { kpl: pa.kpl }))).join('')}</div>
+      <div class="kortti-sisalto">${paperiSelite(L.SELITE)}${palat.map(pa => paperille(L.palaHtml(pa, { kpl: pa.kpl }))).join('')}
+        <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaPiippuDxf()">⬇ DXF-tiedosto (kaikki palat)</button><span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin; peilikuvaparin toinen sivu omana muotonaan, koska pinnoitettua peltiä ei voi kääntää.</span></div></div>
     </div>`;
   } catch (e) {
     console.error('Levityskuvat:', e);
