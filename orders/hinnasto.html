@@ -486,6 +486,7 @@
         <tbody id="matBody"><tr><td colspan="7" class="empty-state">Ei materiaaleja</td></tr></tbody>
       </table>
     </div>
+    <div class="mobile-grid" id="matMobileGrid"></div>
   </div>
 
   <!-- ===== PANEL: KÄÄNNÖSLISÄ ===== -->
@@ -511,6 +512,7 @@
         </tbody>
       </table>
     </div>
+    <div class="mobile-grid" id="surchargeMobileGrid"></div>
   </div>
 
 </div><!-- /page -->
@@ -946,6 +948,7 @@ async function saveFixedPrice(id) {
 // ---- MATERIAALIT ----
 function renderMaterials() {
   var tbody = document.getElementById('matBody');
+  renderMaterialsMobile();
   if (!matData.length) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Ei materiaaleja — lisää napilla</td></tr>';
     return;
@@ -953,16 +956,61 @@ function renderMaterials() {
   var html = '';
   matData.forEach(function(row) {
     html += '<tr>';
-    html += '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>';
+    html += '<td><span class="badge badge-orange">' + esc(row.material || '—') + '</span></td>';
     html += '<td class="mono">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
     html += '<td class="right mono">' + (row.purchase_price != null ? parseFloat(row.purchase_price).toFixed(2) : '—') + ' €</td>';
     html += '<td class="right mono">' + (row.multiplier != null ? parseFloat(row.multiplier).toFixed(2) : '—') + '</td>';
     html += '<td class="right mono">' + (row.work_price != null ? parseFloat(row.work_price).toFixed(2) : '—') + ' €</td>';
     html += '<td class="right" style="font-size:11px;color:var(--text-dim)">' + (row.updated_at ? row.updated_at.slice(0,10) : '—') + '</td>';
-    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" onclick="editMaterial(this)">Muokkaa</button></td>';
+    html += '<td style="text-align:right;white-space:nowrap"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" onclick="editMaterial(this)">Muokkaa</button> '
+      + '<button class="btn btn-secondary btn-sm" data-id="' + row.id + '" onclick="monistaMaterial(this)" title="Uusi materiaali tämän rivin pohjalta">⧉ Monista</button></td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
+}
+
+// Puhelimella taulukot ovat piilossa, joten materiaalit korteiksi kuten Peltilistoissa (Tomi 27.11.: lisätyt materiaalit eivät
+// näkyneet missään puhelimella). Kortissa Muokkaa ja Monista.
+function renderMaterialsMobile() {
+  var grid = document.getElementById('matMobileGrid');
+  if (!grid) return;
+  if (!matData.length) { grid.innerHTML = '<div class="empty-state">Ei materiaaleja — lisää napilla</div>'; return; }
+  var luku = function (v, d) { return v != null ? parseFloat(v).toFixed(d) : '—'; };
+  var html = '';
+  matData.forEach(function(row) {
+    html += '<div class="m-card">'
+      + '<div class="m-card-top">'
+      + '<div class="m-card-name"><span class="badge badge-orange" style="margin-right:6px">' + esc(row.material || '—') + '</span>'
+      + (row.thickness_mm ? row.thickness_mm + ' mm' : '') + '</div>'
+      + '<div class="m-card-price">' + luku(row.purchase_price, 2) + ' €/m²</div>'
+      + '</div>'
+      + '<div class="m-card-meta" style="color:var(--text-dim);font-size:12px">'
+      + '<span>Kerroin ' + luku(row.multiplier, 2) + '</span><span>Työ ' + luku(row.work_price, 2) + ' €/m</span>'
+      + '<span>Päivitetty ' + (row.updated_at ? row.updated_at.slice(0, 10) : '—') + '</span>'
+      + '</div>'
+      + '<div class="m-card-foot" style="gap:8px">'
+      + '<button class="btn btn-secondary btn-sm" data-id="' + row.id + '" onclick="editMaterial(this)">Muokkaa</button>'
+      + '<button class="btn btn-secondary btn-sm" data-id="' + row.id + '" onclick="monistaMaterial(this)">⧉ Monista</button>'
+      + '</div></div>';
+  });
+  grid.innerHTML = html;
+}
+
+// Monista (Tomi, vikalista): lisäysikkuna valmiiksi täytettynä rivin tiedoilla, tallennus tekee UUDEN rivin (alkuperäinen ennallaan)
+function monistaMaterial(btn) {
+  var id = btn && btn.getAttribute ? btn.getAttribute('data-id') : btn;
+  var row = matData.find(function(m) { return String(m.id) === String(id); });
+  if (!row) return;
+  editingMaterialId = null;
+  document.getElementById('addMatModalTitle').textContent = '⧉ Monista materiaali';
+  document.getElementById('newMatName').value = row.material || '';
+  document.getElementById('newMatThickness').value = row.thickness_mm != null ? row.thickness_mm : '';
+  document.getElementById('newMatPurchase').value = row.purchase_price != null ? row.purchase_price : '';
+  document.getElementById('newMatMultiplier').value = row.multiplier != null ? row.multiplier : 1.85;
+  document.getElementById('newMatWork').value = row.work_price != null ? row.work_price : 2.00;
+  document.getElementById('addMatModal').style.display = 'flex';
+  var n = document.getElementById('newMatName');
+  setTimeout(function () { n.focus(); n.select(); }, 50);   // nimi valittuna: kirjoita uusi suoraan päälle
 }
 
 function editMaterial(btnOrId) {
@@ -1017,6 +1065,12 @@ function renderSurcharge() {
     document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
   }
   var tbody = document.getElementById('surchargeHistory');
+  var mg = document.getElementById('surchargeMobileGrid');   // puhelimella taulukko on piilossa → kortit
+  if (mg) mg.innerHTML = surchargeData.length ? surchargeData.map(function(row) {
+    return '<div class="m-card"><div class="m-card-top"><div class="m-card-name mono">' + esc(row.valid_from || '—') + '</div>'
+      + '<div class="m-card-price">' + (row.surcharge_per_bend != null ? parseFloat(row.surcharge_per_bend).toFixed(2) : '—') + ' €</div></div>'
+      + (row.notes ? '<div class="m-card-meta" style="color:var(--text-dim);font-size:12px">' + esc(row.notes) + '</div>' : '') + '</div>';
+  }).join('') : '<div class="empty-state">Ei historiatietoja</div>';
   if (!surchargeData.length) {
     tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Ei historiatietoja</td></tr>';
     return;
@@ -1181,6 +1235,7 @@ async function executeMassUpdate() {
 }
 
 // ---- APUFUNKTIOT ----
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 function round5(v) { return Math.round(v * 20) / 20; }
 
 function formatPrice(v) {
