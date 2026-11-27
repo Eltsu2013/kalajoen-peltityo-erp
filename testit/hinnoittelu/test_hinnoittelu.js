@@ -183,5 +183,20 @@ eq(H.tapa({ profile_type: 'KAPPALE', profile_data: { maara: 3 } }), 'kappale', '
   ok(r.puuttuu.length === 0 && r.rivit[0].tyoMukana && r.rivit[0].osat[1].summa === 75, '14c: huuvan työ 90 min = 75,00 € ensimmäiseltä riviltä, ei puutteita');
 })();
 
+// 15. tilaus.html:n oikea muisti (vaihe 4a): profileType camelCase, kappaletavara itemType 'kappale' + maara
+(function () {
+  const piippu = { profileType: 'piippu', aihio_width_mm: 700, material: 'Pural', thickness: '0.5', rows: [{ mitta: 1000, paat: 0, kok: 1000, kpl: 1 }],
+    profile_data: { vals: { tyoaika: { yhteensa_min: 60 } } } };
+  eq(H.tapa(piippu), 'materiaali_aika', '15a: profileType piippu → materiaali + aika (ei lista)');
+  eq(H.tapa({ profileType: 'piippu', nimike: 'Piipun jalka', kpl: 4, rows: [] }), 'kappale', '15b: piipun jalat (ei rivejä) → kappale');
+  eq(H.kplYhteensa({ profileType: 'piippu', kpl: 4, rows: [] }), 4, '15c: jalkojen kpl tilaus.html:n kentästä kpl');
+  const kap = { id: 'i_1', itemType: 'kappale', nimike: 'Lumieste', maara: 6, yksikko: 'kpl' };
+  eq(H.tapa(kap), 'kappale', '15d: itemType kappale → kappale');
+  eq(H.rivinHinta(kap, Object.assign({}, CTX, { kappalehinta: 12.5 })).yhteensa, 75, '15e: 6 × 12,50 = 75,00 € (maara)');
+  eq(H.tapa({ profileType: 'avp', aihio_width_mm: 250, rows: [{ kok: 1000, kpl: 1 }] }), 'lista', '15f: profileType avp → lista');
+  const r = H.rivinHinta(piippu, CTX);
+  ok(r.tyoMukana && r.osat.length === 2, '15g: piipun materiaali + työ tilaus.html:n muodosta');
+})();
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;

@@ -22,7 +22,8 @@
  *  kiinteat    = pricing_fixed-rivit { product_name, unit, unit_price, ... }
  *  tuote       = order_items-rivi { profile_type, aihio_width_mm, material, color, thickness_mm, quantity,
  *                profile_data: { tyoaika, paatylaputM2, maara, ... }, order_item_rows: [{ mitta_mm, paat_mm, kok_mm, kpl }] }
- *                (tilaus.html:n muistissa olevat rivit { rows: [{ mitta, paat, kok, kpl }], thickness } käyvät myös)
+ *                (tilaus.html:n muistissa olevat rivit { profileType, rows: [{ mitta, paat, kok, kpl }], thickness } ja
+ *                kappaletavara { itemType: 'kappale', maara } käyvät myös, vaihe 4a)
  */
 (function () {
 'use strict';
@@ -91,8 +92,15 @@ function rivit(tuote) {
   }).filter(r => r.kok > 0 && r.kpl > 0);
 }
 // Hinnoittelutapa: 'lista' | 'materiaali_aika' | 'kappale'
+// Tyyppi kummastakin muodosta: kanta profile_type, tilaus.html:n muisti profileType ja kappaletavara itemType 'kappale'
+// (vaihe 4a, 27.11.2026: ilman tätä tilauksen piiput ja huuvat olisivat olleet listapeltejä).
+function tyyppi(tuote) {
+  if (!tuote) return '';
+  if (tuote.itemType === 'kappale') return 'kappale';
+  return nimi(tuote.profile_type != null ? tuote.profile_type : tuote.profileType);
+}
 function tapa(tuote) {
-  const t = nimi(tuote && tuote.profile_type);
+  const t = tyyppi(tuote);
   if (t === 'kappale') return 'kappale';
   if (MATERIAALI_AIKA.indexOf(t) >= 0) {
     // piipun jalat ja lisäosat: ei pituutta eikä aihiota → kappale
@@ -105,7 +113,7 @@ function tapa(tuote) {
 function kplYhteensa(tuote) {
   const rr = rivit(tuote);
   if (rr.length) return rr.reduce((s, r) => s + r.kpl, 0);
-  return luku(tuote && tuote.quantity) || luku(pd(tuote).maara) || luku(tuote && tuote.kpl) || 0;
+  return luku(tuote && tuote.quantity) || luku(pd(tuote).maara) || luku(tuote && tuote.maara) || luku(tuote && tuote.kpl) || 0;
 }
 // Juoksumetrit: leikattava pituus (mitta + päät) × kpl
 function juoksumetrit(tuote) { return rivit(tuote).reduce((s, r) => s + r.kok / 1000 * r.kpl, 0); }
@@ -228,7 +236,7 @@ window.KPT_HINNOITTELU = {
   round5: round5, sentit: sentit,
   materiaalinHinta: materiaalinHinta, metrihinta: metrihinta, neliohinta: neliohinta,
   tuntihinta: tuntihinta, tyonHinta: tyonHinta,
-  tapa: tapa, rivit: rivit, kplYhteensa: kplYhteensa, juoksumetrit: juoksumetrit, menekkiM2: menekkiM2, tyoaikaMin: tyoaikaMin,
+  tyyppi: tyyppi, tapa: tapa, rivit: rivit, kplYhteensa: kplYhteensa, juoksumetrit: juoksumetrit, menekkiM2: menekkiM2, tyoaikaMin: tyoaikaMin,
   paanKaantoEhdotus: paanKaantoEhdotus, paanKaantoHinnat: paanKaantoHinnat, paanKaantoLisa: paanKaantoLisa,
   rivinHinta: rivinHinta, ryhmanHinta: ryhmanHinta, puuteTeksti: puuteTeksti
 };

@@ -673,6 +673,20 @@ let fixedGroupFilter = 'all';
 async function init() {
   await Promise.all([loadList(), loadFixed(), loadMaterials(), loadSurcharge(), loadProducts()]);
   updateSummary();
+  avaaOsoitteesta();
+}
+
+// Tilauksen hintapaneelin linkit (hinnoittelu vaihe 4a, 27.11.2026): hinnasto.html?valilehti=materiaalit&haku=Pural
+// avaa välilehden hakusana valmiina, jotta puuttuvan hinnan voi lisätä suoraan.
+function avaaOsoitteesta() {
+  var q = new URLSearchParams(location.search), v = q.get('valilehti'), haku = q.get('haku');
+  if (!v || !document.getElementById('panel-' + v)) return;
+  var tab = Array.prototype.find.call(document.querySelectorAll('.tab'), function (t) { return (t.getAttribute('onclick') || '').indexOf("'" + v + "'") >= 0; });
+  if (tab) switchTab(v, tab);
+  if (haku) {
+    if (v === 'materiaalit') { document.getElementById('matHaku').value = haku; renderMaterials(); }
+    else if (v === 'kiinteat') { document.getElementById('fixedSearch').value = haku; renderFixed(); }
+  }
 }
 
 // ---- FETCH ----
