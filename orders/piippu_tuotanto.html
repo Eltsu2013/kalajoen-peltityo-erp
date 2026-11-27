@@ -211,9 +211,9 @@
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=22"></script>
+<script src="piippu-levitys.js?v=23"></script>
 <script src="dxf.js?v=3"></script>
-<script src="kansi.js?v=5"></script>
+<script src="kansi.js?v=6"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=5"></script>
 <script>
@@ -716,7 +716,7 @@ function levityskuvatHtml(v, muut) {
     return `<div class="section-card" style="margin-bottom:16px">
       <h3>Hupun levityskuvat</h3>
       <div class="kortti-sisalto">${paperiSelite(L.SELITE)}${palat.map(pa => paperille(L.palaHtml(pa, { kpl: pa.kpl }))).join('')}
-        <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaPiippuDxf()">⬇ DXF-tiedosto (kaikki palat)</button><span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin; peilikuvaparin toinen sivu omana muotonaan, koska pinnoitettua peltiä ei voi kääntää. Kansi reikineen mukana, jos se on valittu (yläpuolelta katsottuna, työkortin kuva on alapuolelta).</span></div></div>
+        <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaPiippuDxf()">⬇ DXF-tiedosto (kaikki palat)</button><span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin; peilikuvaparin toinen sivu omana muotonaan, koska pinnoitettua peltiä ei voi kääntää. Kansi reikineen mukana, jos se on valittu (samassa asennossa kuin työkortin kansikuva).</span></div></div>
     </div>`;
   } catch (e) {
     console.error('Levityskuvat:', e);

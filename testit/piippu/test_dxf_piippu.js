@@ -100,7 +100,8 @@ const A = { lev1: 390, lev2: null, suora1: 445, suora2: 750, kork1: 760, korkH: 
   ok(koodattu.includes(0xe4), '5f: ääkköset Windows-1252:na (ä = 0xE4)');
 }
 
-// 6) Kansi (D4b): samaan tiedostoon hupun palojen perään, yläpuolelta (x käännetty), karvattu reikä leikataan pienempänä
+// 6) Kansi (D4b): samaan tiedostoon hupun palojen perään, samassa asennossa kuin kansikuva (Tomi 27.11.: yläpuolelta vasemman
+//    sivun puolelta, etu vasemmalla, väri ylöspäin; ei peilausta), karvattu reikä leikataan pienempänä
 {
   const PI = require('../../orders/piippu-laskenta.js');
   const vals = Object.assign({}, OLETUS, { kansi: { tyyppi: '90', T: 20, lovi: '45', reiat: [
@@ -125,7 +126,7 @@ const A = { lev1: 390, lev2: null, suora1: 445, suora2: 750, kork1: 760, korkH: 
   const r1 = k.reiat[0], ymp = kp.filter(p => p.v.length === 2 && p.v.every(q => q[2] === 1));
   const sade = p => Math.abs(p.v[0][0] - p.v[1][0]) / 2, kx = p => (p.v[0][0] + p.v[1][0]) / 2;
   ok(ymp.length === 2 && ymp.some(p => p.taso === 'LEIKKAUS' && near(sade(p), 68)) && ymp.some(p => p.taso === 'TAITOS' && near(sade(p), 75)), '6e: pyöreä karvattu reikä: leikkaus Ø 136, taitos Ø 150 (oikeina ympyröinä)');
-  ok(ymp.every(p => near(kx(p), x0 + AU - r1.u, 1e-6) && near(p.v[0][1], r1.w, 1e-6)), '6f: yläpuolelta: reiän x = aihio − u (kuvassa etu vasemmalla, DXF:ssä oikealla)');
+  ok(ymp.every(p => near(kx(p), x0 + r1.u, 1e-6) && near(p.v[0][1], r1.w, 1e-6)), '6f: kuten kansikuvassa: reiän x = etäisyys etureunasta (etu vasemmalla, ei peilausta)');
   // kanttinen karvattu reikä: leikkaus pyöristetyin kulmin (rLeik), taitos rReika
   const r2 = k.reiat[1];
   const kant = kp.filter(p => p.v.length === 8 && p !== raja && p !== taitos);
@@ -137,7 +138,7 @@ const A = { lev1: 390, lev2: null, suora1: 445, suora2: 750, kork1: 760, korkH: 
   const tekstit = e.filter(x => x.tyyppi === 'TEXT').map(x => arvo(x, 1));
   ok(['ETU', 'TAKA', 'VASEN', 'OIKEA'].every(t => tekstit.includes(t)), '6j: reunojen nimet TEKSTI-tasolla');
   const etu = e.find(x => x.tyyppi === 'TEXT' && arvo(x, 1) === 'ETU'), taka = e.find(x => x.tyyppi === 'TEXT' && arvo(x, 1) === 'TAKA');
-  ok(+arvo(etu, 10) > +arvo(taka, 10), '6k: ETU oikealla, TAKA vasemmalla (yläpuolelta)');
+  ok(+arvo(etu, 10) < +arvo(taka, 10), '6k: ETU vasemmalla, TAKA oikealla (kuten työkortissa)');
   ok(tekstit.some(t => t.indexOf('Piippu 1 - Kansi - 2 kpl - aihio ' + Math.ceil(AU - 1e-6) + ' x ' + Math.ceil(AW - 1e-6) + ' mm') === 0), '6l: kannen teksti ja kappalemäärä');
   // suora lovi ja pelkkä kansi ilman hupun paloja
   const k2 = PI.laskeKansi(400, 600, Object.assign({}, vals, { kansi: Object.assign({}, vals.kansi, { lovi: 'suora', reiat: [] }) }));

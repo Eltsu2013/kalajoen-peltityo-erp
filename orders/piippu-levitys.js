@@ -1164,14 +1164,15 @@
     });
     return tulos;
   }
-  // Kansi DXF:ään (D4b, 27.11.2026, Tomi "ok"): k = KPT_PIIPPU.laskeKansi(...) (tulos.kansi). Kansikuva ja työkortti on piirretty
-  // alapuolelta (etu vasemmalla, vasen alhaalla), mutta DXF:ssä ulkopinta ylöspäin eli yläpuolelta: x käännetään (etu oikealla,
-  // vasen alhaalla), ja reunoille nimet TEKSTI-tasolle, ettei suunta mene sekaisin. Kulmissa 45° viiste tai suora lovi T × T kuten
+  // Kansi DXF:ään (D4b, 27.11.2026): k = KPT_PIIPPU.laskeKansi(...) (tulos.kansi). Samassa asennossa kuin kansikuva ja työkortti:
+  // Tomi 27.11.: "olen piipun yläpuolella ja katon sitä peltiä vasemman sivun puolelta päältä. Eli etu on vasemmalla ja taka
+  // oikealla ja väri on minuunpäin" = ulkopinta ylöspäin, ei peilausta (ensimmäinen versio peilasi kuvan vanhan "alapuolelta"-
+  // tekstin takia, korjattu). Reunojen nimet TEKSTI-tasolle, ettei suunta mene sekaisin. Kulmissa 45° viiste tai suora lovi T × T kuten
   // kuvassa, taitos T:n verran reunasta. Karvattu reikä: leikataan karvauksen verran pienempi (leikDw × leikDu, pyöristys rLeik)
   // ja reiän reuna (dw × du, pyöristys rReika) on taitos, koska reuna käännetään ylös. Pyöreä reikä = kaksi puoliympyrää.
   function kansiDxf(d, k, x0, nimi, kpl) {
     const AU = k.S.aihio, AW = k.L.aihio, T = k.D || 0, as = k.as || {};
-    const X = u => x0 + AU - u;                                                     // yläpuolelta: x käännetty
+    const X = u => x0 + u;                                                          // kuten kuvassa: etu vasemmalla, vasen alhaalla
     const b90 = globalThis.KPT_DXF.kaarevuus(90);
     const kulma = (cu, cw, su, sw) => { const pt = (du, dw) => [cu + su * du, cw + sw * dw]; return as.lovi === 'suora' ? [pt(T, 0), pt(T, T), pt(0, T)] : [pt(T, 0), pt(0, T)]; };
     const raja = [].concat(kulma(0, 0, 1, 1), kulma(0, AW, 1, -1).reverse(), kulma(AU, AW, -1, -1), kulma(AU, 0, -1, 1).reverse())
@@ -1196,11 +1197,11 @@
     });
     const nimet = k.harja ? { etu: 'ETU 1', taka: 'ETU 2' } : { etu: 'ETU', taka: 'TAKA' };
     const h = 12, lev = t => t.length * h * 0.8, sis = T + 10;   // leveysarvio väljä, ettei teksti osu taitokseen
-    d.teksti(x0 + AU - sis - lev(nimet.etu), AW / 2, h, nimet.etu, 'TEKSTI');
-    d.teksti(x0 + sis, AW / 2, h, nimet.taka, 'TEKSTI');
+    d.teksti(x0 + sis, AW / 2, h, nimet.etu, 'TEKSTI');
+    d.teksti(x0 + AU - sis - lev(nimet.taka), AW / 2, h, nimet.taka, 'TEKSTI');
     d.teksti(x0 + AU / 2 - lev('VASEN') / 2, sis, h, 'VASEN', 'TEKSTI');
     d.teksti(x0 + AU / 2 - lev('OIKEA') / 2, AW - sis - h, h, 'OIKEA', 'TEKSTI');
-    d.teksti(x0, AW + 15, 12, [nimi || '', 'Kansi', kpl + ' kpl', 'aihio ' + ylos(AU) + ' × ' + ylos(AW) + ' mm', 'yläpuolelta (työkortin kuva alapuolelta)'].filter(Boolean).join(' · '), 'TEKSTI');
+    d.teksti(x0, AW + 15, 12, [nimi || '', 'Kansi', kpl + ' kpl', 'aihio ' + ylos(AU) + ' × ' + ylos(AW) + ' mm', 'yläpuolelta vasemmalta, väri ylöspäin (kuten työkortissa)'].filter(Boolean).join(' · '), 'TEKSTI');
     return AU;
   }
 

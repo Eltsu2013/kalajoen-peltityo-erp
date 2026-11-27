@@ -12,7 +12,8 @@
 //   KPT_KANSI.reikaTaulu(k, { mista })  → HTML-taulukko reikien alku / keski / loppu kannen reunasta
 //   KPT_KANSI.tiedot(k) → [[otsikko, teksti], ...] (aihio, taitos, kulmat) listoihin ja työkorttiin
 //   KPT_KANSI.sivuKortti(el, { muutos, kortti }) → piippusivujen kansikortti (lomake + kuva + taulukko + mitattu), ks. alla
-// Kuva: tasoaihio, ETU vasemmalla ja VASEN alhaalla (kuten piippusivuilla; kansi alapuolelta katsottuna, Tomi 23.11.).
+// Kuva: tasoaihio, ETU vasemmalla ja VASEN alhaalla (kuten piippusivuilla). Tomi 27.11.: katsotaan piipun yläpuolelta vasemman sivun
+// puolelta, väri katsojaan päin (teksti oli ennen virheellisesti "alapuolelta katsottuna").
 // Versiot: v1 23.11.2026. v2 24.11.2026: karvauksen profiilikuvake ei pieneen reikään (reiän muoto näkyy).
 //          v3 24.11.2026: reikien mitat oletuksena muuratusta piipusta (Tomi), hupun pinta kuvaan omana viivanaan.
 //          v5 26.11.2026 (ulkoasuremontti R2b): tyylit uuden ulkoasun muuttujilla (--kpt-*) vanhat varalla; sivuKortti(el, { kuvaMuunnos })
@@ -243,7 +244,7 @@
     s += '</svg>';
     return s;
   }
-  const alateksti = opts => 'Etu vasemmalla, vasen alhaalla (kansi alapuolelta katsottuna). Mitat ' +
+  const alateksti = opts => 'Etu vasemmalla, vasen alhaalla (kansi yläpuolelta vasemman sivun puolelta katsottuna, väri ylöspäin). Mitat ' +
     ((opts || {}).mista === 'taitettu' ? 'taitetun kannen reunasta.' : 'tasoaihion leikkuureunasta.');
 
   function teksti(x, y, t, anchor, vari, pysty) {
