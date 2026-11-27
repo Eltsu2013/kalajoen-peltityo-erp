@@ -162,5 +162,15 @@ eq(H.tapa({ profile_type: 'KAPPALE', profile_data: { maara: 3 } }), 'kappale', '
   eq(r.yhteensa, 21.6, '12a: 3 × 7,20 = 21,60 €');
 })();
 
+// 13. Pään kääntö -tasojen hinnat kiinteistä hinnoista (ennen ja jälkeen rivien uudelleennimeämisen)
+(function () {
+  let h = H.paanKaantoHinnat([{ product_name: 'Pään kääntö', unit_price: 5 }, { product_name: 'Toisen pään taivutus', unit_price: 2.5 }]);
+  ok(h.normaali === 5 && h.helppo === 2.5 && h.vaativa === null, '13a: vanhat nimet: normaali 5, helppo 2,50, vaativa puuttuu');
+  h = H.paanKaantoHinnat([{ product_name: 'Pään kääntö, normaali', unit_price: 5 }, { product_name: 'Pään kääntö, helppo', unit_price: '2.50' },
+    { product_name: 'pään kääntö,  VAATIVA', unit_price: 7.5 }, { product_name: 'Pään kääntö', unit_price: 99 }]);
+  ok(h.normaali === 5 && h.helppo === 2.5 && h.vaativa === 7.5, '13b: uudet nimet voittavat vanhan (kirjainkoko ja välilyönnit eivät haittaa)');
+  eq(H.paanKaantoLisa(h.vaativa, 1, 4), 30, '13c: vaativa 7,50 € × 1 pää × 4 kpl = 30,00 €');
+})();
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;

@@ -1233,19 +1233,29 @@ function showMassModal() {
   document.getElementById('massModalTitle').textContent = '⟳ Laske uudet hinnat';
   document.getElementById('massConfirmBtn').disabled = true;
   document.getElementById('massConfirmBtn').style.opacity = '0.4';
-  var materials = [];
-  listData.forEach(function(r) { if (r.material && materials.indexOf(r.material) === -1) materials.push(r.material); });
-  materials.sort();
+  // Valinta = materiaali + paksuus (27.11.2026): ennen pelkkä nimi, jolloin saman materiaalin kaikki paksuudet
+  // saivat saman hinnan ja Materiaaleihin syntyi rivi ilman paksuutta
+  var parit = {};
+  listData.forEach(function(r) { if (r.material) { var k = hmAvain(r.material, r.thickness_mm); if (!parit[k]) parit[k] = { mat: r.material, thk: hmPaks(r.thickness_mm) }; } });
+  var avaimet = Object.keys(parit).sort();
   var sel = document.getElementById('massMatSelect');
-  sel.innerHTML = materials.map(function(m) { return '<option value="' + m + '">' + m + '</option>'; }).join('');
+  sel.innerHTML = avaimet.map(function(k) { var p = parit[k]; return '<option value="' + esc(k) + '">' + esc(p.mat) + (p.thk !== null ? ' ' + hmPaksTeksti(p.thk) : ' (paksuus ?)') + '</option>'; }).join('');
   updateMassPurchaseHint();
   updateMassPreview();
   document.getElementById('massModal').style.display = 'flex';
 }
 
+// Massapäivityksen valinta: { avain, mat, thk } (avain = hmAvain(materiaali, paksuus))
+function massValinta() {
+  var avain = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var r = listData.find(function(x) { return x.material && hmAvain(x.material, x.thickness_mm) === avain; });
+  return { avain: avain, mat: r ? r.material : '', thk: r ? hmPaks(r.thickness_mm) : null };
+}
+function massRivit(v) { return listData.filter(function(r) { return r.material && hmAvain(r.material, r.thickness_mm) === v.avain; }); }
+function massPerushinta(v) { return matData.find(function(m) { return hmAvain(m.material, m.thickness_mm) === v.avain && !m.color; }); }
+
 function updateMassPurchaseHint() {
-  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
-  var found = matData.find(function(m) { return m.material === mat && !m.color; });
+  var found = massPerushinta(massValinta());
   document.getElementById('massPurchaseHint').textContent = found
     ? 'Viimeisin: ' + parseFloat(found.purchase_price).toFixed(2) + ' €/m²'
     : 'Ei historiatietoja';
@@ -1258,11 +1268,10 @@ function updateMassPreview() {
   document.getElementById('massConfirmBtn').disabled = true;
   document.getElementById('massConfirmBtn').style.opacity = '0.4';
   updateMassPurchaseHint();
-  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
   var purchase = parseFloat(document.getElementById('massPurchase').value) || 0;
   var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
   var work = parseFloat(document.getElementById('massWork').value) || 2.00;
-  var rows = listData.filter(function(r) { return r.material === mat; });
+  var rows = massRivit(massValinta());
   document.getElementById('massRowCount').textContent = rows.length + ' riviä';
   // Naytetaan vain esimerkki ennen simulaatiota
   var preview = rows.length <= 20 ? rows : rows.filter(function(_, i) { return i % Math.ceil(rows.length / 10) === 0; });
@@ -1270,15 +1279,15 @@ function updateMassPreview() {
 }
 
 function runSimulation() {
-  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var v = massValinta();
   var purchase = parseFloat(document.getElementById('massPurchase').value) || 0;
   var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
   var work = parseFloat(document.getElementById('massWork').value) || 2.00;
-  var rows = listData.filter(function(r) { return r.material === mat; });
+  var rows = massRivit(v);
   // Naytetaan KAIKKI rivit
   renderPreviewRows(rows, purchase, mult, work, true);
   document.getElementById('simuBanner').style.display = 'block';
-  document.getElementById('massModalTitle').textContent = '⟳ Simulaatio — ' + mat;
+  document.getElementById('massModalTitle').textContent = '⟳ Simulaatio — ' + v.mat + (v.thk !== null ? ' ' + hmPaksTeksti(v.thk) : '');
   document.getElementById('massRowCount').textContent = rows.length + ' riviä laskettu';
   document.getElementById('massConfirmBtn').disabled = false;
   document.getElementById('massConfirmBtn').style.opacity = '1';
@@ -1310,14 +1319,14 @@ function renderPreviewRows(rows, purchase, mult, work, showAll) {
 }
 
 async function executeMassUpdate() {
-  var mat = document.getElementById('massMatSelect') ? document.getElementById('massMatSelect').value : '';
+  var v = massValinta(), mat = v.mat;
   var purchase = parseFloat(document.getElementById('massPurchase').value);
   var mult = parseFloat(document.getElementById('massMultiplier').value) || 1.85;
   var work = parseFloat(document.getElementById('massWork').value) || 2.00;
   if (!mat || isNaN(purchase)) { showToast('Täytä kaikki kentät', true); return; }
   var btn = document.getElementById('massConfirmBtn');
   btn.textContent = 'Tallennetaan...'; btn.disabled = true;
-  var rows = listData.filter(function(r) { return r.material === mat; });
+  var rows = massRivit(v);
   var ok = 0, fail = 0;
   for (var i = 0; i < rows.length; i++) {
     var row = rows[i];
@@ -1328,7 +1337,7 @@ async function executeMassUpdate() {
     if (r.ok) { row.price_per_m = newPrice; row.unit_price = newPrice; ok++; }
     else fail++;
   }
-  var existing = matData.find(function(m) { return m.material === mat && !m.color; });   // vain perushinta, ei värien omia
+  var existing = massPerushinta(v);   // saman materiaalin ja paksuuden perushinta, ei värien omia
   if (existing) {
     var updatedAt = new Date().toISOString();
     var pr = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials?id=eq.' + existing.id,
@@ -1344,7 +1353,7 @@ async function executeMassUpdate() {
   } else {
     var nr = await fetch(SUPABASE_URL + '/rest/v1/pricing_materials',
       { method: 'POST', headers: HDR,
-        body: JSON.stringify({ material: mat, purchase_price: purchase, multiplier: mult, work_price: work }) });
+        body: JSON.stringify({ material: mat, thickness_mm: v.thk, color: null, purchase_price: purchase, multiplier: mult, work_price: work, updated_at: new Date().toISOString() }) });
     if (nr.ok) await loadMaterials();
   }
   btn.textContent = 'Päivitä hinnat'; btn.disabled = false;

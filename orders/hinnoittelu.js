@@ -129,6 +129,23 @@ function tyoaikaMin(tuote) {
 function paanKaantoEhdotus(tuote) {
   return rivit(tuote).some(r => r.paat > 0) ? { taso: 'normaali', paat: 2 } : null;
 }
+// Tasojen hinnat €/pää kiinteistä hinnoista (ryhmä Työt / Tarvikkeet): "Pään kääntö, helppo / normaali / vaativa".
+// Ennen rivien uudelleennimeämistä (SQL 27.11.2026) tunnistetaan myös vanhat nimet: "Pään kääntö" = normaali,
+// "Toisen pään taivutus" = helppo. Palauttaa { helppo, normaali, vaativa } (puuttuva taso = null).
+function paanKaantoHinnat(kiinteat) {
+  const out = { helppo: null, normaali: null, vaativa: null };
+  const vanhat = {};
+  (kiinteat || []).forEach(x => {
+    const n = nimi(x.product_name), h = luku(x.unit_price);
+    if (h === null) return;
+    const m = n.match(/^pään kääntö,\s*(helppo|normaali|vaativa)$/);
+    if (m) out[m[1]] = h;
+    else if (n === 'pään kääntö') vanhat.normaali = h;
+    else if (n === 'toisen pään taivutus') vanhat.helppo = h;
+  });
+  Object.keys(vanhat).forEach(k => { if (out[k] === null) out[k] = vanhat[k]; });
+  return out;
+}
 // Lisä € = hinta per pää × päitä (1 tai 2) × kpl
 function paanKaantoLisa(hintaPerPaa, paat, kpl) {
   const h = luku(hintaPerPaa), p = luku(paat), k = luku(kpl);
@@ -210,7 +227,7 @@ window.KPT_HINNOITTELU = {
   materiaalinHinta: materiaalinHinta, metrihinta: metrihinta, neliohinta: neliohinta,
   tuntihinta: tuntihinta, tyonHinta: tyonHinta,
   tapa: tapa, rivit: rivit, kplYhteensa: kplYhteensa, juoksumetrit: juoksumetrit, menekkiM2: menekkiM2, tyoaikaMin: tyoaikaMin,
-  paanKaantoEhdotus: paanKaantoEhdotus, paanKaantoLisa: paanKaantoLisa,
+  paanKaantoEhdotus: paanKaantoEhdotus, paanKaantoHinnat: paanKaantoHinnat, paanKaantoLisa: paanKaantoLisa,
   rivinHinta: rivinHinta, ryhmanHinta: ryhmanHinta, puuteTeksti: puuteTeksti
 };
 })();
