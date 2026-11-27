@@ -104,6 +104,10 @@
   #${ID} .tkk-mitat .mitta-row { display: flex; justify-content: space-between; gap: 3mm; break-inside: avoid; font-family: 'IBM Plex Mono', monospace; }
   #${ID} .tkk-mitat > div { display: block !important; }
     #${ID} .tkk-viivat { height: 13mm; background: repeating-linear-gradient(transparent, transparent 6.5mm, #999 6.5mm, #999 6.8mm) !important; }
+  #${ID} .tkk-aika { display: flex; align-items: baseline; flex-wrap: wrap; gap: 1mm 2mm; margin-top: 1.8mm; font-size: 9pt; font-family: 'IBM Plex Sans', Arial, sans-serif; }
+  #${ID} .tkk-aika .tkk-viiva { display: inline-block; width: 20mm; border-bottom: 1px solid #000; height: 3.5mm; }
+  #${ID} .tkk-aika .tkk-vali { display: inline-block; width: 5mm; }
+  #${ID} .tkk-aika .tkk-arvio { margin-left: auto; font-size: 7.5pt; }
   #${ID} .tkk-alaosa { margin-top: 2.5mm; border-top: 1px solid #000; padding-top: 1.5mm; font-size: 7.5pt; display: flex; justify-content: space-between; }
 }`;
   function lisaaTyylit() {
@@ -164,6 +168,13 @@
   const ruutu = () => '<span class="tkk-ruutu"></span>';
   const kpl = n => `<span class="tkk-kpl">${esc(n)} kpl</span>`;
   const sivu = sisalto => `<section class="tkk-sivu">${sisalto}</section>`;
+  // Työaika paperille (v6, 27.11.2026, Tomi): kirjoitustila suunnittelu- ja työajalle, jotta paperin mukaan tehty työ ja
+  // sen aika kulkevat toimistoon. ta = { suunnittelu_min, tyo_min } (profile_data.tyoaika tai vals.tyoaika); arvio pienellä.
+  function aikaRivi(ta) {
+    const t = ta || {}, luku = x => (Number(x) > 0 ? esc(String(x)) : '–');
+    const arvio = (Number(t.suunnittelu_min) > 0 || Number(t.tyo_min) > 0) ? `<span class="tkk-arvio">arvio ${luku(t.suunnittelu_min)} / ${luku(t.tyo_min)} min</span>` : '';
+    return `<div class="tkk-aika">Suunnitteluaika <span class="tkk-viiva"></span> min<span class="tkk-vali"></span>Työaika <span class="tkk-viiva"></span> min${arvio}</div>`;
+  }
   const alaosa = teksti => `<div class="tkk-alaosa"><span>Kalajoen Peltityö Oy · ${esc(teksti || 'Työkortti')}</span><span>Tulostettu ${nytTeksti()}</span></div>`;
 
   // Ruudun tummat värit paperille: värit vaihdetaan mustaksi / harmaaksi suoraan SVG-merkkijonossa, jolloin kuva on
@@ -296,7 +307,7 @@
     ikk.querySelector('[data-t="ok"]').focus();
   }
 
-  const KPT_TYOKORTTI = { VERSIO: 5, asetaTilaus, lisaaEnsimmaiselle, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
+  const KPT_TYOKORTTI = { VERSIO: 6, aikaRivi, asetaTilaus, lisaaEnsimmaiselle, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
   if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
   if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
 })();

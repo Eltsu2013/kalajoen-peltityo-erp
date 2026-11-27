@@ -674,6 +674,14 @@
     .done-qty-input { width: 64px; }
     .kap-qty-input, .kap-add-btn, .add-row-toggle, .time-link, .time-start { min-height: 44px; }
   }
+  /* Työaika pellin kortissa (hinnoittelu vaihe 3b, 27.11.2026) */
+  .tyoaika-rivi { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 8px; padding: 6px 8px; border: 1px dashed var(--kpt-reuna); border-radius: 6px; font-size: 12px; color: var(--kpt-himmea); }
+  .tyoaika-rivi .ta-otsikko { font-family: var(--kpt-mono); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .tyoaika-rivi .ta-kentta { display: inline-flex; align-items: center; gap: 6px; }
+  .tyoaika-rivi .ta-input { width: 64px; min-height: 32px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--kpt-reuna); background: var(--kpt-kentta); color: var(--kpt-teksti); font-size: 13px; }
+  .tyoaika-rivi .ta-tila.ok { color: var(--kpt-ok); }
+  .tyoaika-rivi .ta-tila.virhe { color: var(--kpt-virhe); }
+  @media (max-width: 700px) { .tyoaika-rivi .ta-input { font-size: 16px; min-height: 42px; width: 72px; } }
   /* Tulosteet ennallaan: selaimen oletuskoko ja riviväli kuten ennen uutta ulkoasua (kpt-sivu muuttaa niitä ruudulla) */
   @media print { body.kpt-sivu { font-size: 16px; line-height: normal; } }
   :where(#tkk) { font-size: 16px; line-height: normal; }
@@ -688,7 +696,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
-<script src="tyokortti.js?v=5"></script>
+<script src="tyokortti.js?v=6"></script>
 <script src="profiilit.js?v=20261127b"></script>
 </head>
 <body class="kpt-sivu">
@@ -1649,6 +1657,46 @@ function calcItemStatus(rows) {
   return 'WAITING';
 }
 
+// ── Työaika tuotannossa (hinnoittelu vaihe 3b, 27.11.2026, Tomi: "pelti suunnitellaan toimistossa, mutta tuotannossa
+// sitten tehdään") ── Suunnitteluaika ja työaika pellin kortissa, molemmat muokattavissa. Tallentuu pellin tietoihin
+// profile_data.tyoaika (sama kuin Peltilistojen arvio), joten hinnoittelu käyttää sitä. Piipun, huuvan ja kartion aika
+// muokataan niiden omilla tuotantosivuilla. Tallennus hakee ensin tuoreen profile_datan, ettei vanha tieto korvaa muuta.
+function tyoaikaKentta(arvo) { return Number(arvo) > 0 ? escT(String(arvo)) : ''; }
+function tyoaikaRiviHtml(item, orderId) {
+  const ta = (item.profile_data && item.profile_data.tyoaika) || {};
+  const kentta = (luokka, arvo, nimi) => `<label class="ta-kentta">${nimi} <input type="number" inputmode="numeric" min="0" step="1" class="ta-input ${luokka}"
+    value="${tyoaikaKentta(arvo)}" placeholder="—" onchange="tallennaTyoaika('${item.id}', '${orderId}', this)"> min</label>`;
+  return `<div class="tyoaika-rivi" id="tyoaika-${item.id}">
+    <span class="ta-otsikko">Työaika</span>${kentta('ta-s', ta.suunnittelu_min, 'Suunnittelu')}${kentta('ta-t', ta.tyo_min, 'Työ')}
+    <span class="ta-tila"></span></div>`;
+}
+async function tallennaTyoaika(itemId, orderId, kentta) {
+  const o = allOrders.find(x => x.id === orderId);
+  const item = o && o.items.find(i => i.id === itemId);
+  const rivi = kentta && kentta.closest('.tyoaika-rivi');
+  if (!item || !rivi) return;
+  const lue = sel => { const v = parseFloat(rivi.querySelector(sel).value); return isFinite(v) && v >= 0 ? v : null; };
+  const s = lue('.ta-s'), t = lue('.ta-t');
+  const ta = (s === null && t === null) ? null : { suunnittelu_min: s || 0, tyo_min: t || 0, yhteensa_min: (s || 0) + (t || 0) };
+  const tila = rivi.querySelector('.ta-tila');
+  tila.className = 'ta-tila'; tila.textContent = 'Tallennetaan…';
+  let pd = item.profile_data || {};
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/order_items?id=eq.${itemId}&select=profile_data`, { headers });
+    if (r.ok) { const j = await r.json(); if (j && j[0]) pd = j[0].profile_data || {}; }
+  } catch (e) { /* käytetään sivun tietoa */ }
+  const uusi = Object.assign({}, pd);
+  if (ta) uusi.tyoaika = ta; else delete uusi.tyoaika;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/order_items?id=eq.${itemId}`, {
+    method: 'PATCH',
+    headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ profile_data: uusi })
+  });
+  if (!res.ok) { tila.className = 'ta-tila virhe'; tila.textContent = 'Tallennus epäonnistui (' + res.status + ')'; return; }
+  item.profile_data = uusi;
+  tila.className = 'ta-tila ok'; tila.textContent = '✓ tallennettu';
+}
+
 function renderItemCards(order) {
   const grid = document.getElementById('itemsGrid');
   if (!order.items.length) {
@@ -1840,6 +1888,7 @@ function renderItemCards(order) {
       <div class="item-card-body">
         ${kanttausBlock}
         ${cutTable}
+        ${(!isKappale(item) && !['piippu', 'huuva', 'kartio'].includes(item.profile_type)) ? tyoaikaRiviHtml(item, order.id) : ''}
         ${kapBlock}
       </div>
     </div>`;
@@ -2271,6 +2320,7 @@ function rakennaTyokortti(asetus) {
             ${rivitP}
           </table>
           <div style="font-size:8.5pt;margin-top:1mm">Levityskuvat, merkintäpisteet sekä piipun kuvat sivulta ja edestä ovat piipun omalla työkortilla (QR).</div>
+          ${T.aikaRivi ? T.aikaRivi(vals.tyoaika) : ''}
         </div>
       </div></div>`;
     }
@@ -2301,6 +2351,7 @@ function rakennaTyokortti(asetus) {
             ${rivitS}
           </table>
           <div style="font-size:8.5pt;margin-top:1mm">Levityskuvat${tyyppi === 'kartio' ? ', harppimitat' : ' ja merkintäpisteet'} ovat ${tyyppi === 'huuva' ? 'huuvan' : 'kartion'} omalla työkortilla (QR).</div>
+          ${T.aikaRivi ? T.aikaRivi(((osat.find(i => i.profile_data && i.profile_data.vals) || {}).profile_data || {}).vals?.tyoaika) : ''}
         </div>
       </div></div>`;
     });
@@ -2336,6 +2387,7 @@ function rakennaTyokortti(asetus) {
             <tr><th>Mitta</th><th>Päät</th><th>Kok.</th><th class="tk-c">kpl</th><th>Huomio</th><th>Työvaihe</th></tr>
             ${rivitHtml}
           </table>
+          ${T.aikaRivi ? T.aikaRivi(pd.tyoaika) : ''}
         </div>
       </div>${lev}</div>`;
     });
