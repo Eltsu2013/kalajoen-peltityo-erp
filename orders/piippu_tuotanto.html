@@ -12,13 +12,9 @@
 <script src="teema.js?v=1"></script>
 <style>
   /* Ulkoasuremontti R3b (26.11.2026): yhteinen tyyli.css, sivun omissa tyyleissä vain --kpt-muuttujia.
-     Vanhat muuttujanimet on kytketty uusiin, koska skripti tuottaa niillä inline-tyylejä. */
+     Myös skriptin inline-tyylit (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026). */
   :root, html[data-teema] {
-    --bg: var(--kpt-kentta); --panel: var(--kpt-paneeli); --panel2: var(--kpt-paneeli2, var(--kpt-kentta));
-    --border: var(--kpt-reuna); --accent: var(--kpt-korostus); --accent-dim: var(--kpt-korostus);
-    --text: var(--kpt-teksti); --text-dim: var(--kpt-himmea); --text1: var(--kpt-teksti); --text2: var(--kpt-himmea);
-    --warn: var(--kpt-huom); --blue: var(--kpt-v-tilaukset); --danger: var(--kpt-virhe); --red: var(--kpt-virhe);
-    --bg2: var(--kpt-paneeli); --bg3: var(--kpt-kentta);
+    --panel2: var(--kpt-paneeli2, var(--kpt-kentta));
     --tila-violetti: var(--kpt-v-ajat);
   }
   .sivu { max-width: 1240px; margin: 0 auto; padding: 16px 16px 64px; }
@@ -147,8 +143,8 @@
   :where(#tkk), :where(#tkk) * { box-sizing: border-box; margin: 0; padding: 0; }
   :where(#tkk) { font-family: 'IBM Plex Sans', sans-serif; }
   :where(#tkk) table { width: 100%; border-collapse: collapse; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
-  :where(#tkk) thead th { background: var(--panel2); color: var(--text-dim); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--border); }
-  :where(#tkk) tbody tr { border-bottom: 1px solid var(--border); }
+  :where(#tkk) thead th { background: var(--panel2); color: var(--kpt-himmea); font-weight: 600; padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--kpt-reuna); }
+  :where(#tkk) tbody tr { border-bottom: 1px solid var(--kpt-reuna); }
   :where(#tkk) tbody tr:last-child { border-bottom: none; }
   :where(#tkk) tbody td { padding: 7px 8px; vertical-align: middle; }
   :where(#tkk) .td-num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -158,11 +154,11 @@
   }
   :where(#tkk) .mitat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; padding: 12px 14px; }
   :where(#tkk) .mitta-row { font-size: 12px; font-family: 'IBM Plex Mono', monospace; display: flex; justify-content: space-between; gap: 8px; }
-  :where(#tkk) .mitta-label { color: var(--text-dim); }
-  :where(#tkk) .mitta-val { color: var(--text); font-weight: 600; }
+  :where(#tkk) .mitta-label { color: var(--kpt-himmea); }
+  :where(#tkk) .mitta-val { color: var(--kpt-teksti); font-weight: 600; }
   :where(#tkk) .badge { display: inline-block; font-size: 10px; font-family: 'IBM Plex Mono', monospace; padding: 2px 7px; border-radius: 3px; font-weight: 600; }
-  :where(#tkk) .badge-done { background: #162018; color: var(--accent); border: 1px solid var(--accent); }
-  :where(#tkk) .badge-waiting { background: var(--panel2); color: var(--text-dim); border: 1px solid var(--border); }
+  :where(#tkk) .badge-done { background: #162018; color: var(--kpt-korostus); border: 1px solid var(--kpt-korostus); }
+  :where(#tkk) .badge-waiting { background: var(--panel2); color: var(--kpt-himmea); border: 1px solid var(--kpt-reuna); }
   @media print {
     :where(#tkk) thead th { background: #eee; color: #333; }
     :where(#tkk) tbody td { color: #000; }
@@ -227,7 +223,7 @@ const groupName = decodeURIComponent(params.get('groupName') || '');
 
 const STEPS     = ['Odottaa','Leikattu','Kantattu','Lisätyöt','Valmis'];
 const STEP_KEYS = ['WAITING','CUT','BENT','EXTRA','DONE'];
-const STEP_COLORS = { WAITING:'var(--border)', CUT:'var(--blue)', BENT:'var(--warn)', EXTRA:'#a855f7', DONE:'var(--accent)' };
+const STEP_COLORS = { WAITING:'var(--kpt-reuna)', CUT:'var(--kpt-v-tilaukset)', BENT:'var(--kpt-huom)', EXTRA:'#a855f7', DONE:'var(--kpt-korostus)' };
 
 function r(n) { return Math.round(n); }
 
@@ -528,7 +524,7 @@ function renderTauluStatus(pellit, label) {
     return `<tr class="${isDone?'row-done':''}">
       <td class="td-osa">${p.osa}</td>
       <td class="td-num">${p.lev}</td>
-      <td style="color:var(--text-dim)">${typeof p.lev==='number'?'×':''}</td>
+      <td style="color:var(--kpt-himmea)">${typeof p.lev==='number'?'×':''}</td>
       <td class="td-num">${typeof p.pit==='number'?p.pit:''}</td>
       <td class="td-num">${p.kpl}</td>
       <td><div class="step-btns">${stepBtns}</div>${mobileBtnHtml}</td>
@@ -614,10 +610,10 @@ function mittalista(v, opts) {
       rivi('Lisää hupun kokoon', v.huplis),
       rivi('Sivujen liitosvara', v.hsivlisa),
     ].filter(Boolean).join('');
-    if (kuvissa && !juuretH) return `<div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>`;
+    if (kuvissa && !juuretH) return `<div><div style="font-size:11px;font-weight:600;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>`;
     return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
-      <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>${juuretH || '—'}</div>
-      <div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>
+      <div><div style="font-size:11px;font-weight:600;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>${juuretH || '—'}</div>
+      <div><div style="font-size:11px;font-weight:600;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppuH || '—'}</div>
     </div>`;
   }
 
@@ -637,15 +633,15 @@ function mittalista(v, opts) {
     rivi('Huppu takaa leveämpi', v.huptakalis),
   ].filter(Boolean).join('');
 
-  if (kuvissa && !juuret) return `<div><div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppu || '—'}</div>`;
+  if (kuvissa && !juuret) return `<div><div style="font-size:11px;font-weight:600;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>${huppu || '—'}</div>`;
   return `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px;">
       <div>
-        <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>
+        <div style="font-size:11px;font-weight:600;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Juuren mitat</div>
         ${juuret||'—'}
       </div>
       <div>
-        <div style="font-size:11px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>
+        <div style="font-size:11px;font-weight:600;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Hupun mitat</div>
         ${huppu||'—'}
       </div>
     </div>`;
@@ -738,8 +734,8 @@ function harjaKulmat(v) {
     const g = KPT_PIIPPU.laskeHarjapiippu(v, { juuret: false, huppu: false, kansi: false, hattu: false }).geom;
     const s = KPT_PIIPPU_LEVITYS.harjaSuhde(v);
     const k = x => `<strong style="font-family:'IBM Plex Mono',monospace">${x}</strong>`;
-    return `<span style="font-weight:400;color:var(--text);">Etukulmat: ${k(r(g.puoli1.kulmaDeg) + '° / ' + r(g.puoli2.kulmaDeg) + '°')}</span>
-      <span style="font-weight:400;color:var(--text);">Kaltevuus: ${k(s.join(' / '))}</span>`;
+    return `<span style="font-weight:400;color:var(--kpt-teksti);">Etukulmat: ${k(r(g.puoli1.kulmaDeg) + '° / ' + r(g.puoli2.kulmaDeg) + '°')}</span>
+      <span style="font-weight:400;color:var(--kpt-teksti);">Kaltevuus: ${k(s.join(' / '))}</span>`;
   } catch (e) { return ''; }
 }
 
@@ -802,13 +798,13 @@ function render(items, order) {
         <span>${onHarja(v) ? 'Harjapiippu' : 'Piippu'} — sivukuva</span>
         ${harjaKulmat(v)}
         ${v?.etukork&&v?.takakork&&v?.suora?`
-          <span style="font-weight:400;color:var(--text);">
+          <span style="font-weight:400;color:var(--kpt-teksti);">
             Etukulma: <strong style="font-family:'IBM Plex Mono',monospace">${Math.round(Math.atan((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1))*180/Math.PI)}°</strong>
           </span>
-          <span style="font-weight:400;color:var(--text);">
+          <span style="font-weight:400;color:var(--kpt-teksti);">
             Takakulma: <strong style="font-family:'IBM Plex Mono',monospace">${180-Math.round(Math.atan((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1))*180/Math.PI)}°</strong>
           </span>
-          <span style="font-weight:400;color:var(--text);">
+          <span style="font-weight:400;color:var(--kpt-teksti);">
             Kaltevuus: <strong style="font-family:'IBM Plex Mono',monospace">1:${((v.suora||0)/(sivuV(v).etukork-sivuV(v).takakork||1)).toFixed(1)}</strong>
           </span>`:''}
       </h3>
@@ -860,21 +856,21 @@ function piirraKansiTuotanto() {
   const el = document.getElementById('kansi-tuotanto');
   if (!el || !tkData || !tkData.kansi || !window.KPT_KANSI) return;
   const k = tkData.kansi, mit = k.as.mitattu, onMit = !!(mit.lev || mit.syv);
-  const tieto = KPT_KANSI.tiedot(k).map(([a, b]) => `<div><span style="color:var(--text-dim)">${a}:</span> <b>${b}</b></div>`).join('');
-  const syotto = (id, arvo, laskettu) => `<input type="number" id="${id}" value="${arvo || ''}" placeholder="${Math.round(laskettu * 10) / 10}" style="width:84px;padding:5px 6px;background:var(--bg,#0a0f1a);color:var(--text);border:1px solid ${arvo ? '#f59e0b' : 'var(--border)'};border-radius:3px;font-size:13px">`;
+  const tieto = KPT_KANSI.tiedot(k).map(([a, b]) => `<div><span style="color:var(--kpt-himmea)">${a}:</span> <b>${b}</b></div>`).join('');
+  const syotto = (id, arvo, laskettu) => `<input type="number" id="${id}" value="${arvo || ''}" placeholder="${Math.round(laskettu * 10) / 10}" style="width:84px;padding:5px 6px;background:var(--kpt-kentta,#0a0f1a);color:var(--kpt-teksti);border:1px solid ${arvo ? '#f59e0b' : 'var(--kpt-reuna)'};border-radius:3px;font-size:13px">`;
   el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:8px 24px;font-size:13px;margin-bottom:10px">${tieto}</div>
-    <div style="border:1px solid var(--border);border-radius:4px;padding:8px 10px;margin-bottom:10px;font-size:13px">
-      <div style="margin-bottom:6px"><b>Piippu ulkoreunasta, mitattu</b> <span style="color:var(--text-dim)">(yläreunojen ulkomitta, kun pellit on liitetty)</span></div>
+    <div style="border:1px solid var(--kpt-reuna);border-radius:4px;padding:8px 10px;margin-bottom:10px;font-size:13px">
+      <div style="margin-bottom:6px"><b>Piippu ulkoreunasta, mitattu</b> <span style="color:var(--kpt-himmea)">(yläreunojen ulkomitta, kun pellit on liitetty)</span></div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
         <label>Etu–taka ${syotto('kansi-mit-syv', mit.syv, k.S.laskettu)}</label>
         <label>Vasen–oikea ${syotto('kansi-mit-lev', mit.lev, k.L.laskettu)}</label>
         <button type="button" class="kpk-nappi" onclick="tallennaKansiMitattu(false)">Tallenna</button>
         ${onMit ? `<button type="button" class="kpk-nappi" onclick="tallennaKansiMitattu(true)">Poista mitattu</button>` : ''}
-        <span id="kansi-mit-tila" style="color:var(--text-dim);font-size:12px">${onMit ? 'Kansi lasketaan mitatusta (laskettu ' + Math.round(k.S.laskettu) + ' × ' + Math.round(k.L.laskettu) + ').' : 'Tyhjä = laskettu mitta (harmaa luku).'}</span>
+        <span id="kansi-mit-tila" style="color:var(--kpt-himmea);font-size:12px">${onMit ? 'Kansi lasketaan mitatusta (laskettu ' + Math.round(k.S.laskettu) + ' × ' + Math.round(k.L.laskettu) + ').' : 'Tyhjä = laskettu mitta (harmaa luku).'}</span>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:6px">Mitat
-      <select onchange="kansiMista=this.value;try{localStorage.setItem('kpt_kansi_mista',kansiMista)}catch(e){};piirraKansiTuotanto()" style="padding:4px 6px;background:var(--bg,#0a0f1a);color:var(--text);border:1px solid var(--border);border-radius:3px">
+      <select onchange="kansiMista=this.value;try{localStorage.setItem('kpt_kansi_mista',kansiMista)}catch(e){};piirraKansiTuotanto()" style="padding:4px 6px;background:var(--kpt-kentta,#0a0f1a);color:var(--kpt-teksti);border:1px solid var(--kpt-reuna);border-radius:3px">
         <option value="leikkuu"${kansiMista === 'leikkuu' ? ' selected' : ''}>tasoaihion leikkuureunasta</option>
         <option value="taitettu"${kansiMista === 'taitettu' ? ' selected' : ''}>taitetun kannen reunasta</option>
       </select></div>

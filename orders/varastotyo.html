@@ -22,25 +22,15 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Sivun vanhat muuttujanimet kytketty yhteisiin (R5d); tumma ja vaalea ulkoasu tyyli.css:stä */
+    /* Sivun oma sävy (muut värit suoraan --kpt-muuttujista, 27.11.2026); tumma ja vaalea ulkoasu tyyli.css:stä */
     :root, html[data-teema] {
-      --bg:       var(--kpt-tausta);
-      --surface:  var(--kpt-paneeli);
-      --surface2: var(--kpt-paneeli2);
-      --border:   var(--kpt-reuna);
-      --text:     var(--kpt-teksti);
-      --muted:    var(--kpt-himmea);
-      --accent:   var(--kpt-korostus);
       --accent2:  color-mix(in srgb, var(--kpt-korostus) 70%, var(--kpt-reuna));
-      --danger:   var(--kpt-virhe);
-      --ok:       var(--kpt-ok);
-      --napin-teksti: var(--kpt-teksti-korostuksella);
     }
 
-    html, body { background: var(--bg); }
+    html, body { background: var(--kpt-tausta); }
     body, body.kpt-sivu {
       font-family: 'IBM Plex Sans', sans-serif;
-      color: var(--text);
+      color: var(--kpt-teksti);
       min-height: 100vh;
       font-size: 16px;
       line-height: normal;
@@ -52,9 +42,9 @@
     /* ── YLÄPALKKI ── */
     .topbar {
       position: sticky; top: 0; z-index: 100;
-      background: var(--surface);
-      border-top: 3px solid var(--accent);
-      border-bottom: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border-top: 3px solid var(--kpt-korostus);
+      border-bottom: 1px solid var(--kpt-reuna);
       padding: 8px 12px 10px;
     }
     .topbar-row {
@@ -65,8 +55,8 @@
 
     .mode-toggle {
       display: flex;
-      background: var(--bg);
-      border: 1px solid var(--border);
+      background: var(--kpt-tausta);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
       overflow: hidden;
     }
@@ -74,46 +64,46 @@
       background: none; border: none;
       padding: 9px 16px;
       font-size: 15px; font-weight: 600;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       cursor: pointer;
     }
-    .mode-btn.active { background: var(--accent); color: var(--napin-teksti); }
+    .mode-btn.active { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
 
     .place-bar {
       width: 100%;
       display: flex; align-items: center; gap: 8px;
-      background: var(--bg);
-      border: 1px solid var(--border);
+      background: var(--kpt-tausta);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
       padding: 10px 12px;
       text-align: left;
       cursor: pointer;
       min-height: 52px;
     }
-    .place-bar.empty { border-style: dashed; color: var(--muted); }
-    .place-code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--accent); font-size: 17px; white-space: nowrap; }
-    .place-name { font-size: 15px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .place-change { margin-left: auto; color: var(--muted); font-size: 13px; white-space: nowrap; }
+    .place-bar.empty { border-style: dashed; color: var(--kpt-himmea); }
+    .place-code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--kpt-korostus); font-size: 17px; white-space: nowrap; }
+    .place-name { font-size: 15px; color: var(--kpt-teksti); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .place-change { margin-left: auto; color: var(--kpt-himmea); font-size: 13px; white-space: nowrap; }
 
     /* ── Valikko (sama kuin varasto.html) ── */
     .nav-menu-wrap { position: relative; }
     .nav-btn {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-teksti);
       font-family: 'IBM Plex Mono', monospace;
       font-size: 12px; font-weight: 600;
       padding: 6px 12px; border-radius: 4px;
       cursor: pointer; letter-spacing: 0.04em;
     }
-    .nav-btn:hover { background: var(--border); }
+    .nav-btn:hover { background: var(--kpt-reuna); }
     .nav-dropdown {
       display: none;
       position: absolute;
       top: calc(100% + 6px);
       left: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 6px;
       min-width: 200px;
       z-index: 999;
@@ -125,24 +115,24 @@
       font-family: 'IBM Plex Mono', monospace;
       font-size: 10px; font-weight: 600;
       letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--muted); padding: 8px 14px 4px;
+      color: var(--kpt-himmea); padding: 8px 14px 4px;
     }
     .nav-item {
       display: block; width: 100%; text-align: left;
       padding: 8px 14px;
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 12px; color: var(--text);
+      font-size: 12px; color: var(--kpt-teksti);
       background: none; border: none; cursor: pointer;
       text-decoration: none; transition: background 0.1s;
     }
-    .nav-item:hover { background: var(--border); color: var(--accent); }
-    .nav-divider { border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+    .nav-item:hover { background: var(--kpt-reuna); color: var(--kpt-korostus); }
+    .nav-divider { border: none; border-top: 1px solid var(--kpt-reuna); margin: 4px 0; }
     /* Puhelin: iso kosketusalue, valikko vasemmassa yläkulmassa (kaukana Lisää/Inventoi-napeista) */
     .topbar-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .topbar .nav-btn {
       width: 44px; height: 44px; padding: 0;
       font-size: 20px; line-height: 1; border-radius: 8px;
-      background: var(--bg);
+      background: var(--kpt-tausta);
     }
     .topbar .nav-dropdown {
       top: calc(100% + 8px);
@@ -166,21 +156,21 @@
     .section-label {
       font-size: 12px; font-weight: 600;
       letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       margin: 18px 0 8px;
     }
 
     .search-input {
       width: 100%;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
-      color: var(--text);
+      color: var(--kpt-teksti);
       font-family: inherit;
       font-size: 18px;
       padding: 14px 14px;
     }
-    .search-input:focus { outline: none; border-color: var(--accent); }
+    .search-input:focus { outline: none; border-color: var(--kpt-korostus); }
 
     /* Isot napit — sormi ja hanska osuvat */
     .big-list { display: flex; flex-direction: column; gap: 8px; }
@@ -188,20 +178,20 @@
       display: flex; align-items: center; gap: 12px;
       width: 100%;
       min-height: 58px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
       padding: 10px 14px;
       text-align: left;
       cursor: pointer;
       font-size: 16px;
     }
-    .big-btn:active { background: var(--surface2); border-color: var(--accent); }
-    .big-btn .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--accent); min-width: 92px; font-size: 15px; }
+    .big-btn:active { background: var(--kpt-paneeli2); border-color: var(--kpt-korostus); }
+    .big-btn .code { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--kpt-korostus); min-width: 92px; font-size: 15px; }
     .big-btn .name { flex: 1; }
-    .big-btn .arrow { color: var(--muted); font-size: 14px; }
+    .big-btn .arrow { color: var(--kpt-himmea); font-size: 14px; }
 
-    .empty-msg { color: var(--muted); font-size: 15px; padding: 14px 4px; }
+    .empty-msg { color: var(--kpt-himmea); font-size: 15px; padding: 14px 4px; }
 
     /* Kaikki paikat — ryhmät aukeavat napauttamalla */
     .zone { margin-bottom: 8px; }
@@ -209,78 +199,78 @@
       list-style: none;
       display: flex; align-items: center; justify-content: space-between;
       min-height: 54px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli2);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
       padding: 0 14px;
       font-size: 16px; font-weight: 600;
       cursor: pointer;
     }
     .zone summary::-webkit-details-marker { display: none; }
-    .zone summary .count { color: var(--muted); font-weight: 400; font-size: 14px; }
+    .zone summary .count { color: var(--kpt-himmea); font-weight: 400; font-size: 14px; }
     .zone summary .count::after { content: ' ▸'; }
-    .zone[open] summary { border-color: var(--accent); color: var(--accent); }
+    .zone[open] summary { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
     .zone[open] summary .count::after { content: ' ▾'; }
     .zone .big-list { padding: 8px 0 4px 10px; }
     .zone-group-title {
       font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--muted); margin: 22px 0 8px; padding-top: 14px; border-top: 1px dashed var(--border);
+      color: var(--kpt-himmea); margin: 22px 0 8px; padding-top: 14px; border-top: 1px dashed var(--kpt-reuna);
     }
 
     /* Taso- ja piikkivalinta */
     .picker-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
     .back-btn {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 8px;
       padding: 10px 14px; font-size: 15px; cursor: pointer; white-space: nowrap;
     }
     .picker-title { font-size: 18px; font-weight: 600; line-height: 1.3; }
-    .picker-title .code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); display: block; font-size: 14px; }
-    .picker-hint { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+    .picker-title .code { font-family: 'IBM Plex Mono', monospace; color: var(--kpt-korostus); display: block; font-size: 14px; }
+    .picker-hint { color: var(--kpt-himmea); font-size: 14px; margin-bottom: 10px; }
 
     .level-stack { display: flex; flex-direction: column; gap: 8px; }
     .level-btn {
       min-height: 60px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
       font-size: 20px; font-weight: 600;
       cursor: pointer;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 18px;
     }
-    .level-btn:active { background: var(--accent); color: var(--napin-teksti); border-color: var(--accent); }
-    .level-btn .lcode { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--muted); font-weight: 400; }
-    .level-btn:active .lcode { color: var(--napin-teksti); }
+    .level-btn:active { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border-color: var(--kpt-korostus); }
+    .level-btn .lcode { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--kpt-himmea); font-weight: 400; }
+    .level-btn:active .lcode { color: var(--kpt-teksti-korostuksella); }
 
     .num-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
     .num-btn {
       min-height: 64px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 8px;
       font-size: 22px; font-weight: 600;
       font-family: 'IBM Plex Mono', monospace;
       cursor: pointer;
     }
-    .num-btn:active { background: var(--accent); color: var(--napin-teksti); border-color: var(--accent); }
+    .num-btn:active { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border-color: var(--kpt-korostus); }
     .row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
     /* Ruutu 2 -paikanpitäjä */
     .placeholder-card {
-      background: var(--surface);
-      border: 1px dashed var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px dashed var(--kpt-reuna);
       border-radius: 8px;
       padding: 22px 16px;
       text-align: center;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       line-height: 1.5;
     }
-    .placeholder-card strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 17px; }
+    .placeholder-card strong { color: var(--kpt-teksti); display: block; margin-bottom: 6px; font-size: 17px; }
 
     /* ── RUUTU 2: TUOTE ── */
-    .big-btn .sub, .here-row .sub { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
-    .here-row .sub { color: var(--accent); }
-    .big-btn.new-btn { border-style: dashed; border-color: var(--accent2); color: var(--accent); font-weight: 600; }
+    .big-btn .sub, .here-row .sub { display: block; font-size: 13px; color: var(--kpt-himmea); margin-top: 2px; }
+    .here-row .sub { color: var(--kpt-korostus); }
+    .big-btn.new-btn { border-style: dashed; border-color: var(--accent2); color: var(--kpt-korostus); font-weight: 600; }
     .laji-tag {
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
       padding: 2px 6px; border-radius: 4px; white-space: nowrap;
@@ -292,56 +282,56 @@
     .here-toggle {
       width: 100%; min-height: 50px;
       display: flex; align-items: center; justify-content: space-between;
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 0 14px; font-size: 15px; color: var(--muted); cursor: pointer;
+      background: none; border: 1px solid var(--kpt-reuna); border-radius: 8px;
+      padding: 0 14px; font-size: 15px; color: var(--kpt-himmea); cursor: pointer;
     }
-    .here-toggle strong { color: var(--text); }
+    .here-toggle strong { color: var(--kpt-teksti); }
     .here-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .here-row {
       display: flex; justify-content: space-between; gap: 10px; align-items: center;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 8px;
       padding: 10px 12px; font-size: 15px; text-align: left; cursor: pointer; width: 100%;
     }
-    .here-row .mitat { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--accent); white-space: nowrap; }
-    .dim { color: var(--muted); }
+    .here-row .mitat { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--kpt-korostus); white-space: nowrap; }
+    .dim { color: var(--kpt-himmea); }
 
     /* ── UUSI TUOTE ── */
-    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin: 18px 0 8px; letter-spacing: 0.04em; }
-    .form-hint  { font-size: 13px; color: var(--muted); margin-top: 6px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; color: var(--kpt-himmea); margin: 18px 0 8px; letter-spacing: 0.04em; }
+    .form-hint  { font-size: 13px; color: var(--kpt-himmea); margin-top: 6px; }
     .text-input {
-      width: 100%; background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); font-family: inherit; font-size: 17px; padding: 13px 14px;
+      width: 100%; background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna);
+      border-radius: 8px; color: var(--kpt-teksti); font-family: inherit; font-size: 17px; padding: 13px 14px;
     }
-    .text-input:focus { outline: none; border-color: var(--accent); }
-    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-    .seg button { background: var(--surface); border: none; min-height: 52px; font-size: 17px; font-weight: 600; color: var(--muted); cursor: pointer; }
-    .seg button + button { border-left: 1px solid var(--border); }
-    .seg button.active { background: var(--accent); color: var(--napin-teksti); }
+    .text-input:focus { outline: none; border-color: var(--kpt-korostus); }
+    .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 0; border: 1px solid var(--kpt-reuna); border-radius: 8px; overflow: hidden; }
+    .seg button { background: var(--kpt-paneeli); border: none; min-height: 52px; font-size: 17px; font-weight: 600; color: var(--kpt-himmea); cursor: pointer; }
+    .seg button + button { border-left: 1px solid var(--kpt-reuna); }
+    .seg button.active { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
     .chips { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip {
       min-height: 46px; min-width: 64px; padding: 0 14px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 23px;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 23px;
       font-size: 15px; font-weight: 500; cursor: pointer;
     }
-    .chip.selected { background: var(--accent); border-color: var(--accent); color: var(--napin-teksti); font-weight: 600; }
-    .chip.chip-muted { color: var(--muted); }
+    .chip.selected { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
+    .chip.chip-muted { color: var(--kpt-himmea); }
     .np-chips-gap { margin-bottom: 8px; }
     .np-preview {
       margin-top: 22px; padding: 14px; border-radius: 8px;
-      background: var(--surface); border: 1px solid var(--border); font-size: 15px; line-height: 1.5;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); font-size: 15px; line-height: 1.5;
     }
-    .np-preview .np-name { font-size: 19px; font-weight: 600; color: var(--text); }
-    .np-preview .np-error { color: var(--danger); }
-    .np-preview .np-dup { color: var(--accent); }
+    .np-preview .np-name { font-size: 19px; font-weight: 600; color: var(--kpt-teksti); }
+    .np-preview .np-error { color: var(--kpt-virhe); }
+    .np-preview .np-dup { color: var(--kpt-korostus); }
     .primary-btn {
       width: 100%; min-height: 60px; margin-top: 14px;
-      background: var(--accent); color: var(--napin-teksti); border: none; border-radius: 8px;
+      background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border: none; border-radius: 8px;
       font-size: 18px; font-weight: 600; cursor: pointer;
     }
     .primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .secondary-btn {
       width: 100%; min-height: 54px; margin-top: 10px;
-      background: none; border: 1px solid var(--border); border-radius: 8px;
+      background: none; border: 1px solid var(--kpt-reuna); border-radius: 8px;
       font-size: 16px; cursor: pointer;
     }
 
@@ -349,59 +339,59 @@
     .num-input { font-family: 'IBM Plex Mono', monospace; font-size: 22px; }
     .check-row {
       display: flex; align-items: center; gap: 10px;
-      margin-top: 10px; font-size: 16px; color: var(--muted); cursor: pointer;
+      margin-top: 10px; font-size: 16px; color: var(--kpt-himmea); cursor: pointer;
       min-height: 44px;
     }
-    .check-row input { width: 22px; height: 22px; accent-color: var(--accent); }
+    .check-row input { width: 22px; height: 22px; accent-color: var(--kpt-korostus); }
     .qty-row { display: flex; align-items: stretch; gap: 8px; }
     .qty-row .text-input { flex: 1; text-align: center; }
     .qty-btn {
       min-width: 68px; min-height: 56px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 8px;
       font-size: 24px; font-weight: 600; cursor: pointer;
     }
-    .qty-btn:active { background: var(--accent); color: var(--napin-teksti); border-color: var(--accent); }
+    .qty-btn:active { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border-color: var(--kpt-korostus); }
     .qty-btn.wide { min-width: 92px; font-size: 17px; }
     .qty-row.big { margin-top: 10px; }
     .qty-row.big .qty-btn { flex: 1; min-height: 62px; }
     .existing-box {
-      background: var(--surface); border: 1px solid var(--accent2); border-radius: 8px;
+      background: var(--kpt-paneeli); border: 1px solid var(--accent2); border-radius: 8px;
       padding: 14px; margin-top: 4px;
     }
-    .existing-qty { font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 600; color: var(--accent); margin: 4px 0 2px; }
-    .secondary-btn.accent { border-color: var(--accent2); color: var(--accent); }
+    .existing-qty { font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 600; color: var(--kpt-korostus); margin: 4px 0 2px; }
+    .secondary-btn.accent { border-color: var(--accent2); color: var(--kpt-korostus); }
 
     /* ── TÄLLÄ KERRALLA LISÄTTY ── */
     .session-bar {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 200;
-      background: var(--surface); border-top: 1px solid var(--border);
+      background: var(--kpt-paneeli); border-top: 1px solid var(--kpt-reuna);
       padding-bottom: env(safe-area-inset-bottom);
     }
     .session-toggle {
       width: 100%; min-height: 50px;
       display: flex; align-items: center; justify-content: space-between;
       background: none; border: none; padding: 0 14px;
-      font-size: 15px; color: var(--muted); cursor: pointer;
+      font-size: 15px; color: var(--kpt-himmea); cursor: pointer;
     }
-    .session-toggle strong { color: var(--accent); }
-    .session-list { max-height: 45vh; overflow-y: auto; border-top: 1px solid var(--border); }
+    .session-toggle strong { color: var(--kpt-korostus); }
+    .session-list { max-height: 45vh; overflow-y: auto; border-top: 1px solid var(--kpt-reuna); }
     .session-row {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 14px;
+      padding: 10px 14px; border-bottom: 1px solid var(--kpt-reuna); font-size: 14px;
     }
     .session-row .srow-main { flex: 1; min-width: 0; }
     .session-row .srow-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .session-row .srow-sub { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+    .session-row .srow-sub { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--kpt-himmea); }
     .undo-btn {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      min-height: 42px; padding: 0 14px; font-size: 14px; color: var(--muted); cursor: pointer; white-space: nowrap;
+      background: none; border: 1px solid var(--kpt-reuna); border-radius: 8px;
+      min-height: 42px; padding: 0 14px; font-size: 14px; color: var(--kpt-himmea); cursor: pointer; white-space: nowrap;
     }
-    .undo-btn:active { border-color: var(--danger); color: var(--danger); }
+    .undo-btn:active { border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
     .session-spacer { height: 56px; }
 
     /* Valittu tuote (ruutu 3:n yläosa) */
     .chosen-card {
-      background: var(--surface); border: 1px solid var(--accent); border-radius: 8px;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-korostus); border-radius: 8px;
       padding: 14px; margin-bottom: 14px;
     }
     .chosen-card .np-name { font-size: 19px; font-weight: 600; }
@@ -410,65 +400,65 @@
        ja tarjotaan sama toiminto sivun alalaidassa varmistuksen takana */
     #auth-user-info { display: none !important; }
     .page-footer {
-      margin-top: 40px; padding-top: 16px; border-top: 1px dashed var(--border);
+      margin-top: 40px; padding-top: 16px; border-top: 1px dashed var(--kpt-reuna);
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      font-size: 13px; color: var(--muted);
+      font-size: 13px; color: var(--kpt-himmea);
     }
     .page-footer button {
-      background: none; border: 1px solid var(--border); border-radius: 6px;
-      padding: 8px 12px; font-size: 13px; color: var(--muted); cursor: pointer;
+      background: none; border: 1px solid var(--kpt-reuna); border-radius: 6px;
+      padding: 8px 12px; font-size: 13px; color: var(--kpt-himmea); cursor: pointer;
     }
     .footer-napit { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .page-footer .kpt-teema-kytkin { min-height: 0; padding: 8px 12px; font-size: 13px; }
 
     /* ── RUUTU 4: INVENTOI ── */
     .inv-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-    .inv-summary { font-size: 15px; color: var(--muted); }
-    .inv-summary b { color: var(--text); }
+    .inv-summary { font-size: 15px; color: var(--kpt-himmea); }
+    .inv-summary b { color: var(--kpt-teksti); }
     .inv-row {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 8px;
       padding: 10px 12px; margin-bottom: 8px;
     }
-    .inv-row.found   { border-color: var(--ok); }
-    .inv-row.missing { border-color: var(--danger); }
-    .inv-row.missing .inv-name { text-decoration: line-through; color: var(--muted); }
+    .inv-row.found   { border-color: var(--kpt-ok); }
+    .inv-row.missing { border-color: var(--kpt-virhe); }
+    .inv-row.missing .inv-name { text-decoration: line-through; color: var(--kpt-himmea); }
     .inv-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
     .inv-name { font-size: 16px; font-weight: 500; }
-    .inv-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
-    .inv-mitat { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--accent); white-space: nowrap; }
+    .inv-meta { font-size: 13px; color: var(--kpt-himmea); margin-top: 2px; }
+    .inv-mitat { font-family: 'IBM Plex Mono', monospace; font-size: 14px; color: var(--kpt-korostus); white-space: nowrap; }
     .inv-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; }
     .inv-btns2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-    .inv-btns2 .inv-btn { color: var(--muted); font-weight: 400; }
-    .inv-btn.on-edit { border-color: var(--accent); color: var(--accent); }
-    .cut-calc { font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: var(--accent); margin-top: 8px; }
-    .cut-calc.bad { color: var(--danger); }
+    .inv-btns2 .inv-btn { color: var(--kpt-himmea); font-weight: 400; }
+    .inv-btn.on-edit { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
+    .cut-calc { font-family: 'IBM Plex Mono', monospace; font-size: 15px; color: var(--kpt-korostus); margin-top: 8px; }
+    .cut-calc.bad { color: var(--kpt-virhe); }
     .cut-loc {
       display: flex; align-items: center; justify-content: space-between; gap: 10px;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-top: 4px;
+      background: var(--kpt-tausta); border: 1px solid var(--kpt-reuna); border-radius: 8px; padding: 10px 12px; margin-top: 4px;
     }
-    .cut-loc .code { font-family: 'IBM Plex Mono', monospace; color: var(--accent); font-weight: 600; }
-    .cut-loc button { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 14px; cursor: pointer; }
+    .cut-loc .code { font-family: 'IBM Plex Mono', monospace; color: var(--kpt-korostus); font-weight: 600; }
+    .cut-loc button { background: none; border: 1px solid var(--kpt-reuna); border-radius: 6px; padding: 8px 12px; color: var(--kpt-teksti); font-size: 14px; cursor: pointer; }
     .inv-btn {
-      min-height: 48px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      min-height: 48px; background: var(--kpt-tausta); border: 1px solid var(--kpt-reuna); border-radius: 8px;
       font-size: 15px; font-weight: 500; cursor: pointer;
     }
-    .inv-btn.on-found   { background: var(--ok); border-color: var(--ok); color: var(--napin-teksti); }
-    .inv-btn.on-missing { background: var(--danger); border-color: var(--danger); color: var(--napin-teksti); }
-    .inv-edit { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .inv-btn.on-found   { background: var(--kpt-ok); border-color: var(--kpt-ok); color: var(--kpt-teksti-korostuksella); }
+    .inv-btn.on-missing { background: var(--kpt-virhe); border-color: var(--kpt-virhe); color: var(--kpt-teksti-korostuksella); }
+    .inv-edit { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--kpt-reuna); }
     .inv-edit .form-label { margin-top: 8px; }
     .inv-edit-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
     .inv-edit-btns .primary-btn, .inv-edit-btns .secondary-btn { margin-top: 0; min-height: 50px; font-size: 16px; }
     .inv-actions { margin-top: 18px; }
-    .inv-empty { color: var(--muted); padding: 20px 4px; font-size: 15px; line-height: 1.5; }
+    .inv-empty { color: var(--kpt-himmea); padding: 20px 4px; font-size: 15px; line-height: 1.5; }
     .move-banner {
-      background: var(--surface2); border: 1px solid var(--accent); border-radius: 8px;
+      background: var(--kpt-paneeli2); border: 1px solid var(--kpt-korostus); border-radius: 8px;
       padding: 12px 14px; margin-bottom: 14px; font-size: 15px; line-height: 1.4;
     }
 
-    .state-msg { text-align: center; color: var(--muted); padding: 40px 10px; }
+    .state-msg { text-align: center; color: var(--kpt-himmea); padding: 40px 10px; }
     .spinner {
       display: inline-block; width: 18px; height: 18px;
-      border: 2px solid var(--border); border-top-color: var(--accent);
+      border: 2px solid var(--kpt-reuna); border-top-color: var(--kpt-korostus);
       border-radius: 50%; animation: spin 0.7s linear infinite;
       vertical-align: middle; margin-right: 8px;
     }
@@ -477,15 +467,15 @@
     .toast {
       position: fixed; left: 50%; bottom: 24px;
       transform: translateX(-50%) translateY(20px);
-      background: var(--surface); border: 1px solid var(--border);
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna);
       border-radius: 8px; padding: 12px 18px;
       font-size: 15px; opacity: 0; pointer-events: none;
       transition: opacity .2s, transform .2s; z-index: 500;
       max-width: calc(100vw - 32px); text-align: center;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast.success { border-color: var(--ok); color: var(--ok); }
-    .toast.error   { border-color: var(--danger); color: var(--danger); }
+    .toast.success { border-color: var(--kpt-ok); color: var(--kpt-ok); }
+    .toast.error   { border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
     </style>
 </head>
 <body class="kpt-sivu">
@@ -1277,7 +1267,7 @@
     } else {
       box.innerHTML = '<div class="dim">Tallennetaan paikalle ' + esc(currentLoc.code) + ':</div>' +
         '<div class="np-name">' + esc(currentProduct.nimi) + '</div>' +
-        '<div class="mono" style="color:var(--accent);margin-top:4px">' + esc(r.summary) + '</div>' +
+        '<div class="mono" style="color:var(--kpt-korostus);margin-top:4px">' + esc(r.summary) + '</div>' +
         (am.note.trim() ? '<div class="dim" style="margin-top:4px">⚠ ' + esc(am.note.trim()) + '</div>' : '');
       save.disabled = false; same.disabled = false;
     }
@@ -1422,8 +1412,8 @@
       return;
     }
     sum.innerHTML = 'Järjestelmän mukaan <b>' + rows.length + ' erää</b>' +
-      ' · <span style="color:var(--ok)">' + nFound + ' löytyi</span>' +
-      ' · <span style="color:var(--danger)">' + nMissing + ' puuttuu</span>' +
+      ' · <span style="color:var(--kpt-ok)">' + nFound + ' löytyi</span>' +
+      ' · <span style="color:var(--kpt-virhe)">' + nMissing + ' puuttuu</span>' +
       (nOpen ? ' · ' + nOpen + ' avoinna' : '');
 
     list.innerHTML = rows.map(it => {

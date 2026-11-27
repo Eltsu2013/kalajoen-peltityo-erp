@@ -12,13 +12,7 @@
 <script src="teema.js?v=1"></script>
 <style>
   /* Ulkoasuremontti R4b (26.11.2026): yhteinen tyyli.css, sivun omissa tyyleissä vain --kpt-muuttujia.
-     Vanhat muuttujanimet kytketty uusiin, koska skripti tuottaa niillä inline-tyylejä. */
-  :root, html[data-teema] {
-    --bg: var(--kpt-tausta); --panel: var(--kpt-paneeli); --border: var(--kpt-reuna);
-    --accent: var(--kpt-korostus); --accent-glow: var(--kpt-korostus-tausta);
-    --text: var(--kpt-teksti); --text-dim: var(--kpt-himmea); --input-bg: var(--kpt-kentta);
-    --success: var(--kpt-ok); --danger: var(--kpt-virhe); --warn: var(--kpt-huom);
-  }
+     Myös skriptin inline-tyylit (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026). */
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   /* Asettelu: lista ja tiedot vierivät erikseen (yläpalkin korkeudesta riippumatta) */
@@ -408,7 +402,7 @@
           <div class="field" style="max-width:180px;">
             <label>Asiakasnumero (automaattinen)</label>
             <input type="text" id="new_customer_number" readonly
-              style="color:var(--text-dim);font-style:italic;"
+              style="color:var(--kpt-himmea);font-style:italic;"
               placeholder="Haetaan tallennuksessa...">
           </div>
 

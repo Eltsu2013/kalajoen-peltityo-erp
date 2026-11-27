@@ -14,16 +14,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* Sivun vanhat muuttujanimet kytketty yhteisiin (R5c) */
+    /* Sivun omat sävyt ja tyyppivärit (muut värit suoraan --kpt-muuttujista, 27.11.2026) */
     :root, html[data-teema] {
-      --bg:       var(--kpt-kentta);
-      --surface:  var(--kpt-paneeli);
-      --border:   var(--kpt-reuna);
-      --text:     var(--kpt-teksti);
-      --muted:    var(--kpt-himmea);
-      --accent:   var(--kpt-korostus);
       --accent2:  color-mix(in srgb, var(--kpt-korostus) 82%, var(--kpt-teksti));
-      --danger:   var(--kpt-virhe);
       --danger-bg:color-mix(in srgb, var(--kpt-virhe) 14%, transparent);
       --roll:     #60a5fa;
       --sheet:    var(--kpt-ok);
@@ -40,8 +33,8 @@
 
     /* ── TABS ── */
     .tabs {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border-bottom: 1px solid var(--kpt-reuna);
       display: flex;
       gap: 0;
       padding: 0 1rem;
@@ -51,7 +44,7 @@
       background: none;
       border: none;
       border-bottom: 3px solid transparent;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       cursor: pointer;
       font-family: inherit;
       font-size: 0.88rem;
@@ -60,8 +53,8 @@
       white-space: nowrap;
       transition: color 0.15s, border-color 0.15s;
     }
-    .tab-btn:hover { color: var(--text); }
-    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover { color: var(--kpt-teksti); }
+    .tab-btn.active { color: var(--kpt-korostus); border-bottom-color: var(--kpt-korostus); }
 
     .tab-panel { display: none; }
     .tab-panel.active { display: block; }
@@ -83,16 +76,16 @@
     .panel-header h2 {
       font-size: 1.15rem;
       font-weight: 600;
-      color: var(--accent);
+      color: var(--kpt-korostus);
     }
     .badge-count {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.78rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 4px;
       padding: 0.1rem 0.45rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
     }
 
     /* ── SUODATTIMET: "Suodata ▾" -nappi ja paneeli (R5c, kuten Tilauksissa) ── */
@@ -114,24 +107,24 @@
     }
     .suodatin-paneeli[hidden] { display: none; }
     .filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.6rem; }
-    .filters label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--muted); }
+    .filters label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--kpt-himmea); }
     .filters select {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
+      background: var(--kpt-kentta);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-teksti);
       font-family: 'IBM Plex Sans', sans-serif;
       font-size: 0.88rem;
       padding: 0.45rem 0.6rem;
       border-radius: 6px;
       min-height: 38px;
     }
-    .filters select:focus { outline: none; border-color: var(--accent); }
-    .filters select.valittu { border-color: var(--accent); }
+    .filters select:focus { outline: none; border-color: var(--kpt-korostus); }
+    .filters select.valittu { border-color: var(--kpt-korostus); }
     .suodatin-alarivi { display: flex; gap: 0.6rem; justify-content: flex-end; margin-top: 0.75rem; }
     .btn-clear {
       background: none;
-      border: 1px solid var(--border);
-      color: var(--muted);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-himmea);
       font-family: inherit;
       font-size: 0.85rem;
       padding: 0.45rem 0.85rem;
@@ -139,13 +132,13 @@
       cursor: pointer;
       min-height: 38px;
     }
-    .btn-clear:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-clear:hover { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
 
     /* ── TABLE ── */
     .table-wrap {
       overflow-x: auto;
       border-radius: 4px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--kpt-reuna);
     }
     table {
       width: 100%;
@@ -153,26 +146,26 @@
       font-size: 0.85rem;
     }
     thead th {
-      background: var(--surface);
-      color: var(--muted);
+      background: var(--kpt-paneeli);
+      color: var(--kpt-himmea);
       font-weight: 500;
       font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       padding: 0.6rem 0.75rem;
       text-align: left;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--kpt-reuna);
       white-space: nowrap;
     }
     thead th.sortable {
       cursor: pointer;
       user-select: none;
     }
-    thead th.sortable:hover { color: var(--text); }
-    thead th.sort-asc::after  { content: " ↑"; color: var(--accent); }
-    thead th.sort-desc::after { content: " ↓"; color: var(--accent); }
+    thead th.sortable:hover { color: var(--kpt-teksti); }
+    thead th.sort-asc::after  { content: " ↑"; color: var(--kpt-korostus); }
+    thead th.sort-desc::after { content: " ↓"; color: var(--kpt-korostus); }
     tbody tr {
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--kpt-reuna);
       cursor: pointer;
       transition: background 0.12s;
     }
@@ -200,17 +193,17 @@
     .type-ITEM   { background: color-mix(in srgb, var(--item) 18%, transparent);   color: var(--item); }
     .type-BULK   { background: color-mix(in srgb, var(--bulk) 18%, transparent);   color: var(--bulk); }
 
-    .dim { color: var(--muted); }
+    .dim { color: var(--kpt-himmea); }
 
     .location-chip {
       display: inline-block;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 4px;
       padding: 0.1rem 0.4rem;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.75rem;
-      color: var(--accent);
+      color: var(--kpt-korostus);
     }
 
     /* ── MODAL ── */
@@ -227,8 +220,8 @@
     .modal-backdrop.open { display: flex; }
 
     .modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 6px;
       width: 100%;
       max-width: 480px;
@@ -240,24 +233,24 @@
       align-items: center;
       justify-content: space-between;
       padding: 1rem 1.25rem 0.75rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--kpt-reuna);
     }
     .modal-header h3 {
       font-size: 1rem;
       font-weight: 600;
-      color: var(--accent);
+      color: var(--kpt-korostus);
     }
     .modal-close {
       background: none;
       border: none;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       cursor: pointer;
       font-size: 1.2rem;
       line-height: 1;
       padding: 0.2rem 0.4rem;
       border-radius: 4px;
     }
-    .modal-close:hover { color: var(--text); background: var(--border); }
+    .modal-close:hover { color: var(--kpt-teksti); background: var(--kpt-reuna); }
 
     .modal-body { padding: 1.25rem; }
 
@@ -267,12 +260,12 @@
       gap: 0.5rem 1rem;
       margin-bottom: 1.25rem;
       padding-bottom: 1.25rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--kpt-reuna);
     }
     .modal-info-item { }
     .modal-info-label {
       font-size: 0.72rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom: 0.15rem;
@@ -280,11 +273,11 @@
     .modal-info-value {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.9rem;
-      color: var(--text);
+      color: var(--kpt-teksti);
     }
     .modal-info-value.big {
       font-size: 1.1rem;
-      color: var(--accent);
+      color: var(--kpt-korostus);
     }
     .modal-info-value.big.mono {
       font-family: 'IBM Plex Mono', monospace;
@@ -295,50 +288,50 @@
     .form-label {
       display: block;
       font-size: 0.8rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       margin-bottom: 0.3rem;
     }
     .form-input {
       width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
+      background: var(--kpt-kentta);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-teksti);
       font-family: 'IBM Plex Sans', sans-serif;
       font-size: 0.9rem;
       padding: 0.5rem 0.75rem;
       border-radius: 4px;
     }
-    .form-input:focus { outline: none; border-color: var(--accent); }
+    .form-input:focus { outline: none; border-color: var(--kpt-korostus); }
 
     /* Varastopaikkahaku */
     .loc-search-wrap { position: relative; }
     .loc-search-input {
       width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
+      background: var(--kpt-kentta);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-teksti);
       font-family: 'IBM Plex Sans', sans-serif;
       font-size: 0.9rem;
       padding: 0.5rem 0.75rem;
       border-radius: 4px 4px 0 0;
       border-bottom: none;
     }
-    .loc-search-input:focus { outline: none; border-color: var(--accent); }
+    .loc-search-input:focus { outline: none; border-color: var(--kpt-korostus); }
     .loc-list {
-      border: 1px solid var(--border);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 0 0 4px 4px;
       max-height: 200px;
       overflow-y: auto;
-      background: var(--bg);
+      background: var(--kpt-kentta);
     }
     .loc-group-label {
       padding: 0.35rem 0.75rem 0.2rem;
       font-size: 0.72rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border-top: 1px solid var(--kpt-reuna);
       position: sticky;
       top: 0;
     }
@@ -350,12 +343,12 @@
       align-items: center;
       gap: 0.6rem;
     }
-    .loc-option:hover { background: var(--border); }
-    .loc-option.selected { background: var(--kpt-korostus-tausta); color: var(--accent); }
+    .loc-option:hover { background: var(--kpt-reuna); }
+    .loc-option.selected { background: var(--kpt-korostus-tausta); color: var(--kpt-korostus); }
     .loc-option-code {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.75rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       min-width: 80px;
     }
     .loc-option.selected .loc-option-code { color: var(--accent2); }
@@ -365,7 +358,7 @@
       gap: 0.6rem;
       flex-wrap: wrap;
       padding-top: 1rem;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--kpt-reuna);
       margin-top: 1rem;
     }
     .btn {
@@ -380,21 +373,21 @@
     }
     .btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .btn-primary {
-      background: var(--accent);
+      background: var(--kpt-korostus);
       color: var(--kpt-teksti-korostuksella);
-      border-color: var(--accent);
+      border-color: var(--kpt-korostus);
     }
     .btn-primary:hover:not(:disabled) { background: var(--accent2); }
     .btn-secondary {
       background: none;
-      border-color: var(--border);
-      color: var(--text);
+      border-color: var(--kpt-reuna);
+      color: var(--kpt-teksti);
     }
-    .btn-secondary:hover:not(:disabled) { border-color: var(--muted); }
+    .btn-secondary:hover:not(:disabled) { border-color: var(--kpt-himmea); }
     .btn-danger {
       background: none;
-      border-color: var(--danger);
-      color: var(--danger);
+      border-color: var(--kpt-virhe);
+      color: var(--kpt-virhe);
       margin-left: auto;
     }
     .btn-danger:hover:not(:disabled) { background: var(--danger-bg); }
@@ -410,15 +403,15 @@
     }
     .form-select {
       width: 100%;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
+      background: var(--kpt-kentta);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-teksti);
       font-family: 'IBM Plex Sans', sans-serif;
       font-size: 0.9rem;
       padding: 0.5rem 0.75rem;
       border-radius: 4px;
     }
-    .form-select:focus { outline: none; border-color: var(--accent); }
+    .form-select:focus { outline: none; border-color: var(--kpt-korostus); }
 
     .add-btn-wrap { margin-top: 1.25rem; }
 
@@ -428,8 +421,8 @@
       gap: 0.6rem;
     }
     .summary-row {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 4px;
       padding: 0.75rem 1rem;
       display: grid;
@@ -439,15 +432,15 @@
       cursor: pointer;
       transition: border-color 0.15s;
     }
-    .summary-row:hover { border-color: var(--accent); }
-    .summary-row:hover .summary-name { color: var(--accent); }
+    .summary-row:hover { border-color: var(--kpt-korostus); }
+    .summary-row:hover .summary-name { color: var(--kpt-korostus); }
     .summary-name {
       font-weight: 500;
       font-size: 0.9rem;
     }
     .summary-sub {
       font-size: 0.78rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       margin-top: 0.15rem;
       font-family: 'IBM Plex Mono', monospace;
     }
@@ -468,14 +461,14 @@
     .state-msg {
       text-align: center;
       padding: 3rem 1rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       font-size: 0.9rem;
     }
     .spinner {
       display: inline-block;
       width: 18px; height: 18px;
-      border: 2px solid var(--border);
-      border-top-color: var(--accent);
+      border: 2px solid var(--kpt-reuna);
+      border-top-color: var(--kpt-korostus);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       vertical-align: middle;
@@ -488,8 +481,8 @@
       bottom: 1.5rem;
       left: 50%;
       transform: translateX(-50%) translateY(2rem);
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 6px;
       padding: 0.6rem 1.2rem;
       font-size: 0.88rem;
@@ -503,20 +496,20 @@
       transform: translateX(-50%) translateY(0);
     }
     .toast.success { border-color: var(--sheet); color: var(--sheet); }
-    .toast.error   { border-color: var(--danger); color: var(--danger); }
+    .toast.error   { border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
 
     /* ── RESIZE ── */
     .resize-handle {
       width: 6px;
       min-width: 6px;
       cursor: col-resize;
-      background: var(--border);
+      background: var(--kpt-reuna);
       border-radius: 3px;
       margin: 0 2px;
       transition: background 0.15s;
       align-self: stretch;
     }
-    .resize-handle:hover { background: var(--accent); }
+    .resize-handle:hover { background: var(--kpt-korostus); }
     .selaa-layout {
       display: flex;
       gap: 1rem;
@@ -529,8 +522,8 @@
     .map-panel {
       width: 360px;
       min-width: 360px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 6px;
       overflow: hidden;
       position: sticky;
@@ -538,14 +531,14 @@
     }
     .map-panel-header {
       padding: 0.6rem 1rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--kpt-reuna);
       font-size: 0.8rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .map-panel-header span { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; }
+    .map-panel-header span { color: var(--kpt-korostus); font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; }
     .map-panel-body {
       padding: 0.5rem;
       max-height: calc(100vh - 160px);
@@ -566,30 +559,30 @@
     /* Ei-kartalla -lista */
     .offmap-list {
       padding: 0.5rem 1rem 0.75rem;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--kpt-reuna);
       font-size: 0.75rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
     }
-    .offmap-list strong { color: var(--text); display: block; margin-bottom: 0.3rem; }
+    .offmap-list strong { color: var(--kpt-teksti); display: block; margin-bottom: 0.3rem; }
     .offmap-badge {
       display: inline-block;
-      background: var(--border);
+      background: var(--kpt-reuna);
       border-radius: 3px;
       padding: 1px 6px;
       margin: 2px 2px 2px 0;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 0.7rem;
-      color: var(--text);
+      color: var(--kpt-teksti);
     }
     /* Checkbox sarake */
     .cb-col { width: 32px; text-align: center; }
-    input[type=checkbox] { accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px; }
+    input[type=checkbox] { accent-color: var(--kpt-korostus); cursor: pointer; width: 15px; height: 15px; }
     .btn-map-mobile {
       display: none;
       margin: 0;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
+      color: var(--kpt-teksti);
       border-radius: 4px;
       padding: 0.4rem 0.8rem;
       font-size: 0.8rem;
@@ -630,14 +623,14 @@
 
     /* Kortin tyyli */
     .stock-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--kpt-paneeli);
+      border: 1px solid var(--kpt-reuna);
       border-radius: 6px;
       padding: 0.75rem 1rem;
       cursor: pointer;
       transition: border-color 0.15s;
     }
-    .stock-card:hover { border-color: var(--accent); }
+    .stock-card:hover { border-color: var(--kpt-korostus); }
     .stock-card-top {
       display: flex;
       align-items: center;
@@ -652,7 +645,7 @@
     .stock-card-mitat {
       font-family: 'IBM Plex Mono', monospace;
       font-size: 1rem;
-      color: var(--accent);
+      color: var(--kpt-korostus);
       margin-bottom: 0.3rem;
     }
     .stock-card-meta {
@@ -660,12 +653,12 @@
       align-items: center;
       gap: 0.75rem;
       font-size: 0.8rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
     }
     .stock-card-note-btn {
       background: none;
       border: none;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       font-size: 0.78rem;
       cursor: pointer;
       padding: 0;
@@ -675,16 +668,16 @@
       align-items: center;
       gap: 0.3rem;
     }
-    .stock-card-note-btn:hover { color: var(--text); }
+    .stock-card-note-btn:hover { color: var(--kpt-teksti); }
     .stock-card-note-text {
       display: none;
       font-size: 0.82rem;
-      color: var(--muted);
+      color: var(--kpt-himmea);
       margin-top: 0.3rem;
       padding: 0.4rem 0.6rem;
-      background: var(--bg);
+      background: var(--kpt-kentta);
       border-radius: 4px;
-      border-left: 2px solid var(--border);
+      border-left: 2px solid var(--kpt-reuna);
     }
     .stock-card-note-text.open { display: block; }
 
@@ -812,7 +805,7 @@
           <span id="mapHighlightCount"></span>
         </div>
         <div class="map-panel-body" id="mapPanelBody">
-          <div style="padding:1rem;color:var(--muted);font-size:0.8rem">Ladataan karttaa...</div>
+          <div style="padding:1rem;color:var(--kpt-himmea);font-size:0.8rem">Ladataan karttaa...</div>
         </div>
         <div class="offmap-list" id="offmapList" style="display:none"></div>
       </div>
@@ -874,7 +867,7 @@
         <div class="loc-search-wrap">
           <input class="loc-search-input" id="addLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('add', this.value)" autocomplete="off">
           <div class="loc-list" id="addLocList">
-            <div style="padding:0.75rem;color:var(--muted);font-size:0.85rem">Ladataan varastopaikkoja...</div>
+            <div style="padding:0.75rem;color:var(--kpt-himmea);font-size:0.85rem">Ladataan varastopaikkoja...</div>
           </div>
         </div>
         <input type="hidden" id="addLocId">
@@ -912,10 +905,10 @@
       <h2>🗺 Varastokartta</h2>
       <span class="badge-count" id="mapTabHighlightCount"></span>
     </div>
-    <div id="mapTabBody" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
-      <div style="padding:1rem;color:var(--muted);font-size:0.8rem">Ladataan karttaa...</div>
+    <div id="mapTabBody" style="background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:6px;overflow:hidden;">
+      <div style="padding:1rem;color:var(--kpt-himmea);font-size:0.8rem">Ladataan karttaa...</div>
     </div>
-    <div class="offmap-list" id="offmapListMobile" style="display:none;margin-top:0.5rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;"></div>
+    <div class="offmap-list" id="offmapListMobile" style="display:none;margin-top:0.5rem;background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:6px;"></div>
   </div>
 </div>
 
@@ -963,7 +956,7 @@
       <!-- Varastopaikka — ylimpänä jotta lista avautuu alaspäin eikä peitä mittoja -->
       <div class="form-group">
         <label class="form-label">Varastopaikka</label>
-        <div id="modalLocCurrent" style="display:none;padding:0.4rem 0.6rem;margin-bottom:0.4rem;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:0.82rem;color:var(--text)"></div>
+        <div id="modalLocCurrent" style="display:none;padding:0.4rem 0.6rem;margin-bottom:0.4rem;background:var(--kpt-kentta);border:1px solid var(--kpt-reuna);border-radius:4px;font-size:0.82rem;color:var(--kpt-teksti)"></div>
         <div class="loc-search-wrap">
           <input class="loc-search-input" id="modalLocSearch" type="text" placeholder="Hae nimellä tai koodilla..." oninput="filterLocations('modal', this.value)" autocomplete="off">
           <div class="loc-list" id="modalLocList"></div>
@@ -1005,8 +998,8 @@
     </div>
 
     <!-- Lisää uusi tuote -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:1rem 1.25rem;margin-bottom:1.25rem;max-width:600px">
-      <div style="font-size:0.85rem;font-weight:600;color:var(--accent);margin-bottom:0.9rem">Lisää uusi tuote</div>
+    <div style="background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:4px;padding:1rem 1.25rem;margin-bottom:1.25rem;max-width:600px">
+      <div style="font-size:0.85rem;font-weight:600;color:var(--kpt-korostus);margin-bottom:0.9rem">Lisää uusi tuote</div>
       <div class="form-row" style="grid-template-columns:1fr 1fr 1fr">
         <div class="form-group">
           <label class="form-label">Materiaali</label>
@@ -1048,11 +1041,11 @@
 
     <!-- Tuotelista -->
     <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem">
-      <select id="prodFilterMaterial" class="filters" style="min-width:150px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:0.85rem;padding:0.4rem 0.65rem;border-radius:4px" onchange="renderProducts()">
+      <select id="prodFilterMaterial" class="filters" style="min-width:150px;background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);color:var(--kpt-teksti);font-family:inherit;font-size:0.85rem;padding:0.4rem 0.65rem;border-radius:4px" onchange="renderProducts()">
         <option value="">Kaikki materiaalit</option>
       </select>
-      <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--muted);cursor:pointer">
-        <input type="checkbox" id="showInactive" onchange="renderProducts()" style="accent-color:var(--accent)">
+      <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.85rem;color:var(--kpt-himmea);cursor:pointer">
+        <input type="checkbox" id="showInactive" onchange="renderProducts()" style="accent-color:var(--kpt-korostus)">
         Näytä poistetut
       </label>
     </div>
@@ -1370,8 +1363,8 @@
         '<td colspan="2">' + pname + parentHtml(item) + '</td>' +
         '<td class="hide-mobile mono">' + thick + '</td>' +
         '<td class="mono">' + mitat + '</td>' +
-        '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '<span style="color:var(--muted)">—</span>') + '</td>' +
-        '<td class="hide-mobile" style="color:var(--muted);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
+        '<td class="hide-mobile">' + (loc ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--kpt-himmea);font-size:0.8rem">' + locName + '</span>' : '') : '<span style="color:var(--kpt-himmea)">—</span>') + '</td>' +
+        '<td class="hide-mobile" style="color:var(--kpt-himmea);max-width:180px;overflow:hidden;text-overflow:ellipsis">' + note + '</td>' +
         '<td class="hide-mobile mono" style="font-size:0.8rem">' + checkedHtml(item) + '</td>' +
         '</tr>';
     }).join('');
@@ -1386,21 +1379,21 @@
     return d.getDate() + '.' + (d.getMonth() + 1) + '.' + String(d.getFullYear()).slice(2);
   }
   function checkedHtml(item) {
-    if (!item.checked_at) return '<span style="color:var(--muted)">—</span>';
+    if (!item.checked_at) return '<span style="color:var(--kpt-himmea)">—</span>';
     const old = Date.now() - new Date(item.checked_at).getTime() > 90 * 24 * 60 * 60 * 1000;
-    return '<span style="color:' + (old ? 'var(--accent)' : 'var(--sheet)') + '" title="' + new Date(item.checked_at).toLocaleString('fi-FI') + '">' + fmtDateShort(item.checked_at) + '</span>';
+    return '<span style="color:' + (old ? 'var(--kpt-korostus)' : 'var(--sheet)') + '" title="' + new Date(item.checked_at).toLocaleString('fi-FI') + '">' + fmtDateShort(item.checked_at) + '</span>';
   }
   // Siivun alkuperä: "← rullasta 40 m · IN-R-01". Emo voi olla jo käytetty tai arkistoitu.
   function parentHtml(item) {
     if (!item.parent_stock_item_id) return '';
     const p = item.parent;
-    if (!p) return '<div style="font-size:0.75rem;color:var(--muted)">← leikattu toisesta erästä</div>';
+    if (!p) return '<div style="font-size:0.75rem;color:var(--kpt-himmea)">← leikattu toisesta erästä</div>';
     const typeFi = (TYPE_FI[p.type] || p.type || '').toLowerCase();
     const dim = p.type === 'ROLL'
       ? (p.original_length_mm != null ? (p.original_length_mm / 1000).toFixed(0).replace('.', ',') + ' m' : '')
       : (p.original_length_mm != null && p.original_width_mm != null ? p.original_length_mm + '×' + p.original_width_mm : '');
     const where = p.status === 'ACTIVE' ? (p.locations?.code || '') : (p.status === 'USED' ? 'käytetty loppuun' : 'arkistoitu');
-    return '<div style="font-size:0.75rem;color:var(--muted)">← ' + typeFi + (dim ? ' ' + dim : '') + (where ? ' · ' + where : '') + '</div>';
+    return '<div style="font-size:0.75rem;color:var(--kpt-himmea)">← ' + typeFi + (dim ? ' ' + dim : '') + (where ? ' · ' + where : '') + '</div>';
   }
 
   // Määrätavara (ITEM = kpl, BULK = m): määrä on quantity-sarakkeessa.
@@ -1567,11 +1560,11 @@
           if (!tip) {
             tip = document.createElement('div');
             tip.className = 'map-tooltip';
-            tip.style.cssText = 'padding:0.4rem 0.7rem;background:var(--surface);border:1px solid var(--accent);border-radius:4px;font-size:0.8rem;margin-bottom:0.4rem;';
+            tip.style.cssText = 'padding:0.4rem 0.7rem;background:var(--kpt-paneeli);border:1px solid var(--kpt-korostus);border-radius:4px;font-size:0.8rem;margin-bottom:0.4rem;';
             tooltip.insertBefore(tip, tooltip.firstChild);
           }
           if (info) {
-            tip.innerHTML = '<strong style="font-family:\'IBM Plex Mono\',monospace;color:var(--accent)">' +
+            tip.innerHTML = '<strong style="font-family:\'IBM Plex Mono\',monospace;color:var(--kpt-korostus)">' +
               info.code + '</strong> &ensp;' + info.name;
           }
         }
@@ -1776,7 +1769,7 @@
         '</div>' +
         '<div class="stock-card-mitat">' + mitat + '</div>' +
         '<div class="stock-card-meta">' +
-          (locName ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--muted);font-size:0.8rem">' + locName + '</span>' : '') : '') +
+          (locName ? '<span class="location-chip">' + loc + '</span>' + (locName && locName !== loc ? ' <span style="color:var(--kpt-himmea);font-size:0.8rem">' + locName + '</span>' : '') : '') +
           ' <span class="mono" style="font-size:0.75rem;margin-left:auto">inv. ' + checkedHtml(item) + '</span>' +
         '</div>' +
         parentHtml(item) +
@@ -1830,7 +1823,7 @@
   function buildLocList(listId, hiddenId, selectedId) {
     const list = document.getElementById(listId);
     if (!allLocations.length) {
-      list.innerHTML = '<div style="padding:0.75rem;color:var(--muted);font-size:0.85rem">Ei varastopaikkoja</div>';
+      list.innerHTML = '<div style="padding:0.75rem;color:var(--kpt-himmea);font-size:0.85rem">Ei varastopaikkoja</div>';
       return;
     }
 
@@ -1904,7 +1897,7 @@
     document.getElementById('modalTitle').textContent = productName(item.products);
     document.getElementById('modalType').textContent  = TYPE_FI[type] || type;
     document.getElementById('modalThick').textContent = thick;
-    document.getElementById('modalChecked').innerHTML = item.checked_at ? checkedHtml(item) : '<span style="color:var(--muted)">ei inventoitu</span>';
+    document.getElementById('modalChecked').innerHTML = item.checked_at ? checkedHtml(item) : '<span style="color:var(--kpt-himmea)">ei inventoitu</span>';
     const origL = item.original_length_mm, origW = item.original_width_mm;
     document.getElementById('modalOrig').textContent = (type === 'ITEM' || type === 'BULK') ? '—'
       : ((origL != null ? (origL >= 1000 ? (origL/1000).toFixed(3).replace('.',',') + ' m' : origL + ' mm') : '—') + ' × ' + (origW != null ? origW + ' mm' : '—'));
@@ -1951,7 +1944,7 @@
     const locCurrentEl = document.getElementById('modalLocCurrent');
     if (locCode) {
       locCurrentEl.innerHTML = '📍 <strong style="font-family:\'IBM Plex Mono\',monospace">' + locCode + '</strong>' +
-        (locName ? '&ensp;<span style="color:var(--muted)">' + locName + '</span>' : '');
+        (locName ? '&ensp;<span style="color:var(--kpt-himmea)">' + locName + '</span>' : '');
       locCurrentEl.style.display = 'block';
     } else {
       locCurrentEl.style.display = 'none';
@@ -2258,7 +2251,7 @@
         '</div>' +
         '<div style="display:flex;align-items:center;gap:0.5rem">' +
           '<div class="summary-counts">' + chips + '</div>' +
-          '<span style="color:var(--muted);font-size:0.8rem">→</span>' +
+          '<span style="color:var(--kpt-himmea);font-size:0.8rem">→</span>' +
         '</div>' +
         '</div>';
     }).join('');
@@ -2320,7 +2313,7 @@
     document.getElementById('productsBody').innerHTML = filtered.map(p => {
       const activeLabel = p.is_active
         ? '<span style="color:var(--sheet);font-size:0.78rem">● Aktiivinen</span>'
-        : '<span style="color:var(--muted);font-size:0.78rem">○ Poistettu</span>';
+        : '<span style="color:var(--kpt-himmea);font-size:0.78rem">○ Poistettu</span>';
       const editBtn = p.is_active
         ? '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem" onclick="openProductModal(' + JSON.stringify(p).replace(/"/g, '&quot;') + ')">Muokkaa</button>'
         : '<button class="btn btn-secondary" style="padding:0.2rem 0.6rem;font-size:0.75rem;color:var(--sheet);border-color:var(--sheet)" onclick="doRestoreProduct(\'' + p.id + '\')">↩ Palauta</button>';
@@ -2332,9 +2325,9 @@
         '<td class="hide-mobile">' + (p.material || '—') + '</td>' +
         '<td class="hide-mobile">' + (p.color || '—') + '</td>' +
         '<td class="hide-mobile mono">' + (p.thickness_mm != null ? p.thickness_mm + ' mm' : '—') + '</td>' +
-        '<td class="hide-mobile" style="color:var(--muted)">' + (p.product_group || '—') + '</td>' +
-        '<td class="hide-mobile" style="color:var(--muted)">' + (p.unit || '—') + '</td>' +
-        '<td class="hide-mobile mono" style="color:var(--muted)">' + (p.default_vat_percent != null ? p.default_vat_percent + ' %' : '—') + '</td>' +
+        '<td class="hide-mobile" style="color:var(--kpt-himmea)">' + (p.product_group || '—') + '</td>' +
+        '<td class="hide-mobile" style="color:var(--kpt-himmea)">' + (p.unit || '—') + '</td>' +
+        '<td class="hide-mobile mono" style="color:var(--kpt-himmea)">' + (p.default_vat_percent != null ? p.default_vat_percent + ' %' : '—') + '</td>' +
         '<td>' + activeLabel + ' ' + editBtn + '</td>' +
         '</tr>';
     }).join('');

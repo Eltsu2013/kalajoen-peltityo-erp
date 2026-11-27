@@ -5,27 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hinnasto — Kalajoen Peltityö</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Värit --kpt-muuttujista (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026),
      rakenne ja skripti ennallaan (oma valikkokoodi pois). Simuloinnin sininen = yhteinen --kpt-info. -->
 <link rel="stylesheet" href="tyyli.css?v=3">
 <script src="teema.js?v=1"></script>
 <style>
-  /* Vanhat värinimet → yhteiset --kpt-värit (R6b) */
+  /* Sivun oma sävy (muut värit suoraan --kpt-muuttujista) */
   :root, html[data-teema] {
-    --bg: var(--kpt-tausta);
-    --panel: var(--kpt-paneeli);
-    --panel2: var(--kpt-paneeli2);
-    --border: var(--kpt-reuna);
-    --accent: var(--kpt-korostus);
     --accent-dim: color-mix(in srgb, var(--kpt-korostus) 82%, #000);
-    --accent-glow: var(--kpt-korostus-tausta);
-    --text: var(--kpt-teksti);
-    --text-dim: var(--kpt-himmea);
-    --input-bg: var(--kpt-kentta);
-    --success: var(--kpt-ok);
-    --danger: var(--kpt-virhe);
-    --warn: var(--kpt-huom);
-    --cyan: var(--kpt-info);
   }
   *, *::before, *::after { margin: 0; padding: 0; }   /* vanha nollaus, jota sivun asettelu olettaa */
 
@@ -38,36 +25,36 @@
     gap: 10px; margin-bottom: 16px;
   }
   .summary-card {
-    background: var(--panel2); border: 1px solid var(--border);
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna);
     border-radius: 6px; padding: 12px 16px;
   }
   .card-label {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
     letter-spacing: 0.08em; text-transform: uppercase;
-    color: var(--text-dim); margin-bottom: 6px;
+    color: var(--kpt-himmea); margin-bottom: 6px;
   }
   .card-number {
     font-family: 'IBM Plex Mono', monospace; font-size: 22px; font-weight: 600; line-height: 1;
   }
-  .card-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-  .card-accent { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-  .card-accent .card-number { color: var(--accent); }
+  .card-sub { font-size: 11px; color: var(--kpt-himmea); margin-top: 4px; }
+  .card-accent { border-color: color-mix(in srgb, var(--kpt-korostus) 45%, transparent); }
+  .card-accent .card-number { color: var(--kpt-korostus); }
 
   /* TABS */
   .tabs {
     display: flex; gap: 2px;
-    border-bottom: 1px solid var(--border); margin-bottom: 16px;
+    border-bottom: 1px solid var(--kpt-reuna); margin-bottom: 16px;
   }
   .tab {
     padding: 9px 18px; cursor: pointer;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
-    color: var(--text-dim); border-bottom: 2px solid transparent;
+    color: var(--kpt-himmea); border-bottom: 2px solid transparent;
     margin-bottom: -1px; letter-spacing: 0.04em; transition: color 0.15s;
   }
-  .tab:hover { color: var(--text); }
-  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--kpt-teksti); }
+  .tab.active { color: var(--kpt-korostus); border-bottom-color: var(--kpt-korostus); }
   .tab-badge {
-    display: inline-block; background: var(--panel2); color: var(--text-dim);
+    display: inline-block; background: var(--kpt-paneeli2); color: var(--kpt-himmea);
     font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-left: 5px;
   }
 
@@ -77,65 +64,65 @@
 
   /* TOOLBAR */
   .filter-bar {
-    background: var(--panel2); border: 1px solid var(--border);
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna);
     border-radius: 6px; padding: 10px 14px;
     display: flex; gap: 8px; align-items: center;
     margin-bottom: 12px; flex-wrap: wrap;
   }
   .filter-label {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    color: var(--text-dim); letter-spacing: 0.06em; white-space: nowrap;
+    color: var(--kpt-himmea); letter-spacing: 0.06em; white-space: nowrap;
   }
   .fbtn {
-    background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    background: none; border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace;
     font-size: 11px; padding: 4px 10px; border-radius: 3px; cursor: pointer;
     transition: all 0.15s;
   }
-  .fbtn:hover { border-color: var(--accent); color: var(--text); }
-  .fbtn.active { background: var(--accent); border-color: var(--accent); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
+  .fbtn:hover { border-color: var(--kpt-korostus); color: var(--kpt-teksti); }
+  .fbtn.active { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
   .filter-search {
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-teksti); font-family: 'IBM Plex Mono', monospace;
     font-size: 12px; padding: 5px 10px; border-radius: 3px; width: 200px;
   }
-  .filter-search:focus { outline: none; border-color: var(--accent); }
-  .filter-search::placeholder { color: var(--text-dim); }
+  .filter-search:focus { outline: none; border-color: var(--kpt-korostus); }
+  .filter-search::placeholder { color: var(--kpt-himmea); }
   .ml-auto { margin-left: auto; }
 
   /* BUTTONS */
   .btn {
     font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600;
     padding: 7px 14px; border-radius: 4px; cursor: pointer;
-    border: 1px solid var(--border); transition: all 0.15s; letter-spacing: 0.02em;
+    border: 1px solid var(--kpt-reuna); transition: all 0.15s; letter-spacing: 0.02em;
   }
-  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--kpt-teksti-korostuksella); }
+  .btn-primary { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
   .btn-primary:hover { background: var(--accent-dim); }
-  .btn-secondary { background: var(--panel2); color: var(--text); }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-secondary { background: var(--kpt-paneeli2); color: var(--kpt-teksti); }
+  .btn-secondary:hover { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
   .btn-sm { padding: 4px 10px; font-size: 11px; }
-  .btn-danger { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+  .btn-danger { background: transparent; color: var(--kpt-virhe); border-color: color-mix(in srgb, var(--kpt-virhe) 40%, transparent); }
 
   /* TABLE */
   .table-wrap {
-    background: var(--panel); border: 1px solid var(--border);
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna);
     border-radius: 6px; overflow: hidden;
   }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead tr { background: var(--panel2); }
+  thead tr { background: var(--kpt-paneeli2); }
   th {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
-    padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--kpt-himmea);
+    padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--kpt-reuna);
     white-space: nowrap;
   }
   th.right, td.right { text-align: right; }
   td {
-    padding: 8px 14px; border-bottom: 1px solid var(--border);
+    padding: 8px 14px; border-bottom: 1px solid var(--kpt-reuna);
     font-size: 13px; vertical-align: middle;
   }
   tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--accent-glow); }
+  tbody tr:hover td { background: var(--kpt-korostus-tausta); }
   .mono { font-family: 'IBM Plex Mono', monospace; }
 
   .badge {
@@ -143,39 +130,39 @@
     font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px;
     white-space: nowrap;
   }
-  .badge-orange { background: var(--kpt-korostus-tausta); color: var(--accent); }
-  .badge-gray { background: var(--kpt-paneeli2); color: var(--text-dim); }
-  .badge-cyan { background: color-mix(in srgb, var(--cyan) 13%, transparent); color: var(--cyan); }
-  .badge-green { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
+  .badge-orange { background: var(--kpt-korostus-tausta); color: var(--kpt-korostus); }
+  .badge-gray { background: var(--kpt-paneeli2); color: var(--kpt-himmea); }
+  .badge-cyan { background: color-mix(in srgb, var(--kpt-info) 13%, transparent); color: var(--kpt-info); }
+  .badge-green { background: color-mix(in srgb, var(--kpt-ok) 15%, transparent); color: var(--kpt-ok); }
 
   .empty-state {
-    text-align: center; color: var(--text-dim); padding: 40px;
+    text-align: center; color: var(--kpt-himmea); padding: 40px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px;
   }
 
   /* INLINE EDIT */
   .price-display { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
   .edit-input {
-    background: var(--input-bg); border: 1px solid var(--accent);
-    color: var(--text); padding: 4px 8px; border-radius: 3px;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-korostus);
+    color: var(--kpt-teksti); padding: 4px 8px; border-radius: 3px;
     font-family: 'IBM Plex Mono', monospace; font-size: 13px;
     width: 80px; outline: none; text-align: right;
   }
   .icon-btn { background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px; }
-  .icon-btn.save { color: var(--success); }
-  .icon-btn.cancel { color: var(--danger); }
+  .icon-btn.save { color: var(--kpt-ok); }
+  .icon-btn.cancel { color: var(--kpt-virhe); }
 
   /* TOAST */
   .toast {
     position: fixed; bottom: 24px; right: 24px;
-    background: var(--success); color: #fff;
+    background: var(--kpt-ok); color: #fff;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px;
     padding: 10px 18px; border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 999;
   }
   .toast.show { opacity: 1; }
-  .toast.error { background: var(--danger); }
+  .toast.error { background: var(--kpt-virhe); }
 
   /* MODAL */
   .modal-overlay {
@@ -183,28 +170,28 @@
     z-index: 200; display: flex; align-items: center; justify-content: center;
   }
   .modal {
-    background: var(--panel); border: 1px solid var(--border);
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna);
     border-radius: 6px; width: 600px; max-width: 95vw;
     box-shadow: var(--kpt-varjo); max-height: 90vh;
     display: flex; flex-direction: column;
   }
   .modal-header {
-    padding: 16px 20px 14px; border-bottom: 1px solid var(--border);
+    padding: 16px 20px 14px; border-bottom: 1px solid var(--kpt-reuna);
     display: flex; align-items: center; justify-content: space-between;
     flex-shrink: 0;
   }
   .modal-title {
     font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 600;
-    color: var(--accent);
+    color: var(--kpt-korostus);
   }
   .modal-close {
-    background: none; border: none; color: var(--text-dim);
+    background: none; border: none; color: var(--kpt-himmea);
     font-size: 20px; cursor: pointer; line-height: 1;
   }
-  .modal-close:hover { color: var(--text); }
+  .modal-close:hover { color: var(--kpt-teksti); }
   .modal-body { padding: 20px; overflow-y: auto; }
   .modal-footer {
-    padding: 14px 20px; border-top: 1px solid var(--border);
+    padding: 14px 20px; border-top: 1px solid var(--kpt-reuna);
     display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
   }
   .form-row { display: flex; gap: 14px; margin-bottom: 14px; }
@@ -212,71 +199,71 @@
   .form-label {
     display: block; font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--text-dim); margin-bottom: 6px;
+    color: var(--kpt-himmea); margin-bottom: 6px;
   }
   .form-input {
-    width: 100%; background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); padding: 8px 12px; border-radius: 4px;
+    width: 100%; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-teksti); padding: 8px 12px; border-radius: 4px;
     font-family: 'IBM Plex Mono', monospace; font-size: 14px; outline: none;
   }
-  .form-input:focus { border-color: var(--accent); }
-  .form-hint { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+  .form-input:focus { border-color: var(--kpt-korostus); }
+  .form-hint { font-size: 11px; color: var(--kpt-himmea); margin-top: 4px; }
 
   /* PREVIEW */
   .preview-box {
-    background: var(--panel2); border: 1px solid var(--border);
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna);
     border-radius: 4px; margin-top: 14px; padding: 12px; max-height: 280px; overflow-y: auto;
   }
   .preview-title {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
     text-transform: uppercase; letter-spacing: 0.08em;
-    color: var(--text-dim); margin-bottom: 8px;
+    color: var(--kpt-himmea); margin-bottom: 8px;
   }
   .preview-row {
     display: grid; grid-template-columns: 70px 90px 90px 80px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px;
-    padding: 3px 0; border-bottom: 1px solid var(--border); gap: 8px;
+    padding: 3px 0; border-bottom: 1px solid var(--kpt-reuna); gap: 8px;
   }
   .preview-row:last-child { border-bottom: none; }
-  .preview-row.header-row { color: var(--text-dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 6px; }
-  .c-dim { color: var(--text-dim); }
-  .c-old { color: var(--text-dim); }
-  .c-new { color: var(--accent); font-weight: 600; }
-  .c-up { color: var(--warn); }
-  .c-dn { color: var(--success); }
-  .c-eq { color: var(--text-dim); }
+  .preview-row.header-row { color: var(--kpt-himmea); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding-bottom: 6px; }
+  .c-dim { color: var(--kpt-himmea); }
+  .c-old { color: var(--kpt-himmea); }
+  .c-new { color: var(--kpt-korostus); font-weight: 600; }
+  .c-up { color: var(--kpt-huom); }
+  .c-dn { color: var(--kpt-ok); }
+  .c-eq { color: var(--kpt-himmea); }
 
   /* KÄÄNNÖSLISÄ */
   .surcharge-box {
-    background: var(--panel2); border: 1px solid var(--border);
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna);
     border-radius: 6px; padding: 28px 32px;
     max-width: 380px; margin-bottom: 20px;
   }
   .surcharge-value {
     font-family: 'IBM Plex Mono', monospace; font-size: 40px; font-weight: 600;
-    color: var(--text-dim); line-height: 1; margin: 10px 0 6px;
+    color: var(--kpt-himmea); line-height: 1; margin: 10px 0 6px;
   }
-  .surcharge-value.set { color: var(--accent); }
+  .surcharge-value.set { color: var(--kpt-korostus); }
 
   /* INFO BOX */
   .info-box {
-    background: color-mix(in srgb, var(--accent) 6%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+    background: color-mix(in srgb, var(--kpt-korostus) 6%, transparent); border: 1px solid color-mix(in srgb, var(--kpt-korostus) 22%, transparent);
     border-radius: 4px; padding: 10px 14px;
-    font-size: 12px; color: var(--text-dim); margin-bottom: 14px;
+    font-size: 12px; color: var(--kpt-himmea); margin-bottom: 14px;
   }
-  .info-box strong { color: var(--accent); }
+  .info-box strong { color: var(--kpt-korostus); }
 
   /* TABLE FOOTER */
   .table-footer {
-    padding: 8px 14px; background: var(--panel2);
-    border-top: 1px solid var(--border);
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim);
+    padding: 8px 14px; background: var(--kpt-paneeli2);
+    border-top: 1px solid var(--kpt-reuna);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--kpt-himmea);
   }
 
   /* LOADING */
   .loading {
     text-align: center; padding: 40px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--kpt-himmea);
   }
 
   /* ===== MOBIILI ===== */
@@ -308,16 +295,16 @@
 
     /* Kortit */
     .m-card {
-      background: var(--panel); border: 1px solid var(--border);
+      background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna);
       border-radius: 6px; padding: 12px 14px;
       display: flex; flex-direction: column; gap: 6px;
     }
-    .m-card:active { background: var(--panel2); }
+    .m-card:active { background: var(--kpt-paneeli2); }
     .m-card-top { display: flex; align-items: center; gap: 8px; }
     .m-card-name { font-size: 13px; font-weight: 600; flex: 1; }
     .m-card-price {
       font-family: 'IBM Plex Mono', monospace;
-      font-size: 20px; font-weight: 600; color: var(--accent);
+      font-size: 20px; font-weight: 600; color: var(--kpt-korostus);
     }
     .m-card-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .m-card-foot { display: flex; justify-content: flex-end; margin-top: 4px; }
@@ -327,25 +314,25 @@
   .hm-tyokalut { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 12px; }
   .hm-tyokalut .filter-search { flex: 1 1 220px; max-width: 360px; }
   .hm-valinta { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
-  .hm-yhteenveto { font-size: 12px; color: var(--text-dim); }
-  .hm-ryhma { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--text-dim); margin: 18px 0 6px; }
-  .hm-rivi { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; }
+  .hm-yhteenveto { font-size: 12px; color: var(--kpt-himmea); }
+  .hm-ryhma { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--kpt-himmea); margin: 18px 0 6px; }
+  .hm-rivi { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: 6px; margin-bottom: 6px; }
   .hm-rivi > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 12px; cursor: pointer; list-style: none; }
   .hm-rivi > summary::-webkit-details-marker { display: none; }
-  .hm-rivi > summary::before { content: '▸'; color: var(--text-dim); width: 10px; }
+  .hm-rivi > summary::before { content: '▸'; color: var(--kpt-himmea); width: 10px; }
   .hm-rivi[open] > summary::before { content: '▾'; }
   .hm-nimi { flex: 1 1 200px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
   .hm-paks { font-weight: 600; font-size: 13px; }
-  .hm-lkm, .hm-lisa, .hm-peritty { font-size: 12px; color: var(--text-dim); }
-  .hm-hinta { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .hm-lkm, .hm-lisa, .hm-peritty { font-size: 12px; color: var(--kpt-himmea); }
+  .hm-hinta { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--kpt-korostus); white-space: nowrap; }
   .hm-puuttuu { font-size: 12px; font-weight: 700; color: var(--kpt-huom); white-space: nowrap; }
   .hm-hintasarake { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-  .hm-varit { border-top: 1px solid var(--border); padding: 6px 12px 10px 34px; }
-  .hm-vari { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 0; border-bottom: 1px dashed var(--border); }
+  .hm-varit { border-top: 1px solid var(--kpt-reuna); padding: 6px 12px 10px 34px; }
+  .hm-vari { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 0; border-bottom: 1px dashed var(--kpt-reuna); }
   .hm-vari:last-child { border-bottom: none; }
   .hm-vari-nimi { min-width: 90px; font-weight: 600; font-size: 13px; }
   .hm-vari .btn { margin-left: auto; }
-  .hm-vihje { font-size: 12px; color: var(--text-dim); margin: 4px 0 14px; }
+  .hm-vihje { font-size: 12px; color: var(--kpt-himmea); margin: 4px 0 14px; }
   .hm-vihje:empty { display: none; }
   .form-input[readonly] { opacity: .75; cursor: not-allowed; }
   @media (max-width: 700px) {
@@ -363,9 +350,9 @@
   .fbtn { min-height: 28px; }
   .filter-search { min-height: 34px; }
   .form-input { border-color: var(--kpt-reuna2); }
-  .simu-banneri { background: color-mix(in srgb, var(--cyan) 10%, transparent); border: 1px solid color-mix(in srgb, var(--cyan) 30%, transparent);
-    border-radius: 4px; padding: 8px 14px; font-size: 12px; color: var(--cyan); margin-bottom: 10px; }
-  #massSimuBtn { color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 40%, transparent); }
+  .simu-banneri { background: color-mix(in srgb, var(--kpt-info) 10%, transparent); border: 1px solid color-mix(in srgb, var(--kpt-info) 30%, transparent);
+    border-radius: 4px; padding: 8px 14px; font-size: 12px; color: var(--kpt-info); margin-bottom: 10px; }
+  #massSimuBtn { color: var(--kpt-info); border-color: color-mix(in srgb, var(--kpt-info) 40%, transparent); }
   @media (max-width: 700px) {
     .kpt-yla { position: static; }
     .page { padding: 12px 12px 48px; }
@@ -423,7 +410,7 @@
     </div>
     <div class="summary-card">
       <div class="card-label">Käännöslisä</div>
-      <div class="card-number" id="cnt-surcharge" style="color:var(--text-dim)">—</div>
+      <div class="card-number" id="cnt-surcharge" style="color:var(--kpt-himmea)">—</div>
       <div class="card-sub">€ per käännös</div>
     </div>
   </div>
@@ -514,7 +501,7 @@
     <div class="surcharge-box">
       <div class="card-label">Nykyinen käännöslisä / käännös</div>
       <div class="surcharge-value" id="surchargeDisplay">— €</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-bottom:20px" id="surchargeNote">Ei asetettu</div>
+      <div style="font-size:12px;color:var(--kpt-himmea);margin-bottom:20px" id="surchargeNote">Ei asetettu</div>
       <button class="btn btn-primary" onclick="showSurchargeModal()">Aseta käännöslisä</button>
     </div>
     <div class="card-label" style="margin-bottom:10px">Historia</div>
@@ -584,7 +571,7 @@
       </div>
     </div>
     <div class="modal-footer">
-      <span id="massRowCount" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-dim);margin-right:auto;align-self:center"></span>
+      <span id="massRowCount" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--kpt-himmea);margin-right:auto;align-self:center"></span>
       <button class="btn btn-secondary" onclick="closeModal('massModal')">Peruuta</button>
       <button class="btn btn-secondary" id="massSimuBtn" onclick="runSimulation()">&#9654; Simuloi</button>
       <button class="btn btn-primary" id="massConfirmBtn" onclick="executeMassUpdate()">Tallenna hinnat</button>
@@ -777,7 +764,7 @@ function updateSummary() {
   }
   if (surchargeData.length > 0) {
     document.getElementById('cnt-surcharge').textContent = parseFloat(surchargeData[0].surcharge_per_bend).toFixed(2) + ' €';
-    document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
+    document.getElementById('cnt-surcharge').style.color = 'var(--kpt-korostus)';
   }
 }
 
@@ -820,10 +807,10 @@ function renderList() {
   rows.forEach(function(row) {
     html += '<tr>';
     html += '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>';
-    html += '<td class="mono" style="color:var(--text-dim)">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
+    html += '<td class="mono" style="color:var(--kpt-himmea)">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
     html += '<td class="mono">' + (row.width_mm != null ? row.width_mm + ' mm' : '—') + '</td>';
     html += '<td class="right mono" id="lp-' + row.id + '">' + formatPrice(row.price_per_m) + '</td>';
-    html += '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>';
+    html += '<td style="color:var(--kpt-himmea);font-size:12px">' + (row.unit || '—') + '</td>';
     html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.price_per_m || 0) + '" data-edittype="list" onclick="handleEditBtn(this)">Muokkaa</button></td>';
     html += '</tr>';
   });
@@ -944,13 +931,13 @@ function renderFixed() {
   var html = '';
   rows.forEach(function(row) {
     html += '<tr>';
-    html += '<td class="mono" style="color:var(--text-dim);font-size:11px">' + (row.legacy_code != null ? row.legacy_code : '—') + '</td>';
+    html += '<td class="mono" style="color:var(--kpt-himmea);font-size:11px">' + (row.legacy_code != null ? row.legacy_code : '—') + '</td>';
     html += '<td style="font-weight:500">' + (row.product_name || '—') + '</td>';
     html += '<td><span class="badge badge-gray">' + row._group + '</span></td>';
-    html += '<td style="color:var(--text-dim);font-size:12px">' + (row.material || '—') + '</td>';
-    html += '<td class="mono" style="color:var(--text-dim);font-size:12px">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
+    html += '<td style="color:var(--kpt-himmea);font-size:12px">' + (row.material || '—') + '</td>';
+    html += '<td class="mono" style="color:var(--kpt-himmea);font-size:12px">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
     html += '<td class="right mono" id="fp-' + row.id + '">' + formatPrice(row.unit_price) + '</td>';
-    html += '<td style="color:var(--text-dim);font-size:12px">' + (row.unit || '—') + '</td>';
+    html += '<td style="color:var(--kpt-himmea);font-size:12px">' + (row.unit || '—') + '</td>';
     html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.unit_price || 0) + '" data-edittype="fixed" onclick="handleEditBtn(this)">Muokkaa</button></td>';
     html += '</tr>';
   });
@@ -1196,14 +1183,14 @@ function renderSurcharge() {
     document.getElementById('surchargeDisplay').classList.add('set');
     document.getElementById('surchargeNote').textContent = 'Voimassa ' + (latest.valid_from || '');
     document.getElementById('cnt-surcharge').textContent = parseFloat(latest.surcharge_per_bend).toFixed(2) + ' €';
-    document.getElementById('cnt-surcharge').style.color = 'var(--accent)';
+    document.getElementById('cnt-surcharge').style.color = 'var(--kpt-korostus)';
   }
   var tbody = document.getElementById('surchargeHistory');
   var mg = document.getElementById('surchargeMobileGrid');   // puhelimella taulukko on piilossa → kortit
   if (mg) mg.innerHTML = surchargeData.length ? surchargeData.map(function(row) {
     return '<div class="m-card"><div class="m-card-top"><div class="m-card-name mono">' + esc(row.valid_from || '—') + '</div>'
       + '<div class="m-card-price">' + (row.surcharge_per_bend != null ? parseFloat(row.surcharge_per_bend).toFixed(2) : '—') + ' €</div></div>'
-      + (row.notes ? '<div class="m-card-meta" style="color:var(--text-dim);font-size:12px">' + esc(row.notes) + '</div>' : '') + '</div>';
+      + (row.notes ? '<div class="m-card-meta" style="color:var(--kpt-himmea);font-size:12px">' + esc(row.notes) + '</div>' : '') + '</div>';
   }).join('') : '<div class="empty-state">Ei historiatietoja</div>';
   if (!surchargeData.length) {
     tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Ei historiatietoja</td></tr>';
@@ -1214,7 +1201,7 @@ function renderSurcharge() {
     html += '<tr>';
     html += '<td class="mono" style="font-size:12px">' + (row.valid_from || '—') + '</td>';
     html += '<td class="right mono">' + (row.surcharge_per_bend != null ? parseFloat(row.surcharge_per_bend).toFixed(2) : '—') + ' €</td>';
-    html += '<td style="font-size:12px;color:var(--text-dim)">' + (row.notes || '—') + '</td>';
+    html += '<td style="font-size:12px;color:var(--kpt-himmea)">' + (row.notes || '—') + '</td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
@@ -1317,7 +1304,7 @@ function renderPreviewRows(rows, purchase, mult, work, showAll) {
       + '</div>';
   });
   if (!showAll && rows.length > 0) {
-    html += '<div style="text-align:center;padding:8px;font-size:11px;color:var(--text-dim)">Paina ▶ Simuloi nähdäksesi kaikki rivit</div>';
+    html += '<div style="text-align:center;padding:8px;font-size:11px;color:var(--kpt-himmea)">Paina ▶ Simuloi nähdäksesi kaikki rivit</div>';
   }
   document.getElementById('massPreviewRows').innerHTML = html;
 }
@@ -1373,7 +1360,7 @@ function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function
 function round5(v) { return Math.round(v * 20) / 20; }
 
 function formatPrice(v) {
-  if (v == null) return '<span style="color:var(--text-dim)">—</span>';
+  if (v == null) return '<span style="color:var(--kpt-himmea)">—</span>';
   return parseFloat(v).toFixed(2) + ' €';
 }
 
@@ -1431,8 +1418,8 @@ function renderListMobile() {
       + '<div class="m-card-price" id="mlp-' + row.id + '">' + (row.price_per_m != null ? parseFloat(row.price_per_m).toFixed(2) + ' €' : '—') + '</div>'
       + '</div>'
       + '<div class="m-card-meta">'
-      + (row.thickness_mm ? '<span style="color:var(--text-dim);font-size:12px">' + row.thickness_mm + ' mm paksu</span>' : '')
-      + '<span style="color:var(--text-dim);font-size:12px">' + (row.unit || 'm') + '</span>'
+      + (row.thickness_mm ? '<span style="color:var(--kpt-himmea);font-size:12px">' + row.thickness_mm + ' mm paksu</span>' : '')
+      + '<span style="color:var(--kpt-himmea);font-size:12px">' + (row.unit || 'm') + '</span>'
       + '</div>'
 
       + '</div>';
@@ -1466,10 +1453,10 @@ function renderFixedMobile() {
       + '</div>'
       + '<div class="m-card-meta">'
       + '<span class="badge badge-gray">' + row._group + '</span>'
-      + (row.material ? '<span style="color:var(--text-dim);font-size:12px">' + row.material + '</span>' : '')
-      + (row.thickness_mm ? '<span style="color:var(--text-dim);font-size:12px">' + row.thickness_mm + ' mm</span>' : '')
-      + '<span style="color:var(--text-dim);font-size:12px">' + (row.unit || '') + '</span>'
-      + (row.legacy_code != null ? '<span style="color:var(--text-dim);font-size:11px">#' + row.legacy_code + '</span>' : '')
+      + (row.material ? '<span style="color:var(--kpt-himmea);font-size:12px">' + row.material + '</span>' : '')
+      + (row.thickness_mm ? '<span style="color:var(--kpt-himmea);font-size:12px">' + row.thickness_mm + ' mm</span>' : '')
+      + '<span style="color:var(--kpt-himmea);font-size:12px">' + (row.unit || '') + '</span>'
+      + (row.legacy_code != null ? '<span style="color:var(--kpt-himmea);font-size:11px">#' + row.legacy_code + '</span>' : '')
       + '</div>'
 
       + '</div>';

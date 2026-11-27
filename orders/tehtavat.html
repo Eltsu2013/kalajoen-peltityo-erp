@@ -6,23 +6,15 @@
 <title>Tehtävät — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Värit --kpt-muuttujista (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026),
      rakenne ja skripti ennallaan (oma valikkokoodi pois). Lomake puhelimella koko ruudulle, kentät 16 px. -->
 <link rel="stylesheet" href="tyyli.css?v=3">
 <script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* Vanhat värinimet → yhteiset --kpt-värit (R6b). Kiireellisyys: punainen / keltainen / vihreä. */
+  /* Sivun omat värit (muut suoraan --kpt-muuttujista). Kiireellisyys: punainen / keltainen / vihreä. */
   :root, html[data-teema]{
-    --bg: var(--kpt-tausta);
-    --bg-panel: var(--kpt-paneeli);
-    --bg-card: var(--kpt-paneeli);
-    --border: var(--kpt-reuna);
-    --text: var(--kpt-teksti);
-    --text-dim: var(--kpt-himmea);
-    --accent: var(--kpt-korostus);
     --accent-dim: color-mix(in srgb, var(--kpt-korostus) 20%, transparent);
-    --accent-glow: var(--kpt-korostus-tausta);
     --high: var(--kpt-virhe);
     --normal: var(--kpt-huom);
     --low: var(--kpt-ok);
@@ -36,22 +28,22 @@
     margin-bottom:20px;
   }
   .btn{
-    background:var(--accent);color:var(--kpt-teksti-korostuksella);border:none;
+    background:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);border:none;
     padding:10px 18px;border-radius:var(--radius);font-weight:600;
     font-family:'IBM Plex Sans',sans-serif;font-size:14px;cursor:pointer;
   }
   .btn:hover{filter:brightness(1.1);}
   .btn.secondary{
-    background:transparent;color:var(--text);border:1px solid var(--border);
+    background:transparent;color:var(--kpt-teksti);border:1px solid var(--kpt-reuna);
   }
-  .btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.secondary:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
   .btn.danger{background:var(--high);color:var(--kpt-teksti-korostuksella);}
-  .btn-primary{background:var(--accent);color:var(--kpt-teksti-korostuksella);}
+  .btn-primary{background:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);}
   .btn-primary:hover{filter:brightness(1.1);}
-  .saving{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .saving{font-size:12px;color:var(--kpt-himmea);font-family:'IBM Plex Mono',monospace;}
 
-  .toggle-wrap{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-dim);}
-  .toggle-wrap input{accent-color:var(--accent);width:16px;height:16px;}
+  .toggle-wrap{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--kpt-himmea);}
+  .toggle-wrap input{accent-color:var(--kpt-korostus);width:16px;height:16px;}
 
   .columns{
     display:grid;grid-template-columns:1fr 1fr;gap:20px;
@@ -61,21 +53,21 @@
   }
   .column h2{
     font-size:15px;text-transform:uppercase;letter-spacing:.6px;
-    color:var(--text-dim);border-bottom:1px solid var(--border);
+    color:var(--kpt-himmea);border-bottom:1px solid var(--kpt-reuna);
     padding-bottom:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;
   }
   .column h2 .count{
-    background:var(--bg-card);color:var(--text);font-family:'IBM Plex Mono',monospace;
+    background:var(--kpt-paneeli);color:var(--kpt-teksti);font-family:'IBM Plex Mono',monospace;
     font-size:12px;padding:2px 8px;border-radius:10px;
   }
   .cards{display:flex;flex-direction:column;gap:10px;}
   .empty-state{
-    color:var(--text-dim);font-size:14px;padding:24px 10px;text-align:center;
-    border:1px dashed var(--border);border-radius:var(--radius);
+    color:var(--kpt-himmea);font-size:14px;padding:24px 10px;text-align:center;
+    border:1px dashed var(--kpt-reuna);border-radius:var(--radius);
   }
 
   .card{
-    background:var(--bg-card);border-radius:var(--radius);
+    background:var(--kpt-paneeli);border-radius:var(--radius);
     border-left:4px solid var(--normal);
     padding:12px 14px;cursor:pointer;
     display:flex;gap:12px;align-items:flex-start;
@@ -89,29 +81,29 @@
   .card.done .card-title{text-decoration:line-through;}
 
   .card input[type=checkbox]{
-    margin-top:2px;width:18px;height:18px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;
+    margin-top:2px;width:18px;height:18px;accent-color:var(--kpt-korostus);cursor:pointer;flex-shrink:0;
   }
   .card-body{flex:1;min-width:0;}
   .card-title{font-weight:600;font-size:15px;}
   .card-meta{
-    margin-top:4px;font-size:12px;color:var(--text-dim);
+    margin-top:4px;font-size:12px;color:var(--kpt-himmea);
     font-family:'IBM Plex Mono',monospace;
     display:flex;gap:10px;flex-wrap:wrap;
   }
   .card-phone{margin-top:6px;}
   .card-customer{margin-top:6px;}
   .card-customer a{
-    color:var(--accent);text-decoration:none;font-weight:600;
+    color:var(--kpt-korostus);text-decoration:none;font-weight:600;
     font-family:'IBM Plex Mono',monospace;font-size:13px;
   }
   .card-customer a:hover{text-decoration:underline;}
   .card-phone a{
-    color:var(--accent);text-decoration:none;font-weight:600;
+    color:var(--kpt-korostus);text-decoration:none;font-weight:600;
     font-family:'IBM Plex Mono',monospace;font-size:13px;
   }
   .card-phone a:hover{text-decoration:underline;}
   .card-notes{
-    margin-top:6px;font-size:13px;color:var(--text-dim);
+    margin-top:6px;font-size:13px;color:var(--kpt-himmea);
     white-space:pre-wrap;word-break:break-word;
   }
 
@@ -122,14 +114,14 @@
   }
   .overlay.open{display:flex;}
   .modal{
-    background:var(--bg-panel);border:1px solid var(--border);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);
     border-radius:var(--radius);width:100%;max-width:480px;
     max-height:90vh;overflow-y:auto;padding:20px;
   }
-  .modal h3{margin:0 0 16px 0;font-size:17px;color:var(--accent);}
+  .modal h3{margin:0 0 16px 0;font-size:17px;color:var(--kpt-korostus);}
   .field{margin-bottom:14px;}
   .field label{
-    display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px;
+    display:block;font-size:13px;color:var(--kpt-himmea);margin-bottom:5px;
   }
   .field input[type=text],
   .field input[type=tel],
@@ -137,13 +129,13 @@
   .field input[type=time],
   .field select,
   .field textarea{
-    width:100%;background:var(--bg-card);border:1px solid var(--border);
-    color:var(--text);padding:9px 10px;border-radius:var(--radius);
+    width:100%;background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);
+    color:var(--kpt-teksti);padding:9px 10px;border-radius:var(--radius);
     font-family:'IBM Plex Sans',sans-serif;font-size:14px;
   }
   .field textarea{resize:vertical;min-height:70px;}
   .field input:focus, .field select:focus, .field textarea:focus{
-    outline:none;border-color:var(--accent);
+    outline:none;border-color:var(--kpt-korostus);
   }
   #todoPriority{font-weight:600;transition:border-color .15s,color .15s;}
   #todoPriority.prio-high{border-color:var(--high);color:var(--high);}
@@ -155,34 +147,34 @@
   /* Asiakashaku */
   .customer-dropdown{
     display:none;position:absolute;top:100%;left:0;right:0;
-    background:var(--bg-card);border:1px solid var(--border);border-top:none;
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-top:none;
     max-height:180px;overflow-y:auto;z-index:50;border-radius:0 0 4px 4px;
   }
   .customer-dropdown.open{display:block;}
   .customer-dropdown-item{
-    padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border);
+    padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--kpt-reuna);
   }
   .customer-dropdown-item:last-child{border-bottom:none;}
-  .customer-dropdown-item:hover{background:var(--accent-glow);color:var(--accent);}
+  .customer-dropdown-item:hover{background:var(--kpt-korostus-tausta);color:var(--kpt-korostus);}
   .customer-chip{
     margin-top:8px;display:flex;align-items:center;gap:8px;
-    background:var(--accent-glow);border:1px solid var(--accent);border-radius:12px;
-    padding:5px 10px;font-size:13px;color:var(--accent);width:fit-content;
+    background:var(--kpt-korostus-tausta);border:1px solid var(--kpt-korostus);border-radius:12px;
+    padding:5px 10px;font-size:13px;color:var(--kpt-korostus);width:fit-content;
   }
   .customer-chip button{
-    background:none;border:none;color:var(--accent);cursor:pointer;
+    background:none;border:none;color:var(--kpt-korostus);cursor:pointer;
     font-size:12px;padding:0;line-height:1;
   }
 
   /* Piilotettava yhteystieto-osio */
   .contact-toggle{
-    background:none;border:none;color:var(--accent);cursor:pointer;
+    background:none;border:none;color:var(--kpt-korostus);cursor:pointer;
     font-size:13px;padding:0;margin-bottom:12px;text-decoration:underline;
     font-family:'IBM Plex Sans',sans-serif;
   }
 
-  .checkbox-field input{width:18px;height:18px;accent-color:var(--accent);}
-  .checkbox-field label{margin:0;color:var(--text);font-size:14px;}
+  .checkbox-field input{width:18px;height:18px;accent-color:var(--kpt-korostus);}
+  .checkbox-field label{margin:0;color:var(--kpt-teksti);font-size:14px;}
   .modal-actions{
     display:flex;justify-content:space-between;align-items:center;
     margin-top:18px;gap:10px;flex-wrap:wrap;
@@ -191,7 +183,7 @@
 
   .toast{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:var(--bg-card);border:1px solid var(--accent);color:var(--text);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-korostus);color:var(--kpt-teksti);
     padding:10px 18px;border-radius:var(--radius);font-size:14px;z-index:200;
     display:none;
   }
@@ -203,9 +195,9 @@
   .field input[type=time], .field select, .field textarea{
     background:var(--kpt-kentta);border-color:var(--kpt-reuna2);min-height:42px;
   }
-  .field input[type=email]{width:100%;color:var(--text);padding:9px 10px;border:1px solid var(--kpt-reuna2);border-radius:var(--radius);font-family:var(--kpt-fontti);font-size:14px;}
+  .field input[type=email]{width:100%;color:var(--kpt-teksti);padding:9px 10px;border:1px solid var(--kpt-reuna2);border-radius:var(--radius);font-family:var(--kpt-fontti);font-size:14px;}
   .modal{box-shadow:var(--kpt-varjo);}
-  .card{border:1px solid var(--border);border-left-width:4px;}
+  .card{border:1px solid var(--kpt-reuna);border-left-width:4px;}
   .column h2{font-family:var(--kpt-mono);font-size:12px;letter-spacing:.1em;}
   .column h2 .count{background:var(--kpt-paneeli2);}
   .customer-dropdown{background:var(--kpt-paneeli);box-shadow:var(--kpt-varjo);}
@@ -227,7 +219,7 @@
     .checkbox-field label{font-size:16px;}
     .contact-toggle{font-size:15px;min-height:40px;}
     .customer-dropdown-item{padding:12px;font-size:15px;}
-    .modal-actions{position:sticky;bottom:0;margin-top:auto;padding:12px 0 16px;background:var(--bg-panel);}
+    .modal-actions{position:sticky;bottom:0;margin-top:auto;padding:12px 0 16px;background:var(--kpt-paneeli);}
     .modal-actions .right{flex:1;}
     .modal-actions .btn{min-height:48px;font-size:15px;}
     .modal-actions .right .btn{flex:1;}

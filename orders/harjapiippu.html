@@ -775,7 +775,7 @@ const HARJA_VAKIOT = [['tupla', 'v-tupla'], ['etulis', 'v-etulis'], ['nousu', 'v
   ['ylareunaV', 'v-ylareunaV'], ['alatupla', 'v-alatupla'], ['vahennys', 'v-vahennys'], ['hsivlisa', 'v-hsivlisa'], ['hattulis', 'v-hattulis'], ['jakosauma', 'v-jakosauma'], ['harjakulma', 'v-harjakulma']];
 function palautaMuokattava() {
   if (toinenTyyppi) {
-    ilmoitus('<b>Tämän ryhmän piippu on lapepiippu.</b> Tallennus korvaa sen tällä harjapiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.', 'var(--red)');
+    ilmoitus('<b>Tämän ryhmän piippu on lapepiippu.</b> Tallennus korvaa sen tällä harjapiipulla. Jos haluat lisätä uuden piipun, valitse tilauksessa <b>+ Uusi ryhmä</b>.', 'virhe');
     return;
   }
   if (!muokattava) return;
@@ -813,7 +813,7 @@ function palautaMuokattava() {
   const tunnettu = n => /^(Juuri|Huppu)( |$)/.test(n) || ['Kansi', 'Hattu', 'Piipun jalat'].includes(n);
   lisaosat = items.filter(i => !i.pituus && !tunnettu(i.nimike || '')).map((i, k) => ({ id: Date.now() + k, nimi: i.nimike, kpl: Math.max(1, Math.round(i.kpl / pk)) }));
   renderLisaosat();
-  ilmoitus('Muokataan tilauksen harjapiippua: mitat, osat ja materiaali haettu tilauksesta. Tallennus korvaa tilauksen piipun.', 'var(--accent)');
+  ilmoitus('Muokataan tilauksen harjapiippua: mitat, osat ja materiaali haettu tilauksesta. Tallennus korvaa tilauksen piipun.', 'info');
 }
 
 // ── Lisää tilaukseen ─────────────────────────────────────────

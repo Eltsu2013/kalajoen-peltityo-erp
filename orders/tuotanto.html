@@ -11,25 +11,10 @@
 <link rel="stylesheet" href="tyyli.css?v=3">
 <script src="teema.js?v=1"></script>
 <style>
-  /* Ulkoasuremontti R3c (26.11.2026): yhteinen tyyli.css. Sivun vanhat muuttujanimet on kytketty uusiin, joten
-     rakenne ja luokat pysyivät ennallaan (myös skriptin inline-tyylit). Tulostusohjeet (@media print) ennallaan. */
+  /* Ulkoasuremontti R3c (26.11.2026): yhteinen tyyli.css. Rakenne ja luokat pysyivät ennallaan, värit
+     --kpt-muuttujista (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026), myös skriptin inline-tyyleissä. Tulostusohjeet (@media print) ennallaan. */
   :root, html[data-teema] {
-    --bg: var(--kpt-tausta);
-    --panel: var(--kpt-paneeli);
-    --panel2: var(--kpt-paneeli2);
-    --border: var(--kpt-reuna);
-    --accent: var(--kpt-korostus);
-    --accent-dim: var(--kpt-korostus);
-    --accent-glow: var(--kpt-korostus-tausta);
-    --text: var(--kpt-teksti);
-    --text-dim: var(--kpt-himmea);
-    --input-bg: var(--kpt-kentta);
-    --success: var(--kpt-ok);
-    --danger: var(--kpt-virhe);
-    --warn: var(--kpt-huom);
-    --blue: var(--kpt-v-tilaukset);
     --lisatyo: var(--kpt-v-ajat);
-    --napin-teksti: var(--kpt-teksti-korostuksella);   /* teksti vihreällä napilla */
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { min-height: 100vh; }
@@ -43,105 +28,105 @@
 
   /* Materiaalisuodatin */
   .filter-bar {
-    background: var(--panel2);
-    border-bottom: 1px solid var(--border);
+    background: var(--kpt-paneeli2);
+    border-bottom: 1px solid var(--kpt-reuna);
     padding: 12px 24px;
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
   }
   .filter-label {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.08em; color: var(--text-dim);
+    font-weight: 600; letter-spacing: 0.08em; color: var(--kpt-himmea);
     white-space: nowrap;
   }
   .filter-select {
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-teksti); font-family: 'IBM Plex Mono', monospace;
     font-size: 12px; padding: 6px 10px; border-radius: 4px; cursor: pointer;
   }
-  .filter-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .filter-divider { width: 1px; height: 20px; background: var(--kpt-reuna); margin: 0 4px; }
   .status-filter-btns { display: flex; gap: 4px; flex-wrap: wrap; }
   .status-filter-btn {
-    background: var(--panel2); border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace;
     font-size: 11px; padding: 4px 8px; border-radius: 3px; cursor: pointer;
     transition: all 0.15s;
   }
   .status-filter-btn.active {
-    background: var(--accent-glow); border-color: var(--accent);
-    color: var(--accent); font-weight: 600;
+    background: var(--kpt-korostus-tausta); border-color: var(--kpt-korostus);
+    color: var(--kpt-korostus); font-weight: 600;
   }
-  .status-filter-btn[data-status="ORDERED"].active { border-color: var(--blue); color: var(--blue); background: color-mix(in srgb, var(--blue) 14%, transparent); }
-  .status-filter-btn[data-status="IN_PRODUCTION"].active { border-color: var(--warn); color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); }
-  .status-filter-btn[data-status="IN_PROGRESS"].active { border-color: var(--text-dim); color: var(--text); background: color-mix(in srgb, var(--text-dim) 14%, transparent); }
+  .status-filter-btn[data-status="ORDERED"].active { border-color: var(--kpt-v-tilaukset); color: var(--kpt-v-tilaukset); background: color-mix(in srgb, var(--kpt-v-tilaukset) 14%, transparent); }
+  .status-filter-btn[data-status="IN_PRODUCTION"].active { border-color: var(--kpt-huom); color: var(--kpt-huom); background: color-mix(in srgb, var(--kpt-huom) 14%, transparent); }
+  .status-filter-btn[data-status="IN_PROGRESS"].active { border-color: var(--kpt-himmea); color: var(--kpt-teksti); background: color-mix(in srgb, var(--kpt-himmea) 14%, transparent); }
   .status-filter-btn[data-status="QUOTED"].active { border-color: var(--lisatyo); color: var(--lisatyo); background: color-mix(in srgb, var(--lisatyo) 14%, transparent); }
   .status-filter-btn[data-status="DRAFT"] { border-style: dashed; }
   .status-filter-btn[data-status="DRAFT"].active { border-color: var(--kpt-himmea); color: var(--kpt-teksti); background: color-mix(in srgb, var(--kpt-himmea) 16%, transparent); }
-  .status-filter-btn[data-status="COMPLETED"].active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
-  .filter-select option { background: var(--panel2); }
+  .status-filter-btn[data-status="COMPLETED"].active { border-color: var(--kpt-korostus); color: var(--kpt-korostus); background: var(--kpt-korostus-tausta); }
+  .filter-select option { background: var(--kpt-paneeli2); }
   .filter-clear {
-    background: none; border: 1px solid var(--border); color: var(--text-dim);
+    background: none; border: 1px solid var(--kpt-reuna); color: var(--kpt-himmea);
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     padding: 5px 10px; border-radius: 4px; cursor: pointer;
   }
-  .filter-clear:hover { border-color: var(--danger); color: var(--danger); }
+  .filter-clear:hover { border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
   .filter-info {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--accent); margin-left: auto;
+    color: var(--kpt-korostus); margin-left: auto;
   }
   .filter-list-btn {
-    background: none; border: 1px solid var(--accent); color: var(--accent);
+    background: none; border: 1px solid var(--kpt-korostus); color: var(--kpt-korostus);
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
     padding: 5px 12px; border-radius: 4px; cursor: pointer;
     transition: all 0.15s;
   }
   .filter-list-btn:hover, .filter-list-btn.active {
-    background: var(--accent); color: var(--napin-teksti); font-weight: 600;
+    background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600;
   }
 
   /* Yhteislista */
   .combined-list { padding: 16px 24px; display: flex; flex-direction: column; gap: 16px; }
   .combined-order-block {
-    background: var(--panel); border: 1px solid var(--border);
+    background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna);
     border-radius: 8px; overflow: hidden;
   }
   .combined-order-header {
-    background: var(--panel2); padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
+    background: var(--kpt-paneeli2); padding: 10px 16px;
+    border-bottom: 1px solid var(--kpt-reuna);
     display: flex; align-items: baseline; gap: 12px;
   }
   .combined-customer { font-weight: 600; font-size: 14px; }
-  .combined-kohde { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; }
-  .combined-matval { font-size: 11px; color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-weight: 600; margin-left: auto; }
-  .combined-date { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-left: 12px; }
+  .combined-kohde { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; }
+  .combined-matval { font-size: 11px; color: var(--kpt-korostus); font-family: 'IBM Plex Mono', monospace; font-weight: 600; margin-left: auto; }
+  .combined-date { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; margin-left: 12px; }
   .combined-item-row {
-    padding: 8px 16px; border-bottom: 1px solid var(--border);
+    padding: 8px 16px; border-bottom: 1px solid var(--kpt-reuna);
     display: flex; flex-direction: column; gap: 4px;
   }
   .combined-item-row:last-child { border-bottom: none; }
   .combined-item-nimike {
-    font-size: 12px; font-weight: 600; color: var(--text);
+    font-size: 12px; font-weight: 600; color: var(--kpt-teksti);
   }
   .combined-aihio {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--blue); font-weight: 400; margin-bottom: 2px;
+    color: var(--kpt-v-tilaukset); font-weight: 400; margin-bottom: 2px;
   }
   .combined-rows { display: flex; flex-direction: column; gap: 2px; padding-left: 8px; }
   .combined-pituusrivi {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--text-dim); display: flex; gap: 10px; align-items: center;
+    color: var(--kpt-himmea); display: flex; gap: 10px; align-items: center;
   }
-  .combined-pituusrivi .ck { color: var(--text); min-width: 50px; }
-  .combined-pituusrivi .cm { color: var(--text); min-width: 65px; }
-  .combined-pituusrivi .cp { color: var(--blue); min-width: 55px; }
-  .combined-pituusrivi .cko { color: var(--warn); font-weight: 700; min-width: 65px; font-size: 13px; }
-  .combined-pituusrivi .ch { color: var(--text-dim); font-size: 10px; }
+  .combined-pituusrivi .ck { color: var(--kpt-teksti); min-width: 50px; }
+  .combined-pituusrivi .cm { color: var(--kpt-teksti); min-width: 65px; }
+  .combined-pituusrivi .cp { color: var(--kpt-v-tilaukset); min-width: 55px; }
+  .combined-pituusrivi .cko { color: var(--kpt-huom); font-weight: 700; min-width: 65px; font-size: 13px; }
+  .combined-pituusrivi .ch { color: var(--kpt-himmea); font-size: 10px; }
   .combined-pituusrivi .cs {
     font-size: 10px; padding: 1px 5px; border-radius: 3px;
-    border: 1px solid var(--border); color: var(--text-dim);
+    border: 1px solid var(--kpt-reuna); color: var(--kpt-himmea);
   }
-  .combined-pituusrivi .cs.DONE { border-color: var(--accent); color: var(--accent); }
-  .combined-pituusrivi .cs.CUT { border-color: var(--blue); color: var(--blue); }
-  .combined-pituusrivi .cs.BENT { border-color: var(--warn); color: var(--warn); }
+  .combined-pituusrivi .cs.DONE { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
+  .combined-pituusrivi .cs.CUT { border-color: var(--kpt-v-tilaukset); color: var(--kpt-v-tilaukset); }
+  .combined-pituusrivi .cs.BENT { border-color: var(--kpt-huom); color: var(--kpt-huom); }
   .combined-pituusrivi .cs.EXTRA { border-color: var(--lisatyo); color: var(--lisatyo); }
 
   @media print {
@@ -159,27 +144,27 @@
   }
 
   .order-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: var(--kpt-paneeli);
+    border: 1px solid var(--kpt-reuna);
     border-radius: 8px;
     cursor: pointer;
     transition: border-color 0.15s, background 0.15s;
     overflow: hidden;
   }
-  .order-card:hover { border-color: var(--accent); background: var(--panel2); }
-  .order-card.status-all-done { border-left: 4px solid var(--accent); }
-  .order-card.status-started  { border-left: 4px solid var(--warn); }
-  .order-card.status-none     { border-left: 4px solid var(--border); }
+  .order-card:hover { border-color: var(--kpt-korostus); background: var(--kpt-paneeli2); }
+  .order-card.status-all-done { border-left: 4px solid var(--kpt-korostus); }
+  .order-card.status-started  { border-left: 4px solid var(--kpt-huom); }
+  .order-card.status-none     { border-left: 4px solid var(--kpt-reuna); }
 
   .card-header {
     padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--kpt-reuna);
     display: flex; align-items: flex-start; gap: 10px;
   }
   .card-header-info { flex: 1; }
-  .card-customer { font-weight: 600; font-size: 14px; color: var(--text); }
-  .card-kohde { font-size: 12px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
-  .card-date { font-size: 11px; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+  .card-customer { font-weight: 600; font-size: 14px; color: var(--kpt-teksti); }
+  .card-kohde { font-size: 12px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+  .card-date { font-size: 11px; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
   .card-status-badge {
     display: inline-block; font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
@@ -188,7 +173,7 @@
   }
   /* Kiila ja levityskuva (13.11.2026) */
   .kiila-merkki { display: inline-block; background: #f0a429; color: #1c1f26; font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 11px; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 5px; vertical-align: middle; }
-  .lev-nappi { display: block; margin: 8px auto 0; min-height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; }
+  .lev-nappi { display: block; margin: 8px auto 0; min-height: 40px; padding: 0 14px; border-radius: 6px; border: 1px solid var(--kpt-reuna); background: transparent; color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace; font-size: 12px; cursor: pointer; }
   .lev-nappi.kiila { border-color: #f0a429; color: #f0a429; }
   .lev-alue { border: 1px solid var(--kpt-paperi-reuna); width: 100%; min-width: 0; box-sizing: border-box; align-self: stretch; overflow: hidden; background: #fff; color: #1c1f26; border-radius: 6px; padding: 10px; margin-top: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .lev-pituus { font-weight: 600; margin: 6px 0; }
@@ -204,18 +189,18 @@
   .lev-vihje, .lev-huom { font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; color: #555; margin: 8px 0 0; }
   @media print { .lev-nappi { display: none !important; } .lev-kehys { overflow: visible; } .lev-taulu { min-width: 0; font-size: 10px; } .lev-taulu th, .lev-taulu td { padding: 3px 4px; } }
   .badge-DRAFT        { color: var(--kpt-himmea); border-color: var(--kpt-himmea); border-style: dashed; }
-  .badge-IN_PROGRESS  { color: var(--text-dim); border-color: var(--border); }
+  .badge-IN_PROGRESS  { color: var(--kpt-himmea); border-color: var(--kpt-reuna); }
   .badge-QUOTED       { color: var(--lisatyo); border-color: var(--lisatyo); }
-  .badge-ORDERED      { color: var(--blue); border-color: var(--blue); }
-  .badge-IN_PRODUCTION{ color: var(--warn); border-color: var(--warn); }
-  .badge-COMPLETED    { color: var(--accent); border-color: var(--accent); }
+  .badge-ORDERED      { color: var(--kpt-v-tilaukset); border-color: var(--kpt-v-tilaukset); }
+  .badge-IN_PRODUCTION{ color: var(--kpt-huom); border-color: var(--kpt-huom); }
+  .badge-COMPLETED    { color: var(--kpt-korostus); border-color: var(--kpt-korostus); }
   .badge-INVOICED     { color: var(--kpt-info); border-color: var(--kpt-info); }
   .card-status-mini {
-    background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; padding: 2px 6px; border-radius: 3px; cursor: pointer;
   }
-  .card-status-mini:focus { outline: none; border-color: var(--accent); }
+  .card-status-mini:focus { outline: none; border-color: var(--kpt-korostus); }
 
   .card-body { padding: 12px 16px; }
 
@@ -224,49 +209,49 @@
   .progress-label {
     display: flex; justify-content: space-between;
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    color: var(--text-dim); margin-bottom: 4px;
+    color: var(--kpt-himmea); margin-bottom: 4px;
   }
   .progress-bar-bg {
-    background: var(--panel2); border-radius: 3px; height: 6px; overflow: hidden;
+    background: var(--kpt-paneeli2); border-radius: 3px; height: 6px; overflow: hidden;
   }
   .progress-bar-fill {
-    height: 100%; border-radius: 3px; background: var(--accent);
+    height: 100%; border-radius: 3px; background: var(--kpt-korostus);
     transition: width 0.3s;
   }
-  .progress-bar-fill.partial { background: var(--warn); }
-  .progress-bar-fill.zero    { background: var(--border); }
+  .progress-bar-fill.partial { background: var(--kpt-huom); }
+  .progress-bar-fill.zero    { background: var(--kpt-reuna); }
 
   /* Materiaalitägit */
   .material-tags { display: flex; gap: 5px; flex-wrap: wrap; }
   .mtag {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
     padding: 2px 7px; border-radius: 3px;
-    background: var(--panel2); border: 1px solid var(--border);
-    color: var(--text-dim); white-space: nowrap;
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); white-space: nowrap;
   }
-  .mtag.highlight { border-color: var(--accent); color: var(--accent); }
+  .mtag.highlight { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
 
   /* ── NÄKYMÄ 2: TYÖKORTTI ── */
   .card-view-header {
-    background: var(--panel2);
-    border-bottom: 1px solid var(--border);
+    background: var(--kpt-paneeli2);
+    border-bottom: 1px solid var(--kpt-reuna);
     padding: 14px 24px;
     display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   }
   .back-btn {
-    background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    background: none; border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace;
     font-size: 12px; padding: 6px 12px; border-radius: 4px; cursor: pointer;
   }
-  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .back-btn:hover { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
   .card-view-title { font-size: 16px; font-weight: 600; }
   .card-yhteys { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .card-yhteys:empty { display: none; }
-  .card-yhteys a { color: var(--accent); text-decoration: none; overflow-wrap: anywhere; }
+  .card-yhteys a { color: var(--kpt-korostus); text-decoration: none; overflow-wrap: anywhere; }
   .card-yhteys a:hover { text-decoration: underline; }
   .card-view-meta {
     font-family: 'IBM Plex Mono', monospace; font-size: 11px;
-    color: var(--text-dim); display: flex; gap: 16px; flex-wrap: wrap;
+    color: var(--kpt-himmea); display: flex; gap: 16px; flex-wrap: wrap;
     margin-left: auto;
   }
 
@@ -279,28 +264,28 @@
   }
 
   .item-card {
-    background: var(--panel);
-    border: 1px solid var(--border);
+    background: var(--kpt-paneeli);
+    border: 1px solid var(--kpt-reuna);
     border-radius: 8px;
     overflow: hidden;
   }
-  .item-card.done { border-color: var(--accent); opacity: 0.7; }
+  .item-card.done { border-color: var(--kpt-korostus); opacity: 0.7; }
 
   .item-card-header {
-    background: var(--panel2);
+    background: var(--kpt-paneeli2);
     padding: 8px 14px;
     display: flex; align-items: center; gap: 10px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--kpt-reuna);
   }
   .item-material {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    font-weight: 600; letter-spacing: 0.06em; color: var(--accent);
+    font-weight: 600; letter-spacing: 0.06em; color: var(--kpt-korostus);
     text-transform: uppercase;
   }
   .item-nimike { font-size: 13px; font-weight: 600; flex: 1; }
   .item-done-badge {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    color: var(--accent); border: 1px solid var(--accent);
+    color: var(--kpt-korostus); border: 1px solid var(--kpt-korostus);
     padding: 1px 6px; border-radius: 3px;
   }
 
@@ -309,24 +294,24 @@
   /* LEIKKAUS-lohko */
   .block-title {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: 0.1em; color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--kpt-himmea); text-transform: uppercase;
     margin-bottom: 6px;
   }
   .aihio-width {
     font-family: 'IBM Plex Mono', monospace; font-size: 13px;
-    color: var(--blue); margin-bottom: 6px;
+    color: var(--kpt-v-tilaukset); margin-bottom: 6px;
   }
   .aihio-width-centered {
     font-family: 'IBM Plex Mono', monospace; font-size: 13px;
-    color: var(--blue); text-align: center; margin-bottom: 4px;
+    color: var(--kpt-v-tilaukset); text-align: center; margin-bottom: 4px;
   }
   .kanttaus-section { display: flex; flex-direction: column; align-items: center; }
   .cut-section { width: 100%; }
   .cut-list { font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
   .cut-list-header {
     display: flex; gap: 0; padding: 3px 0 3px 6px;
-    border-bottom: 1px solid var(--border);
-    font-size: 10px; color: var(--text-dim);
+    border-bottom: 1px solid var(--kpt-reuna);
+    font-size: 10px; color: var(--kpt-himmea);
   }
   .cut-row-wrap { padding-left: 6px; margin-bottom: 1px; }
   .cut-row-wrap.row-done { opacity: 0.55; }
@@ -337,19 +322,19 @@
   .cut-row-bottom {
     display: flex; gap: 8px; padding: 3px 0 5px 0;
     align-items: center; flex-wrap: wrap;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--kpt-reuna);
   }
   .cut-row-wrap:last-child .cut-row-bottom { border-bottom: none; }
 
   /* Sarakeleveydet — sekä header että data-riveille */
-  .cut-list .mitta, .cut-list-header .mitta { width: 56px; color: var(--text); }
-  .cut-list .paat,  .cut-list-header .paat  { width: 46px; color: var(--blue); }
-  .cut-list .kok,   .cut-list-header .kok   { width: 52px; color: var(--warn); font-weight: 600; }
-  .cut-list .kpl,   .cut-list-header .kpl   { width: 32px; color: var(--accent); font-weight: 600; }
+  .cut-list .mitta, .cut-list-header .mitta { width: 56px; color: var(--kpt-teksti); }
+  .cut-list .paat,  .cut-list-header .paat  { width: 46px; color: var(--kpt-v-tilaukset); }
+  .cut-list .kok,   .cut-list-header .kok   { width: 52px; color: var(--kpt-huom); font-weight: 600; }
+  .cut-list .kpl,   .cut-list-header .kpl   { width: 32px; color: var(--kpt-korostus); font-weight: 600; }
   .cut-list .done-qty-cell,
   .cut-list-header .done-qty-cell            { width: 56px; }
   .cut-list .huomio-cell,
-  .cut-list-header .huomio-cell              { flex: 1; color: var(--warn); font-size: 11px; min-width: 60px; }
+  .cut-list-header .huomio-cell              { flex: 1; color: var(--kpt-huom); font-size: 11px; min-width: 60px; }
 
   /* KANTTAUS-lohko */
   .kanttaus-block {
@@ -377,23 +362,23 @@
   /* Statusnappirivi */
   .status-row {
     display: flex; gap: 4px; padding: 10px 14px;
-    border-top: 1px solid var(--border);
-    background: var(--panel2);
+    border-top: 1px solid var(--kpt-reuna);
+    background: var(--kpt-paneeli2);
     overflow-x: auto;
   }
   .status-step {
     flex: 1; min-width: 70px;
-    background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    background: none; border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; padding: 6px 4px; border-radius: 4px;
     cursor: pointer; text-align: center; transition: all 0.15s; white-space: nowrap;
   }
-  .status-step:hover { border-color: var(--text-dim); color: var(--text); }
-  .status-step.active { background: var(--accent); border-color: var(--accent); color: var(--napin-teksti); font-weight: 600; }
-  .status-step.passed { background: var(--panel); border-color: var(--accent); color: var(--accent); }
+  .status-step:hover { border-color: var(--kpt-himmea); color: var(--kpt-teksti); }
+  .status-step.active { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
+  .status-step.passed { background: var(--kpt-paneeli); border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
 
-  .cut-row { border-left: 3px solid var(--row-color, var(--border)); }
-  .cut-row-sub { border-left: 3px solid var(--row-color, var(--border)); }
+  .cut-row { border-left: 3px solid var(--row-color, var(--kpt-reuna)); }
+  .cut-row-sub { border-left: 3px solid var(--row-color, var(--kpt-reuna)); }
   .cut-row.row-done, .cut-row-sub.row-done { opacity: 0.55; }
   .sub-row-cell {
     padding: 3px 6px 6px 0 !important;
@@ -401,30 +386,30 @@
   }
   .huomio-tag {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-    color: var(--warn); white-space: nowrap;
+    color: var(--kpt-huom); white-space: nowrap;
   }
   .row-status-cell { min-width: 260px; padding: 3px 0; }
   .row-steps { display: flex; gap: 3px; flex-wrap: nowrap; }
   .row-status-btn {
-    background: none; border: 1px solid var(--border);
-    color: var(--text-dim); font-family: 'IBM Plex Mono', monospace;
+    background: none; border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-himmea); font-family: 'IBM Plex Mono', monospace;
     font-size: 9px; padding: 3px 5px; border-radius: 3px;
     cursor: pointer; white-space: nowrap; transition: all 0.1s;
   }
-  .row-status-btn:hover { border-color: var(--text-dim); color: var(--text); }
-  .row-status-btn.ractive { background: var(--accent); border-color: var(--accent); color: var(--napin-teksti); font-weight: 600; }
-  .row-status-btn.rpassed { border-color: var(--accent); color: var(--accent); }
+  .row-status-btn:hover { border-color: var(--kpt-himmea); color: var(--kpt-teksti); }
+  .row-status-btn.ractive { background: var(--kpt-korostus); border-color: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 600; }
+  .row-status-btn.rpassed { border-color: var(--kpt-korostus); color: var(--kpt-korostus); }
 
   /* done_qty kenttä */
   .done-qty-cell { min-width: 70px; text-align: right; }
   .done-qty-input {
-    width: 52px; background: var(--input-bg); border: 1px solid var(--border);
-    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    width: 52px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna);
+    color: var(--kpt-teksti); font-family: 'IBM Plex Mono', monospace;
     font-size: 11px; padding: 2px 5px; border-radius: 3px; text-align: center;
   }
-  .done-qty-input:focus { outline: none; border-color: var(--accent); }
-  .done-all { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); }
-  .done-partial { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--warn); }
+  .done-qty-input:focus { outline: none; border-color: var(--kpt-korostus); }
+  .done-all { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--kpt-korostus); }
+  .done-partial { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--kpt-huom); }
 
   @media print {
     .cut-row-bottom { display: none !important; }
@@ -437,46 +422,46 @@
     display: flex; align-items: baseline; gap: 12px;
     font-family: 'IBM Plex Mono', monospace;
   }
-  .kap-nimike { font-size: 13px; color: var(--text); flex: 1; }
-  .kap-maara { font-size: 16px; color: var(--accent); font-weight: 600; }
-  .kap-unit { font-size: 11px; color: var(--text-dim); }
+  .kap-nimike { font-size: 13px; color: var(--kpt-teksti); flex: 1; }
+  .kap-maara { font-size: 16px; color: var(--kpt-korostus); font-weight: 600; }
+  .kap-unit { font-size: 11px; color: var(--kpt-himmea); }
 
   /* Kappaletavaran toimitusseuranta */
   .kap-track {
     display: flex; flex-direction: column; gap: 8px; margin-top: 8px;
     font-family: 'IBM Plex Mono', monospace; font-size: 12px;
   }
-  .kap-progress { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; color: var(--text); }
-  .kap-progress b { font-size: 15px; color: var(--accent); }
-  .kap-progress .kap-left { color: var(--warn); }
-  .kap-progress .kap-over { color: var(--blue); }
+  .kap-progress { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; color: var(--kpt-teksti); }
+  .kap-progress b { font-size: 15px; color: var(--kpt-korostus); }
+  .kap-progress .kap-left { color: var(--kpt-huom); }
+  .kap-progress .kap-over { color: var(--kpt-v-tilaukset); }
   .kap-steps { display: flex; gap: 6px; }
   .kap-steps .row-status-btn { padding: 8px 18px; font-size: 12px; }
   .kap-add { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .kap-qty-input {
-    width: 80px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
+    width: 80px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); color: var(--kpt-teksti);
     border-radius: 4px; padding: 7px 8px; font-family: inherit; font-size: 13px;
   }
-  .kap-qty-input:focus { outline: none; border-color: var(--accent); }
+  .kap-qty-input:focus { outline: none; border-color: var(--kpt-korostus); }
   .kap-add-btn {
-    background: var(--panel2); border: 1px solid var(--accent); color: var(--accent);
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-korostus); color: var(--kpt-korostus);
     border-radius: 4px; padding: 7px 12px; font-family: inherit; font-size: 12px; cursor: pointer;
   }
-  .kap-add-btn:hover { background: var(--accent); color: var(--napin-teksti); }
-  .kap-log { display: flex; flex-direction: column; gap: 2px; color: var(--text-dim); font-size: 11px; }
+  .kap-add-btn:hover { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
+  .kap-log { display: flex; flex-direction: column; gap: 2px; color: var(--kpt-himmea); font-size: 11px; }
   .kap-log-row { display: flex; gap: 10px; align-items: center; }
-  .kap-log-del { background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 0 4px; }
-  .kap-log-del:hover { color: var(--danger); }
+  .kap-log-del { background: none; border: none; color: var(--kpt-himmea); cursor: pointer; font-size: 12px; padding: 0 4px; }
+  .kap-log-del:hover { color: var(--kpt-virhe); }
 
   /* Kortin materiaalisuodatin */
   .card-filter-bar { display: none; gap: 6px; flex-wrap: wrap; padding: 12px 24px 0; }
   .card-filter-chip {
-    background: var(--panel2); border: 1px solid var(--border); color: var(--text-dim);
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-reuna); color: var(--kpt-himmea);
     border-radius: 4px; padding: 6px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
     cursor: pointer; white-space: nowrap;
   }
-  .card-filter-chip:hover { color: var(--text); border-color: var(--text-dim); }
-  .card-filter-chip.active { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); font-weight: 600; }
+  .card-filter-chip:hover { color: var(--kpt-teksti); border-color: var(--kpt-himmea); }
+  .card-filter-chip.active { border-color: var(--kpt-korostus); color: var(--kpt-korostus); background: var(--kpt-korostus-tausta); font-weight: 600; }
   @media (max-width: 700px) {
     .card-filter-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }
     .all-done-banner { margin: 12px 24px 0; }
@@ -491,59 +476,59 @@
   /* Työaika (ajanseurannasta) */
   .time-panel {
     display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap;
-    margin: 12px 24px 0; padding: 10px 14px; border: 1px solid var(--border); border-radius: 4px;
-    background: var(--panel); font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-dim);
+    margin: 12px 24px 0; padding: 10px 14px; border: 1px solid var(--kpt-reuna); border-radius: 4px;
+    background: var(--kpt-paneeli); font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--kpt-himmea);
   }
-  .time-title { color: var(--text-dim); }
-  .time-total { font-size: 16px; font-weight: 600; color: var(--accent); }
-  .time-total.none { font-size: 12px; font-weight: 400; color: var(--text-dim); }
-  .time-cat { border: 1px solid var(--border); border-radius: 3px; padding: 2px 8px; color: var(--text); white-space: nowrap; }
-  .time-running { color: var(--warn); white-space: nowrap; }
-  .time-warn { color: var(--danger); white-space: nowrap; }
+  .time-title { color: var(--kpt-himmea); }
+  .time-total { font-size: 16px; font-weight: 600; color: var(--kpt-korostus); }
+  .time-total.none { font-size: 12px; font-weight: 400; color: var(--kpt-himmea); }
+  .time-cat { border: 1px solid var(--kpt-reuna); border-radius: 3px; padding: 2px 8px; color: var(--kpt-teksti); white-space: nowrap; }
+  .time-running { color: var(--kpt-huom); white-space: nowrap; }
+  .time-warn { color: var(--kpt-virhe); white-space: nowrap; }
   .time-link, .time-start {
-    background: var(--panel2); border: 1px solid var(--accent); color: var(--accent); border-radius: 4px;
+    background: var(--kpt-paneeli2); border: 1px solid var(--kpt-korostus); color: var(--kpt-korostus); border-radius: 4px;
     padding: 6px 12px; font-family: inherit; font-size: 12px; cursor: pointer; text-decoration: none; white-space: nowrap;
   }
-  .time-link:hover, .time-start:hover { background: var(--accent); color: var(--napin-teksti); }
+  .time-link:hover, .time-start:hover { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
   .time-start:disabled { opacity: 0.5; cursor: default; }
   .time-spacer { flex: 1 1 auto; }
-  .time-chip { color: var(--accent); font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: nowrap; }
+  .time-chip { color: var(--kpt-korostus); font-family: 'IBM Plex Mono', monospace; font-size: 11px; white-space: nowrap; }
   @media (max-width: 700px) { .time-panel { margin: 12px 12px 0; } }
 
   /* Rivin lisäys tuotannon aikana */
   .add-row-wrap { padding: 12px 24px 0; font-family: 'IBM Plex Mono', monospace; }
   .add-row-toggle {
-    background: var(--panel2); border: 1px dashed var(--accent); color: var(--accent);
+    background: var(--kpt-paneeli2); border: 1px dashed var(--kpt-korostus); color: var(--kpt-korostus);
     border-radius: 4px; padding: 7px 14px; font-family: inherit; font-size: 12px; cursor: pointer;
   }
-  .add-row-toggle:hover { background: var(--accent); color: var(--napin-teksti); }
+  .add-row-toggle:hover { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); }
   .add-row-form {
-    margin-top: 10px; padding: 14px; border: 1px solid var(--border); border-radius: 4px;
-    background: var(--panel); max-width: 720px;
+    margin-top: 10px; padding: 14px; border: 1px solid var(--kpt-reuna); border-radius: 4px;
+    background: var(--kpt-paneeli); max-width: 720px;
   }
-  .add-row-title { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+  .add-row-title { font-size: 12px; color: var(--kpt-himmea); margin-bottom: 10px; }
   .add-row-fields { display: flex; gap: 10px; flex-wrap: wrap; }
-  .add-row-f { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-dim); }
+  .add-row-f { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--kpt-himmea); }
   .add-row-f-wide { flex: 1 1 220px; }
   .add-row-f input, .add-row-f select {
-    background: var(--input-bg); border: 1px solid var(--border); color: var(--text);
+    background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); color: var(--kpt-teksti);
     border-radius: 4px; padding: 8px; font-family: inherit; font-size: 13px; min-width: 0; width: 100%;
   }
   .add-row-f:not(.add-row-f-wide) { flex: 0 0 90px; }
-  .add-row-f input:focus, .add-row-f select:focus { outline: none; border-color: var(--accent); }
+  .add-row-f input:focus, .add-row-f select:focus { outline: none; border-color: var(--kpt-korostus); }
   .add-row-actions { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
   .add-row-save {
-    background: var(--accent); color: var(--napin-teksti); border: 1px solid var(--accent); border-radius: 4px;
+    background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border: 1px solid var(--kpt-korostus); border-radius: 4px;
     padding: 8px 16px; font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
   }
   .add-row-save:disabled { opacity: 0.5; cursor: default; }
   .add-row-cancel {
-    background: none; color: var(--text-dim); border: 1px solid var(--border); border-radius: 4px;
+    background: none; color: var(--kpt-himmea); border: 1px solid var(--kpt-reuna); border-radius: 4px;
     padding: 8px 14px; font-family: inherit; font-size: 12px; cursor: pointer;
   }
-  .add-row-msg { font-size: 11px; color: var(--warn); }
+  .add-row-msg { font-size: 11px; color: var(--kpt-huom); }
   .lisatty-tag {
-    font-size: 10px; color: var(--blue); border: 1px solid var(--blue); border-radius: 3px;
+    font-size: 10px; color: var(--kpt-v-tilaukset); border: 1px solid var(--kpt-v-tilaukset); border-radius: 3px;
     padding: 1px 6px; white-space: nowrap; font-family: 'IBM Plex Mono', monospace;
   }
   @media (max-width: 700px) {
@@ -553,19 +538,19 @@
   /* Kaikki valmiit -ilmoitus */
   .all-done-banner {
     display: none; align-items: center; gap: 10px; flex-wrap: wrap;
-    margin: 12px 24px 0; padding: 12px 14px; border: 1px solid var(--accent); border-radius: 4px;
-    background: var(--accent-glow); font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text);
+    margin: 12px 24px 0; padding: 12px 14px; border: 1px solid var(--kpt-korostus); border-radius: 4px;
+    background: var(--kpt-korostus-tausta); font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--kpt-teksti);
   }
   .all-done-banner button {
-    background: var(--accent); color: var(--napin-teksti); border: 1px solid var(--accent); border-radius: 4px;
+    background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border: 1px solid var(--kpt-korostus); border-radius: 4px;
     padding: 7px 14px; font-family: inherit; font-size: 12px; cursor: pointer; font-weight: 600;
   }
-  .all-done-banner button.ghost { background: none; color: var(--text-dim); border-color: var(--border); font-weight: 400; }
+  .all-done-banner button.ghost { background: none; color: var(--kpt-himmea); border-color: var(--kpt-reuna); font-weight: 400; }
 
   /* EMPTY STATE */
   .empty-state {
     text-align: center; padding: 60px 20px;
-    color: var(--text-dim); font-size: 13px;
+    color: var(--kpt-himmea); font-size: 13px;
   }
 
 
@@ -780,7 +765,7 @@
     <button class="back-btn" onclick="showList()">← Takaisin</button>
     <div>
       <div class="card-view-title" id="cardTitle">—</div>
-      <div style="font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;margin-top:2px" id="cardKohde"></div>
+      <div style="font-size:12px;color:var(--kpt-himmea);font-family:'IBM Plex Mono',monospace;margin-top:2px" id="cardKohde"></div>
       <div id="cardYhteys" class="card-yhteys"></div>
     </div>
     <div class="card-view-meta">
@@ -1224,7 +1209,7 @@ function renderCombinedList(orders, mat, color, thick) {
       const rowsHtml = rows.map(r => {
         const rs = r.production_status || 'WAITING';
         const rsIdx = STEP_KEYS.indexOf(rs);
-        const rsColor = STEP_COLORS[rs] || 'var(--border)';
+        const rsColor = STEP_COLORS[rs] || 'var(--kpt-reuna)';
         const dq = r.done_qty || 0;
         const totalKpl = r.kpl || 0;
 
@@ -1240,8 +1225,8 @@ function renderCombinedList(orders, mat, color, thick) {
           : rs !== 'WAITING'
             ? `<input type="number" class="done-qty-input" value="${dq}" min="0" max="${totalKpl}"
                 onchange="setCombinedRowDoneQty('${r.id}', this.value, '${item.id}', '${o.id}')"
-                title="Tehty kpl" style="width:44px">/<span style="color:var(--text-dim)">${totalKpl}</span>`
-            : `<span style="color:var(--text-dim);font-size:10px">${totalKpl} kpl</span>`;
+                title="Tehty kpl" style="width:44px">/<span style="color:var(--kpt-himmea)">${totalKpl}</span>`
+            : `<span style="color:var(--kpt-himmea);font-size:10px">${totalKpl} kpl</span>`;
 
         return `<div class="combined-pituusrivi" id="crow-${r.id}" style="--row-color:${rsColor};border-left:3px solid ${rsColor};padding-left:6px;margin-bottom:4px;flex-wrap:wrap;gap:6px;align-items:center">
           <span class="cm">${r.mitta_mm || ''}</span>
@@ -1342,7 +1327,7 @@ function renderOrderList(orders, mat, color, thick) {
         </div>
         <div class="card-date">
           <div>${date}</div>
-          <div style="color:var(--warn);margin-top:2px">${deliv !== '—' ? '→ ' + deliv : ''}</div>
+          <div style="color:var(--kpt-huom);margin-top:2px">${deliv !== '—' ? '→ ' + deliv : ''}</div>
         </div>
       </div>
       <div class="card-body">
@@ -1420,12 +1405,12 @@ function showList() {
 const STEPS = ['Odottaa', 'Leikattu', 'Kantattu', 'Lisätyöt', 'Valmis'];
 const STEP_KEYS = ['WAITING', 'CUT', 'BENT', 'EXTRA', 'DONE'];
 const STEP_COLORS = {
-  WAITING: 'var(--border)',
-  CUT: 'var(--blue)',
-  BENT: 'var(--warn)',
+  WAITING: 'var(--kpt-reuna)',
+  CUT: 'var(--kpt-v-tilaukset)',
+  BENT: 'var(--kpt-huom)',
   EXTRA: 'var(--lisatyo)',
-  DONE: 'var(--accent)',
-  PARTIAL: 'var(--warn)'
+  DONE: 'var(--kpt-korostus)',
+  PARTIAL: 'var(--kpt-huom)'
 };
 
 // ── Apufunktiot: kappaletavara, kokonaistila ja suodatin ──────────
@@ -1697,7 +1682,7 @@ function renderItemCards(order) {
       const rowsHtml = rows.map(r => {
         const rs = r.production_status || 'WAITING';
         const rsIdx = STEP_KEYS.indexOf(rs);
-        const rsColor = STEP_COLORS[rs] || 'var(--border)';
+        const rsColor = STEP_COLORS[rs] || 'var(--kpt-reuna)';
         const rsDone = rs === 'DONE';
         const doneQty = r.done_qty || 0;
         const totalKpl = r.kpl || 0;
@@ -1757,8 +1742,8 @@ function renderItemCards(order) {
         kanttausBlock = `<div style="margin-top:4px">
           <a href="${item.profile_type}.html?orderId=${item.order_id}&groupName=${encodeURIComponent(item.group_name||'')}"
              target="_blank"
-             style="display:inline-block;padding:6px 14px;background:var(--panel2);border:1px solid var(--accent);
-                    color:var(--accent);border-radius:4px;font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace;">
+             style="display:inline-block;padding:6px 14px;background:var(--kpt-paneeli2);border:1px solid var(--kpt-korostus);
+                    color:var(--kpt-korostus);border-radius:4px;font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace;">
             🏭 Avaa ${item.profile_type} →
           </a>
         </div>`;
@@ -1768,8 +1753,8 @@ function renderItemCards(order) {
         kanttausBlock = `<div style="margin-top:4px">
           <a href="piippu_tuotanto.html?orderId=${item.order_id}&groupName=${encodeURIComponent(item.group_name||'')}"
              target="_blank"
-             style="display:inline-block;padding:6px 14px;background:var(--panel2);border:1px solid var(--accent);
-                    color:var(--accent);border-radius:4px;font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace;">
+             style="display:inline-block;padding:6px 14px;background:var(--kpt-paneeli2);border:1px solid var(--kpt-korostus);
+                    color:var(--kpt-korostus);border-radius:4px;font-size:12px;text-decoration:none;font-family:'IBM Plex Mono',monospace;">
             🏭 Avaa piippu →
           </a>
         </div>`;
@@ -1820,8 +1805,8 @@ function renderItemCards(order) {
           <span class="kap-nimike">${escT(item.nimike || '—')}</span>
           <span class="kap-maara">${fmtNum(tot) || ''}</span>
           <span class="kap-unit">${unit}</span>
-          ${pd.huomio ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">⚠ ${escT(pd.huomio)}</span>` : ''}
-          ${pd.alkup_maara != null ? `<span style="font-size:11px;color:var(--warn);font-family:'IBM Plex Mono',monospace">muutettu: alun perin ${fmtNum(pd.alkup_maara)}</span>` : ''}
+          ${pd.huomio ? `<span style="font-size:11px;color:var(--kpt-huom);font-family:'IBM Plex Mono',monospace">⚠ ${escT(pd.huomio)}</span>` : ''}
+          ${pd.alkup_maara != null ? `<span style="font-size:11px;color:var(--kpt-huom);font-family:'IBM Plex Mono',monospace">muutettu: alun perin ${fmtNum(pd.alkup_maara)}</span>` : ''}
         </div>
         <div class="kap-track">
           <div class="kap-progress">
@@ -1843,7 +1828,7 @@ function renderItemCards(order) {
     }
 
     // Kokonaistilan ilmaisin kortin otsikossa
-    const statusColor = STEP_COLORS[overallStatus] || 'var(--border)';
+    const statusColor = STEP_COLORS[overallStatus] || 'var(--kpt-reuna)';
 
     return `<div class="item-card${isDone ? ' done' : ''}" id="item-card-${idx}" style="border-left:4px solid ${statusColor}">
       <div class="item-card-header">

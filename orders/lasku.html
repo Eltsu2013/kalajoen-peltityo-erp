@@ -12,107 +12,90 @@
 <script src="teema.js?v=1"></script>
 <style>
 :root, html[data-teema] {
-  /* Ulkoasuremontti R4c (26.11.2026): vanhat muuttujanimet kytketty yhteisiin (tyyli.css), joten rakenne pysyi. */
-  --bg: var(--kpt-tausta);
-  --bg2: var(--kpt-paneeli);
-  --bg3: var(--kpt-kentta);
-  --bg4: var(--kpt-paneeli2);
-  --border: var(--kpt-reuna);
-  --border2: var(--kpt-reuna2);
-  --text: var(--kpt-teksti);
-  --text2: var(--kpt-himmea);
-  --text3: var(--kpt-heikko);
-  --accent: var(--kpt-korostus);
-  --accent2: var(--kpt-korostus);
-  --info: var(--kpt-info);
-  --success: var(--kpt-ok);
-  --danger: var(--kpt-virhe);
-  --warning: var(--kpt-huom);
-  --font: var(--kpt-fontti);
-  --mono: var(--kpt-mono);
+  /* Ulkoasuremontti R4c (26.11.2026): yhteinen tyyli.css, värit --kpt-muuttujista (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026). */
   --radius: 6px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-size: 14px; line-height: 1.5; min-height: 100vh; }
 
 /* Laskun tila yläpalkissa */
-.nav-status { font-family: var(--mono); font-size: 11.5px; padding: 4px 10px; border-radius: var(--radius); background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); }
-.nav-status.luonnos { color: var(--text2); border-color: var(--border2); }
-.nav-status.lahetetty { color: var(--info); border-color: var(--info); background: color-mix(in srgb, var(--info) 10%, transparent); }
-.nav-status.maksettu { color: var(--success); border-color: var(--success); background: color-mix(in srgb, var(--success) 10%, transparent); }
-.nav-invoice-num { font-family: var(--mono); color: var(--accent); font-weight: 500; }
+.nav-status { font-family: var(--kpt-mono); font-size: 11.5px; padding: 4px 10px; border-radius: var(--radius); background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); color: var(--kpt-himmea); }
+.nav-status.luonnos { color: var(--kpt-himmea); border-color: var(--kpt-reuna2); }
+.nav-status.lahetetty { color: var(--kpt-info); border-color: var(--kpt-info); background: color-mix(in srgb, var(--kpt-info) 10%, transparent); }
+.nav-status.maksettu { color: var(--kpt-ok); border-color: var(--kpt-ok); background: color-mix(in srgb, var(--kpt-ok) 10%, transparent); }
+.nav-invoice-num { font-family: var(--kpt-mono); color: var(--kpt-korostus); font-weight: 500; }
 /* LAYOUT */
 .layout { display: grid; grid-template-columns: 1fr 320px; gap: 0; min-height: calc(100vh - 48px); }
-.main { padding: 24px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--border); }
-.sidebar { padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--bg2); }
+.main { padding: 24px; display: flex; flex-direction: column; gap: 16px; border-right: 1px solid var(--kpt-reuna); }
+.sidebar { padding: 20px; display: flex; flex-direction: column; gap: 16px; background: var(--kpt-paneeli); }
 
 /* CARDS */
-.card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-.card-header { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.card-header h3 { font-size: 11px; font-weight: 500; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--mono); }
+.card { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna); border-radius: var(--radius); overflow: hidden; }
+.card-header { padding: 10px 14px; border-bottom: 1px solid var(--kpt-reuna); display: flex; align-items: center; justify-content: space-between; }
+.card-header h3 { font-size: 11px; font-weight: 500; color: var(--kpt-himmea); text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--kpt-mono); }
 .card-body { padding: 14px; }
 
 /* FORM ELEMENTS */
-label { font-size: 11px; color: var(--text2); display: block; margin-bottom: 4px; }
+label { font-size: 11px; color: var(--kpt-himmea); display: block; margin-bottom: 4px; }
 input, select, textarea {
-  width: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius);
-  color: var(--text); font-family: var(--font); font-size: 13px; padding: 7px 10px;
+  width: 100%; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); border-radius: var(--radius);
+  color: var(--kpt-teksti); font-family: var(--kpt-fontti); font-size: 13px; padding: 7px 10px;
   outline: none; transition: border-color 0.15s;
 }
-input:focus, select:focus, textarea:focus { border-color: var(--accent); }
-input::placeholder, textarea::placeholder { color: var(--text3); }
-select option { background: var(--bg3); }
+input:focus, select:focus, textarea:focus { border-color: var(--kpt-korostus); }
+input::placeholder, textarea::placeholder { color: var(--kpt-heikko); }
+select option { background: var(--kpt-kentta); }
 textarea { resize: vertical; min-height: 60px; }
 .field { display: flex; flex-direction: column; gap: 4px; }
-.field-val { font-size: 13px; color: var(--text); padding: 7px 0; }
-.field-val.mono { font-family: var(--mono); color: var(--accent); font-size: 14px; font-weight: 500; }
-.field-val.muted { color: var(--text2); font-size: 12px; }
+.field-val { font-size: 13px; color: var(--kpt-teksti); padding: 7px 0; }
+.field-val.mono { font-family: var(--kpt-mono); color: var(--kpt-korostus); font-size: 14px; font-weight: 500; }
+.field-val.muted { color: var(--kpt-himmea); font-size: 12px; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
 /* BUTTONS */
-.btn { padding: 7px 14px; border-radius: var(--radius); font-family: var(--font); font-size: 13px; cursor: pointer; border: 1px solid var(--border2); background: var(--bg3); color: var(--text); transition: all 0.15s; }
-.btn:hover { border-color: var(--border); background: var(--bg4); }
+.btn { padding: 7px 14px; border-radius: var(--radius); font-family: var(--kpt-fontti); font-size: 13px; cursor: pointer; border: 1px solid var(--kpt-reuna2); background: var(--kpt-kentta); color: var(--kpt-teksti); transition: all 0.15s; }
+.btn:hover { border-color: var(--kpt-reuna); background: var(--kpt-paneeli2); }
 .btn-sm { padding: 4px 10px; font-size: 12px; }
-.btn-accent { background: var(--accent); color: var(--kpt-teksti-korostuksella); border-color: var(--accent); font-weight: 500; }
-.btn-accent:hover { background: var(--accent2); border-color: var(--accent2); }
-.btn-info { background: color-mix(in srgb, var(--info) 12%, transparent); color: var(--info); border-color: color-mix(in srgb, var(--info) 35%, transparent); }
-.btn-info:hover { background: color-mix(in srgb, var(--info) 20%, transparent); }
-.btn-danger { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
-.btn-danger:hover { background: color-mix(in srgb, var(--danger) 20%, transparent); }
-.btn-success { background: color-mix(in srgb, var(--success) 10%, transparent); color: var(--success); border-color: color-mix(in srgb, var(--success) 35%, transparent); }
-.btn-success:hover { background: color-mix(in srgb, var(--success) 20%, transparent); }
+.btn-accent { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); border-color: var(--kpt-korostus); font-weight: 500; }
+.btn-accent:hover { background: var(--kpt-korostus); border-color: var(--kpt-korostus); }
+.btn-info { background: color-mix(in srgb, var(--kpt-info) 12%, transparent); color: var(--kpt-info); border-color: color-mix(in srgb, var(--kpt-info) 35%, transparent); }
+.btn-info:hover { background: color-mix(in srgb, var(--kpt-info) 20%, transparent); }
+.btn-danger { background: color-mix(in srgb, var(--kpt-virhe) 10%, transparent); color: var(--kpt-virhe); border-color: color-mix(in srgb, var(--kpt-virhe) 35%, transparent); }
+.btn-danger:hover { background: color-mix(in srgb, var(--kpt-virhe) 20%, transparent); }
+.btn-success { background: color-mix(in srgb, var(--kpt-ok) 10%, transparent); color: var(--kpt-ok); border-color: color-mix(in srgb, var(--kpt-ok) 35%, transparent); }
+.btn-success:hover { background: color-mix(in srgb, var(--kpt-ok) 20%, transparent); }
 
 /* ASIAKAS SEARCH */
 .search-wrap { position: relative; }
-.search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); z-index: 50; max-height: 220px; overflow-y: auto; margin-top: 2px; }
-.search-result-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.search-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); z-index: 50; max-height: 220px; overflow-y: auto; margin-top: 2px; }
+.search-result-item { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--kpt-reuna); display: flex; justify-content: space-between; align-items: center; }
 .search-result-item:last-child { border-bottom: none; }
-.search-result-item:hover { background: var(--bg4); }
-.search-result-name { font-size: 13px; color: var(--text); }
-.search-result-num { font-size: 11px; color: var(--text2); font-family: var(--mono); }
-.asiakas-selected { background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 14px; }
-.asiakas-name { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
-.asiakas-detail { font-size: 12px; color: var(--text2); line-height: 1.6; }
-.asiakas-num { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-top: 6px; }
+.search-result-item:hover { background: var(--kpt-paneeli2); }
+.search-result-name { font-size: 13px; color: var(--kpt-teksti); }
+.search-result-num { font-size: 11px; color: var(--kpt-himmea); font-family: var(--kpt-mono); }
+.asiakas-selected { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); padding: 12px 14px; }
+.asiakas-name { font-size: 14px; font-weight: 500; color: var(--kpt-teksti); margin-bottom: 4px; }
+.asiakas-detail { font-size: 12px; color: var(--kpt-himmea); line-height: 1.6; }
+.asiakas-num { font-family: var(--kpt-mono); font-size: 11px; color: var(--kpt-heikko); margin-top: 6px; }
 
 /* TYYPPI TOGGLE */
-.type-toggle { display: flex; gap: 0; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
-.type-btn { flex: 1; padding: 7px; font-size: 13px; font-family: var(--font); border: none; background: var(--bg3); color: var(--text2); cursor: pointer; transition: all 0.15s; }
-.type-btn.active { background: var(--accent); color: var(--kpt-teksti-korostuksella); font-weight: 500; }
-.type-btn:not(.active):hover { background: var(--bg4); color: var(--text); }
+.type-toggle { display: flex; gap: 0; border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); overflow: hidden; }
+.type-btn { flex: 1; padding: 7px; font-size: 13px; font-family: var(--kpt-fontti); border: none; background: var(--kpt-kentta); color: var(--kpt-himmea); cursor: pointer; transition: all 0.15s; }
+.type-btn.active { background: var(--kpt-korostus); color: var(--kpt-teksti-korostuksella); font-weight: 500; }
+.type-btn:not(.active):hover { background: var(--kpt-paneeli2); color: var(--kpt-teksti); }
 
 /* RIVIT TABLE */
 .rivit-wrap { overflow-x: auto; }
 table.rivit { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; min-width: 860px; }
-table.rivit th { background: var(--bg3); padding: 8px 8px; text-align: left; font-weight: 500; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); font-family: var(--mono); }
+table.rivit th { background: var(--kpt-kentta); padding: 8px 8px; text-align: left; font-weight: 500; font-size: 10px; color: var(--kpt-heikko); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--kpt-reuna); font-family: var(--kpt-mono); }
 table.rivit th.right { text-align: right; }
-table.rivit td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.rivit td { padding: 6px 8px; border-bottom: 1px solid var(--kpt-reuna); vertical-align: middle; }
 table.rivit tr:last-child td { border-bottom: none; }
 table.rivit tr.hidden-row td { opacity: 0.45; }
 table.rivit tr.summary-row td { background: var(--kpt-korostus-tausta); }
-table.rivit input { padding: 4px 6px; font-size: 12px; background: var(--bg4); border-color: transparent; }
-table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
+table.rivit input { padding: 4px 6px; font-size: 12px; background: var(--kpt-paneeli2); border-color: transparent; }
+table.rivit input:focus { border-color: var(--kpt-korostus); background: var(--kpt-kentta); }
 .col-kohde { width: 10%; }
 .col-nimike { width: 20%; }
 .col-pit { width: 7%; }
@@ -124,66 +107,66 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
 .col-alvp { width: 6%; }
 .col-rivi { width: 9%; }
 .col-act { width: 4%; }
-.rivi-total { text-align: right; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--text); }
-.hidden-badge { font-size: 10px; background: var(--bg4); color: var(--text3); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--border); margin-left: 4px; }
-.summary-badge { font-size: 10px; background: var(--kpt-korostus-tausta); color: var(--accent); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--accent); margin-left: 4px; }
+.rivi-total { text-align: right; font-family: var(--kpt-mono); font-size: 12px; font-weight: 500; color: var(--kpt-teksti); }
+.hidden-badge { font-size: 10px; background: var(--kpt-paneeli2); color: var(--kpt-heikko); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--kpt-reuna); margin-left: 4px; }
+.summary-badge { font-size: 10px; background: var(--kpt-korostus-tausta); color: var(--kpt-korostus); padding: 1px 6px; border-radius: 2px; border: 1px solid var(--kpt-korostus); margin-left: 4px; }
 
 /* DROPDOWN MENU */
 .dropdown-wrap { position: relative; display: inline-block; }
-.dropdown-menu { position: absolute; right: 0; top: 100%; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); z-index: 50; min-width: 160px; margin-top: 2px; overflow: hidden; display: none; }
+.dropdown-menu { position: absolute; right: 0; top: 100%; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); z-index: 50; min-width: 160px; margin-top: 2px; overflow: hidden; display: none; }
 .dropdown-menu.open { display: block; }
-.dropdown-item { padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--text); border-bottom: 1px solid var(--border); }
+.dropdown-item { padding: 8px 14px; font-size: 13px; cursor: pointer; color: var(--kpt-teksti); border-bottom: 1px solid var(--kpt-reuna); }
 .dropdown-item:last-child { border-bottom: none; }
-.dropdown-item:hover { background: var(--bg4); }
-.dropdown-item.danger { color: var(--danger); }
+.dropdown-item:hover { background: var(--kpt-paneeli2); }
+.dropdown-item.danger { color: var(--kpt-virhe); }
 
 /* TOTALS */
 .totals-table { width: 100%; }
 .totals-table td { padding: 5px 0; font-size: 13px; }
-.totals-table td:last-child { text-align: right; font-family: var(--mono); font-weight: 500; }
-.totals-divider { border: none; border-top: 1px solid var(--border); margin: 6px 0; }
-.total-yht { font-size: 16px; color: var(--accent); }
+.totals-table td:last-child { text-align: right; font-family: var(--kpt-mono); font-weight: 500; }
+.totals-divider { border: none; border-top: 1px solid var(--kpt-reuna); margin: 6px 0; }
+.total-yht { font-size: 16px; color: var(--kpt-korostus); }
 
 /* SIDEBAR SECTIONS */
-.sidebar-label { font-size: 10px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--mono); margin-bottom: 8px; }
-.info-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.sidebar-label { font-size: 10px; font-weight: 500; color: var(--kpt-heikko); text-transform: uppercase; letter-spacing: 0.08em; font-family: var(--kpt-mono); margin-bottom: 8px; }
+.info-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--kpt-reuna); font-size: 12px; }
 .info-row:last-child { border-bottom: none; }
-.info-row-label { color: var(--text2); }
-.info-row-val { font-family: var(--mono); color: var(--text); font-size: 12px; }
-.info-row-val.accent { color: var(--accent); }
+.info-row-label { color: var(--kpt-himmea); }
+.info-row-val { font-family: var(--kpt-mono); color: var(--kpt-teksti); font-size: 12px; }
+.info-row-val.accent { color: var(--kpt-korostus); }
 
 /* KAAVAKE */
-.kaavake { border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; font-size: 11px; }
-.kaavake-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+.kaavake { border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); overflow: hidden; font-size: 11px; }
+.kaavake-row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--kpt-reuna); }
 .kaavake-row:last-child { border-bottom: none; }
-.kaavake-cell { padding: 8px 10px; border-right: 1px solid var(--border); }
+.kaavake-cell { padding: 8px 10px; border-right: 1px solid var(--kpt-reuna); }
 .kaavake-cell:last-child { border-right: none; }
-.kaavake-cell-label { color: var(--text3); font-size: 10px; margin-bottom: 2px; }
-.kaavake-cell-val { color: var(--text); font-family: var(--mono); font-size: 11px; }
+.kaavake-cell-label { color: var(--kpt-heikko); font-size: 10px; margin-bottom: 2px; }
+.kaavake-cell-val { color: var(--kpt-teksti); font-family: var(--kpt-mono); font-size: 11px; }
 
 /* TEKSTIPOHJA MODAL */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: none; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
-.modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: var(--radius); width: 500px; max-height: 80vh; overflow-y: auto; }
-.modal-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.modal { background: var(--kpt-paneeli); border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); width: 500px; max-height: 80vh; overflow-y: auto; }
+.modal-header { padding: 14px 16px; border-bottom: 1px solid var(--kpt-reuna); display: flex; justify-content: space-between; align-items: center; }
 .modal-header h3 { font-size: 14px; font-weight: 500; }
-.modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 18px; }
+.modal-close { background: none; border: none; color: var(--kpt-himmea); cursor: pointer; font-size: 18px; }
 .modal-body { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-.template-item { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; cursor: pointer; transition: border-color 0.15s; }
-.template-item:hover { border-color: var(--accent); }
+.template-item { background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna); border-radius: var(--radius); padding: 12px; cursor: pointer; transition: border-color 0.15s; }
+.template-item:hover { border-color: var(--kpt-korostus); }
 .template-item-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-.template-item-body { font-size: 12px; color: var(--text2); }
+.template-item-body { font-size: 12px; color: var(--kpt-himmea); }
 
 /* NOTIFICATION */
-.notif { position: fixed; bottom: 20px; right: 20px; background: var(--bg3); border: 1px solid var(--border2); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; z-index: 300; display: none; transition: all 0.2s; }
-.notif.success { border-color: var(--success); color: var(--success); }
-.notif.error { border-color: var(--danger); color: var(--danger); }
+.notif { position: fixed; bottom: 20px; right: 20px; background: var(--kpt-kentta); border: 1px solid var(--kpt-reuna2); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; z-index: 300; display: none; transition: all 0.2s; }
+.notif.success { border-color: var(--kpt-ok); color: var(--kpt-ok); }
+.notif.error { border-color: var(--kpt-virhe); color: var(--kpt-virhe); }
 
 /* ── Puhelin (Tomi 26.11.2026: laskun voi tehdä myös puhelimella) ── */
 @media screen and (max-width: 900px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .main { border-right: none; padding: 14px; }
-  .sidebar { padding: 14px; border-top: 1px solid var(--border); }
+  .sidebar { padding: 14px; border-top: 1px solid var(--kpt-reuna); }
 }
 @media screen and (max-width: 700px) {
   .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
@@ -200,10 +183,10 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
   table.rivit, table.rivit tbody { display: block; }
   table.rivit tbody tr {
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 8px; position: relative;
-    padding: 12px 12px 12px; border-bottom: 1px solid var(--border);
+    padding: 12px 12px 12px; border-bottom: 1px solid var(--kpt-reuna);
   }
   table.rivit td { display: block; padding: 0; border: none; min-width: 0; }
-  table.rivit td::before { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
+  table.rivit td::before { display: block; font-family: var(--kpt-mono); font-size: 10.5px; color: var(--kpt-heikko); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; }
   table.rivit td:nth-child(1) { grid-column: 1 / -1; padding-right: 48px; }
   table.rivit td:nth-child(2) { grid-column: 1 / -1; }
   table.rivit td:nth-child(1)::before { content: 'Kohde'; }
@@ -218,11 +201,11 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
   table.rivit td:nth-child(10)::before { content: 'Rivihinta'; }
   table.rivit td:nth-child(11) { position: absolute; top: 10px; right: 10px; }
   table.rivit td.rivi-total { align-self: end; padding-bottom: 10px; }
-  table.rivit input { font-size: 16px; min-height: 40px; background: var(--bg3); border-color: var(--border2); }
+  table.rivit input { font-size: 16px; min-height: 40px; background: var(--kpt-kentta); border-color: var(--kpt-reuna2); }
   table.rivit tr#riviEmpty { display: block; }
   table.rivit tr#riviEmpty td::before { content: none; }
   .kaavake-row { grid-template-columns: minmax(0, 1fr); }
-  .kaavake-cell { border-right: none; border-bottom: 1px solid var(--border); }
+  .kaavake-cell { border-right: none; border-bottom: 1px solid var(--kpt-reuna); }
   .kaavake-row .kaavake-cell:last-child { border-bottom: none; }
   .modal { width: 100%; max-height: 90vh; }
   .notif { left: 12px; right: 12px; bottom: 12px; }
@@ -330,7 +313,7 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
             <label>Hinnat tarjouksella</label>
             <div style="display:flex;align-items:center;gap:8px">
               <input type="checkbox" id="showPrices" checked style="width:auto" onchange="paivitaNaytaHinnat()">
-              <span style="font-size:12px;color:var(--text2)">Näytä rivihinnat tarjouksella</span>
+              <span style="font-size:12px;color:var(--kpt-himmea)">Näytä rivihinnat tarjouksella</span>
             </div>
           </div>
         </div>
@@ -364,7 +347,7 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
         </thead>
         <tbody id="riviBody">
           <tr id="riviEmpty">
-            <td colspan="11" style="text-align:center;padding:24px;color:var(--text3);font-size:13px">
+            <td colspan="11" style="text-align:center;padding:24px;color:var(--kpt-heikko);font-size:13px">
               Ei rivejä — lisää rivi tai valitse tilaus
             </td>
           </tr>
@@ -379,8 +362,8 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
       <div class="card">
         <div class="card-body">
           <table class="totals-table">
-            <tr><td style="color:var(--text2)">Alv 0%</td><td id="totalAlv0">0,00 €</td></tr>
-            <tr><td style="color:var(--text2)" id="totalAlvLabel">Alv (25,5%)</td><td id="totalAlv">0,00 €</td></tr>
+            <tr><td style="color:var(--kpt-himmea)">Alv 0%</td><td id="totalAlv0">0,00 €</td></tr>
+            <tr><td style="color:var(--kpt-himmea)" id="totalAlvLabel">Alv (25,5%)</td><td id="totalAlv">0,00 €</td></tr>
           </table>
           <hr class="totals-divider">
           <table class="totals-table">
@@ -393,7 +376,7 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
 
   <!-- TILISIIRTOKAAVAKE -->
   <div class="card" id="kaavakeCard">
-    <div class="card-header"><h3>Tilisiirtokaavake</h3><span style="font-size:11px;color:var(--text3)">Tulostuu laskun alapuolelle</span></div>
+    <div class="card-header"><h3>Tilisiirtokaavake</h3><span style="font-size:11px;color:var(--kpt-heikko)">Tulostuu laskun alapuolelle</span></div>
     <div class="card-body">
       <div class="kaavake">
         <div class="kaavake-row">
@@ -455,7 +438,7 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
       <button class="btn" onclick="window.print()">Esikatsele / tulosta</button>
       <button class="btn btn-success" id="btnLahetaMain" onclick="lahetaSahkoposti()" disabled>Lähetä sähköpostilla</button>
       <button class="btn" onclick="kopioi()" id="btnKopioi" style="display:none">Kopioi uudeksi</button>
-      <hr style="border:none;border-top:1px solid var(--border);margin:4px 0">
+      <hr style="border:none;border-top:1px solid var(--kpt-reuna);margin:4px 0">
       <button class="btn btn-danger" onclick="poistaLasku()" id="btnPoista" style="display:none">Poista lasku</button>
     </div>
   </div>
@@ -470,11 +453,11 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
         </div>
         <div class="info-row">
           <span class="info-row-label">Maksettu</span>
-          <span class="info-row-val" id="sbMaksettu" style="color:var(--success)">—</span>
+          <span class="info-row-val" id="sbMaksettu" style="color:var(--kpt-ok)">—</span>
         </div>
         <div class="info-row">
           <span class="info-row-label">Jäljellä</span>
-          <span class="info-row-val" id="sbJaljella" style="color:var(--danger)">—</span>
+          <span class="info-row-val" id="sbJaljella" style="color:var(--kpt-virhe)">—</span>
         </div>
         <button class="btn btn-sm btn-success" onclick="kirjaaMaxsu()">+ Kirjaa maksu</button>
       </div>
@@ -491,7 +474,7 @@ table.rivit input:focus { border-color: var(--accent); background: var(--bg3); }
       <button class="modal-close" onclick="suljeModal('tekstipohjaModal')">✕</button>
     </div>
     <div class="modal-body" id="tekstipohjaList">
-      <p style="color:var(--text3);font-size:13px">Ladataan...</p>
+      <p style="color:var(--kpt-heikko);font-size:13px">Ladataan...</p>
     </div>
   </div>
 </div>
@@ -623,7 +606,7 @@ async function hakuAsiakkaat(q) {
       .or(`name.ilike.%${q}%,customer_number.eq.${isNaN(q)?0:q}`)
       .eq('is_active', true).limit(10);
     if (!data || data.length === 0) {
-      res.innerHTML = '<div style="padding:10px 12px;color:var(--text3);font-size:12px">Ei tuloksia</div>';
+      res.innerHTML = '<div style="padding:10px 12px;color:var(--kpt-heikko);font-size:12px">Ei tuloksia</div>';
     } else {
       res.innerHTML = data.map(c => `
         <div class="search-result-item" onclick='valitseAsiakas(${JSON.stringify(c)})'>
@@ -821,7 +804,7 @@ function poistaRivi(id) {
   state.rivit = state.rivit.filter(x => x._id !== id);
   document.getElementById('tr-' + id)?.remove();
   if (state.rivit.length === 0) {
-    document.getElementById('riviBody').innerHTML = '<tr id="riviEmpty"><td colspan="11" style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Ei rivejä — lisää rivi tai valitse tilaus</td></tr>';
+    document.getElementById('riviBody').innerHTML = '<tr id="riviEmpty"><td colspan="11" style="text-align:center;padding:24px;color:var(--kpt-heikko);font-size:13px">Ei rivejä — lisää rivi tai valitse tilaus</td></tr>';
   }
   laskeTotals();
   paivitaKaavake();
@@ -916,7 +899,7 @@ async function avaaTextipohjaModal() {
   const { data } = await sb.from('invoice_text_templates').select('*').eq('is_active', true).order('sort_order');
   const list = document.getElementById('tekstipohjaList');
   if (!data || data.length === 0) {
-    list.innerHTML = '<p style="color:var(--text3);font-size:13px">Ei tekstipohjia</p>';
+    list.innerHTML = '<p style="color:var(--kpt-heikko);font-size:13px">Ei tekstipohjia</p>';
     return;
   }
   list.innerHTML = data.map(t => `

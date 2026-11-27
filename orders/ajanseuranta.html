@@ -6,24 +6,16 @@
 <title>Ajanseuranta — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Ulkoasuremontti R6a (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+<!-- Ulkoasuremontti R6a (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Värit --kpt-muuttujista (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026),
      rakenne ja skripti ennallaan. Puhelinkäyttö: isommat napit, iso kello, kentät 16 px. Käynnissä oleva ajanotto ja
      Tauko-nappi pysyvät punaisina (Tomi 26.11.), muu sivu kategorian violetilla. -->
 <link rel="stylesheet" href="tyyli.css?v=3">
 <script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  /* Vanhat värinimet → yhteiset --kpt-värit. Käynnissä = punainen (--kpt-virhe), Tomi 26.11.2026. */
+  /* Sivun omat värit. Käynnissä = punainen (--run = --kpt-virhe), Tomi 26.11.2026. */
   :root, html[data-teema]{
-    --bg: var(--kpt-tausta);
-    --bg-panel: var(--kpt-paneeli);
-    --bg-card: var(--kpt-paneeli);
-    --border: var(--kpt-reuna);
-    --text: var(--kpt-teksti);
-    --text-dim: var(--kpt-himmea);
-    --accent: var(--kpt-korostus);
     --accent-dim: color-mix(in srgb, var(--kpt-korostus) 20%, transparent);
-    --accent-glow: var(--kpt-korostus-tausta);
     --high: var(--kpt-virhe);
     --normal: var(--kpt-huom);
     --low: var(--kpt-ok);
@@ -39,38 +31,38 @@
   }
   .filter-tabs{display:flex;flex-wrap:wrap;gap:6px;}
   .filter-tab{
-    background:var(--bg-card);border:1px solid var(--border);color:var(--text-dim);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);
     font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
     padding:7px 12px;border-radius:var(--radius);cursor:pointer;letter-spacing:.02em;
   }
-  .filter-tab:hover{border-color:var(--accent);color:var(--text);}
-  .filter-tab.active{background:var(--accent);border-color:var(--accent);color:var(--kpt-teksti-korostuksella);}
+  .filter-tab:hover{border-color:var(--kpt-korostus);color:var(--kpt-teksti);}
+  .filter-tab.active{background:var(--kpt-korostus);border-color:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);}
 
   .btn{
-    background:var(--accent);color:var(--kpt-teksti-korostuksella);border:none;
+    background:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);border:none;
     padding:10px 18px;border-radius:var(--radius);font-weight:600;
     font-family:'IBM Plex Sans',sans-serif;font-size:14px;cursor:pointer;
   }
   .btn:hover{filter:brightness(1.1);}
   .btn.secondary{
-    background:transparent;color:var(--text);border:1px solid var(--border);
+    background:transparent;color:var(--kpt-teksti);border:1px solid var(--kpt-reuna);
   }
-  .btn.secondary:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.secondary:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
   .btn.danger{background:var(--high);color:var(--kpt-teksti-korostuksella);}
-  .btn-primary{background:var(--accent);color:var(--kpt-teksti-korostuksella);}
+  .btn-primary{background:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);}
   .btn-sm{padding:6px 12px;font-size:12px;}
-  .saving{font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+  .saving{font-size:12px;color:var(--kpt-himmea);font-family:'IBM Plex Mono',monospace;}
 </style>
 <style>
   /* ---------- Projektikortit (listanäkymä) ---------- */
   .cards{display:flex;flex-direction:column;gap:10px;}
   .empty-state{
-    color:var(--text-dim);font-size:14px;padding:24px 10px;text-align:center;
-    border:1px dashed var(--border);border-radius:var(--radius);
+    color:var(--kpt-himmea);font-size:14px;padding:24px 10px;text-align:center;
+    border:1px dashed var(--kpt-reuna);border-radius:var(--radius);
   }
   .project-card{
-    background:var(--bg-card);border-radius:var(--radius);
-    border-left:4px solid var(--border);
+    background:var(--kpt-paneeli);border-radius:var(--radius);
+    border-left:4px solid var(--kpt-reuna);
     padding:14px 16px;cursor:pointer;
     transition:background .15s;
   }
@@ -79,11 +71,11 @@
   .project-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
   .project-card-title{font-weight:600;font-size:15px;}
   .project-card-total{
-    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-dim);
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--kpt-himmea);
     white-space:nowrap;
   }
   .project-card-meta{
-    margin-top:6px;font-size:12px;color:var(--text-dim);
+    margin-top:6px;font-size:12px;color:var(--kpt-himmea);
     display:flex;gap:10px;flex-wrap:wrap;align-items:center;
   }
   .running-badge{
@@ -103,19 +95,19 @@
   /* ---------- Detail-näkymä ---------- */
   #detailView{display:none;}
   .back-btn{
-    background:none;border:none;color:var(--text-dim);cursor:pointer;
+    background:none;border:none;color:var(--kpt-himmea);cursor:pointer;
     font-family:'IBM Plex Mono',monospace;font-size:13px;padding:0;margin-bottom:16px;
   }
-  .back-btn:hover{color:var(--accent);}
+  .back-btn:hover{color:var(--kpt-korostus);}
   .detail-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
   .detail-header h2{margin:0;font-size:20px;font-weight:600;}
   .icon-btn{
-    background:none;border:1px solid var(--border);color:var(--text-dim);
+    background:none;border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);
     cursor:pointer;border-radius:var(--radius);padding:4px 8px;font-size:13px;
   }
-  .icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .icon-btn:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
   .detail-name-input{
-    background:var(--bg-card);border:1px solid var(--accent);color:var(--text);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-korostus);color:var(--kpt-teksti);
     padding:8px 10px;border-radius:var(--radius);font-size:18px;font-weight:600;
     font-family:'IBM Plex Sans',sans-serif;width:100%;max-width:420px;
   }
@@ -124,24 +116,24 @@
   }
   .link-chip{
     display:inline-flex;align-items:center;gap:8px;
-    background:var(--bg-card);border:1px solid var(--border);border-radius:12px;
-    padding:5px 12px;font-size:13px;color:var(--text-dim);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:12px;
+    padding:5px 12px;font-size:13px;color:var(--kpt-himmea);
   }
-  .link-chip a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .link-chip a{color:var(--kpt-korostus);text-decoration:none;font-weight:600;}
   .link-chip a:hover{text-decoration:underline;}
   .link-chip button{
-    background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:12px;padding:0;
+    background:none;border:none;color:var(--kpt-himmea);cursor:pointer;font-size:12px;padding:0;
   }
   .link-chip button:hover{color:var(--high);}
   .add-link-btn{
-    background:none;border:1px dashed var(--border);color:var(--text-dim);
+    background:none;border:1px dashed var(--kpt-reuna);color:var(--kpt-himmea);
     border-radius:12px;padding:5px 12px;font-size:13px;cursor:pointer;
   }
-  .add-link-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .add-link-btn:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
 
   .rows-toolbar{margin-bottom:14px;}
   .start-row-btn{
-    background:var(--accent);color:var(--kpt-teksti-korostuksella);border:none;
+    background:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);border:none;
     padding:14px 22px;border-radius:var(--radius);font-weight:700;
     font-family:'IBM Plex Sans',sans-serif;font-size:16px;cursor:pointer;
     width:100%;
@@ -151,26 +143,26 @@
 
   .row-list{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
   .row-card{
-    background:var(--bg-card);border-radius:var(--radius);
-    border-left:4px solid var(--border);padding:12px 14px;
+    background:var(--kpt-paneeli);border-radius:var(--radius);
+    border-left:4px solid var(--kpt-reuna);padding:12px 14px;
   }
   .row-card.running{border-left-color:var(--run);}
   .row-line1{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .row-label-input{
     flex:1;min-width:140px;background:transparent;border:none;border-bottom:1px solid transparent;
-    color:var(--text);font-size:14px;font-weight:600;padding:4px 2px;
+    color:var(--kpt-teksti);font-size:14px;font-weight:600;padding:4px 2px;
     font-family:'IBM Plex Sans',sans-serif;
   }
-  .row-label-input::placeholder{color:var(--text-dim);font-weight:400;}
-  .row-label-input:focus{outline:none;border-bottom-color:var(--accent);}
+  .row-label-input::placeholder{color:var(--kpt-himmea);font-weight:400;}
+  .row-label-input:focus{outline:none;border-bottom-color:var(--kpt-korostus);}
   .row-timer{
     font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
-    color:var(--text);white-space:nowrap;
+    color:var(--kpt-teksti);white-space:nowrap;
   }
   .row-timer.running{color:var(--run);}
   .row-line2{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;}
   .row-category-input, .row-detail-input{
-    background:var(--bg-panel);border:1px solid var(--border);color:var(--text);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);color:var(--kpt-teksti);
     padding:6px 8px;border-radius:var(--radius);font-size:12px;
     font-family:'IBM Plex Sans',sans-serif;
   }
@@ -187,12 +179,12 @@
   }
   .resume-btn:hover{filter:brightness(1.1);}
   .duration-edit-btn{
-    background:none;border:1px solid var(--border);color:var(--text-dim);
+    background:none;border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);
     border-radius:var(--radius);padding:6px 10px;font-size:12px;cursor:pointer;
   }
-  .duration-edit-btn:hover{border-color:var(--accent);color:var(--accent);}
+  .duration-edit-btn:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
   .row-delete-btn{
-    background:none;border:1px solid var(--border);color:var(--text-dim);
+    background:none;border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);
     border-radius:var(--radius);padding:6px 10px;font-size:12px;cursor:pointer;
   }
   .row-delete-btn:hover{border-color:var(--high);color:var(--high);}
@@ -204,34 +196,34 @@
 
   .duration-edit-box{
     display:flex;gap:8px;align-items:center;margin-top:8px;
-    background:var(--bg-panel);border:1px solid var(--accent);border-radius:var(--radius);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-korostus);border-radius:var(--radius);
     padding:8px;
   }
   .duration-edit-box input{
-    width:70px;background:var(--bg-card);border:1px solid var(--border);color:var(--text);
+    width:70px;background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);color:var(--kpt-teksti);
     padding:6px 8px;border-radius:var(--radius);font-family:'IBM Plex Mono',monospace;
   }
-  .duration-edit-box label{font-size:12px;color:var(--text-dim);}
+  .duration-edit-box label{font-size:12px;color:var(--kpt-himmea);}
 
   /* ---------- Segmenttichipit (yksittäiset aloita/lopeta-pätkät ajanoton sisällä) ---------- */
   .row-segments{
     display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;
-    border-top:1px dashed var(--border);
+    border-top:1px dashed var(--kpt-reuna);
   }
   .seg-chip{
     position:relative;
     display:inline-flex;align-items:center;gap:6px;
-    background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;
-    padding:4px 8px;font-size:11px;color:var(--text-dim);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:10px;
+    padding:4px 8px;font-size:11px;color:var(--kpt-himmea);
     font-family:'IBM Plex Mono',monospace;
   }
   .seg-chip.running{border-color:var(--run);color:var(--run);}
   .seg-live{font-weight:700;}
   .seg-edit-btn, .seg-del-btn{
-    background:none;border:none;color:var(--text-dim);cursor:pointer;
+    background:none;border:none;color:var(--kpt-himmea);cursor:pointer;
     font-size:11px;padding:0;line-height:1;
   }
-  .seg-edit-btn:hover{color:var(--accent);}
+  .seg-edit-btn:hover{color:var(--kpt-korostus);}
   .seg-del-btn:hover{color:var(--high);}
   .seg-chip .duration-edit-box{
     position:absolute;top:calc(100% + 4px);left:0;z-index:20;white-space:nowrap;
@@ -239,23 +231,23 @@
 
   /* ---------- Yhteenveto ---------- */
   .summary-box{
-    background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:var(--radius);
     padding:16px;
   }
-  .summary-box h3{margin:0 0 12px 0;font-size:14px;color:var(--text-dim);
+  .summary-box h3{margin:0 0 12px 0;font-size:14px;color:var(--kpt-himmea);
     text-transform:uppercase;letter-spacing:.06em;}
   .summary-row{
     display:flex;justify-content:space-between;padding:6px 0;
-    border-bottom:1px solid var(--border);font-size:13px;
+    border-bottom:1px solid var(--kpt-reuna);font-size:13px;
   }
   .summary-row:last-of-type{border-bottom:none;}
-  .summary-row .cat{color:var(--text-dim);}
+  .summary-row .cat{color:var(--kpt-himmea);}
   .summary-row .val{font-family:'IBM Plex Mono',monospace;font-weight:600;}
   .summary-total{
     display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;
-    border-top:2px solid var(--accent);font-size:16px;font-weight:700;
+    border-top:2px solid var(--kpt-korostus);font-size:16px;font-weight:700;
   }
-  .summary-total .val{font-family:'IBM Plex Mono',monospace;color:var(--accent);}
+  .summary-total .val{font-family:'IBM Plex Mono',monospace;color:var(--kpt-korostus);}
 
   /* ---------- Modaali ---------- */
   .overlay{
@@ -264,23 +256,23 @@
   }
   .overlay.open{display:flex;}
   .modal{
-    background:var(--bg-panel);border:1px solid var(--border);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);
     border-radius:var(--radius);width:100%;max-width:480px;
     max-height:90vh;overflow-y:auto;padding:20px;
   }
-  .modal h3{margin:0 0 16px 0;font-size:17px;color:var(--accent);}
+  .modal h3{margin:0 0 16px 0;font-size:17px;color:var(--kpt-korostus);}
   .field{margin-bottom:14px;}
   .field label{
-    display:block;font-size:13px;color:var(--text-dim);margin-bottom:5px;
+    display:block;font-size:13px;color:var(--kpt-himmea);margin-bottom:5px;
   }
   .field input[type=text],
   .field select{
-    width:100%;background:var(--bg-card);border:1px solid var(--border);
-    color:var(--text);padding:9px 10px;border-radius:var(--radius);
+    width:100%;background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);
+    color:var(--kpt-teksti);padding:9px 10px;border-radius:var(--radius);
     font-family:'IBM Plex Sans',sans-serif;font-size:14px;
   }
   .field input:focus, .field select:focus{
-    outline:none;border-color:var(--accent);
+    outline:none;border-color:var(--kpt-korostus);
   }
   .modal-actions{
     display:flex;justify-content:space-between;align-items:center;
@@ -291,34 +283,34 @@
   /* Haku-dropdown (tilaushaku): lista avautuu hakukentän alle ikkunan sisään, ei omaa pientä vieritysikkunaa */
   .search-dropdown{
     display:none;margin-top:6px;
-    background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);border-radius:var(--radius);
   }
   .search-dropdown.open{display:block;}
   .search-dropdown-item{
     padding:12px 14px;min-height:56px;cursor:pointer;font-size:15px;line-height:1.3;
-    border-bottom:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;gap:3px;
+    border-bottom:1px solid var(--kpt-reuna);display:flex;flex-direction:column;justify-content:center;gap:3px;
   }
   .search-dropdown-item:last-child{border-bottom:none;}
-  .search-dropdown-item:hover,.search-dropdown-item:active{background:var(--accent-glow);}
-  .search-dropdown-item .sd-title{font-weight:600;color:var(--text);}
-  .search-dropdown-item .sd-sub{color:var(--text-dim);font-size:12px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;}
-  .st-chip{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;border:1px solid var(--border);color:var(--text-dim);}
-  .st-chip.st-draft{color:var(--text-dim);}
+  .search-dropdown-item:hover,.search-dropdown-item:active{background:var(--kpt-korostus-tausta);}
+  .search-dropdown-item .sd-title{font-weight:600;color:var(--kpt-teksti);}
+  .search-dropdown-item .sd-sub{color:var(--kpt-himmea);font-size:12px;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;}
+  .st-chip{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600;border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);}
+  .st-chip.st-draft{color:var(--kpt-himmea);}
   .st-chip.st-active{color:var(--kpt-huom);border-color:var(--kpt-huom);}
   .st-chip.st-done{color:var(--kpt-ok);border-color:var(--kpt-ok);}
   .chip-preview{
     margin-top:8px;display:flex;align-items:center;gap:8px;
-    background:var(--accent-glow);border:1px solid var(--accent);border-radius:12px;
-    padding:5px 10px;font-size:13px;color:var(--accent);width:fit-content;
+    background:var(--kpt-korostus-tausta);border:1px solid var(--kpt-korostus);border-radius:12px;
+    padding:5px 10px;font-size:13px;color:var(--kpt-korostus);width:fit-content;
   }
   .chip-preview button{
-    background:none;border:none;color:var(--accent);cursor:pointer;
+    background:none;border:none;color:var(--kpt-korostus);cursor:pointer;
     font-size:12px;padding:0;line-height:1;
   }
 
   .toast{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:var(--bg-card);border:1px solid var(--accent);color:var(--text);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-korostus);color:var(--kpt-teksti);
     padding:10px 18px;border-radius:var(--radius);font-size:14px;z-index:200;
     display:none;
   }
@@ -329,7 +321,7 @@
     .overlay{padding:0;align-items:stretch;}
     .modal{max-width:none;max-height:none;height:100%;border-radius:0;border:none;padding:16px;}
     .field input[type=text],.field select{font-size:16px;padding:12px;}
-    .modal-actions{position:sticky;bottom:0;background:var(--bg-panel);padding:12px 0 4px;margin-top:14px;}
+    .modal-actions{position:sticky;bottom:0;background:var(--kpt-paneeli);padding:12px 0 4px;margin-top:14px;}
     .modal-actions .right{width:100%;}
     .modal-actions .right .btn{flex:1;min-height:48px;font-size:15px;}
     .chip-preview{font-size:14px;padding:8px 12px;}
@@ -342,7 +334,7 @@
     background:var(--kpt-kentta);border-color:var(--kpt-reuna2);
   }
   .modal{box-shadow:var(--kpt-varjo);}
-  .project-card, .row-card{border:1px solid var(--border);border-left-width:4px;}
+  .project-card, .row-card{border:1px solid var(--kpt-reuna);border-left-width:4px;}
   /* Kello: käynnissä olevan ajanoton aika isona, jotta sen näkee käsivarren mitan päästä */
   .row-timer{font-size:20px;}
   .row-timer.running{font-size:26px;}

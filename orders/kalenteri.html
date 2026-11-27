@@ -6,25 +6,17 @@
 <title>Kalenteri — Kalajoen Peltityö</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Vanhat värinimet kytketty --kpt-muuttujiin,
+<!-- Ulkoasuremontti R6b (26.11.2026): uusi ulkoasu (tyyli.css + teema.js). Värit --kpt-muuttujista (vanhat värinimet vaihdettu --kpt-muuttujiksi 27.11.2026),
      rakenne ja skripti ennallaan (oma valikkokoodi pois). Tilausten värit samat kuin Tilaukset-listassa (Tomi 26.11.). -->
 <link rel="stylesheet" href="tyyli.css?v=3">
 <script src="teema.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 <style>
-  /* Vanhat värinimet → yhteiset --kpt-värit (R6b). Tehtävien kiireellisyys: punainen / keltainen / vihreä. */
+  /* Sivun omat värit (muut suoraan --kpt-muuttujista). Tehtävien kiireellisyys: punainen / keltainen / vihreä. */
   :root, html[data-teema]{
-    --bg: var(--kpt-tausta);
-    --bg-panel: var(--kpt-paneeli);
-    --bg-card: var(--kpt-paneeli2);
     --bg-dim: color-mix(in srgb, var(--kpt-paneeli2) 70%, var(--kpt-tausta));
-    --border: var(--kpt-reuna);
-    --text: var(--kpt-teksti);
-    --text-dim: var(--kpt-himmea);
-    --accent: var(--kpt-korostus);
     --accent-dim: color-mix(in srgb, var(--kpt-korostus) 82%, #000);
-    --accent-glow: var(--kpt-korostus-tausta);
     --today-bg: var(--kpt-korostus-tausta);
     --high: var(--kpt-virhe);
     --normal: var(--kpt-huom);
@@ -37,12 +29,12 @@
   }
 
   .btn{
-    background:var(--bg-card);color:var(--text);border:1px solid var(--border);
+    background:var(--kpt-paneeli2);color:var(--kpt-teksti);border:1px solid var(--kpt-reuna);
     padding:8px 14px;border-radius:var(--radius);font-weight:600;
     font-family:'IBM Plex Mono',monospace;font-size:13px;cursor:pointer;
   }
-  .btn:hover{border-color:var(--accent);color:var(--accent);}
-  .btn-accent{background:var(--accent);color:var(--kpt-teksti-korostuksella);border-color:var(--accent);}
+  .btn:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
+  .btn-accent{background:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);border-color:var(--kpt-korostus);}
   .btn-accent:hover{background:var(--accent-dim);border-color:var(--accent-dim);color:var(--kpt-teksti-korostuksella);}
 
   main{max-width:1100px;margin:0 auto;padding:20px;}
@@ -53,18 +45,18 @@
   }
   .month-nav{display:flex;align-items:center;gap:10px;}
   .month-nav button{
-    background:var(--bg-card);border:1px solid var(--border);color:var(--text);
+    background:var(--kpt-paneeli2);border:1px solid var(--kpt-reuna);color:var(--kpt-teksti);
     font-family:'IBM Plex Mono',monospace;font-size:14px;
     padding:7px 13px;border-radius:var(--radius);cursor:pointer;
   }
-  .month-nav button:hover{border-color:var(--accent);color:var(--accent);}
+  .month-nav button:hover{border-color:var(--kpt-korostus);color:var(--kpt-korostus);}
   .month-label{
     font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;
-    color:var(--accent);min-width:150px;text-align:center;
+    color:var(--kpt-korostus);min-width:150px;text-align:center;
   }
 
   .legend{
-    display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--text-dim);
+    display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--kpt-himmea);
     margin-bottom:14px;font-family:'IBM Plex Mono',monospace;
   }
   .legend span{display:inline-flex;align-items:center;gap:5px;}
@@ -72,23 +64,23 @@
 
   /* ---------- KUUKAUSIRUUDUKKO (desktop) ---------- */
   .cal-wrap{
-    background:var(--bg-panel);border:1px solid var(--border);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);
     border-radius:6px;overflow:hidden;
   }
   .cal-weekdays{
     display:grid;grid-template-columns:repeat(7,1fr);
-    background:var(--bg-dim);border-bottom:1px solid var(--border);
+    background:var(--bg-dim);border-bottom:1px solid var(--kpt-reuna);
   }
   .cal-weekday{
     padding:9px 6px;text-align:center;font-family:'IBM Plex Mono',monospace;
     font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
-    color:var(--text-dim);
+    color:var(--kpt-himmea);
   }
   .cal-weekday.weekend{color:var(--kpt-heikko);}
 
   .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
   .cal-day{
-    min-height:96px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+    min-height:96px;border-right:1px solid var(--kpt-reuna);border-bottom:1px solid var(--kpt-reuna);
     padding:5px;transition:background .1s;
   }
   .cal-day:nth-child(7n){border-right:none;}
@@ -99,27 +91,27 @@
 
   .day-number{
     font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
-    color:var(--text-dim);margin-bottom:4px;
+    color:var(--kpt-himmea);margin-bottom:4px;
     display:flex;align-items:center;justify-content:space-between;gap:4px;
   }
-  .day-number.today-num{color:var(--accent);}
+  .day-number.today-num{color:var(--kpt-korostus);}
   .day-number-right{display:flex;align-items:center;gap:5px;}
-  .week-num{font-size:9px;color:var(--text-dim);font-weight:400;}
+  .week-num{font-size:9px;color:var(--kpt-himmea);font-weight:400;}
   .add-day-btn{
     width:16px;height:16px;border-radius:3px;flex-shrink:0;
-    background:var(--bg-dim);border:1px solid var(--border);color:var(--text-dim);
+    background:var(--bg-dim);border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);
     font-size:12px;line-height:1;cursor:pointer;padding:0;
     display:flex;align-items:center;justify-content:center;
     font-family:'IBM Plex Mono',monospace;
   }
-  .add-day-btn:hover{background:var(--accent);border-color:var(--accent);color:var(--kpt-teksti-korostuksella);}
+  .add-day-btn:hover{background:var(--kpt-korostus);border-color:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);}
   .mobile-add{
     width:22px;height:22px;border-radius:4px;flex-shrink:0;align-self:flex-start;
-    background:var(--bg-panel);border:1px solid var(--border);color:var(--text-dim);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);color:var(--kpt-himmea);
     font-size:14px;line-height:1;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
   }
-  .mobile-add:hover{background:var(--accent);border-color:var(--accent);color:var(--kpt-teksti-korostuksella);}
+  .mobile-add:hover{background:var(--kpt-korostus);border-color:var(--kpt-korostus);color:var(--kpt-teksti-korostuksella);}
 
   .event{
     display:block;padding:3px 6px;border-radius:3px;font-size:11px;font-weight:500;
@@ -128,10 +120,10 @@
   }
   .event:hover{filter:brightness(1.2);}
   .event-more{
-    color:var(--text-dim);font-size:11px;cursor:pointer;padding:2px 6px;
+    color:var(--kpt-himmea);font-size:11px;cursor:pointer;padding:2px 6px;
     font-family:'IBM Plex Mono',monospace;
   }
-  .event-more:hover{color:var(--accent);}
+  .event-more:hover{color:var(--kpt-korostus);}
 
   /* Tilausten värit samat kuin Tilaukset-listassa (R6b, Tomi 26.11.2026). Luokan nimi STATUS_CLASS-taulusta:
      active = Kesken ja Tilattu, production = Työn alla. */
@@ -150,7 +142,7 @@
   }
 
   /* Tehtäväväreillä prioriteetti */
-  .event-todo{background:var(--bg-card);color:var(--text);}
+  .event-todo{background:var(--kpt-paneeli2);color:var(--kpt-teksti);}
   .event-todo.prio-high{border-left-color:var(--high);}
   .event-todo.prio-normal{border-left-color:var(--normal);}
   .event-todo.prio-low{border-left-color:var(--low);}
@@ -160,22 +152,22 @@
   .mobile-list{display:none;}
   .day-row{
     display:flex;gap:14px;align-items:flex-start;
-    background:var(--bg-card);border-radius:var(--radius);
+    background:var(--kpt-paneeli2);border-radius:var(--radius);
     border-left:3px solid transparent;
     padding:10px 14px;margin-bottom:4px;
   }
   .day-row.weekend{background:color-mix(in srgb, var(--kpt-paneeli2) 70%, var(--kpt-tausta));}
   .day-row.empty-day{opacity:.55;}
-  .day-row.today{border-left-color:var(--accent);background:var(--accent-glow);}
+  .day-row.today{border-left-color:var(--kpt-korostus);background:var(--kpt-korostus-tausta);}
   .day-label{
     flex-shrink:0;width:78px;font-family:'IBM Plex Mono',monospace;
     display:flex;flex-direction:column;line-height:1.3;padding-top:2px;
   }
-  .day-name{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;}
+  .day-name{font-size:11px;color:var(--kpt-himmea);text-transform:uppercase;letter-spacing:.05em;}
   .day-num{font-size:15px;font-weight:600;}
-  .day-row.today .day-num{color:var(--accent);}
+  .day-row.today .day-num{color:var(--kpt-korostus);}
   .day-tags{display:flex;flex-wrap:wrap;gap:6px;flex:1;}
-  .day-empty{color:var(--text-dim);font-size:13px;flex:1;padding-top:3px;}
+  .day-empty{color:var(--kpt-himmea);font-size:13px;flex:1;padding-top:3px;}
   .tag{
     display:inline-flex;align-items:center;gap:6px;
     padding:5px 10px;border-radius:12px;font-size:12px;
@@ -183,12 +175,12 @@
   }
   .tag-order{cursor:pointer;font-weight:600;}
   .tag-order .tag-status{font-size:10px;font-weight:400;opacity:.8;font-family:'IBM Plex Mono',monospace;}
-  .tag-todo{background:var(--bg-panel);color:var(--text);cursor:pointer;border-left:3px solid var(--normal);}
+  .tag-todo{background:var(--kpt-paneeli);color:var(--kpt-teksti);cursor:pointer;border-left:3px solid var(--normal);}
   .tag-todo.prio-high{border-left-color:var(--high);}
   .tag-todo.prio-normal{border-left-color:var(--normal);}
   .tag-todo.prio-low{border-left-color:var(--low);}
   .tag-todo.is-done{opacity:.5;text-decoration:line-through;}
-  .tag-todo input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;margin:0;}
+  .tag-todo input[type=checkbox]{width:14px;height:14px;accent-color:var(--kpt-korostus);cursor:pointer;margin:0;}
 
   @media (max-width:640px){
     .cal-wrap{display:none;}
@@ -205,17 +197,17 @@
   .overlay.open{display:flex;}
   #todoOverlay{ z-index:150; } /* aina ylivuotomodaalin päällä, ettei jää piiloon */
   .modal{
-    background:var(--bg-panel);border:1px solid var(--border);
+    background:var(--kpt-paneeli);border:1px solid var(--kpt-reuna);
     border-radius:var(--radius);width:100%;max-width:420px;
     max-height:90vh;overflow-y:auto;padding:20px;
   }
-  .modal h3{margin:0 0 14px 0;font-size:17px;color:var(--accent);}
+  .modal h3{margin:0 0 14px 0;font-size:17px;color:var(--kpt-korostus);}
   .modal-field{margin-bottom:12px;}
   .modal-field label{
-    display:block;font-size:11px;color:var(--text-dim);text-transform:uppercase;
+    display:block;font-size:11px;color:var(--kpt-himmea);text-transform:uppercase;
     letter-spacing:.05em;margin-bottom:3px;font-family:'IBM Plex Mono',monospace;
   }
-  .modal-field .value{font-size:14px;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+  .modal-field .value{font-size:14px;color:var(--kpt-teksti);white-space:pre-wrap;word-break:break-word;}
   .modal-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
   .badge-pill{
     padding:4px 10px;border-radius:12px;font-size:11px;font-weight:600;
@@ -225,9 +217,9 @@
   .badge-pill.prio-normal{background:color-mix(in srgb, var(--normal) 15%, transparent);color:var(--normal);}
   .badge-pill.prio-low{background:color-mix(in srgb, var(--low) 15%, transparent);color:var(--low);}
   .badge-pill.shared{background:var(--kpt-korostus-tausta);color:var(--kpt-korostus);}
-  .badge-pill.own{background:var(--kpt-paneeli2);color:var(--text-dim);}
+  .badge-pill.own{background:var(--kpt-paneeli2);color:var(--kpt-himmea);}
   .badge-pill.done{background:color-mix(in srgb, var(--kpt-ok) 15%, transparent);color:var(--kpt-ok);}
-  .badge-pill.notdone{background:var(--kpt-paneeli2);color:var(--text-dim);}
+  .badge-pill.notdone{background:var(--kpt-paneeli2);color:var(--kpt-himmea);}
   .modal-actions{
     display:flex;justify-content:flex-end;gap:10px;margin-top:16px;
   }
@@ -236,7 +228,7 @@
 
   .toast{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-    background:var(--bg-card);border:1px solid var(--accent);color:var(--text);
+    background:var(--kpt-paneeli2);border:1px solid var(--kpt-korostus);color:var(--kpt-teksti);
     padding:10px 18px;border-radius:var(--radius);font-size:14px;z-index:200;
     display:none;
   }
@@ -246,13 +238,13 @@
   /* ---------- R6b: uusi ulkoasu ja puhelin (26.11.2026) ---------- */
   .btn{min-height:36px;font-family:var(--kpt-fontti);}
   .kpt-sivu a.event, .kpt-sivu a.tag{color:var(--v);}                 /* tyyli.css värittää linkit korostusvärillä */
-  .kpt-sivu a.btn{color:var(--text);text-decoration:none;}
+  .kpt-sivu a.btn{color:var(--kpt-teksti);text-decoration:none;}
   .kpt-sivu a.btn-accent{color:var(--kpt-teksti-korostuksella);}
   .month-nav button{min-height:40px;min-width:44px;}
   .modal{box-shadow:var(--kpt-varjo);}
   .cal-wrap{border-radius:var(--kpt-pyoristys);}
-  .day-row{border:1px solid var(--border);border-left-width:3px;}
-  .day-row.today{border-color:var(--accent);}
+  .day-row{border:1px solid var(--kpt-reuna);border-left-width:3px;}
+  .day-row.today{border-color:var(--kpt-korostus);}
   @media (max-width:640px){
     .kpt-yla{position:static;}
     .month-nav{width:100%;justify-content:space-between;}
@@ -332,7 +324,7 @@
     </div>
     <div class="modal-field" id="todoModalPhoneWrap" style="display:none;">
       <label>Puhelin</label>
-      <div class="value"><a id="todoModalPhone" href="#" style="color:var(--accent);text-decoration:none;font-weight:600;"></a></div>
+      <div class="value"><a id="todoModalPhone" href="#" style="color:var(--kpt-korostus);text-decoration:none;font-weight:600;"></a></div>
     </div>
     <div class="modal-field">
       <label>Eräpäivä</label>
