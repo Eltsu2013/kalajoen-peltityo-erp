@@ -24,6 +24,7 @@
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
 // v21 (27.11.2026, DXF 8.5 D4): dxf(palat, nimi, kerroin) ja dxfPalat (hupun palat DXF-tiedostoon, vaatii orders/dxf.js:n sivulla).
+// v22 (27.11.2026, D4b): dxf(..., { kansi: { k, kpl } }) = kansi reikineen samaan tiedostoon (kansiDxf, yläpuolelta).
 // v20 (26.11.2026, ulkoasuremontti R2b): palojen korttien tyylit uuden ulkoasun muuttujilla (--kpt-*), vanhat värit varalla,
 //      joten sivut ilman tyyli.css:ää (Tuotanto, Harjapiippu) näyttävät ennallaan; kuvien tausta paperi, kun sivulla on --kpt-paperi.
 // v19 (24.11.2026): kaistaKappaleet (hupun palat kaistoille, menekki.js, vaihe 8.3; peilikuvapari samalle kaistalle vuorotellen).
@@ -1163,11 +1164,52 @@
     });
     return tulos;
   }
-  function dxf(palat, nimi, kerroin) {
+  // Kansi DXF:ään (D4b, 27.11.2026, Tomi "ok"): k = KPT_PIIPPU.laskeKansi(...) (tulos.kansi). Kansikuva ja työkortti on piirretty
+  // alapuolelta (etu vasemmalla, vasen alhaalla), mutta DXF:ssä ulkopinta ylöspäin eli yläpuolelta: x käännetään (etu oikealla,
+  // vasen alhaalla), ja reunoille nimet TEKSTI-tasolle, ettei suunta mene sekaisin. Kulmissa 45° viiste tai suora lovi T × T kuten
+  // kuvassa, taitos T:n verran reunasta. Karvattu reikä: leikataan karvauksen verran pienempi (leikDw × leikDu, pyöristys rLeik)
+  // ja reiän reuna (dw × du, pyöristys rReika) on taitos, koska reuna käännetään ylös. Pyöreä reikä = kaksi puoliympyrää.
+  function kansiDxf(d, k, x0, nimi, kpl) {
+    const AU = k.S.aihio, AW = k.L.aihio, T = k.D || 0, as = k.as || {};
+    const X = u => x0 + AU - u;                                                     // yläpuolelta: x käännetty
+    const b90 = globalThis.KPT_DXF.kaarevuus(90);
+    const kulma = (cu, cw, su, sw) => { const pt = (du, dw) => [cu + su * du, cw + sw * dw]; return as.lovi === 'suora' ? [pt(T, 0), pt(T, T), pt(0, T)] : [pt(T, 0), pt(0, T)]; };
+    const raja = [].concat(kulma(0, 0, 1, 1), kulma(0, AW, 1, -1).reverse(), kulma(AU, AW, -1, -1), kulma(AU, 0, -1, 1).reverse())
+      .map(q => [X(q[0]), q[1]]).filter((q, i, a) => { const r = a[(i + 1) % a.length]; return Math.hypot(q[0] - r[0], q[1] - r[1]) > 1e-9; });
+    d.monikulmio(raja, 'LEIKKAUS');
+    if (T > 0) d.monikulmio([[X(T), T], [X(AU - T), T], [X(AU - T), AW - T], [X(T), AW - T]], 'TAITOS');
+    // reikä: keskipiste (cx, cy), koko a (x) × b (y), kulmien pyöristys r; vastapäivään, kaaret kaarevuutena
+    const reika = (cx, cy, a, b, r, taso, pyorea) => {
+      if (!(a > 0 && b > 0)) return;
+      if (pyorea) { d.monikulmio([[cx + a / 2, cy, 1], [cx - a / 2, cy, 1]], taso); return; }
+      const x0r = cx - a / 2, x1 = cx + a / 2, y0 = cy - b / 2, y1 = cy + b / 2;
+      r = Math.max(0, Math.min(r || 0, a / 2, b / 2));
+      if (r < 1e-6) { d.monikulmio([[x0r, y0], [x1, y0], [x1, y1], [x0r, y1]], taso); return; }
+      d.monikulmio([[x0r + r, y0], [x1 - r, y0, b90], [x1, y0 + r], [x1, y1 - r, b90], [x1 - r, y1], [x0r + r, y1, b90], [x0r, y1 - r], [x0r, y0 + r, b90]], taso);
+    };
+    (k.reiat || []).forEach(r => {
+      const cx = X(r.u), cy = r.w, py = r.muoto === 'pyorea';
+      if (r.karvaus && r.leikDw > 0 && r.leikDu > 0) {
+        reika(cx, cy, r.leikDu, r.leikDw, r.rLeik, 'LEIKKAUS', py);
+        reika(cx, cy, r.du, r.dw, r.rReika, 'TAITOS', py);
+      } else reika(cx, cy, r.du, r.dw, r.rReika, 'LEIKKAUS', py);
+    });
+    const nimet = k.harja ? { etu: 'ETU 1', taka: 'ETU 2' } : { etu: 'ETU', taka: 'TAKA' };
+    const h = 12, lev = t => t.length * h * 0.8, sis = T + 10;   // leveysarvio väljä, ettei teksti osu taitokseen
+    d.teksti(x0 + AU - sis - lev(nimet.etu), AW / 2, h, nimet.etu, 'TEKSTI');
+    d.teksti(x0 + sis, AW / 2, h, nimet.taka, 'TEKSTI');
+    d.teksti(x0 + AU / 2 - lev('VASEN') / 2, sis, h, 'VASEN', 'TEKSTI');
+    d.teksti(x0 + AU / 2 - lev('OIKEA') / 2, AW - sis - h, h, 'OIKEA', 'TEKSTI');
+    d.teksti(x0, AW + 15, 12, [nimi || '', 'Kansi', kpl + ' kpl', 'aihio ' + ylos(AU) + ' × ' + ylos(AW) + ' mm', 'yläpuolelta (työkortin kuva alapuolelta)'].filter(Boolean).join(' · '), 'TEKSTI');
+    return AU;
+  }
+
+  // opts.kansi = { k: tulos.kansi, kpl } → kansi hupun palojen perään samaan tiedostoon (Tomi: kaikki palat samaan tiedostoon)
+  function dxf(palat, nimi, kerroin, opts) {
     const D = globalThis.KPT_DXF;
     if (!D) throw new Error('piippu-levitys.js: DXF vaatii dxf.js:n (KPT_DXF)');
-    const lista = dxfPalat(palat, kerroin);
-    if (!lista.length) return null;
+    const lista = dxfPalat(palat, kerroin), kansi = opts && opts.kansi && opts.kansi.k && opts.kansi.k.S && opts.kansi.k.S.aihio > 0 && opts.kansi.k.L.aihio > 0 ? opts.kansi : null;
+    if (!lista.length && !kansi) return null;
     const d = D.uusi();
     let x0 = 0;
     lista.forEach(k => {
@@ -1177,6 +1219,7 @@
       d.teksti(x0, k.h + 15, 12, [nimi || '', k.nimi, k.kpl + ' kpl', 'aihio ' + ylos(k.w) + ' × ' + ylos(k.h) + ' mm'].filter(Boolean).join(' · '), 'TEKSTI');
       x0 += k.w + 50;
     });
+    if (kansi) x0 += kansiDxf(d, kansi.k, x0, nimi, Math.max(1, Math.round(kansi.kpl || 1))) + 50;
     return d;
   }
 

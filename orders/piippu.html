@@ -421,7 +421,7 @@
     <div class="kpt-kortti" id="levitys-card" style="display:none;">
       <div class="kpt-kortti-otsikko">Hupun levityskuvat</div>
       <div id="levityskuvat"></div>
-      <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaPiippuDxf()">⬇ DXF-tiedosto (kaikki palat)</button><span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin; peilikuvaparin toinen sivu omana muotonaan, koska pinnoitettua peltiä ei voi kääntää.</span></div>
+      <div class="dxf-rivi"><button class="kpt-nappi pieni" type="button" onclick="lataaPiippuDxf()">⬇ DXF-tiedosto (kaikki palat)</button><span class="kpt-vihje">CAD-ohjelmaan ja laserille, millimetreinä. Tasot: LEIKKAUS (ääriviiva), TAITOS (katkoviiva) ja TEKSTI. Ulkopinta ylöspäin; peilikuvaparin toinen sivu omana muotonaan, koska pinnoitettua peltiä ei voi kääntää. Kansi reikineen mukana, jos se on valittu (yläpuolelta katsottuna, työkortin kuva on alapuolelta).</span></div>
     </div>
 
     <!-- Kaistat ja rullan menekki (yhteinen menekki.js, vaihe 8.3 24.11.2026): hupun palat kaistoiksi, oletuksena kiinni -->
@@ -437,7 +437,7 @@
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
 <script src="piippu-laskenta.js?v=10"></script>
-<script src="piippu-levitys.js?v=21"></script>
+<script src="piippu-levitys.js?v=22"></script>
 <script src="dxf.js?v=3"></script>
 <script src="kansi.js?v=5"></script>
 <script src="materiaali.js?v=5"></script>
@@ -924,6 +924,7 @@ function laske() {
   renderTaulu('luettelo-juuret', juuret, piippukpl);
   renderTaulu('luettelo-huppu', muut, piippukpl);
   piirraLevityskuvat(vals, hasHuppu, piippukpl);
+  if (dxfTila) dxfTila.kansi = osat.kansi ? tulos.kansi : null;   // kansi DXF:ään hupun palojen perään (D4b)
   paivitaYhteenvedot();
 }
 
@@ -931,7 +932,7 @@ function laske() {
 let dxfTila = null;
 function lataaPiippuDxf() {
   const nimi = ((tuotantoKohde && tuotantoKohde.groupName) || (muokattava && muokattava.groupName) || 'Piippu').trim();
-  const d = dxfTila ? KPT_PIIPPU_LEVITYS.dxf(dxfTila.palat, nimi, dxfTila.kerroin) : null;
+  const d = dxfTila ? KPT_PIIPPU_LEVITYS.dxf(dxfTila.palat, nimi, dxfTila.kerroin, { kansi: dxfTila.kansi ? { k: dxfTila.kansi, kpl: dxfTila.kerroin } : null }) : null;
   if (!d) { alert('Hupun paloja ei ole: tarkista mitat.'); return; }
   d.lataa(nimi + '.dxf');
 }

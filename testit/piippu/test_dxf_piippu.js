@@ -100,5 +100,56 @@ const A = { lev1: 390, lev2: null, suora1: 445, suora2: 750, kork1: 760, korkH: 
   ok(koodattu.includes(0xe4), '5f: ääkköset Windows-1252:na (ä = 0xE4)');
 }
 
+// 6) Kansi (D4b): samaan tiedostoon hupun palojen perään, yläpuolelta (x käännetty), karvattu reikä leikataan pienempänä
+{
+  const PI = require('../../orders/piippu-laskenta.js');
+  const vals = Object.assign({}, OLETUS, { kansi: { tyyppi: '90', T: 20, lovi: '45', reiat: [
+    { muoto: 'pyorea', d: 150, vTapa: 'reuna', vMm: 50, sTapa: 'reuna', sMm: 60, karvaus: true, karvMm: 7 },
+    { muoto: 'nelio', l: 120, s: 100, vTapa: 'keski', sTapa: 'reuna', sMm: 250, karvaus: true, karvMm: 7 },
+    { muoto: 'nelio', l: 80, s: 80, vTapa: 'keski', sTapa: 'reuna', sMm: 400, karvaus: false }] } });
+  const k = PI.laskeKansi(400, 600, vals);
+  const AU = k.S.aihio, AW = k.L.aihio;
+  const d = L.dxf(lape({}), 'Piippu 1', 2, { kansi: { k, kpl: 2 } }), e = entiteetit(parit(d.sisalto()).p);
+  const polyt = []; let nyk = null;
+  e.forEach(x => { if (x.tyyppi === 'POLYLINE') { nyk = { taso: arvo(x, 8), suljettu: arvo(x, 70) === '1', v: [] }; polyt.push(nyk); } else if (x.tyyppi === 'VERTEX' && nyk) nyk.v.push([+arvo(x, 10), +arvo(x, 20), +(arvo(x, 42) || 0)]); else if (x.tyyppi === 'SEQEND') nyk = null; });
+  const hupunPalat = polyt.slice(0, 4), kp = polyt.slice(4);
+  const x0 = Math.max(...hupunPalat[3].v.map(q => q[0])) + 50;
+  ok(kp.length === 1 + 1 + 3 + 2, '6a: kansi: ääriviiva, taitos, 3 reiän leikkaus ja 2 karvauksen taitosta (' + kp.length + ')');
+  const raja = kp[0];
+  ok(raja.taso === 'LEIKKAUS' && raja.v.length === 8 && near(Math.min(...raja.v.map(q => q[0])), x0, 1e-3) && near(Math.max(...raja.v.map(q => q[0])) - x0, AU, 1e-3) && near(Math.max(...raja.v.map(q => q[1])), AW, 1e-3),
+    '6b: kannen ääriviiva ' + AU + ' × ' + AW + ', 8 kulmapistettä (45° viisteet), 50 mm hupun palojen jälkeen');
+  ok(raja.v.some(q => near(q[0], x0 + 20, 1e-3) && near(q[1], 0, 1e-3)) && raja.v.some(q => near(q[0], x0, 1e-3) && near(q[1], 20, 1e-3)), '6c: kulman viiste 20 × 20');
+  const taitos = kp[1];
+  ok(taitos.taso === 'TAITOS' && near(Math.min(...taitos.v.map(q => q[0])), x0 + 20, 1e-3) && near(Math.min(...taitos.v.map(q => q[1])), 20, 1e-3), '6d: taitos 20 mm reunasta');
+  // pyöreä karvattu reikä: leikkaus Ø 150 − 2 × 7 = 136, taitos Ø 150; yläpuolelta x = AU − u
+  const r1 = k.reiat[0], ymp = kp.filter(p => p.v.length === 2 && p.v.every(q => q[2] === 1));
+  const sade = p => Math.abs(p.v[0][0] - p.v[1][0]) / 2, kx = p => (p.v[0][0] + p.v[1][0]) / 2;
+  ok(ymp.length === 2 && ymp.some(p => p.taso === 'LEIKKAUS' && near(sade(p), 68)) && ymp.some(p => p.taso === 'TAITOS' && near(sade(p), 75)), '6e: pyöreä karvattu reikä: leikkaus Ø 136, taitos Ø 150 (oikeina ympyröinä)');
+  ok(ymp.every(p => near(kx(p), x0 + AU - r1.u, 1e-6) && near(p.v[0][1], r1.w, 1e-6)), '6f: yläpuolelta: reiän x = aihio − u (kuvassa etu vasemmalla, DXF:ssä oikealla)');
+  // kanttinen karvattu reikä: leikkaus pyöristetyin kulmin (rLeik), taitos rReika
+  const r2 = k.reiat[1];
+  const kant = kp.filter(p => p.v.length === 8 && p !== raja && p !== taitos);
+  ok(r2.rLeik > 0 && kant.length === 2 && kant.every(p => p.v.filter(q => near(q[2], KPT_DXF.kaarevuus(90))).length === 4), '6g: kanttinen karvattu reikä: pyöristetyt kulmat (4 × 90° kaari) leikkauksessa ja taitoksessa');
+  const lk = kant.find(p => p.taso === 'LEIKKAUS'), lev = p => Math.max(...p.v.map(q => q[0])) - Math.min(...p.v.map(q => q[0])), kork = p => Math.max(...p.v.map(q => q[1])) - Math.min(...p.v.map(q => q[1]));
+  ok(lk && near(lev(lk), r2.leikDu, 1e-6) && near(kork(lk), r2.leikDw, 1e-6), '6h: leikattava reikä ' + r2.leikDu + ' × ' + r2.leikDw + ' (karvauksen verran pienempi)');
+  const nelio = kp.find(p => p.v.length === 4 && p.taso === 'LEIKKAUS');
+  ok(nelio && near(lev(nelio), 80) && near(kork(nelio), 80), '6i: karvaamaton reikä 80 × 80 leikataan sellaisenaan, ei taitosta');
+  const tekstit = e.filter(x => x.tyyppi === 'TEXT').map(x => arvo(x, 1));
+  ok(['ETU', 'TAKA', 'VASEN', 'OIKEA'].every(t => tekstit.includes(t)), '6j: reunojen nimet TEKSTI-tasolla');
+  const etu = e.find(x => x.tyyppi === 'TEXT' && arvo(x, 1) === 'ETU'), taka = e.find(x => x.tyyppi === 'TEXT' && arvo(x, 1) === 'TAKA');
+  ok(+arvo(etu, 10) > +arvo(taka, 10), '6k: ETU oikealla, TAKA vasemmalla (yläpuolelta)');
+  ok(tekstit.some(t => t.indexOf('Piippu 1 - Kansi - 2 kpl - aihio ' + Math.ceil(AU - 1e-6) + ' x ' + Math.ceil(AW - 1e-6) + ' mm') === 0), '6l: kannen teksti ja kappalemäärä');
+  // suora lovi ja pelkkä kansi ilman hupun paloja
+  const k2 = PI.laskeKansi(400, 600, Object.assign({}, vals, { kansi: Object.assign({}, vals.kansi, { lovi: 'suora', reiat: [] }) }));
+  const d2 = L.dxf([], 'P', 1, { kansi: { k: k2, kpl: 1 } }), p2 = entiteetit(parit(d2.sisalto()).p).filter(x => x.tyyppi === 'VERTEX').length;
+  ok(d2 && p2 === 12 + 4, '6m: suora lovi (12 pistettä) ja taitos; pelkkä kansi ilman hupun paloja kelpaa');
+  ok(L.dxf(lape({}), 'P', 1, { kansi: null }).sisalto().indexOf('Kansi') < 0, '6n: ilman kantta ei kantta tiedostossa');
+  // harjapiippu: ETU 1 / ETU 2
+  const kh = PI.laskeKansi(390, 1195, Object.assign({}, vals, { kansi: Object.assign({}, vals.kansi, { reiat: [] }) }));
+  kh.harja = true;
+  const th = entiteetit(parit(L.dxf([], 'H', 1, { kansi: { k: kh, kpl: 1 } }).sisalto()).p).filter(x => x.tyyppi === 'TEXT').map(x => arvo(x, 1));
+  ok(th.includes('ETU 1') && th.includes('ETU 2'), '6o: harjapiipun kannessa ETU 1 / ETU 2');
+}
+
 console.log(fails === 0 ? '\nKAIKKI TESTIT OK' : '\nEPÄONNISTUI: ' + fails);
 if (fails) process.exitCode = 1;
