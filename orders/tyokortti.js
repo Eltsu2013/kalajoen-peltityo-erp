@@ -226,6 +226,7 @@
   }
   function tallennaValinnat(v) { try { localStorage.setItem(maaritys.avain, JSON.stringify(v)); } catch (e) {} }
   // ---------- Tilauksen tiedot ensimmäiselle sivulle (v5) ----------
+  // v7 (27.11.2026): t.tyoaikaRivi = true → lohkon loppuun kirjoitustila ajalle (aikaRivi, t.tyoaika = arvio). Huuva ja Kartio tuotantotilassa.
   let tilaus = null;
   function asetaTilaus(t) { tilaus = t || null; }
   function tilausLohko(t) {
@@ -233,7 +234,7 @@
     const qr = linkki ? qrSvg(linkki) : '';
     return `<div class="tkk-tilausrivi">${qr ? `<div class="tkk-qr">${qr}Tilaus Tuotannossa</div>` : ''}<div>
       <div class="tkk-tilausotsikko">Tilaus ${esc(t.numero || '')}${t.ryhma ? ' · ' + esc(t.ryhma) : ''}${t.status ? ' · ' + esc(STATUS_FI[t.status] || t.status) : ''}</div>
-      ${tiedot(t)}</div></div>`;
+      ${tiedot(t)}${t.tyoaikaRivi ? aikaRivi(t.tyoaika) : ''}</div></div>`;
   }
   // Lisää lohkon ensimmäisen yläosan (tkk-yla / tkk-yla-pieni) perään; jos yläosaa ei löydy, ensimmäisen sivun alkuun
   function lisaaEnsimmaiselle(html, lohko) {
@@ -307,7 +308,7 @@
     ikk.querySelector('[data-t="ok"]').focus();
   }
 
-  const KPT_TYOKORTTI = { VERSIO: 6, aikaRivi, asetaTilaus, lisaaEnsimmaiselle, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
+  const KPT_TYOKORTTI = { VERSIO: 7, aikaRivi, asetaTilaus, lisaaEnsimmaiselle, esc, pvm, nytTeksti, STATUS_FI, qrSvg, ylaosa, ylaosaPieni, tiedot, huomio, ruutu, kpl, sivu, alaosa, paperille, rajaa, asenna, tulosta, tulostaKysyen, lueValinnat, rakenna, CSS };
   if (typeof window !== 'undefined') window.KPT_TYOKORTTI = KPT_TYOKORTTI;
   if (typeof module !== 'undefined') module.exports = KPT_TYOKORTTI;
 })();

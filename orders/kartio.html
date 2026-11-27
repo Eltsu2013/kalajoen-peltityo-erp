@@ -226,7 +226,7 @@
 <script src="geom.js?v=1"></script>
 <script src="pellit.js?v=4"></script>
 <script src="menekki.js?v=4"></script>
-<script src="tyokortti.js?v=6"></script>
+<script src="tyokortti.js?v=7"></script>
 <script src="dxf.js?v=3"></script>
 <script>
 
@@ -2347,6 +2347,48 @@ var TUOTANTO = (function () {
   var p = new URLSearchParams(location.search);
   return p.get('orderId') && p.get('groupName') ? { orderId: p.get('orderId'), groupName: p.get('groupName') } : null;
 })();
+// ── Työaika tuotannossa (hinnoittelu vaihe 3b, 27.11.2026, Tomi: suunnitellaan toimistossa, tehdään tuotannossa) ──
+// Suunnitteluaika ja työaika koko työlle, molemmat muokattavissa. Tallentuu syöttöpakettiin profile_data.vals.tyoaika
+// ryhmän ensimmäiselle riville (sama kuin Tilaukseen-osion kentät), joten hinnoittelu ja muokkaus näkevät sen.
+// Työkortin tilauslohkoon kirjoitustila ajalle (tyokortti.js v7 tyoaikaRivi).
+function tuotantoTyoaika(eka, ilmo, U, H, tilausTiedot) {
+  var ta = (eka.profile_data.vals || {}).tyoaika || {};
+  var arvo = function (x) { return Number(x) > 0 ? String(x) : ''; };
+  var kortti = document.createElement('div');
+  kortti.className = 'kpt-kortti'; kortti.id = 'tuotanto-tyoaika'; kortti.style.marginBottom = '14px';
+  kortti.innerHTML = '<div class="kpt-kortti-otsikko">Työaika</div><div class="kpt-kentat">'
+    + '<div class="kpt-kentta"><label for="tt-s">Suunnitteluaika min</label><input type="number" inputmode="numeric" min="0" step="1" id="tt-s" placeholder="—" value="' + arvo(ta.suunnittelu_min) + '"></div>'
+    + '<div class="kpt-kentta"><label for="tt-t">Työaika min</label><input type="number" inputmode="numeric" min="0" step="1" id="tt-t" placeholder="—" value="' + arvo(ta.tyo_min) + '"></div>'
+    + '</div><p class="kpt-vihje" id="tt-tila">Koko työlle, ei per pala. Tallentuu tilaukseen, kun kentästä poistutaan.</p>';
+  ilmo.parentNode.insertBefore(kortti, ilmo.nextSibling);
+  var tila = document.getElementById('tt-tila');
+  var tallenna = function () {
+    var lue = function (id) { var x = parseFloat(document.getElementById(id).value); return isFinite(x) && x >= 0 ? x : null; };
+    var s = lue('tt-s'), t = lue('tt-t');
+    var uusiTa = (s === null && t === null) ? null : { suunnittelu_min: s || 0, tyo_min: t || 0, yhteensa_min: (s || 0) + (t || 0) };
+    tila.style.color = ''; tila.textContent = 'Tallennetaan…';
+    // tuore profile_data ensin, ettei sivun vanha tieto korvaa muualla tehtyjä muutoksia
+    fetch(U + '/rest/v1/order_items?id=eq.' + encodeURIComponent(eka.id) + '&select=profile_data', { headers: H })
+      .then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; })
+      .then(function (j) {
+        var pd = (j && j[0] && j[0].profile_data) || eka.profile_data || {};
+        var vals = Object.assign({}, pd.vals || {});
+        if (uusiTa) vals.tyoaika = uusiTa; else delete vals.tyoaika;
+        var uusi = Object.assign({}, pd, { vals: vals });
+        return fetch(U + '/rest/v1/order_items?id=eq.' + encodeURIComponent(eka.id), {
+          method: 'PATCH', headers: Object.assign({}, H, { 'Content-Type': 'application/json', 'Prefer': 'return=minimal' }), body: JSON.stringify({ profile_data: uusi })
+        }).then(function (res) {
+          if (!res.ok) throw new Error('tallennus epäonnistui (' + res.status + ')');
+          eka.profile_data = uusi;
+          tilausTiedot.tyoaika = uusiTa;
+          KPT_TYOKORTTI.asetaTilaus(tilausTiedot);
+          tila.style.color = 'var(--kpt-ok)'; tila.textContent = '✓ Tallennettu tilaukseen.';
+        });
+      }).catch(function (e) { tila.style.color = 'var(--kpt-virhe)'; tila.textContent = 'Tallennus epäonnistui: ' + e.message; });
+  };
+  document.getElementById('tt-s').onchange = tallenna;
+  document.getElementById('tt-t').onchange = tallenna;
+}
 function avaaTuotannossa() {
   var osio = document.querySelector('.tilaukseen'); if (osio) osio.style.display = 'none';
   var ilmo = document.createElement('div');
@@ -2373,9 +2415,12 @@ function avaaTuotannossa() {
     ilmo.innerHTML = '<b>Tuotanto</b> · tilaus ' + esc(numero) + ' · ' + esc(c.name || 'ei asiakasta') + ' · ' + esc(TUOTANTO.groupName)
       + (mat ? ' · ' + esc(mat) : '') + '<br>Muutokset tehdään tilauksessa ("Muokkaa kartiota"). '
       + '<a href="tuotanto.html?tilaus=' + enc(o.id) + '">← Tuotanto</a>';
-    KPT_TYOKORTTI.asetaTilaus({ numero: numero, ryhma: TUOTANTO.groupName, orderId: o.id, status: o.status,
+    var tilausTiedot = { numero: numero, ryhma: TUOTANTO.groupName, orderId: o.id, status: o.status,
       asiakas: c.name, puhelin: c.phone, email: c.email, kohde: o.kohde, toimitus: o.delivery_date, osoite: o.site_address,
-      tilattu: o.order_date, ohjeet: o.site_instructions });
+      tilattu: o.order_date, ohjeet: o.site_instructions,
+      tyoaikaRivi: true, tyoaika: (eka.profile_data.vals || {}).tyoaika || null };   // kirjoitustila ajalle (hinnoittelu vaihe 3b)
+    KPT_TYOKORTTI.asetaTilaus(tilausTiedot);
+    tuotantoTyoaika(eka, ilmo, U, H, tilausTiedot);
   }).catch(function (e) { ilmo.className = 'kpt-ilmoitus virhe'; ilmo.textContent = 'Tilauksen haku epäonnistui: ' + e.message; });
 }
 if (TUOTANTO) avaaTuotannossa();
