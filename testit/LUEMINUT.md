@@ -61,6 +61,12 @@ Testaavat yhteistä `orders/profiilit.js`:ää (Peltilistat ja Tuotanto) suoraan
 
 - `test_kiila_nolla.js` — kiilapelti, kun mitta on toisessa päässä 0 (Kynnyksen etukäännös, U-listojen tiivisteet, tupla): levitys lasketaan, aihiot ja taitosten paikat oikein, poikkileikkauksessa "0–15" ja haamu, tuplan taitos tuplana. Lisäksi tarkistetaan, että nollasta poikkeavat kiilat ja suorat pellit ovat ennallaan.
 
+## hinnoittelu/ (1 sarja, 27.11.2026)
+
+Testaavat yhteistä hintalaskentaa `orders/hinnoittelu.js` (hinnoittelun vaihe 1, päätökset projektin `claude/hinnoittelu_paatokset_2026-11-27.md`).
+
+- `test_hinnoittelu.js` — materiaalin hinta (värin oma → perus → puuttuu, nimet kirjainkoosta ja välilyönneistä välittämättä), metrihinta (Pural 0,5, aihio 250 → 6,30 €/m) ja neliöhinta (17,10 €/m²), tuntihinta ja työ tarkasti /60, hinnoittelutapa tilausriviltä, listapelti päineen, kiila, kourun päätylaput ja työaika, piippu ryhmänä (palat, jalat, työ kerran), puutteet ("Työaika puuttuu" ym.).
+
 ## Tulossa
 
 - `piippu/`: harjapiipun testipiiput A ja B (vaihe 5).
