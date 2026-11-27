@@ -24,7 +24,8 @@
 // (suora = oikea sivu); laskeKaikki antaa suorankin piipun hupun rivit todellisen aihion kokoisina (ei varmuusvaraa).
 // v4–v5 (20.11. illalla): harjapiipun hupun palat (harjaHupunPalat, levitaTaso, laskeKaikkiHarja). Vaatii pellit.js?v=2.
 // v21 (27.11.2026, DXF 8.5 D4): dxf(palat, nimi, kerroin) ja dxfPalat (hupun palat DXF-tiedostoon, vaatii orders/dxf.js:n sivulla).
-// v22 (27.11.2026, D4b): dxf(..., { kansi: { k, kpl } }) = kansi reikineen samaan tiedostoon (kansiDxf, yläpuolelta).
+// v22 (27.11.2026, D4b): dxf(..., { kansi: { k, kpl } }) = kansi reikineen samaan tiedostoon (kansiDxf).
+// v23: kansi samassa asennossa kuin kansikuva. v24: karvattu reikä DXF:ssä vain puolet karvauksesta pienempi (Tomi 27.11.).
 // v20 (26.11.2026, ulkoasuremontti R2b): palojen korttien tyylit uuden ulkoasun muuttujilla (--kpt-*), vanhat värit varalla,
 //      joten sivut ilman tyyli.css:ää (Tuotanto, Harjapiippu) näyttävät ennallaan; kuvien tausta paperi, kun sivulla on --kpt-paperi.
 // v19 (24.11.2026): kaistaKappaleet (hupun palat kaistoille, menekki.js, vaihe 8.3; peilikuvapari samalle kaistalle vuorotellen).
@@ -1168,8 +1169,10 @@
   // Tomi 27.11.: "olen piipun yläpuolella ja katon sitä peltiä vasemman sivun puolelta päältä. Eli etu on vasemmalla ja taka
   // oikealla ja väri on minuunpäin" = ulkopinta ylöspäin, ei peilausta (ensimmäinen versio peilasi kuvan vanhan "alapuolelta"-
   // tekstin takia, korjattu). Reunojen nimet TEKSTI-tasolle, ettei suunta mene sekaisin. Kulmissa 45° viiste tai suora lovi T × T kuten
-  // kuvassa, taitos T:n verran reunasta. Karvattu reikä: leikataan karvauksen verran pienempi (leikDw × leikDu, pyöristys rLeik)
-  // ja reiän reuna (dw × du, pyöristys rReika) on taitos, koska reuna käännetään ylös. Pyöreä reikä = kaksi puoliympyrää.
+  // kuvassa, taitos T:n verran reunasta. Karvattu reikä (Tomi 27.11.): DXF:ssä leikataan vain puolet karvauksesta pienempi (reunasta
+  // k/2, kuvan leikkausviiva on k), koska karvaus ei koskaan käänny aivan oikealta kohdalta: himpan isompi reikä on parempi, putki
+  // mahtuu läpi ja karvauksen saa naputeltua putkeen tiiviiksi. Reiän reuna (du × dw, pyöristys rReika) on taitos.
+  // Pyöreä reikä = kaksi puoliympyrää.
   function kansiDxf(d, k, x0, nimi, kpl) {
     const AU = k.S.aihio, AW = k.L.aihio, T = k.D || 0, as = k.as || {};
     const X = u => x0 + u;                                                          // kuten kuvassa: etu vasemmalla, vasen alhaalla
@@ -1191,7 +1194,8 @@
     (k.reiat || []).forEach(r => {
       const cx = X(r.u), cy = r.w, py = r.muoto === 'pyorea';
       if (r.karvaus && r.leikDw > 0 && r.leikDu > 0) {
-        reika(cx, cy, r.leikDu, r.leikDw, r.rLeik, 'LEIKKAUS', py);
+        const kp = r.karvaus / 2;                                                   // DXF: puolet karvauksesta (Tomi 27.11.)
+        reika(cx, cy, r.du - 2 * kp, r.dw - 2 * kp, r.rReika > 0 ? r.rReika - kp : 0, 'LEIKKAUS', py);
         reika(cx, cy, r.du, r.dw, r.rReika, 'TAITOS', py);
       } else reika(cx, cy, r.du, r.dw, r.rReika, 'LEIKKAUS', py);
     });

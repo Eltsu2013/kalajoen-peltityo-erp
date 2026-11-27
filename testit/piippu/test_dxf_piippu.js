@@ -125,14 +125,16 @@ const A = { lev1: 390, lev2: null, suora1: 445, suora2: 750, kork1: 760, korkH: 
   // pyöreä karvattu reikä: leikkaus Ø 150 − 2 × 7 = 136, taitos Ø 150; yläpuolelta x = AU − u
   const r1 = k.reiat[0], ymp = kp.filter(p => p.v.length === 2 && p.v.every(q => q[2] === 1));
   const sade = p => Math.abs(p.v[0][0] - p.v[1][0]) / 2, kx = p => (p.v[0][0] + p.v[1][0]) / 2;
-  ok(ymp.length === 2 && ymp.some(p => p.taso === 'LEIKKAUS' && near(sade(p), 68)) && ymp.some(p => p.taso === 'TAITOS' && near(sade(p), 75)), '6e: pyöreä karvattu reikä: leikkaus Ø 136, taitos Ø 150 (oikeina ympyröinä)');
+  ok(ymp.length === 2 && ymp.some(p => p.taso === 'LEIKKAUS' && near(sade(p), 71.5)) && ymp.some(p => p.taso === 'TAITOS' && near(sade(p), 75)), '6e: pyöreä karvattu reikä (7 mm): leikkaus Ø 143 (puolet karvauksesta, Tomi 27.11.), taitos Ø 150, oikeina ympyröinä');
   ok(ymp.every(p => near(kx(p), x0 + r1.u, 1e-6) && near(p.v[0][1], r1.w, 1e-6)), '6f: kuten kansikuvassa: reiän x = etäisyys etureunasta (etu vasemmalla, ei peilausta)');
   // kanttinen karvattu reikä: leikkaus pyöristetyin kulmin (rLeik), taitos rReika
   const r2 = k.reiat[1];
   const kant = kp.filter(p => p.v.length === 8 && p !== raja && p !== taitos);
   ok(r2.rLeik > 0 && kant.length === 2 && kant.every(p => p.v.filter(q => near(q[2], KPT_DXF.kaarevuus(90))).length === 4), '6g: kanttinen karvattu reikä: pyöristetyt kulmat (4 × 90° kaari) leikkauksessa ja taitoksessa');
   const lk = kant.find(p => p.taso === 'LEIKKAUS'), lev = p => Math.max(...p.v.map(q => q[0])) - Math.min(...p.v.map(q => q[0])), kork = p => Math.max(...p.v.map(q => q[1])) - Math.min(...p.v.map(q => q[1]));
-  ok(lk && near(lev(lk), r2.leikDu, 1e-6) && near(kork(lk), r2.leikDw, 1e-6), '6h: leikattava reikä ' + r2.leikDu + ' × ' + r2.leikDw + ' (karvauksen verran pienempi)');
+  ok(lk && near(lev(lk), r2.du - r2.karvaus, 1e-6) && near(kork(lk), r2.dw - r2.karvaus, 1e-6), '6h: leikattava reikä ' + (r2.du - r2.karvaus) + ' × ' + (r2.dw - r2.karvaus) + ' (reunasta puolet karvauksesta)');
+  const kaarenSade = p => { const i = p.v.findIndex(q => q[2]); const a = p.v[i], b = p.v[(i + 1) % p.v.length]; return Math.hypot(b[0] - a[0], b[1] - a[1]) / Math.SQRT2; };
+  ok(near(kaarenSade(lk), r2.rReika - r2.karvaus / 2, 1e-6) && near(kaarenSade(kant.find(p => p.taso === 'TAITOS')), r2.rReika, 1e-6), '6h2: leikkauksen kulmapyöristys = reiän pyöristys − karvaus/2 (samankeskinen)');
   const nelio = kp.find(p => p.v.length === 4 && p.taso === 'LEIKKAUS');
   ok(nelio && near(lev(nelio), 80) && near(kork(nelio), 80), '6i: karvaamaton reikä 80 × 80 leikataan sellaisenaan, ei taitosta');
   const tekstit = e.filter(x => x.tyyppi === 'TEXT').map(x => arvo(x, 1));
