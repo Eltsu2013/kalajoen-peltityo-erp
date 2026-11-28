@@ -218,6 +218,26 @@
   .ryhma-hinta table { width: 100%; font-size: 11px; font-family: 'IBM Plex Mono', monospace; color: var(--kpt-himmea); border-collapse: collapse; margin-top: 4px; }
   .ryhma-hinta td { padding: 2px 4px; } .ryhma-hinta td:last-child { text-align: right; }
   .hinta-korostus { outline: 2px solid var(--kpt-huom); outline-offset: 2px; }
+  /* Käsin muokkaus (4b-3) */
+  .rivi-hinta .rh-oikea { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .hp-muokkaa { font-size: 11px; padding: 3px 9px; background: var(--kpt-paneeli2); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .hp-muokkaa:hover { border-color: var(--kpt-korostus); }
+  .hp-merkki { font-size: 11px; font-weight: 600; color: var(--kpt-info); font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
+  .hp-syy { font-size: 11px; color: var(--kpt-himmea); font-style: italic; }
+  .hp-yliviivattu { color: var(--kpt-heikko); font-weight: 400; font-size: 12px; }
+  .ryhma-hinta .rr .hp-merkki, .ryhma-hinta .rr .hp-syy { align-self: center; }
+  #hinta-ikkuna [hidden] { display: none !important; }
+  .hi-rivi { display: flex; gap: 10px; }
+  .hi-rivi > .kpt-kentta { flex: 1; }
+  #hinta-ikkuna .kpt-kentta { margin-bottom: 10px; }
+  #hinta-ikkuna .kpt-kentta textarea { width: 100%; font-family: inherit; }
+  .hi-ohje { font-size: 11px; color: var(--kpt-himmea); margin-top: 3px; }
+  .hi-valinta { display: flex; gap: 8px; align-items: center; font-size: 13px; margin: 0 0 12px; cursor: pointer; }
+  .hi-valinta input { width: auto; min-height: 0; }
+  .hi-esikatselu { padding: 10px 12px; background: var(--kpt-paneeli2); border-radius: 6px; font-size: 14px; font-family: 'IBM Plex Mono', monospace; }
+  .hi-kopio { display: flex; flex-direction: column; gap: 10px; }
+  .hi-kopio .kpt-nappi { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; padding: 12px 14px; height: auto; }
+  .hi-kopio .kpt-nappi span { font-size: 12px; color: var(--kpt-himmea); font-weight: 400; }
   @media (max-width: 860px) { .item-actions { order: 6; } }
 
   /* Tilauslomakkeen tuloste ennallaan: kpt-sivu muuttaa otsikoiden rivivälin ja paksuuden, palautetaan ne lomakkeelle */
@@ -225,6 +245,18 @@
   /* Yläpalkin napit (← Peltilistat, Vakiomallit, Kopioi tilaus) */
   .kpt-yla .header-right a.kpt-nappi { text-decoration: none; }
 </style>
+<!-- Hinnan käsin muokkaus (hinnoittelu 4b-3) ja kopioinnin hintakysymys -->
+<div class="kpt-ikkuna-tausta" id="hinta-ikkuna" onclick="if(event.target===this)hpSuljeMuokkaus()">
+  <div class="kpt-ikkuna" role="dialog" aria-labelledby="hi-otsikko">
+    <h3 id="hi-otsikko">Hinta</h3>
+    <div id="hi-sisalto"></div>
+    <div class="kpt-ikkuna-napit">
+      <button type="button" class="kpt-nappi vaara vasen" id="hi-poista" onclick="hpTallennaMuokkaus(true)">Poista muutokset</button>
+      <button type="button" class="kpt-nappi" onclick="document.getElementById('hi-tallenna').hidden=false;hpSuljeMuokkaus()">Peruuta</button>
+      <button type="button" class="kpt-nappi ensisijainen" id="hi-tallenna" onclick="hpTallennaMuokkaus(false)">Tallenna</button>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
 </head>
@@ -882,8 +914,9 @@ async function loadOrderById(orderId) {
 }
 
 // ── Tilauksen kopiointi ───────────────────────────────────────────
-async function copyOrderById(sourceId, keepCustomer) {
+async function copyOrderById(sourceId, keepCustomer, kopioiHinnat) {
   setSaveStatus('', 'Kopioidaan...');
+  const idKartta = {};   // vanha order_items.id → uusi (hintamuokkausten siirto)
 
   const r1 = await fetch(SUPABASE_URL + '/rest/v1/orders?id=eq.' + sourceId + '&select=*', { headers });
   const srcOrders = await r1.json();
@@ -938,6 +971,7 @@ async function copyOrderById(sourceId, keepCustomer) {
   updateMobileSummary();
 
   if (!srcItems || !srcItems.length) {
+    if (kopioiHinnat) await hpKopioiHinnat(src, idKartta);
     setSaveStatus('ok', 'Kopioitu — ei rivejä');
     return;
   }
@@ -999,7 +1033,7 @@ async function copyOrderById(sourceId, keepCustomer) {
         });
         if (rk.ok) {
           const savedK = await rk.json();
-          if (savedK && savedK[0]) kopioKappale.supabaseId = savedK[0].id;
+          if (savedK && savedK[0]) { kopioKappale.supabaseId = savedK[0].id; idKartta[srcItem.id] = savedK[0].id; }
         }
         continue;
       }
@@ -1045,12 +1079,14 @@ async function copyOrderById(sourceId, keepCustomer) {
         const saved = await r4.json();
         if (saved && saved[0]) {
           newItem.supabaseId = saved[0].id;
+          idKartta[srcItem.id] = saved[0].id;
           await saveSubItems(saved[0].id, newItem);
         }
       }
     }
   }
 
+  if (kopioiHinnat) await hpKopioiHinnat(src, idKartta);
   renderGroups();
   updateSummary();
   setSaveStatus('ok', 'Kopioitu ✓');
@@ -1059,7 +1095,9 @@ async function copyOrderById(sourceId, keepCustomer) {
 
 function kopiointiTilaus() {
   if (!currentOrderId) return;
+  if (hpKopioKysymys()) return;   // hinnoittelu 4b-3: lukitus tai hintamuutoksia → kysytään hinnoista
   if (!confirm('Kopioidaan tilaus uudeksi luonnokseksi ilman asiakasta. Jatketaanko?')) return;
+  localStorage.removeItem('copyPricing');
   localStorage.setItem('copyOrderId', currentOrderId);
   localStorage.setItem('copyKeepCustomer', 'false');
   window.open('tilaus.html', '_blank');
@@ -2219,7 +2257,8 @@ function hpPuuteHtml(k, groupId, item) {
   if (k === 'hinta') nappi = `<button type="button" onclick="hpKorjaa('hinta','${gi}','${ii}','${escAttr(item && item.material || '')}')">→ Hinnasto</button>`;
   else if (k === 'tuntihinta') nappi = `<button type="button" onclick="hpKorjaa('tuntihinta','${gi}')">→ Hinnasto</button>`;
   else if (k === 'tyoaika') nappi = `<button type="button" onclick="hpKorjaa('tyoaika','${gi}')">Lisää työaika →</button>`;
-  else if (k === 'kappalehinta') nappi = `<span class="hp-huom">(annetaan myöhemmin tilauksessa)</span>`;
+  else if (k === 'kappalehinta') nappi = item ? `<button type="button" onclick="hpAvaaMuokkaus('rivi','${gi}','${ii}')">Anna hinta</button>` : '';
+  else if (k === 'paankaanto') nappi = `<button type="button" onclick="window.open('hinnasto.html?valilehti=kiinteat&haku=' + encodeURIComponent('Pään kääntö'), '_blank')">→ Hinnasto</button>`;
   else nappi = `<button type="button" onclick="hpKorjaa('${k}','${gi}','${ii}')">✎ Muokkaa</button>`;
   return `<span class="hinta-puute">⚠ ${t} ${nappi}</span>`;
 }
@@ -2350,7 +2389,8 @@ function ryhmanHintaTiedot(g) {
       const it = g.items.find((x, i) => !HP_RIVIT[x.id].nayta && rh.rivit[i].puuttuu.indexOf(k) >= 0);
       rr.push(`<div class="rr">${hpPuuteHtml(k, g.id, it)}</div>`);
     });
-    rr.push(`<div class="rr yht"><span class="n"><b>Ryhmä yhteensä</b></span><span class="s" style="color:var(${tulos.vajaa ? '--kpt-huom' : '--kpt-ok'})">${tulos.vajaa ? 'väh. ' : ''}${hpEur(rh.yhteensa)}</span></div>`);
+    rr.push(`<div class="rr yht"><span class="n"><b>Ryhmä yhteensä</b></span><span class="s" style="color:var(${tulos.vajaa ? '--kpt-huom' : '--kpt-ok'})">${rh.muokattu ? `<s class="hp-yliviivattu">${hpEur(rh.valisumma)}</s> ` : ''}${tulos.vajaa ? 'väh. ' : ''}${hpEur(rh.yhteensa)}</span></div>`);
+    rr.push(`<div class="rr">${hpSyy(mk.ryhma)}<span class="n"></span>${hpMerkki(mk.ryhma)}${hpMuokkaaNappi('ryhma', g.id, '')}</div>`);
     if (palat.length) rr.push(`<details><summary>Näytä palat (${palat.length})</summary><table>${palat.map(p => `<tr><td>${escAttr(p.nimi)}</td><td>${hpLuku(p.m2, 3)} m²</td><td>${hpEur(p.summa)}</td></tr>`).join('')}</table></details>`);
     tulos.osio = `<div class="ryhma-hinta">${rr.join('')}</div>`;
   }
@@ -2368,12 +2408,13 @@ function hintaRiviHtml(item, groupId) {
   const t = HP_RIVIT[item.id];
   if (!t || !t.nayta) return '';
   const r = t.r;
+  const m = (tilausPricing && tilausPricing.rivit && item.supabaseId && tilausPricing.rivit[item.supabaseId]) || null;
   const pelti = r.osat.find(o => o.nimi === 'Pelti'), kpl = r.osat.find(o => o.nimi === 'Kappaleet');
   let h = '', summa = '';
   if (r.puuttuu.length) h = r.puuttuu.map(k => hpPuuteHtml(k, groupId, item)).join('');
   if (pelti) {
     summa = hpEur(r.yhteensa);
-    h += `<div class="rh-kaava">${hpLuku(pelti.maara, 2)} m × ${hpEur(pelti.ahinta)}/m = ${hpEur(pelti.summa)}</div>
+    h += `<div class="rh-kaava">${hpLuku(pelti.maara, 2)} m × ${hpEur(pelti.ahinta)}/m${pelti.oma ? ' (oma, laskettu ' + hpEur(pelti.laskettuAhinta) + '/m)' : ''} = ${hpEur(pelti.summa)}</div>
          <details><summary>Miten hinta muodostuu?</summary><div>${escAttr(pelti.selite || '')}, pyöristys 5 senttiin.
          Pituus päineen (esim. 3000 + 20 mm = 3,02 m).</div></details>`;
     const v = hpVanhaHinta(item);
@@ -2388,9 +2429,12 @@ function hintaRiviHtml(item, groupId) {
   }
   r.osat.forEach(o => {
     if (o.nimi === 'Pään kääntö') h += `<div class="rh-kaava${o.ehdotus ? ' hinta-ehdotus' : ''}">Pään kääntö${o.ehdotus ? ' (ehdotus)' : ''}: ${escAttr(o.taso)} ${hpEur(o.ahinta)} × ${o.paat} ${o.paat === 1 ? 'pää' : 'päätä'} × ${hpLuku(o.maara / o.paat, 0)} kpl = ${hpEur(o.summa)}</div>`;
-    else if (o.lisa || o.alennus) h += `<div class="rh-kaava">${o.nimi}${o.selite ? ' ' + escAttr(o.selite) : ''}: ${hpEur(o.summa)}</div>`;
+    else if (o.lisa || o.alennus) h += `<div class="rh-kaava">${o.nimi}${o.selite ? ' ' + escAttr(o.selite) : ''}${o.alennus && !o.nayta ? ' (ei näy laskulla)' : ''}: ${hpEur(o.summa)}</div>`;
   });
-  return `<div class="rivi-hinta"><div class="rh-tiedot">${h}</div>${summa ? `<div class="rh-summa">${summa}</div>` : ''}</div>`;
+  h += hpSyy(m);
+  if (summa && r.muokattu) summa = `<s class="hp-yliviivattu">${hpEur(r.ilmanMuokkausta)}</s> ${summa}`;
+  const nappi = item.supabaseId ? hpMuokkaaNappi('rivi', groupId, item.id) : '';
+  return `<div class="rivi-hinta"><div class="rh-tiedot">${h}</div><div class="rh-oikea">${summa ? `<div class="rh-summa">${summa}</div>` : ''}${hpMerkki(m)}${nappi}</div></div>`;
 }
 
 // Tilauksen yhteenveto ylös
@@ -2405,6 +2449,7 @@ function paivitaHintaYhteenveto(tulokset) {
       <div class="hy-napit"><button type="button" class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="paivitaHinnat()">↻ Yritä uudelleen</button></div>`;
     return;
   }
+  HP_TULOKSET = tulokset;
   const th = KPT_HINNOITTELU.tilauksenHinta(tulokset.map(t => t.rh).filter(Boolean), (tilausPricing || {}).tilaus);
   const yht = th.yhteensa;
   const vajaat = tulokset.reduce((s, t) => s + t.rivejaVajaa, 0);
@@ -2427,7 +2472,7 @@ function paivitaHintaYhteenveto(tulokset) {
     <div class="hy-pieni">Tilaus yhteensä, ALV 0 %</div>
     <div class="hy-iso${vajaat ? ' vajaa' : ''}">${vajaat ? 'väh. ' : ''}${hpEur(yht)}</div>
     <div class="hy-pieni">sis. ALV ${String(ALV_PROSENTTI).replace('.', ',')} %: ${hpEur(Math.round(yht * (1 + ALV_PROSENTTI / 100) * 100) / 100)}${vajaat ? ` · <b style="color:var(--kpt-huom)">${vajaat} ${vajaat === 1 ? 'rivi' : 'riviä'} ilman täyttä hintaa</b>` : ''}</div>
-    ${th.alennus ? `<div class="hy-pieni">Tilauksen alennus ${escAttr(th.alennus.selite)}: ${hpEur(th.alennus.summa)}</div>` : ''}
+    ${th.alennus ? `<div class="hy-pieni">Tilauksen alennus ${escAttr(th.alennus.selite)}${th.alennus.nayta ? '' : ' (ei näy laskulla)'}: ${hpEur(th.alennus.summa)} (ennen ${hpEur(th.valisumma)})</div>${hpSyy((tilausPricing || {}).tilaus)}` : ''}
     ${th.alennuksetYhteensa ? `<div class="hy-pieni">Alennukset yhteensä ${hpEur(th.alennuksetYhteensa)}</div>` : ''}
     ${th.ehdotuksia ? `<div class="hy-pieni">${th.ehdotuksia} ${th.ehdotuksia === 1 ? 'pään kääntö' : 'pään kääntöä'} ehdotuksena (normaali, 2 päätä), mukana summassa</div>` : ''}
     ${vanha ? `<div class="hy-pieni">Listapellit (ilman lisiä): uusi hinta ${hpEur(Math.round(uusi * 100) / 100)}, vanhalla listalla olisi ${hpEur(Math.round(vanha * 100) / 100)}</div>` : ''}
@@ -2436,7 +2481,210 @@ function paivitaHintaYhteenveto(tulokset) {
     <div class="hy-napit">${lukko}</div>
     <div class="hy-napit">
       <button type="button" class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="paivitaHinnat()" title="Hae Hinnasto uudelleen, jos hintoja on korjattu toisessa välilehdessä">↻ Päivitä hinnat</button>
+      <button type="button" class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="hpAvaaMuokkaus('tilaus')">✎ Tilauksen alennus</button>
     </div>`;
+}
+// ── Hinnan käsin muokkaus (vaihe 4b-3, 28.11.2026, suunnitelma projektin claude/vaihe4b_suunnitelma.md kohta 4) ──
+// Ikkuna #hinta-ikkuna (tyyli.css:n kpt-ikkuna: puhelimella koko ruutu). Muokkaus tallentuu orders.pricing-lokeroon:
+// rivit[order_items.id], ryhmat[group_name] (piippu, huuva, kartio), tilaus. Laskenta hinnoittelu.js:n rivinHintaMuokattu.
+let HI = null;          // { tyyppi: 'rivi' | 'ryhma' | 'tilaus', groupId, itemId }
+let HP_TULOKSET = [];   // viimeisimmän piirron ryhmätulokset (tilauksen alennuksen esikatselu)
+function hpLukuKentasta(id) {
+  const el = document.getElementById(id);
+  if (!el || el.value === '') return null;
+  const n = parseFloat(String(el.value).replace(',', '.').replace(/\s/g, ''));
+  return isFinite(n) ? n : null;
+}
+function hpMuokkausKohde() {
+  if (!HI) return {};
+  const g = groups.find(x => x.id === HI.groupId);
+  const i = g ? g.items.findIndex(x => x.id === HI.itemId) : -1;
+  return { g, i, item: i >= 0 ? g.items[i] : null };
+}
+function hpNykyinen() {
+  const p = tilausPricing || {}, k = hpMuokkausKohde();
+  if (HI.tyyppi === 'rivi') return (p.rivit && k.item && k.item.supabaseId && p.rivit[k.item.supabaseId]) || {};
+  if (HI.tyyppi === 'ryhma') return (p.ryhmat && k.g && p.ryhmat[k.g.name]) || {};
+  return p.tilaus || {};
+}
+function hpAvaaMuokkaus(tyyppi, groupId, itemId) {
+  if (!hinnasto || hinnasto.virhe || !currentOrderId) return;
+  document.getElementById('hi-tallenna').hidden = false;
+  HI = { tyyppi, groupId, itemId };
+  const k = hpMuokkausKohde(), m = hpNykyinen(), H = KPT_HINNOITTELU;
+  if (tyyppi === 'rivi' && (!k.item || !k.item.supabaseId)) { alert('Tallenna pelti ensin tilaukseen.'); return; }
+  const tapa = k.item ? H.tapa(k.item) : null;
+  const ctx = hpCtx();
+  const arvo = v => v == null ? '' : String(v).replace('.', ',');
+  const kentta = (id, otsikko, v, ph, lisa) => `<div class="kpt-kentta"><label for="${id}">${otsikko}</label><input id="${id}" inputmode="decimal" value="${escAttr(arvo(v))}" placeholder="${escAttr(ph || '')}" oninput="hpEsikatselu()">${lisa || ''}</div>`;
+  let otsikko = '', h = '';
+  if (tyyppi === 'rivi' && tapa === 'lista') {
+    const e = H.paanKaantoEhdotus(k.item), hinnat = H.paanKaantoHinnat(ctx.kiinteat), pk = m.paan_kaanto || {};
+    const t = n => hinnat[n] != null ? ' (' + hpEur(hinnat[n]) + ' / pää)' : '';
+    const pelti = H.rivinHinta(k.item, { materiaalit: ctx.materiaalit, kiinteat: ctx.kiinteat }).osat.find(o => o.nimi === 'Pelti');
+    otsikko = 'Hinta: ' + (k.item.nimike || 'pelti');
+    h += `<div class="kpt-kentta"><label for="hi-pk">Pään kääntö</label><select id="hi-pk" onchange="hpEsikatselu()">
+        <option value="">${e ? 'Ehdotus: normaali, 2 päätä' : 'Ei (riveillä ei päitä)'}</option>
+        <option value="ei"${pk.taso === 'ei' ? ' selected' : ''}>Ei pään kääntöä</option>
+        <option value="helppo"${pk.taso === 'helppo' ? ' selected' : ''}>Helppo${t('helppo')}</option>
+        <option value="normaali"${pk.taso === 'normaali' ? ' selected' : ''}>Normaali${t('normaali')}</option>
+        <option value="vaativa"${pk.taso === 'vaativa' ? ' selected' : ''}>Vaativa${t('vaativa')}</option>
+        <option value="oma"${pk.taso === 'oma' ? ' selected' : ''}>Oma hinta</option></select></div>
+      <div class="hi-rivi" id="hi-pk-lisat">
+        <div class="kpt-kentta"><label for="hi-pk-paat">Päitä per pelti</label><select id="hi-pk-paat" onchange="hpEsikatselu()"><option value="2"${pk.paat !== 1 ? ' selected' : ''}>2</option><option value="1"${pk.paat === 1 ? ' selected' : ''}>1</option></select></div>
+        ${kentta('hi-pk-hinta', 'Oma € / pää', pk.hinta, 'esim. 4,00')}
+      </div>`;
+    h += kentta('hi-oma', 'Oma hinta €/m', m.oma_hinta, pelti ? 'laskettu ' + Number(pelti.ahinta).toFixed(2).replace('.', ',') : '', '<div class="hi-ohje">Tyhjä = laskettu hinta.</div>');
+  } else if (tyyppi === 'rivi') {
+    otsikko = 'Hinta: ' + (k.item.nimike || 'kappaletavara');
+    const kh = hpKappalehinta(k.item, ctx.kiinteat);
+    h += kentta('hi-kpl', 'Kappalehinta €/kpl', m.kappalehinta, kh != null ? 'Kiinteistä ' + Number(kh).toFixed(2).replace('.', ',') : 'esim. 12,50');
+  } else if (tyyppi === 'ryhma') {
+    otsikko = 'Hinta: ' + k.g.name;
+    h += `<div class="hi-ohje" style="margin-bottom:10px">Hankaluuden voi hoitaa myös korottamalla työaikaa (ryhmän ✏️ Muokkaa).</div>`;
+  } else {
+    otsikko = 'Tilauksen alennus';
+  }
+  if (tyyppi !== 'tilaus') h += kentta('hi-lisa', 'Lisä €', m.lisa_eur, 'esim. 25,00', '<div class="hi-ohje">Esim. hankala pelti. Miinus vähentää.</div>');
+  const aleYks = m.alennus_pct != null ? 'pct' : (m.alennus_eur != null ? 'eur' : 'pct');
+  h += `<div class="hi-rivi"><div class="kpt-kentta" style="flex:2"><label for="hi-ale">Alennus</label><input id="hi-ale" inputmode="decimal" value="${escAttr(arvo(m.alennus_pct != null ? m.alennus_pct : m.alennus_eur))}" placeholder="esim. 20" oninput="hpEsikatselu()"></div>
+      <div class="kpt-kentta" style="flex:1"><label for="hi-ale-yks">&nbsp;</label><select id="hi-ale-yks" onchange="hpEsikatselu()"><option value="pct"${aleYks === 'pct' ? ' selected' : ''}>%</option><option value="eur"${aleYks === 'eur' ? ' selected' : ''}>€</option></select></div></div>
+    <label class="hi-valinta"><input type="checkbox" id="hi-nayta"${m.nayta_alennus === false ? '' : ' checked'}> Näytä alennus laskulla</label>
+    <div class="kpt-kentta"><label for="hi-syy">Syy (vain omaan käyttöön, ei tulostu)</label><textarea id="hi-syy" rows="2" placeholder="esim. naarmuja, sovittu asiakkaan kanssa">${escAttr(m.syy || '')}</textarea></div>
+    <div id="hi-esikatselu" class="hi-esikatselu"></div>`;
+  document.getElementById('hi-otsikko').textContent = otsikko;
+  document.getElementById('hi-sisalto').innerHTML = h;
+  document.getElementById('hi-poista').hidden = !Object.keys(m).length;
+  document.getElementById('hinta-ikkuna').classList.add('auki');
+  hpEsikatselu();
+}
+function hpSuljeMuokkaus() { document.getElementById('hinta-ikkuna').classList.remove('auki'); HI = null; }
+// Ikkunan kentät muokkaukseksi (tyhjät pois). null = ei mitään tallennettavaa.
+function hpLueMuokkaus() {
+  const m = {}, pk = document.getElementById('hi-pk');
+  if (pk && pk.value) {
+    m.paan_kaanto = { taso: pk.value };
+    if (pk.value !== 'ei') m.paan_kaanto.paat = parseInt(document.getElementById('hi-pk-paat').value, 10) || 2;
+    if (pk.value === 'oma') m.paan_kaanto.hinta = hpLukuKentasta('hi-pk-hinta');
+  }
+  const oma = hpLukuKentasta('hi-oma'); if (oma !== null && oma >= 0) m.oma_hinta = oma;
+  const kh = hpLukuKentasta('hi-kpl'); if (kh !== null && kh >= 0) m.kappalehinta = kh;
+  const lisa = hpLukuKentasta('hi-lisa'); if (lisa) m.lisa_eur = lisa;
+  const ale = hpLukuKentasta('hi-ale');
+  if (ale !== null && ale > 0) {
+    if (document.getElementById('hi-ale-yks').value === 'pct') m.alennus_pct = Math.min(ale, 100); else m.alennus_eur = ale;
+    if (!document.getElementById('hi-nayta').checked) m.nayta_alennus = false;
+  }
+  const syy = (document.getElementById('hi-syy').value || '').trim(); if (syy) m.syy = syy;
+  return Object.keys(m).length ? m : null;
+}
+function hpEsikatselu() {
+  if (!HI) return;
+  const pk = document.getElementById('hi-pk');
+  const lisat = document.getElementById('hi-pk-lisat');
+  if (lisat) {
+    lisat.style.display = pk.value && pk.value !== 'ei' ? '' : 'none';
+    document.getElementById('hi-pk-hinta').parentElement.style.display = pk.value === 'oma' ? '' : 'none';
+  }
+  const H = KPT_HINNOITTELU, k = hpMuokkausKohde(), m = hpLueMuokkaus() || {}, ctx = hpCtx();
+  let ennen = null, jalkeen = null;
+  if (HI.tyyppi === 'rivi') {
+    const c = { materiaalit: ctx.materiaalit, kiinteat: ctx.kiinteat, kappalehinta: hpKappalehinta(k.item, ctx.kiinteat) };
+    ennen = H.rivinHintaMuokattu(k.item, c, null).yhteensa;
+    jalkeen = H.rivinHintaMuokattu(k.item, c, m).yhteensa;
+  } else if (HI.tyyppi === 'ryhma') {
+    const kh = {}; k.g.items.forEach((it, i) => { if (H.tapa(it) === 'kappale') { const v = hpKappalehinta(it, ctx.kiinteat); if (v !== undefined) kh[i] = v; } });
+    const mk = hpMuokkaukset(k.g, true), c = { materiaalit: ctx.materiaalit, kiinteat: ctx.kiinteat, kappalehinnat: kh };
+    ennen = H.ryhmanHintaMuokattu(k.g.items, c, { rivit: mk.rivit, ryhma: null }).yhteensa;
+    jalkeen = H.ryhmanHintaMuokattu(k.g.items, c, { rivit: mk.rivit, ryhma: m }).yhteensa;
+  } else {
+    const rr = HP_TULOKSET.map(t => t.rh).filter(Boolean);
+    ennen = H.tilauksenHinta(rr, null).yhteensa;
+    jalkeen = H.tilauksenHinta(rr, m).yhteensa;
+  }
+  document.getElementById('hi-esikatselu').innerHTML = `Laskettu ${hpEur(ennen)} → <b>${hpEur(jalkeen)}</b> <span class="hy-pieni">(ALV 0 %)</span>`;
+}
+async function hpTallennaMuokkaus(poista) {
+  if (!HI) return;
+  const m = poista ? null : hpLueMuokkaus();
+  const k = hpMuokkausKohde(), tyyppi = HI.tyyppi;
+  const nappi = document.getElementById('hi-tallenna'); nappi.disabled = true;
+  try {
+    const o = { url: SUPABASE_URL, key: SUPABASE_KEY };
+    const p = await KPT_HINTALUKITUS.haePricing(o, currentOrderId);   // tuore: toisen välilehden muutokset säilyvät
+    const aseta = (lokero, avain) => { p[lokero] = p[lokero] || {}; if (m) p[lokero][avain] = m; else delete p[lokero][avain]; };
+    if (tyyppi === 'rivi') aseta('rivit', k.item.supabaseId);
+    else if (tyyppi === 'ryhma') aseta('ryhmat', k.g.name);
+    else { if (m) p.tilaus = m; else delete p.tilaus; }
+    // Siivous: poistettujen rivien ja ryhmien muokkaukset pois
+    const idt = {}, nimet = {};
+    groups.forEach(g => { nimet[g.name] = true; g.items.forEach(it => { if (it.supabaseId) idt[it.supabaseId] = true; }); });
+    Object.keys(p.rivit || {}).forEach(id => { if (!idt[id]) delete p.rivit[id]; });
+    Object.keys(p.ryhmat || {}).forEach(n => { if (!nimet[n]) delete p.ryhmat[n]; });
+    await KPT_HINTALUKITUS.tallennaPricing(o, currentOrderId, p);
+    tilausPricing = p;
+    setSaveStatus('ok', poista ? 'Hinnan muutokset poistettu' : 'Hinta tallennettu');
+    hpSuljeMuokkaus();
+    renderGroups();
+  } catch (e) {
+    console.warn('Hinnan tallennus epäonnistui', e);
+    alert('Hinnan tallennus epäonnistui. Yritä uudelleen.');
+  } finally { nappi.disabled = false; }
+}
+// Muokatun hinnan merkki: "−20 %", "+25,00 €", "oma €/m"
+function hpMerkki(m) {
+  if (!m) return '';
+  const o = [];
+  if (m.oma_hinta != null) o.push('oma ' + hpEur(m.oma_hinta) + '/m');
+  if (m.kappalehinta != null) o.push(hpEur(m.kappalehinta) + '/kpl');
+  if (m.lisa_eur) o.push((m.lisa_eur > 0 ? '+' : '') + hpEur(m.lisa_eur));
+  if (m.alennus_pct) o.push('−' + hpLuku(m.alennus_pct, 2) + ' %');
+  else if (m.alennus_eur) o.push('−' + hpEur(m.alennus_eur));
+  return o.length ? `<span class="hp-merkki" title="${escAttr(m.syy || '')}">${o.join(' ')}</span>` : '';
+}
+function hpSyy(m) { return m && m.syy ? `<div class="hp-syy">Syy: ${escAttr(m.syy)}</div>` : ''; }
+function hpMuokkaaNappi(tyyppi, groupId, itemId) {
+  return `<button type="button" class="hp-muokkaa" onclick="hpAvaaMuokkaus('${tyyppi}','${escAttr(groupId || '')}','${escAttr(itemId || '')}')" title="Alennus, lisä, oma hinta${tyyppi === 'rivi' ? ', pään kääntö' : ''}">✎ Hinta</button>`;
+}
+
+// ⧉ Kopioi tilaus: kysytään hinnoista, jos tilauksessa on lukitus tai hintamuutoksia (Tomi 28.11.)
+function hpKopioKysymys() {
+  const p = tilausPricing || {};
+  const muutoksia = Object.keys(p.rivit || {}).length || Object.keys(p.ryhmat || {}).length || p.tilaus;
+  if (!p.lukittu && !muutoksia) return false;
+  document.getElementById('hi-otsikko').textContent = 'Kopioi tilaus';
+  document.getElementById('hi-sisalto').innerHTML = `<p style="margin:0 0 12px">Tilaus kopioidaan uudeksi luonnokseksi ilman asiakasta. Millä hinnoilla?</p>
+    <div class="hi-kopio">
+      <button type="button" class="kpt-nappi" onclick="hpKopioi('nykyiset')"><b>Nykyisillä hinnoilla</b><span>Uusi tarjous: hinnat nykyisestä Hinnastosta, ei alennuksia</span></button>
+      <button type="button" class="kpt-nappi" onclick="hpKopioi('samat')"><b>Samoilla hinnoilla ja alennuksilla</b><span>${p.lukittu ? 'Lukitut hinnat (' + hpPvm(p.lukittu.aika) + ')' : 'Nykyiset hinnat'}${muutoksia ? ', alennukset ja lisät mukaan' : ''}</span></button>
+    </div>`;
+  document.getElementById('hi-poista').hidden = true;
+  document.getElementById('hi-tallenna').hidden = true;
+  HI = null;
+  document.getElementById('hinta-ikkuna').classList.add('auki');
+  return true;
+}
+function hpKopioi(tapa) {
+  document.getElementById('hi-tallenna').hidden = false;
+  hpSuljeMuokkaus();
+  localStorage.setItem('copyOrderId', currentOrderId);
+  localStorage.setItem('copyKeepCustomer', 'false');
+  localStorage.setItem('copyPricing', tapa);
+  window.open('tilaus.html', '_blank');
+}
+// Kopioinnin lopuksi: alkuperäisen pricing uuteen tilaukseen (rivien tunnukset vaihdettu idKartalla)
+async function hpKopioiHinnat(src, idKartta) {
+  const sp = src.pricing || {};
+  const p = {};
+  if (sp.lukittu) p.lukittu = sp.lukittu;
+  if (sp.rivit) { p.rivit = {}; Object.keys(sp.rivit).forEach(id => { if (idKartta[id]) p.rivit[idKartta[id]] = sp.rivit[id]; }); }
+  if (sp.ryhmat) p.ryhmat = JSON.parse(JSON.stringify(sp.ryhmat));
+  if (sp.tilaus) p.tilaus = sp.tilaus;
+  if (!Object.keys(p).length) return;
+  try {
+    await KPT_HINTALUKITUS.tallennaPricing({ url: SUPABASE_URL, key: SUPABASE_KEY }, currentOrderId, p);
+    tilausPricing = p;
+  } catch (e) { console.warn('Hintojen kopiointi epäonnistui', e); setSaveStatus('err', 'Hintojen kopiointi epäonnistui'); }
 }
 function hpSiirry(groupId) {
   const i = groups.findIndex(g => g.id === groupId);
@@ -2859,6 +3107,7 @@ fetchProducts();
 const openOrderId = localStorage.getItem('openOrderId');
 const copyOrderId = localStorage.getItem('copyOrderId');
 const copyKeepCustomer = localStorage.getItem('copyKeepCustomer') === 'true';
+const copyPricing = localStorage.getItem('copyPricing') === 'samat';
 let alustus = null;   // lähetykset otetaan vastaan vasta, kun tilaus on latautunut
 if (openOrderId) {
   localStorage.removeItem('openOrderId');
@@ -2866,7 +3115,8 @@ if (openOrderId) {
 } else if (copyOrderId) {
   localStorage.removeItem('copyOrderId');
   localStorage.removeItem('copyKeepCustomer');
-  alustus = copyOrderById(copyOrderId, copyKeepCustomer);
+  localStorage.removeItem('copyPricing');
+  alustus = copyOrderById(copyOrderId, copyKeepCustomer, copyPricing);
 } else {
   alustus = fetchCustomers().then(() => {
     const preCustomerId = localStorage.getItem('newOrderCustomerId');
