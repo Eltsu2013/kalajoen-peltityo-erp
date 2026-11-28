@@ -172,6 +172,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
+<script src="hintalukitus.js?v=1"></script>
 </head>
 <body class="kpt-sivu">
 
@@ -531,6 +532,8 @@ async function setOrderStatus(id, newStatus) {
     // koko listan hakemista uudelleen palvelimelta — nopeampaa ja sulavampaa.
     const o = allOrders.find(x => x.id === id);
     if (o) o.status = newStatus;
+    // Hinnoittelu 4b: Tarjottu / Tilattu (tai myöhempi) → hinnat lukitaan tilaukseen, jos ei vielä lukittu
+    if (window.KPT_HINTALUKITUS) KPT_HINTALUKITUS.lukitse(id, newStatus, { url: SUPABASE_URL, key: SUPABASE_KEY }).catch(e => console.warn('Hintojen lukitus epäonnistui', e));
     updateCounts();
     applyFilters();
   } catch (err) {

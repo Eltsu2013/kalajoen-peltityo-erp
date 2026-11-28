@@ -695,6 +695,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
+<script src="hintalukitus.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <script src="tyokortti.js?v=7"></script>
 <script src="profiilit.js?v=20261127b"></script>
@@ -1907,6 +1908,7 @@ async function quickChangeStatus(orderId, newStatus) {
   if (!res.ok) { alert('Statuksen tallennus epäonnistui'); return; }
   const o = allOrders.find(x => x.id === orderId);
   if (o) o.status = newStatus;
+  if (window.KPT_HINTALUKITUS) KPT_HINTALUKITUS.lukitse(orderId, newStatus, { url: SUPABASE_URL, key: SUPABASE_KEY }).catch(e => console.warn('Hintojen lukitus epäonnistui', e));
   // Renderöi lista uudelleen jotta badge päivittyy
   applyFilter();
 }
@@ -1932,6 +1934,7 @@ async function changeOrderStatus(newStatus) {
     const sel = document.getElementById('cardStatusSelect');
     if (sel) sel.value = newStatus;
   }
+  if (window.KPT_HINTALUKITUS) KPT_HINTALUKITUS.lukitse(activeOrderId, newStatus, { url: SUPABASE_URL, key: SUPABASE_KEY }).catch(e => console.warn('Hintojen lukitus epäonnistui', e));
 }
 
 // ── Avaa tilaus muokattavaksi tilaus.html:ssä ─────────────────────

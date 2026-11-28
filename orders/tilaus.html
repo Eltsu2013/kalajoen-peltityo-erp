@@ -553,6 +553,7 @@
 
 <script src="lahetys.js?v=3"></script>
 <script src="hinnoittelu.js?v=2"></script>
+<script src="hintalukitus.js?v=1"></script>
 <script>
 const SUPABASE_URL = 'https://hjyeugeqmyavxisndlwp.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqeWV1Z2VxbXlhdnhpc25kbHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNDM2NzgsImV4cCI6MjA4NjcxOTY3OH0.ZMuN6lruMUHkASUtwnoShiqHLAg6YBEGsC7zMlymLs4';
@@ -777,6 +778,7 @@ async function loadOrderById(orderId) {
   const order = data[0];
 
   currentOrderId = order.id;
+  tilausPricing = order.pricing || {};   // hinnoittelu 4b: lukitus ja muokkaukset
   paivitaTuotantoNappi();
   document.getElementById('order-number-display').textContent = order.order_number || currentOrderId.slice(0,8);
   if (order.order_date) document.getElementById('order-date').value = order.order_date.slice(0,10);
@@ -876,6 +878,7 @@ async function loadOrderById(orderId) {
   updateSummary();
   setSaveStatus('ok', 'Tilaus ladattu');
   const kb = document.getElementById('kopioi-btn'); if (kb) kb.style.display = 'inline-block';
+  hpTarkistaLukitus(order.status, true);   // vanha tai muualta tilaa vaihdettu tilaus ilman lukitusta
 }
 
 // ── Tilauksen kopiointi ───────────────────────────────────────────
@@ -914,6 +917,7 @@ async function copyOrderById(sourceId, keepCustomer) {
   const newOrders = await r3.json();
   const newOrderId = newOrders[0].id;
   currentOrderId = newOrderId;
+  tilausPricing = {};   // uusi tilaus: ei lukitusta eikä hintamuokkauksia (kopion kysymys vaiheessa 4b-3)
   paivitaTuotantoNappi();
   document.getElementById('order-number-display').textContent = newOrders[0].order_number || newOrderId.slice(0,8);
   document.getElementById('order-date').value = today;
@@ -1131,6 +1135,7 @@ async function createOrder() {
   }
   const data = await r.json();
   currentOrderId = data[0].id;
+  tilausPricing = {};   // uusi tilaus: ei lukitusta eikä hintamuokkauksia (kopion kysymys vaiheessa 4b-3)
   paivitaTuotantoNappi();
   document.getElementById('order-number-display').textContent = data[0].order_number || currentOrderId.slice(0,8);
   setSaveStatus('ok', 'Tallennettu');
@@ -1162,6 +1167,7 @@ async function saveOrderMeta() {
         return;
       }
       setSaveStatus('ok', 'Tallennettu');
+      hpTarkistaLukitus(body.status, false);   // Tarjottu / Tilattu → hinnat lukitaan
     } catch (e) {
       console.warn('Tilauksen tietojen tallennus epäonnistui:', e);
       setSaveStatus('err', 'Tallennus epäonnistui');
@@ -2177,10 +2183,11 @@ const hpLuku = (x, d) => (+Number(x).toFixed(d == null ? 2 : d)).toLocaleString(
 const hpNimi = s => String(s == null ? '' : s).trim().toLowerCase().replace(/\s+/g, ' ');
 
 // Kappaletavaran ja piipun lisäosien hinta Kiinteistä hinnoista, jos nimi täsmää (Tomi 27.11.). Muuten vaiheessa 4b.
-function hpKappalehinta(item) {
-  if (!hinnasto) return undefined;
+function hpKappalehinta(item, kiinteat) {
+  const lista = kiinteat || (hinnasto && hinnasto.kiinteat);
+  if (!lista) return undefined;
   const n = hpNimi(item.nimike);
-  const r = n && hinnasto.kiinteat.find(k => hpNimi(k.product_name) === n && k.unit_price != null);
+  const r = n && lista.find(k => hpNimi(k.product_name) === n && k.unit_price != null);
   return r ? Number(r.unit_price) : undefined;
 }
 // Vanha listahinta vertailuksi: sama materiaali ja paksuus, pienin leveysporras, johon aihio mahtuu.
@@ -2219,15 +2226,81 @@ function hpPuuteHtml(k, groupId, item) {
 
 // Ryhmän hinnat: { merkki, osio, yhteensa, vajaa, puutteet: [{ k, ryhma, groupId }], uusiVert, vanhaVert }
 // Listapellit ja kappaletavara näytetään omassa kortissaan (hintaRiviHtml), materiaali + aika -tuotteet ryhmän alla.
+// ── Lukitus (vaihe 4b-2, 28.11.2026): laskennan hinnasto = lukittu kopio + nykyisestä ne rivit, joita kopiossa ei ole ──
+let tilausPricing = {};          // orders.pricing (luetaan tilauksen mukana)
+let hpUudetTallennus = null;
+function hpLukittu() { return tilausPricing && tilausPricing.lukittu ? tilausPricing.lukittu : null; }
+function hpCtx() {
+  const y = window.KPT_HINTALUKITUS ? KPT_HINTALUKITUS.yhdista(hpLukittu(), hinnasto) : { materiaalit: hinnasto.materiaalit, kiinteat: hinnasto.kiinteat, uudet: null };
+  if (y.uudet && hpLukittu()) hpLisaaKopioon(y.uudet);
+  return y;
+}
+// Kopiosta puuttuneet rivit (esim. hinta lisättiin Hinnastoon lukituksen jälkeen) lisätään kopioon, jolloin nekin pysyvät lukittuina.
+function hpLisaaKopioon(uudet) {
+  const l = hpLukittu();
+  l.materiaalit = (l.materiaalit || []).concat(uudet.materiaalit);
+  l.kiinteat = (l.kiinteat || []).concat(uudet.kiinteat);
+  clearTimeout(hpUudetTallennus);
+  hpUudetTallennus = setTimeout(async () => {
+    try {
+      const o = { url: SUPABASE_URL, key: SUPABASE_KEY };
+      const p = await KPT_HINTALUKITUS.haePricing(o, currentOrderId);
+      if (!p.lukittu) return;
+      const y = KPT_HINTALUKITUS.yhdista(p.lukittu, { materiaalit: l.materiaalit, kiinteat: l.kiinteat });
+      if (!y.uudet) return;
+      p.lukittu.materiaalit = p.lukittu.materiaalit.concat(y.uudet.materiaalit);
+      p.lukittu.kiinteat = p.lukittu.kiinteat.concat(y.uudet.kiinteat);
+      await KPT_HINTALUKITUS.tallennaPricing(o, currentOrderId, p);
+      tilausPricing = p;
+    } catch (e) { console.warn('Lukitun hinnaston täydennys epäonnistui', e); }
+  }, 1500);
+}
+// Lukitus tilan vaihtuessa (saveOrderMeta) ja varmistus avattaessa (loadOrderById)
+async function hpTarkistaLukitus(tila, avattaessa) {
+  if (!window.KPT_HINTALUKITUS || !currentOrderId || !KPT_HINTALUKITUS.lukitaankoTila(tila) || hpLukittu()) return;
+  try {
+    const t = await KPT_HINTALUKITUS.lukitse(currentOrderId, tila, { url: SUPABASE_URL, key: SUPABASE_KEY });
+    if (t.pricing) tilausPricing = t.pricing;
+    if (t.lukittiin) setSaveStatus('ok', avattaessa ? 'Hinnat lukittiin (tila ' + KPT_HINTALUKITUS.tilaTeksti(tila) + ')' : 'Hinnat lukittu');
+    renderGroups();
+  } catch (e) {
+    console.warn('Hintojen lukitus epäonnistui', e);
+    setSaveStatus('err', 'Hintojen lukitus epäonnistui');
+  }
+}
+async function hpPaivitaNykyiseen() {
+  if (!currentOrderId || !hinnasto || hinnasto.virhe) return;
+  if (!confirm('Lasketaanko tilauksen hinnat nykyisellä hinnastolla?\n\nUusi hinnasto lukitaan tilaukseen. Alennukset ja lisät säilyvät.')) return;
+  try {
+    tilausPricing = await KPT_HINTALUKITUS.paivitaNykyiseen(currentOrderId, document.getElementById('order-status').value,
+      { url: SUPABASE_URL, key: SUPABASE_KEY, hinnasto: { materiaalit: hinnasto.materiaalit, kiinteat: hinnasto.kiinteat } });
+    setSaveStatus('ok', 'Hinnat päivitetty nykyiseen hinnastoon');
+    renderGroups();
+  } catch (e) { console.warn(e); setSaveStatus('err', 'Hintojen päivitys epäonnistui'); }
+}
+function hpPvm(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear(); }
+// Ryhmän muokkaukset orders.pricingista: rivit rivin tunnuksella (supabaseId), piippujen ym. ryhmä nimellä
+function hpMuokkaukset(g, matAika) {
+  const p = tilausPricing || {}, rivit = {};
+  g.items.forEach((it, i) => { const m = it.supabaseId && p.rivit && p.rivit[it.supabaseId]; if (m) rivit[i] = m; });
+  return { rivit, ryhma: matAika && p.ryhmat ? p.ryhmat[g.name] : null };
+}
+
 function ryhmanHintaTiedot(g) {
   if (!hinnatNakyvissa()) return null;
   if (!hinnasto || hinnastoHaku || hinnasto.virhe) { if (!hinnasto) haeHinnasto(); return { merkki: '', osio: '', yhteensa: 0, vajaa: false, puutteet: [], lataa: true }; }
-  const H = KPT_HINNOITTELU;
+  const H = KPT_HINNOITTELU, ctx = hpCtx();
   const kappalehinnat = {};
-  g.items.forEach((it, i) => { if (H.tapa(it) === 'kappale') { const h = hpKappalehinta(it); if (h !== undefined) kappalehinnat[i] = h; } });
-  const rh = H.ryhmanHinta(g.items, { materiaalit: hinnasto.materiaalit, kiinteat: hinnasto.kiinteat, kappalehinnat });
-  const matAika = rh.rivit.some(r => r.tapa === 'materiaali_aika');
-  const tulos = { yhteensa: rh.yhteensa, vajaa: rh.puuttuu.length > 0, puutteet: [], uusiVert: 0, vanhaVert: 0, rivejaVajaa: 0 };
+  g.items.forEach((it, i) => { if (H.tapa(it) === 'kappale') { const h = hpKappalehinta(it, ctx.kiinteat); if (h !== undefined) kappalehinnat[i] = h; } });
+  const matAika = g.items.some(it => H.tapa(it) === 'materiaali_aika');
+  const mk = hpMuokkaukset(g, matAika);
+  const rh = H.ryhmanHintaMuokattu(g.items, { materiaalit: ctx.materiaalit, kiinteat: ctx.kiinteat, kappalehinnat }, mk);
+  const tulos = { rh, yhteensa: rh.yhteensa, vajaa: rh.puuttuu.length > 0, puutteet: [], uusiVert: 0, vanhaVert: 0, rivejaVajaa: 0 };
+  // Lukitussa tilauksessa sama nykyisellä hinnastolla vertailuksi
+  if (hpLukittu()) {
+    const kh = {}; g.items.forEach((it, i) => { if (H.tapa(it) === 'kappale') { const h = hpKappalehinta(it, hinnasto.kiinteat); if (h !== undefined) kh[i] = h; } });
+    tulos.yhteensaNyt = H.ryhmanHintaMuokattu(g.items, { materiaalit: hinnasto.materiaalit, kiinteat: hinnasto.kiinteat, kappalehinnat: kh }, mk).yhteensa;
+  }
 
   const osioPuutteet = [];
   g.items.forEach((it, i) => {
@@ -2237,9 +2310,10 @@ function ryhmanHintaTiedot(g) {
     HP_RIVIT[it.id] = { r, nayta };
     if (r.puuttuu.length) tulos.rivejaVajaa++;
     r.puuttuu.forEach(k => { if (!nayta && osioPuutteet.indexOf(k) < 0) osioPuutteet.push(k); });
-    if (nayta && r.tapa === 'lista' && !r.puuttuu.length && r.osat[0]) {
+    const pelti = r.osat.find(o => o.nimi === 'Pelti');
+    if (nayta && r.tapa === 'lista' && !r.puuttuu.length && pelti) {
       const v = hpVanhaHinta(it);
-      if (v) { tulos.uusiVert += r.yhteensa; tulos.vanhaVert += Number(v.unit_price) * r.osat[0].maara; }
+      if (v) { tulos.uusiVert += pelti.summa; tulos.vanhaVert += Number(v.unit_price) * pelti.maara; }
     }
   });
   if (rh.puuttuu.indexOf('tyoaika') >= 0) { osioPuutteet.push('tyoaika'); tulos.rivejaVajaa++; }
@@ -2250,7 +2324,7 @@ function ryhmanHintaTiedot(g) {
 
   tulos.osio = '';
   if (matAika) {
-    const mat = {}, kpl = [], palat = [];
+    const mat = {}, kpl = [], palat = [], muut = [];
     let tyo = null;
     rh.rivit.forEach((r, i) => {
       if (HP_RIVIT[g.items[i].id].nayta) return;
@@ -2263,12 +2337,15 @@ function ryhmanHintaTiedot(g) {
           palat.push({ nimi, m2: o.maara, summa: o.summa });
         } else if (o.nimi === 'Työ') tyo = o;
         else if (o.nimi === 'Kappaleet') kpl.push({ nimi, o });
+        else muut.push({ nimi, o });
       });
     });
     const mm = Object.values(mat), rr = [];
     mm.forEach(m => rr.push(`<div class="rr"><span class="n">Materiaali${mm.length > 1 ? ' ' + escAttr(m.nimi) : ''}</span><span class="k">${hpLuku(m.m2, 2)} m² × ${hpEur(m.ahinta)}/m²</span><span class="s">${hpEur(Math.round(m.summa * 100) / 100)}</span></div>`));
     if (tyo) rr.push(`<div class="rr"><span class="n">Työ</span><span class="k">${hpLuku(tyo.maara, 0)} min × ${escAttr(tyo.selite || '')}</span><span class="s">${hpEur(tyo.summa)}</span></div>`);
     kpl.forEach(x => rr.push(`<div class="rr"><span class="n">${escAttr(x.nimi)}</span><span class="k">${hpLuku(x.o.maara, 2)} kpl × ${hpEur(x.o.ahinta)}</span><span class="s">${hpEur(x.o.summa)}</span></div>`));
+    muut.forEach(x => rr.push(hpOsaRivi(x.o, x.nimi)));
+    rh.osat.forEach(o => rr.push(hpOsaRivi(o)));
     osioPuutteet.forEach(k => {
       const it = g.items.find((x, i) => !HP_RIVIT[x.id].nayta && rh.rivit[i].puuttuu.indexOf(k) >= 0);
       rr.push(`<div class="rr">${hpPuuteHtml(k, g.id, it)}</div>`);
@@ -2279,37 +2356,40 @@ function ryhmanHintaTiedot(g) {
   }
   return tulos;
 }
+// Lisä, alennus ja muut käsin tehdyt osat erittelyyn
+function hpOsaRivi(o, kenelle) {
+  const nimi = (kenelle ? kenelle + ': ' : '') + o.nimi + (o.selite ? ' ' + o.selite : '');
+  return `<div class="rr"><span class="n">${escAttr(nimi)}</span><span class="k"></span><span class="s">${hpEur(o.summa)}</span></div>`;
+}
 
 // Listapellin ja kappaletavaran hinta omassa kortissaan
 function hintaRiviHtml(item, groupId) {
   if (!hinnatNakyvissa()) return '';
   const t = HP_RIVIT[item.id];
   if (!t || !t.nayta) return '';
-  const H = KPT_HINNOITTELU, r = t.r, osa = r.osat[0];
+  const r = t.r;
+  const pelti = r.osat.find(o => o.nimi === 'Pelti'), kpl = r.osat.find(o => o.nimi === 'Kappaleet');
   let h = '', summa = '';
   if (r.puuttuu.length) h = r.puuttuu.map(k => hpPuuteHtml(k, groupId, item)).join('');
-  else if (r.tapa === 'lista' && osa) {
+  if (pelti) {
     summa = hpEur(r.yhteensa);
-    h = `<div class="rh-kaava">${hpLuku(osa.maara, 2)} m × ${hpEur(osa.ahinta)}/m</div>
-         <details><summary>Miten hinta muodostuu?</summary><div>${escAttr(osa.selite || '')}, pyöristys 5 senttiin = ${hpEur(osa.ahinta)}/m.
+    h += `<div class="rh-kaava">${hpLuku(pelti.maara, 2)} m × ${hpEur(pelti.ahinta)}/m = ${hpEur(pelti.summa)}</div>
+         <details><summary>Miten hinta muodostuu?</summary><div>${escAttr(pelti.selite || '')}, pyöristys 5 senttiin.
          Pituus päineen (esim. 3000 + 20 mm = 3,02 m).</div></details>`;
     const v = hpVanhaHinta(item);
     if (v) {
-      const ero = (osa.ahinta - v.unit_price) / v.unit_price * 100;
+      const ero = (pelti.ahinta - v.unit_price) / v.unit_price * 100;
       h += `<div class="hinta-vert">vanha lista ${hpEur(Number(v.unit_price))}/m (porras ${v.width_mm} mm), ero
             <span class="${ero >= 0 ? 'ero-plus' : 'ero-miinus'}">${ero >= 0 ? '+' : '−'}${hpLuku(Math.abs(ero), 0)} %</span></div>`;
     }
-  } else if (osa) {
+  } else if (kpl) {
     summa = hpEur(r.yhteensa);
-    h = `<div class="rh-kaava">${hpLuku(osa.maara, 2)} ${escAttr(osa.yksikko)} × ${hpEur(osa.ahinta)}</div>`;
+    h += `<div class="rh-kaava">${hpLuku(kpl.maara, 2)} kpl × ${hpEur(kpl.ahinta)}</div>`;
   }
-  if (r.tapa === 'lista') {
-    const e = H.paanKaantoEhdotus(item);
-    if (e) {
-      const hinnat = H.paanKaantoHinnat(hinnasto.kiinteat), kpl = H.kplYhteensa(item), lisa = H.paanKaantoLisa(hinnat[e.taso], e.paat, kpl);
-      if (lisa != null) h += `<div class="hinta-ehdotus">Pään kääntö (ehdotus): ${e.taso} ${hpEur(hinnat[e.taso])} × ${e.paat} päätä × ${hpLuku(kpl, 0)} kpl = ${hpEur(lisa)}, ei summassa</div>`;
-    }
-  }
+  r.osat.forEach(o => {
+    if (o.nimi === 'Pään kääntö') h += `<div class="rh-kaava${o.ehdotus ? ' hinta-ehdotus' : ''}">Pään kääntö${o.ehdotus ? ' (ehdotus)' : ''}: ${escAttr(o.taso)} ${hpEur(o.ahinta)} × ${o.paat} ${o.paat === 1 ? 'pää' : 'päätä'} × ${hpLuku(o.maara / o.paat, 0)} kpl = ${hpEur(o.summa)}</div>`;
+    else if (o.lisa || o.alennus) h += `<div class="rh-kaava">${o.nimi}${o.selite ? ' ' + escAttr(o.selite) : ''}: ${hpEur(o.summa)}</div>`;
+  });
   return `<div class="rivi-hinta"><div class="rh-tiedot">${h}</div>${summa ? `<div class="rh-summa">${summa}</div>` : ''}</div>`;
 }
 
@@ -2325,21 +2405,37 @@ function paivitaHintaYhteenveto(tulokset) {
       <div class="hy-napit"><button type="button" class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="paivitaHinnat()">↻ Yritä uudelleen</button></div>`;
     return;
   }
-  const yht = Math.round(tulokset.reduce((s, t) => s + t.yhteensa, 0) * 100) / 100;
+  const th = KPT_HINNOITTELU.tilauksenHinta(tulokset.map(t => t.rh).filter(Boolean), (tilausPricing || {}).tilaus);
+  const yht = th.yhteensa;
   const vajaat = tulokset.reduce((s, t) => s + t.rivejaVajaa, 0);
   const puutteet = [].concat(...tulokset.map(t => t.puutteet));
   const uusi = tulokset.reduce((s, t) => s + t.uusiVert, 0), vanha = tulokset.reduce((s, t) => s + t.vanhaVert, 0);
+  const l = hpLukittu();
+  let lukko;
+  if (l) {
+    const nyt = KPT_HINNOITTELU.tilauksenHinta(tulokset.map(t => ({ yhteensa: t.yhteensaNyt != null ? t.yhteensaNyt : t.yhteensa })), (tilausPricing || {}).tilaus).yhteensa;
+    const ero = yht ? (nyt - yht) / yht * 100 : 0;
+    const eroTeksti = Math.abs(nyt - yht) >= 0.01
+      ? ` · Hinnasto nyt ${hpEur(nyt)} (<span style="color:var(${ero >= 0 ? '--kpt-huom' : '--kpt-ok'})">${ero >= 0 ? '+' : '−'}${hpLuku(Math.abs(ero), 1)} %</span>)`
+      : ' · sama kuin nykyinen hinnasto';
+    lukko = `<span class="hy-pieni" style="margin:0">🔒 Hinnat lukittu ${hpPvm(l.aika)}${l.tila ? ' (' + escAttr(KPT_HINTALUKITUS.tilaTeksti(l.tila)) + ')' : ''}${l.paivitetty ? ', päivitetty' : ''}${eroTeksti}</span>
+      ${Math.abs(nyt - yht) >= 0.01 ? `<button type="button" class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="hpPaivitaNykyiseen()">Päivitä nykyiseen hinnastoon</button>` : ''}`;
+  } else {
+    lukko = `<span class="hy-pieni" style="margin:0">Hinnat lasketaan nykyisestä Hinnastosta. Ne lukitaan, kun tilaksi vaihdetaan Tarjottu tai Tilattu.</span>`;
+  }
   el.innerHTML = `
-    ${hinnasto.virhe ? `<div class="hinta-puute" style="margin-bottom:6px">⚠ ${escAttr(hinnasto.virhe)}</div>` : ''}
     <div class="hy-pieni">Tilaus yhteensä, ALV 0 %</div>
     <div class="hy-iso${vajaat ? ' vajaa' : ''}">${vajaat ? 'väh. ' : ''}${hpEur(yht)}</div>
     <div class="hy-pieni">sis. ALV ${String(ALV_PROSENTTI).replace('.', ',')} %: ${hpEur(Math.round(yht * (1 + ALV_PROSENTTI / 100) * 100) / 100)}${vajaat ? ` · <b style="color:var(--kpt-huom)">${vajaat} ${vajaat === 1 ? 'rivi' : 'riviä'} ilman täyttä hintaa</b>` : ''}</div>
-    ${vanha ? `<div class="hy-pieni">Listapellit: uusi hinta ${hpEur(Math.round(uusi * 100) / 100)}, vanhalla listalla olisi ${hpEur(Math.round(vanha * 100) / 100)}</div>` : ''}
+    ${th.alennus ? `<div class="hy-pieni">Tilauksen alennus ${escAttr(th.alennus.selite)}: ${hpEur(th.alennus.summa)}</div>` : ''}
+    ${th.alennuksetYhteensa ? `<div class="hy-pieni">Alennukset yhteensä ${hpEur(th.alennuksetYhteensa)}</div>` : ''}
+    ${th.ehdotuksia ? `<div class="hy-pieni">${th.ehdotuksia} ${th.ehdotuksia === 1 ? 'pään kääntö' : 'pään kääntöä'} ehdotuksena (normaali, 2 päätä), mukana summassa</div>` : ''}
+    ${vanha ? `<div class="hy-pieni">Listapellit (ilman lisiä): uusi hinta ${hpEur(Math.round(uusi * 100) / 100)}, vanhalla listalla olisi ${hpEur(Math.round(vanha * 100) / 100)}</div>` : ''}
     ${puutteet.length ? `<div class="hy-puutteet">${puutteet.map(p => `<div><span class="hinta-puute">⚠ ${escAttr(p.ryhma)}: ${escAttr(KPT_HINNOITTELU.puuteTeksti(p.k))}</span>
         <button type="button" class="btn btn-secondary" style="padding:1px 8px;font-size:11px" onclick="hpSiirry('${escAttr(p.groupId)}')">näytä</button></div>`).join('')}</div>` : ''}
+    <div class="hy-napit">${lukko}</div>
     <div class="hy-napit">
       <button type="button" class="btn btn-secondary" style="font-size:11px;padding:3px 10px" onclick="paivitaHinnat()" title="Hae Hinnasto uudelleen, jos hintoja on korjattu toisessa välilehdessä">↻ Päivitä hinnat</button>
-      <span class="hy-pieni" style="margin:0">Hinnat lasketaan nykyisestä Hinnastosta, eikä niitä ole lukittu.</span>
     </div>`;
 }
 function hpSiirry(groupId) {
