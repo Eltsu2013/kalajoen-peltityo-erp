@@ -366,7 +366,12 @@
     .modal { width: 100%; max-width: none; max-height: none; height: 100%; border-radius: 0; }
     .modal-footer .btn { flex: 1; }
   }
-  </style>
+    /* Peltilistat laskettuna Materiaaleista (28.11.2026) */
+  .lp-valinta { background: var(--kpt-kentta); color: var(--kpt-teksti); border: 1px solid var(--kpt-reuna2); border-radius: 4px; padding: 5px 8px; font-family: inherit; font-size: 13px; }
+  .lp-kaava { flex-basis: 100%; order: 10; font-size: 12px; color: var(--kpt-himmea); line-height: 1.5; }
+  .lp-kaava:empty { display: none; }
+  @media (max-width: 700px) { .lp-valinta { font-size: 16px; width: 100%; } #listMatFilters { flex-direction: column; } }
+</style>
 </head>
 <body class="kpt-sivu">
 
@@ -428,8 +433,9 @@
     <div class="filter-bar">
       <span class="filter-label">Materiaali:</span>
       <div id="listMatFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div id="listKaava" class="lp-kaava"></div>
       <div class="ml-auto" style="display:flex;gap:8px;align-items:center">
-        <input class="filter-search" id="listSearch" placeholder="Hae leveydellä tai materiaalilla..." oninput="renderList();renderListMobile()">
+        <input class="filter-search" id="listSearch" inputmode="decimal" placeholder="Leveys mm, esim. 263" oninput="renderList()">
         <button class="btn btn-secondary" onclick="showMassModal()">&#x27F3; Laske uudet hinnat</button>
       </div>
     </div>
@@ -437,12 +443,11 @@
       <table>
         <thead>
           <tr>
-            <th>Materiaali</th>
-            <th>Paksuus</th>
-            <th>Leveys mm</th>
-            <th class="right">Hinta €/m <span style="font-weight:400;opacity:0.5">(alv 0%)</span></th>
-            <th>Yks</th>
-            <th style="width:90px"></th>
+            <th>Aihion leveys</th>
+            <th class="right">Hinta €/m <span style="font-weight:400;opacity:0.5">(alv 0 %)</span></th>
+            <th class="right">sis. alv 25,5 %</th>
+            <th class="right">Vanha lista</th>
+            <th class="right">Ero</th>
           </tr>
         </thead>
         <tbody id="listBody"><tr><td colspan="5" class="loading">Ladataan...</td></tr></tbody>
@@ -653,6 +658,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="auth-guard.js"></script>
+<script src="hinnoittelu.js?v=1"></script>
 <script>
 
 
@@ -673,6 +679,8 @@ let fixedGroupFilter = 'all';
 async function init() {
   await Promise.all([loadList(), loadFixed(), loadMaterials(), loadSurcharge(), loadProducts()]);
   updateSummary();
+  renderListFilters();
+  renderList();
   avaaOsoitteesta();
 }
 
@@ -784,53 +792,144 @@ function updateSummary() {
 
 // ---- PELTILISTAT ----
 function renderListFilters() {
-  var materials = [];
-  listData.forEach(function(r) { if (r.material && materials.indexOf(r.material) === -1) materials.push(r.material); });
-  materials.sort();
-  var html = '<button class="fbtn ' + (listMatFilter === 'all' ? 'active' : '') + '" data-filter="all" onclick="setListFilterData(this)">Kaikki</button>';
-  materials.forEach(function(m) {
-    html += '<button class="fbtn ' + (listMatFilter === m ? 'active' : '') + '" data-filter="' + m + '" onclick="setListFilterData(this)">' + m + '</button>';
-  });
-  document.getElementById('listMatFilters').innerHTML = html;
+  // Peltilistat laskettuna (28.11.2026, Tomi: HC 25 ja Glossy hinnastoon). Taulukko lasketaan Materiaaleista
+  // samalla kaavalla kuin tilauksen hinnat (KPT_HINNOITTELU.metrihinta), joten kantaan ei tule uusia rivejä
+  // ja hinta päivittyy, kun ostohinta muuttuu. Vanha pricing_list näkyy vertailusarakkeena.
+  var el = document.getElementById('listMatFilters');
+  if (!el) return;
+  var vanha = lpValinta();
+  var mats = lpMateriaalit();
+  if (!mats.length) {
+    el.innerHTML = '<span style="color:var(--kpt-himmea);font-size:13px">Lisää materiaalille ostohinta Materiaalit-välilehdellä.</span>';
+    return;
+  }
+  var avain = mats.some(function (m) { return m.avain === vanha.avain; }) ? vanha.avain
+    : ((mats.find(function (m) { return hmNimi(m.material) === 'pural' && m.paks === 0.5; }) || mats[0]).avain);
+  var varit = lpVarit(avain);
+  var vari = varit.indexOf(vanha.vari) >= 0 ? vanha.vari : '';
+  el.innerHTML = '<select id="listMat" class="lp-valinta" onchange="lpVaihda()" title="Materiaali ja paksuus">'
+    + mats.map(function (m) { return '<option value="' + esc(m.avain) + '"' + (m.avain === avain ? ' selected' : '') + '>' + esc(m.material + ' ' + String(m.paks).replace('.', ',')) + '</option>'; }).join('')
+    + '</select>'
+    + (varit.length ? '<select id="listVari" class="lp-valinta" onchange="lpVaihda()" title="Väri">'
+      + '<option value="">Perushinta (kaikki värit)</option>'
+      + varit.map(function (c) { return '<option value="' + esc(c) + '"' + (c === vari ? ' selected' : '') + '>' + esc(c) + ' (oma hinta)</option>'; }).join('')
+      + '</select>' : '');
 }
-
-function setListFilterData(btn) {
-  listMatFilter = btn.getAttribute('data-filter');
-  document.querySelectorAll('#listMatFilters .fbtn').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
+var LP_ALV = 25.5;
+// Materiaalit, joilla on perushinta (väritön rivi + ostohinta), kerran kukin materiaali + paksuus
+function lpMateriaalit() {
+  var nahty = {}, out = [];
+  matData.forEach(function (m) {
+    var p = hmPaks(m.thickness_mm);
+    if (!m.material || p === null || m.color || m.purchase_price == null) return;
+    var a = hmAvain(m.material, p);
+    if (nahty[a]) return;
+    nahty[a] = true;
+    out.push({ avain: a, material: m.material, paks: p });
+  });
+  return out.sort(function (x, y) { return x.material.localeCompare(y.material, 'fi') || x.paks - y.paks; });
+}
+function lpVarit(avain) {
+  var v = [];
+  matData.forEach(function (m) { if (m.color && m.purchase_price != null && hmAvain(m.material, m.thickness_mm) === avain && v.indexOf(m.color) < 0) v.push(m.color); });
+  return v.sort();
+}
+function lpValinta() {
+  var s = document.getElementById('listMat'), c = document.getElementById('listVari');
+  if (s) return { avain: s.value, vari: c ? c.value : '' };
+  try { var t = JSON.parse(localStorage.getItem('kpt_hinnasto_lista') || '{}'); return { avain: t.avain || '', vari: t.vari || '' }; } catch (e) { return { avain: '', vari: '' }; }
+}
+function lpVaihda() {
+  var s = document.getElementById('listMat'), c = document.getElementById('listVari');
+  // Materiaalin vaihto: värilista uusiksi (väri säilyy, jos uudella materiaalilla on sama)
+  try { localStorage.setItem('kpt_hinnasto_lista', JSON.stringify({ avain: s ? s.value : '', vari: c ? c.value : '' })); } catch (e) {}
+  renderListFilters();
   renderList();
+}
+function setListFilterData() { renderList(); }
+
+// Taulukon rivit: [{ leveys, hinta, vanha, haettu }] + otsikkotiedot
+function lpRivit() {
+  var H = window.KPT_HINNOITTELU, v = lpValinta();
+  var m = lpMateriaalit().find(function (x) { return x.avain === v.avain; });
+  if (!H || !m) return null;
+  var mh = H.materiaalinHinta(matData, { material: m.material, thickness: m.paks, color: v.vari || null });
+  if (!mh) return null;
+  var omat = listData.filter(function (r) { return r.material && hmAvain(r.material, r.thickness_mm) === m.avain && r.width_mm != null && r.price_per_m != null; });
+  // Leveydet: tämän materiaalin vanhan listan leveydet, muuten minkä tahansa vanhan listan, muuten 50–1250 mm sentin välein
+  var lahde = omat.length ? omat : listData.filter(function (r) { return r.width_mm != null; });
+  var lev = [];
+  lahde.forEach(function (r) { var w = Number(r.width_mm); if (w > 0 && lev.indexOf(w) < 0) lev.push(w); });
+  if (!lev.length) for (var w = 50; w <= 1250; w += 10) lev.push(w);
+  lev.sort(function (a, b) { return a - b; });
+  var haku = (document.getElementById('listSearch') ? document.getElementById('listSearch').value : '').trim().replace(',', '.');
+  var nayta = haku ? lev.filter(function (w) { return String(w).indexOf(haku) >= 0; }) : lev.slice();
+  var hw = parseFloat(haku);
+  var haettu = isFinite(hw) && hw > 0 && /^\d+(\.\d+)?$/.test(haku) && nayta.indexOf(hw) < 0;
+  if (haettu) nayta.unshift(hw);
+  var vanhaHinta = function (w) {
+    var p = omat.filter(function (r) { return Number(r.width_mm) >= w; }).sort(function (a, b) { return a.width_mm - b.width_mm; })[0];
+    return p ? { hinta: Number(p.price_per_m), porras: Number(p.width_mm) } : null;
+  };
+  return {
+    m: m, mh: mh, vari: v.vari, vertailu: omat.length > 0,
+    rivit: nayta.map(function (w) { return { leveys: w, hinta: H.metrihinta(mh, w), vanha: vanhaHinta(w), haettu: haettu && w === hw }; })
+  };
+}
+function lpEur(x) { return x == null ? '—' : Number(x).toFixed(2).replace('.', ',') + ' €'; }
+function lpEro(t) {
+  if (!t.vanha || !t.vanha.hinta) return '';
+  var e = (t.hinta - t.vanha.hinta) / t.vanha.hinta * 100;
+  if (Math.abs(e) < 0.5) return '<span style="color:var(--kpt-himmea)">0 %</span>';
+  return '<span style="color:var(' + (e >= 0 ? '--kpt-ok' : '--kpt-huom') + ')">' + (e >= 0 ? '+' : '−') + Math.abs(e).toFixed(0) + ' %</span>';
+}
+function lpKaava(d) {
+  var el = document.getElementById('listKaava');
+  if (!el) return;
+  if (!d) { el.innerHTML = matData.length ? '' : ''; return; }
+  var lahde = d.mh.lahde === 'vari' ? d.vari + ' oma hinta' : 'perushinta';
+  el.innerHTML = '<b>' + esc(d.m.material + ' ' + String(d.m.paks).replace('.', ',')) + '</b> · ' + esc(lahde) + ': aihio m × '
+    + lpEur(d.mh.ostohinta).replace(' €', ' €/m²') + ' × ' + String(d.mh.kerroin).replace('.', ',') + ' + työ ' + lpEur(d.mh.tyo).replace(' €', ' €/m')
+    + ', pyöristys 5 senttiin. Sama kaava kuin tilauksen hinnoissa. '
+    + '<a href="#" onclick="lpMateriaaleihin(); return false">Muuta hintaa → Materiaalit</a>'
+    + (d.vertailu ? '' : '<br><span style="color:var(--kpt-heikko)">Tälle materiaalille ei ole vanhaa listaa, joten vertailusarakkeet ovat tyhjiä.</span>');
+}
+function lpMateriaaleihin() {
+  var d = lpRivit(), tab = Array.prototype.find.call(document.querySelectorAll('.tab'), function (t) { return (t.getAttribute('onclick') || '').indexOf("'materiaalit'") >= 0; });
+  if (tab) switchTab('materiaalit', tab);
+  if (d) { document.getElementById('matHaku').value = d.m.material; renderMaterials(); }
 }
 
 function renderList() {
-  var search = (document.getElementById('listSearch') ? document.getElementById('listSearch').value : '').toLowerCase().trim();
-  var rows = listMatFilter === 'all' ? listData : listData.filter(function(r) { return r.material === listMatFilter; });
-  if (search) {
-    rows = rows.filter(function(r) {
-      return String(r.width_mm || '').includes(search)
-        || (r.material || '').toLowerCase().includes(search)
-        || String(r.thickness_mm || '').includes(search);
-    });
-  }
   var tbody = document.getElementById('listBody');
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Ei rivijä</td></tr>';
+  if (!tbody) return;
+  var d = lpRivit();
+  lpKaava(d);
+  if (!d) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">' + (matData.length ? 'Valitulla materiaalilla ei ole hintaa. Lisää ostohinta Materiaalit-välilehdellä.' : 'Ladataan...') + '</td></tr>';
     document.getElementById('listFooter').textContent = '';
+    renderListMobile(d);
+    return;
+  }
+  if (!d.rivit.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Ei rivejä</td></tr>';
+    document.getElementById('listFooter').textContent = '';
+    renderListMobile(d);
     return;
   }
   var html = '';
-  rows.forEach(function(row) {
-    html += '<tr>';
-    html += '<td><span class="badge badge-orange">' + (row.material || '—') + '</span></td>';
-    html += '<td class="mono" style="color:var(--kpt-himmea)">' + (row.thickness_mm ? row.thickness_mm + ' mm' : '—') + '</td>';
-    html += '<td class="mono">' + (row.width_mm != null ? row.width_mm + ' mm' : '—') + '</td>';
-    html += '<td class="right mono" id="lp-' + row.id + '">' + formatPrice(row.price_per_m) + '</td>';
-    html += '<td style="color:var(--kpt-himmea);font-size:12px">' + (row.unit || '—') + '</td>';
-    html += '<td style="text-align:right"><button class="btn btn-secondary btn-sm" data-id="' + row.id + '" data-price="' + (row.price_per_m || 0) + '" data-edittype="list" onclick="handleEditBtn(this)">Muokkaa</button></td>';
+  d.rivit.forEach(function (t) {
+    html += '<tr' + (t.haettu ? ' style="background:var(--kpt-paneeli2)"' : '') + '>';
+    html += '<td class="mono">' + String(t.leveys).replace('.', ',') + ' mm' + (t.haettu ? ' <span style="color:var(--kpt-himmea);font-size:11px">(haettu)</span>' : '') + '</td>';
+    html += '<td class="right mono" style="font-weight:600">' + lpEur(t.hinta) + '</td>';
+    html += '<td class="right mono" style="color:var(--kpt-himmea)">' + lpEur(t.hinta == null ? null : Math.round(t.hinta * (1 + LP_ALV / 100) * 100) / 100) + '</td>';
+    html += '<td class="right mono" style="color:var(--kpt-himmea)">' + (t.vanha ? lpEur(t.vanha.hinta) + (t.vanha.porras !== t.leveys ? ' <span style="font-size:11px">(' + t.vanha.porras + ')</span>' : '') : '') + '</td>';
+    html += '<td class="right mono">' + lpEro(t) + '</td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
-  document.getElementById('listFooter').textContent = rows.length + ' riviä';
-  renderListMobile();
+  document.getElementById('listFooter').textContent = d.rivit.length + ' leveyttä · hinnat lasketaan Materiaaleista';
+  renderListMobile(d);
 }
 
 function handleEditBtn(btn) {
@@ -1094,6 +1193,7 @@ function renderMaterials() {
   el.innerHTML = html;
   var yv = document.getElementById('matYhteenveto');
   if (yv) yv.textContent = yht ? yht + ' materiaalia · ' + (puuttuu ? puuttuu + ' ilman hintaa' : 'kaikilla hinta') : '';
+  renderListFilters(); renderList();   // Peltilistat lasketaan Materiaaleista
 }
 
 function hmToiminto(e, btn) {
@@ -1414,40 +1514,23 @@ function showToast(msg, error) {
 
 
 // ---- MOBIILIKORTTIT ----
-function renderListMobile() {
+function renderListMobile(d) {
   var grid = document.getElementById('listMobileGrid');
   if (!grid) return;
-  var search = (document.getElementById('listSearch') ? document.getElementById('listSearch').value : '').toLowerCase().trim();
-  var rows = listMatFilter === 'all' ? listData : listData.filter(function(r) { return r.material === listMatFilter; });
-  if (search) {
-    rows = rows.filter(function(r) {
-      return String(r.width_mm || '').includes(search)
-        || (r.material || '').toLowerCase().includes(search)
-        || String(r.thickness_mm || '').includes(search);
-    });
-  }
-  if (!rows.length) {
-    grid.innerHTML = '<div class="empty-state">Ei rivejä</div>';
+  if (d === undefined) d = lpRivit();
+  if (!d || !d.rivit.length) {
+    grid.innerHTML = '<div class="empty-state">' + (d ? 'Ei rivejä' : 'Valitulla materiaalilla ei ole hintaa.') + '</div>';
     return;
   }
-  var html = '';
-  rows.forEach(function(row) {
-    html += '<div class="m-card">'
+  grid.innerHTML = d.rivit.map(function (t) {
+    return '<div class="m-card">'
       + '<div class="m-card-top">'
-      + '<div class="m-card-name">'
-      + '<span class="badge badge-orange" style="margin-right:6px">' + (row.material || '') + '</span>'
-      + (row.width_mm != null ? row.width_mm + ' mm' : '—')
+      + '<div class="m-card-name">' + String(t.leveys).replace('.', ',') + ' mm' + (t.haettu ? ' <span style="color:var(--kpt-himmea);font-size:11px;font-weight:400">(haettu)</span>' : '') + '</div>'
+      + '<div class="m-card-price">' + lpEur(t.hinta) + '</div>'
       + '</div>'
-      + '<div class="m-card-price" id="mlp-' + row.id + '">' + (row.price_per_m != null ? parseFloat(row.price_per_m).toFixed(2) + ' €' : '—') + '</div>'
-      + '</div>'
-      + '<div class="m-card-meta">'
-      + (row.thickness_mm ? '<span style="color:var(--kpt-himmea);font-size:12px">' + row.thickness_mm + ' mm paksu</span>' : '')
-      + '<span style="color:var(--kpt-himmea);font-size:12px">' + (row.unit || 'm') + '</span>'
-      + '</div>'
-
+      + (t.vanha ? '<div class="m-card-meta"><span style="color:var(--kpt-himmea);font-size:12px">vanha lista ' + lpEur(t.vanha.hinta) + (t.vanha.porras !== t.leveys ? ' (' + t.vanha.porras + ' mm)' : '') + '</span><span style="font-size:12px">' + lpEro(t) + '</span></div>' : '')
       + '</div>';
-  });
-  grid.innerHTML = html;
+  }).join('');
 }
 
 function renderFixedMobile() {
