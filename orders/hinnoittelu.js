@@ -223,21 +223,119 @@ function ryhmanHinta(tuotteet, ctx) {
   return { rivit: rr, yhteensa: sentit(rr.reduce((s, r) => s + r.yhteensa, 0)), puuttuu: puuttuu };
 }
 
+// ─── Käsin muokkaus (vaihe 4b-1, 28.11.2026, suunnitelma projektin claude/vaihe4b_suunnitelma.md) ─
+// Muokkaus m (rivin tai ryhmän, tallennetaan tilauksen orders.pricing-lokeroon):
+//   { oma_hinta (€/m, listapelti), kappalehinta (€/kpl), paan_kaanto: { taso: 'ei'|'helppo'|'normaali'|'vaativa'|'oma', paat: 1|2, hinta (oma €/pää) },
+//     lisa_eur, alennus_pct, alennus_eur, syy (sisäinen), nayta_alennus (laskulla, oletus true) }
+// Laskentajärjestys (Tomi 28.11.):
+//   1. (oma hinta tai laskettu €/m) × metrit + pään kääntö + lisä
+//   2. alennus: % tästä tai € (enintään koko summa)
+// Pään kääntö: ilman valintaa ehdotus (normaali × 2, jos riveillä on päitä) on mukana summassa merkinnällä ehdotus
+// (Tomi 28.11.: unohtunut lisä on menetettyä rahaa), taso 'ei' poistaa sen.
+function ehdotuksenPaanKaanto(tuote, m) {
+  if (m && m.paan_kaanto) return { taso: m.paan_kaanto.taso, paat: m.paan_kaanto.paat, hinta: m.paan_kaanto.hinta, ehdotus: false };
+  const e = paanKaantoEhdotus(tuote);
+  return e ? { taso: e.taso, paat: e.paat, hinta: null, ehdotus: true } : null;
+}
+// Alennus % lasketaan senteissä, ettei liukuluku pyöristä esim. 8,305 → 8,30.
+function alennusOsa(pohja, m) {
+  if (!m) return null;
+  const pct = luku(m.alennus_pct), eur = luku(m.alennus_eur);
+  let summa = 0, selite = '';
+  if (pct !== null && pct > 0) { const p = Math.min(pct, 100); summa = Math.round(Math.round(pohja * 100) * p / 100) / 100; selite = String(p).replace('.', ',') + ' %'; }
+  else if (eur !== null && eur > 0) { summa = sentit(Math.min(eur, Math.max(pohja, 0))); selite = String(eur).replace('.', ',') + ' €'; }
+  if (!(summa > 0)) return null;
+  return { nimi: 'Alennus', maara: 1, yksikko: 'erä', ahinta: -summa, summa: -summa, selite: selite, alennus: true, nayta: m.nayta_alennus !== false };
+}
+function lisaOsa(m) {
+  const l = luku(m && m.lisa_eur);
+  return l !== null && l !== 0 ? { nimi: 'Lisä', maara: 1, yksikko: 'erä', ahinta: sentit(l), summa: sentit(l), selite: '', lisa: true } : null;
+}
+function onMuokattu(m) {
+  return !!m && (luku(m.oma_hinta) !== null || luku(m.lisa_eur) || luku(m.alennus_pct) > 0 || luku(m.alennus_eur) > 0);
+}
+
+// Rivin hinta muokkauksineen. Palauttaa rivinHinnan muodon + { ilmanMuokkausta, muokattu, ehdotus, alennus }.
+function rivinHintaMuokattu(tuote, ctx, m) {
+  const c = Object.assign({}, ctx || {});
+  if (m && luku(m.kappalehinta) !== null) c.kappalehinta = luku(m.kappalehinta);
+  const r = rivinHinta(tuote, c);
+  r.muokattu = onMuokattu(m); r.ehdotus = false; r.alennus = null;
+  if (r.tapa === 'lista') {
+    const pelti = r.osat.find(o => o.nimi === 'Pelti');
+    const oma = luku(m && m.oma_hinta);
+    if (pelti && oma !== null && oma >= 0) {
+      pelti.laskettuAhinta = pelti.ahinta; pelti.ahinta = oma; pelti.summa = sentit(oma * pelti.maara); pelti.oma = true;
+    }
+    const pk = ehdotuksenPaanKaanto(tuote, m);
+    if (pk && pk.taso !== 'ei') {
+      const hinnat = paanKaantoHinnat(c.kiinteat);
+      const hPaa = pk.taso === 'oma' ? luku(pk.hinta) : hinnat[pk.taso];
+      const kpl = kplYhteensa(tuote), paat = luku(pk.paat) || 2;
+      if (hPaa === null || hPaa === undefined) { if (r.puuttuu.indexOf('paankaanto') < 0) r.puuttuu.push('paankaanto'); }
+      else {
+        r.osat.push({ nimi: 'Pään kääntö', maara: paat * kpl, yksikko: 'kpl', ahinta: hPaa, summa: sentit(hPaa * paat * kpl),
+          selite: pk.taso + ', ' + paat + (paat === 1 ? ' pää' : ' päätä') + ' × ' + kpl + ' kpl', ehdotus: pk.ehdotus, taso: pk.taso, paat: paat });
+        r.ehdotus = pk.ehdotus;
+      }
+    }
+  }
+  const lo = lisaOsa(m); if (lo) r.osat.push(lo);
+  // Hinta ilman käsin tehtyjä muutoksia (oma hinta, lisä, alennus), mutta pään kääntö mukana: yliviivattu luku
+  r.ilmanMuokkausta = sentit(r.osat.filter(o => !o.lisa).reduce((s, o) => s + (o.oma ? o.laskettuAhinta * o.maara : o.summa), 0));
+  const pohja = sentit(r.osat.reduce((s, o) => s + o.summa, 0));
+  const ao = alennusOsa(pohja, m); if (ao) { r.osat.push(ao); r.alennus = ao; }
+  r.yhteensa = sentit(r.osat.reduce((s, o) => s + o.summa, 0));
+  return r;
+}
+
+// Ryhmän hinta muokkauksineen. mk = { rivit: { [indeksi]: m }, ryhma: m (lisä / alennus koko ryhmälle, esim. piippu) }
+// ctx.kappalehinnat kuten ryhmanHinnassa (rivin oma kappalehinta voittaa).
+function ryhmanHintaMuokattu(tuotteet, ctx, mk) {
+  const c = ctx || {}, k = mk || {}, rm = k.rivit || {};
+  const rr = (tuotteet || []).map((t, i) => rivinHintaMuokattu(t, Object.assign({}, c, { kappalehinta: c.kappalehinnat ? c.kappalehinnat[i] : undefined }), rm[i]));
+  const puuttuu = [];
+  rr.forEach(r => r.puuttuu.forEach(x => { if (puuttuu.indexOf(x) < 0) puuttuu.push(x); }));
+  if (rr.some(r => r.tarvitseeTyon) && !rr.some(r => r.tyoMukana)) puuttuu.push('tyoaika');
+  const valisumma = sentit(rr.reduce((s, r) => s + r.yhteensa, 0));
+  const osat = [], lo = lisaOsa(k.ryhma); if (lo) osat.push(lo);
+  const pohja = sentit(valisumma + (lo ? lo.summa : 0));
+  const ao = alennusOsa(pohja, k.ryhma); if (ao) osat.push(ao);
+  return { rivit: rr, valisumma: valisumma, osat: osat, alennus: ao, muokattu: onMuokattu(k.ryhma),
+    yhteensa: sentit(pohja + (ao ? ao.summa : 0)), puuttuu: puuttuu };
+}
+
+// Tilauksen summa: ryhmien summat + koko tilauksen alennus (% tai €). Palauttaa
+// { valisumma, alennus (osa tai null), yhteensa, alennuksetYhteensa (rivit + ryhmät + tilaus, negatiivinen tai 0), ehdotuksia }
+function tilauksenHinta(ryhmat, m) {
+  const rr = ryhmat || [];
+  const valisumma = sentit(rr.reduce((s, g) => s + (g.yhteensa || 0), 0));
+  const ao = alennusOsa(valisumma, m);
+  let ale = ao ? ao.summa : 0, ehd = 0;
+  rr.forEach(g => {
+    (g.osat || []).forEach(o => { if (o.alennus) ale += o.summa; });
+    (g.rivit || []).forEach(r => { (r.osat || []).forEach(o => { if (o.alennus) ale += o.summa; if (o.ehdotus) ehd++; }); });
+  });
+  return { valisumma: valisumma, alennus: ao, yhteensa: sentit(valisumma + (ao ? ao.summa : 0)), alennuksetYhteensa: sentit(ale), ehdotuksia: ehd };
+}
+
 // Puutteiden tekstit käyttöliittymään (suomeksi)
 const PUUTE_TEKSTIT = {
   materiaali: 'Materiaali valitsematta', hinta: 'Hinta puuttuu (Hinnasto → Materiaalit)', aihio: 'Aihion leveys puuttuu',
   pituus: 'Pituus puuttuu', tuntihinta: 'Tuntihinta puuttuu (Hinnasto → Kiinteät hinnat: Verstastyö)',
-  kappalehinta: 'Kappalehinta puuttuu', tyoaika: 'Työaika puuttuu'
+  kappalehinta: 'Kappalehinta puuttuu', tyoaika: 'Työaika puuttuu',
+  paankaanto: 'Pään käännön hinta puuttuu (Hinnasto → Kiinteät hinnat)'
 };
 function puuteTeksti(k) { return PUUTE_TEKSTIT[k] || k; }
 
 window.KPT_HINNOITTELU = {
-  versio: '2026-11-27',
+  versio: '2026-11-28',
   round5: round5, sentit: sentit,
   materiaalinHinta: materiaalinHinta, metrihinta: metrihinta, neliohinta: neliohinta,
   tuntihinta: tuntihinta, tyonHinta: tyonHinta,
   tyyppi: tyyppi, tapa: tapa, rivit: rivit, kplYhteensa: kplYhteensa, juoksumetrit: juoksumetrit, menekkiM2: menekkiM2, tyoaikaMin: tyoaikaMin,
   paanKaantoEhdotus: paanKaantoEhdotus, paanKaantoHinnat: paanKaantoHinnat, paanKaantoLisa: paanKaantoLisa,
-  rivinHinta: rivinHinta, ryhmanHinta: ryhmanHinta, puuteTeksti: puuteTeksti
+  rivinHinta: rivinHinta, ryhmanHinta: ryhmanHinta, puuteTeksti: puuteTeksti,
+  rivinHintaMuokattu: rivinHintaMuokattu, ryhmanHintaMuokattu: ryhmanHintaMuokattu, tilauksenHinta: tilauksenHinta, onMuokattu: onMuokattu
 };
 })();
